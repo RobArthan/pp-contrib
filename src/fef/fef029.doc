@@ -171,7 +171,6 @@ transformation process.
 Ü	in	Flat(Map do1td tdl)
 °
 =TEX
-=SML
 ¹HOLCONST
 Ü	Ûfind‰i‰d‰e‰n‰tÝ : ColumnSpecification ¸ IdentDetail LIST ­ 
 Ü					IdentDetail LIST
@@ -188,18 +187,16 @@ transformation process.
 We replace the function $look$, which is private to $lookup\sb{column\_info}$
 in \cite{DS/FMU/FEF/029,trans} by a top-level function,
 $lookup\_column\_info\_look$ (since it is recursive and HOL local functions
-cannot be recursive). The recursive definition is simpler if we arrange for
-the list argument to be supplied in reverse order.
-=SML
+cannot be recursive).
 ¹HOLCONST
 Ü 	Ûlookup_column_info_lookÝ :
 Ü		ColumnSpecification  ¸ Scope LIST ­ (TableInfo ¸ SsqlCol)RESULT
 ÷üüüüüüüüüüüüüüüüüüüüüüü
 Üµcs ti outer·
 Ü	lookup_column_info_look (cs, []) = Exception [noSuchColumn]
-Ü±	lookup_column_info_look (cs, Cons ti outer) =
-Ü	let	(t, i) = (s_tables ti, s_identifiers ti)
-Ü	in let	tdsctcl = find‰c‰o‰l‰u‰m‰n(cs,t)
+Ü±	lookup_column_info_look (cs, outer @ [ti]) =
+Ü	let	t = s_tables ti
+Ü	in let	tdsctcl = find‰c‰o‰l‰u‰m‰n(cs, t)
 Ü	in	if	tdsctcl = []
 Ü		then	lookup_column_info_look (cs, outer)
 Ü		else if	Tl(tdsctcl) = []
@@ -214,203 +211,308 @@ the list argument to be supplied in reverse order.
 Ü		lookup_column_info_look (cs, symbolTable(st_stack st))
 °
 =TEX
+¹HOLCONST
+Ü	ÛmaxBoundÝ : BoundInfo ­ Class
+÷üüüüüüüüüüü
+Üµc·	maxBound c =
+Ü	CASE c [
+Ü	WHEN_upb c· c;
+Ü	WHEN_constant c· c
+Ü	]
+°
+=TEX
+¹HOLCONST
+Ü	ÛinnermostÝ : Scope LIST ­ Scope LIST
+÷üüüüüüüüüüüü
+Üµouter inner·
+Ü	innermost [] = []
+Ü±	innermost (outer @ [inner]) =
+Ü	let tds = s_tables inner
+Ü	in	if	tds = []
+Ü		then	innermost outer @ [inner]
+Ü		else	[inner]
+°
+As with $lookup\sb{column\_info}$, we replace the recursive
+function $look$ local to $lookup\sb{col\_info}$
+by a top-level function $look\_up\_col\_spec\_class\_look$.
+The comments before the $then$s below show the corresponding ML pattern match
+(cf. \cite{DS/FMU/FEF/020}).
+¹HOLCONST
+Ü	Ûlookup_col_spec_class_lookÝ
+Ü		: ColumnSpecification  ¸ Scope LIST ­ (TsqlRepr ¸ Class) RESULT
+÷üüüüüüüüüüüüüüüü
+Üµ cs outer ti·
+Ü	lookup_col_spec_class_look(cs,[]) = Exception [noSuchColumn]
+Ü±	lookup_col_spec_class_look(cs, outer @ [ti]) = 	
+Ü	let	(t, i) = (s_tables ti, s_identifiers ti)
+Ü	in let	cds = find‰c‰o‰l‰u‰m‰n(cs,t)
+Ü	and	ids = find‰i‰d‰e‰n‰t(cs,i)
+Ü	in 	if	ids = []
+Ü		then	if	cds = []
+Ü(* ([], []) *)		then	lookup_col_spec_class_look(cs, outer)
+Ü			else	if	Tl cds = []
+Ü(* ([(td,sc,tc)], []) *)	then 	let	(td, sc, tc) = Hd cds
+Ü					in let	u = maxBound (sc_col_class sc)
+Ü					in	CASE (tc_class_name tc) [
+Ü						WHEN_anon‰t‰c
+Ü							(Exception[internalError]);
+Ü						WHEN_name‰t‰c s·
+Ü							Ok(mk_column(td_genCorr td, s), u);
+Ü						WHEN_constant‰t‰c c·
+Ü							Ok(mk_constant_class c,u)
+Ü						]
+Ü(* (xs, []) *)				else	Exception [ambiguousName]
+Ü		else	if	cds = [] ± Tl ids = []
+Ü(* ([], [id]) *)	then	let	id = Hd ids
+Ü				in let	cl = id_lub‰i‰d id
+Ü				in	CASE (id_cName id) [
+Ü					WHEN_none‰t (Ok(mk_constant_class cl, cl));
+Ü					WHEN_anon‰t (Exception[internalError]);
+Ü					WHEN_name‰t s·Ok(mk_local_identifier s, cl)
+Ü					]
+Ü(* (xs, ys) *)		else	Exception [ambiguousName]
+°
+¹HOLCONST
+Ü	Ûlookup‰c‰o‰l‰_‰s‰p‰e‰c‰_‰c‰l‰a‰s‰sÝ :
+Ü		TRANS_STATE ¸ BOOL ¸ ColumnSpecification ­ (TsqlRepr ¸ Class)RESULT 
+÷üüüüüüüüüüüüü
+Üµst flg cs·
+Ü	lookup‰c‰o‰l‰_‰s‰p‰e‰c‰_‰c‰l‰a‰s‰s (st, flg, cs) =
+Ü	if	flg
+Ü	then	lookup_col_spec_class_look(cs, innermost(symbolTable(st_stack st)))
+Ü	else	lookup_col_spec_class_look(cs, (symbolTable(st_stack st)))
+°
+=TEX
+{\it Mutatatis mutandis},
+the remarks about $lookup\_col\_spec\_class\_look$ above apply both to
+to $lookup\_col\_spec\_dinary\_look$, and to
+$lookup\_col\_spec\_sterling\_look$ below.
+¹HOLCONST
+Ü	Ûlookup_col_spec_dinary_lookÝ
+Ü		: ColumnSpecification  ¸ Scope LIST ­ TsqlRepr RESULT
+÷üüüüüüüüüüüüüüüü
+Üµ cs outer ti·
+Ü	lookup_col_spec_dinary_look(cs,[]) = Exception [noSuchColumn]
+Ü±	lookup_col_spec_dinary_look(cs, outer @ [ti]) = 	
+Ü	let	(t, i) = (s_tables ti, s_identifiers ti)
+Ü	in let	cds = find‰c‰o‰l‰u‰m‰n(cs,t)
+Ü	and	ids = find‰i‰d‰e‰n‰t(cs,i)
+Ü	in 	if	ids = []
+Ü		then	if	cds = []
+Ü(* ([], []) *)		then	lookup_col_spec_dinary_look(cs, outer)
+Ü			else	if	Tl cds = []
+Ü(* ([(td,sc,tc)], []) *)	then 	let	(td, sc, tc) = Hd cds
+Ü					in	CASE (tc_dinary_name tc) [
+Ü						WHEN_none‰t
+Ü							(Exception[internalError]);
+Ü						WHEN_anon‰t
+Ü							(Exception[internalError]);
+Ü						WHEN_name‰t s·
+Ü							Ok(mk_column(td_genCorr td, s))
+Ü						]
+Ü(* (xs, []) *)				else	Exception [ambiguousName]
+Ü		else	if	cds = [] ± Tl ids = []
+Ü(* ([], [id]) *)	then	let	id = Hd ids
+Ü				in let	(st, w) = id_info id
+Ü				in	if	w = dinary
+Ü					then	Ok(mk_local_identifier(id_vName id))
+Ü					else	Ok(c_constant_null)
+Ü(* (xs, ys) *)		else	Exception [ambiguousName]
+°
+=TEX
+¹HOLCONST
+Ü	Ûlookup‰c‰o‰l‰_‰s‰p‰e‰c‰_‰d‰i‰n‰a‰r‰yÝ :
+Ü		TRANS_STATE ¸ BOOL ¸ ColumnSpecification ­ TsqlRepr RESULT 
+÷üüüüüüüüüüüüü
+Üµst flg cs·
+Ü	lookup‰c‰o‰l‰_‰s‰p‰e‰c‰_‰d‰i‰n‰a‰r‰y (st, flg, cs) =
+Ü	if	flg
+Ü	then	lookup_col_spec_dinary_look(cs, innermost(symbolTable(st_stack st)))
+Ü	else	lookup_col_spec_dinary_look(cs, (symbolTable(st_stack st)))
+°
+¹HOLCONST
+Ü	Ûlookup_col_spec_sterling_lookÝ
+Ü		: ColumnSpecification  ¸ Scope LIST ­ TsqlRepr RESULT
+÷üüüüüüüüüüüüüüüü
+Üµ cs outer ti·
+Ü	lookup_col_spec_sterling_look(cs,[]) = Exception [noSuchColumn]
+Ü±	lookup_col_spec_sterling_look(cs, outer @ [ti]) = 	
+Ü	let	(t, i) = (s_tables ti, s_identifiers ti)
+Ü	in let	cds = find‰c‰o‰l‰u‰m‰n(cs,t)
+Ü	and	ids = find‰i‰d‰e‰n‰t(cs,i)
+Ü	in 	if	ids = []
+Ü		then	if	cds = []
+Ü(* ([], []) *)		then	lookup_col_spec_sterling_look(cs, outer)
+Ü			else	if	Tl cds = []
+Ü(* ([(td,sc,tc)], []) *)	then 	let	(td, sc, tc) = Hd cds
+Ü					in	CASE (tc_sterling_name tc) [
+Ü						WHEN_none‰t
+Ü							(Exception[internalError]);
+Ü						WHEN_anon‰t
+Ü							(Exception[internalError]);
+Ü						WHEN_name‰t s·
+Ü							Ok(mk_column(td_genCorr td, s))
+Ü						]
+Ü(* (xs, []) *)				else	Exception [ambiguousName]
+Ü		else	if	cds = [] ± Tl ids = []
+Ü(* ([], [id]) *)	then	let	id = Hd ids
+Ü				in let	(st, w) = id_info id
+Ü				in	if	w = sterling
+Ü					then	Ok(mk_local_identifier(id_vName id))
+Ü					else	Ok(c_constant_null)
+Ü(* (xs, ys) *)		else	Exception [ambiguousName]
+°
+=TEX
+¹HOLCONST
+Ü	Ûlookup‰c‰o‰l‰_‰s‰p‰e‰c‰_‰s‰t‰e‰r‰l‰i‰n‰gÝ :
+Ü		TRANS_STATE ¸ BOOL ¸ ColumnSpecification ­ TsqlRepr RESULT 
+÷üüüüüüüüüüüüü
+Üµst flg cs·
+Ü	lookup‰c‰o‰l‰_‰s‰p‰e‰c‰_‰s‰t‰e‰r‰l‰i‰n‰g (st, flg, cs) =
+Ü	if	flg
+Ü	then	lookup_col_spec_sterling_look(cs, innermost(symbolTable(st_stack st)))
+Ü	else	lookup_col_spec_sterling_look(cs, (symbolTable(st_stack st)))
+°
+=TEX
+¹HOLCONST
+Ü	Ûlookup‰l‰o‰c‰a‰l‰_‰c‰o‰l‰_‰i‰m‰p‰l‰e‰m‰e‰n‰t‰a‰t‰i‰o‰nÝ
+Ü		: TRANS_STATE ­ TsqlCol LIST RESULT 
+÷üüüüüüüüüüüüüüüüüüü
+Üµ st· lookup‰l‰o‰c‰a‰l‰_‰c‰o‰l‰_‰i‰m‰p‰l‰e‰m‰e‰n‰t‰a‰t‰i‰o‰n st =
+Ü	let	extract_implementation sc =
+Ü		Fold ($@) (Map td_implementation (s_tables sc)) []
+Ü	in let	trs =
+Ü		Fold ($@)
+Ü		(Map extract_implementation (innermost(symbolTable(st_stack st))))[]
+Ü	in	if	trs = []
+Ü		then	Exception[noScope]
+Ü		else	Ok trs
+°
+=TEX
+¹HOLCONST
+Ü	Ûlookup‰l‰o‰c‰a‰l‰_‰c‰o‰l‰_‰i‰n‰f‰oÝ
+Ü		: TRANS_STATE ­ SsqlCol LIST RESULT 
+÷üüüüüüüüüüüüüüüüüüü
+Üµ st· lookup‰l‰o‰c‰a‰l‰_‰c‰o‰l‰_‰i‰n‰f‰o st =
+Ü	let	extract_columns sc =
+Ü		Fold ($@) (Map td_columns (s_tables sc)) []
+Ü	in let	trs =
+Ü		Fold ($@)
+Ü		(Map extract_columns (innermost(symbolTable(st_stack st))))[]
+Ü	in	if	trs = []
+Ü		then	Exception[noScope]
+Ü		else	Ok trs
+°
+=TEX
+¹HOLCONST
+Ü	Ûlookup‰l‰o‰c‰a‰l‰_‰c‰o‰l‰_‰s‰p‰e‰c‰_‰c‰l‰a‰s‰s‰e‰sÝ
+Ü		: TRANS_STATE ­ (TsqlRepr ¸ Class) LIST RESULT 
+÷üüüüüüüüüüüüüüüüüüü
+Üµ st· lookup‰l‰o‰c‰a‰l‰_‰c‰o‰l‰_‰s‰p‰e‰c‰_‰c‰l‰a‰s‰s‰e‰s st =
+Ü	let	look2(corr,sc,tc) =
+Ü		let	u = maxBound(sc_col_class sc)
+Ü		in	CASE (tc_class_name tc) [
+Ü			WHEN_anon‰t‰c (Exception[internalError]);
+Ü			WHEN_name‰t‰c s· Ok(mk_column(corr, s), u);
+Ü			WHEN_constant‰t‰c c· Ok(mk_constant_class c,u)
+Ü			]
+Ü	in let	look1 td = at3 (Map look2)
+Ü			(seq (Length (td_columns td)) (td_genCorr td),
+Ü				td_columns td, td_implementation td)
+Ü	in let	look sc = Fold ($@) (Map look1 (s_tables sc)) []
+Ü	in let	trs = 
+Ü		Fold ($@) (Map look (innermost(symbolTable(st_stack st))))[]
+Ü	in	if	trs = []
+Ü		then	Exception[noScope]
+Ü		else	ListOk trs
+°
+=TEX
+¹HOLCONST
+Ü	Ûlookup‰l‰o‰c‰a‰l‰_‰c‰o‰l‰_‰s‰p‰e‰c‰_‰s‰t‰e‰r‰l‰i‰n‰g‰sÝ
+Ü		: TRANS_STATE ­ TsqlRepr LIST RESULT 
+÷üüüüüüüüüüüüüüüüüüü
+Üµ st· lookup‰l‰o‰c‰a‰l‰_‰c‰o‰l‰_‰s‰p‰e‰c‰_‰s‰t‰e‰r‰l‰i‰n‰g‰s st =
+Ü	let	look2(corr,tc) =
+Ü		CASE (tc_sterling_name tc) [
+Ü		WHEN_none‰t (Ok c_constant_null);
+Ü		WHEN_anon‰t (Exception[internalError]);
+Ü		WHEN_name‰t s· Ok(mk_column(corr, s))
+Ü		]
+Ü	in let	look1 td = at2 (Map look2)
+Ü			(seq (Length (td_columns td)) (td_genCorr td),
+Ü				td_implementation td)
+Ü	in let	look sc = Fold ($@) (Map look1 (s_tables sc)) []
+Ü	in let	trs = 
+Ü		Fold ($@) (Map look (innermost(symbolTable(st_stack st))))[]
+Ü	in	if	trs = []
+Ü		then	Exception[noScope]
+Ü		else	ListOk trs
+°
+=TEX
+¹HOLCONST
+Ü	Ûlookup‰l‰o‰c‰a‰l‰_‰r‰o‰w‰_‰c‰l‰a‰s‰s‰e‰sÝ
+Ü		: TRANS_STATE ­ TsqlRepr LIST RESULT 
+÷üüüüüüüüüüüüüüüüüüü
+Üµ st· lookup‰l‰o‰c‰a‰l‰_‰r‰o‰w‰_‰c‰l‰a‰s‰s‰e‰s st =
+Ü	let	look1 td =
+Ü		CASE (td_rowClass td) [
+Ü		WHEN_anon‰t‰c (Exception[internalError]);
+Ü		WHEN_name‰t‰c s· Ok(mk_column(td_genCorr td, s));
+Ü		WHEN_constant‰t‰c c· Ok(mk_constant_class c)
+Ü		]
+Ü	in let	look sc = Map look1 (s_tables sc)
+Ü	in let	trs = 
+Ü		Fold ($@) (Map look (innermost(symbolTable(st_stack st))))[]
+Ü	in	if	trs = []
+Ü		then	Exception[noScope]
+Ü		else	ListOk trs
+°
+=TEX
+Again {\it mutatatis mutandis},
+the remarks about $lookup\_col\_spec\_class\_look$ above apply to
+to the following.
+=SML
+¹HOLCONST
+Ü	Ûlookup_column_row_class_lookÝ
+Ü		: TRANS_STATE ­ ColumnSpecification  ¸ Scope LIST ­ TsqlRepr RESULT
+÷üüüüüüüüüüüüüüüü
+Üµ st cs outer ti·
+Ü	lookup_column_row_class_look st (cs,[]) = Exception [noSuchColumn]
+Ü±	lookup_column_row_class_look st (cs, outer @ [ti]) = 	
+Ü	let	(t, i) = (s_tables ti, s_identifiers ti)
+Ü	in let	cds = find‰c‰o‰l‰u‰m‰n(cs,t)
+Ü	and	ids = find‰i‰d‰e‰n‰t(cs,i)
+Ü	in 	if	ids = []
+Ü		then	if	cds = []
+Ü(* ([], []) *)		then	lookup_column_row_class_look st (cs, outer)
+Ü			else	if	Tl cds = []
+Ü(* ([(td,sc,tc)], []) *)	then 	let	(td, sc, tc) = Hd cds
+Ü					in	CASE (td_rowClass td) [
+Ü						WHEN_anon‰t‰c
+							(Exception[internalError]);
+Ü						WHEN_name‰t‰c s·
+							Ok(mk_column(td_genCorr td, s));
+Ü						WHEN_constant‰t‰c c·
+							Ok(mk_constant_class c)
+Ü						]
+Ü(* (xs, []) *)				else	Exception [ambiguousName]
+Ü		else	if	cds = [] ± Tl ids = []
+Ü(* ([], [id]) *)	then	let	id = Hd ids
+Ü				in	Ok(mk_constant_class(query_class st))
+Ü(* (xs, ys) *)		else	Exception [ambiguousName]
+°
+¹HOLCONST
+Ü	Ûlookup‰c‰o‰l‰u‰m‰n‰_‰r‰o‰w‰_‰c‰l‰a‰s‰sÝ
+Ü		: (TRANS_STATE ¸ BOOL ¸ ColumnSpecification) ­ TsqlRepr RESULT
+÷üüüüüüüüüüüüüüüüüüüü
+Üµst flg cs·
+Ü	lookup‰c‰o‰l‰u‰m‰n‰_‰r‰o‰w‰_‰c‰l‰a‰s‰s (st, flg, cs) =
+Ü	if	flg
+Ü	then	lookup_column_row_class_look st (cs, innermost(symbolTable(st_stack st)))
+Ü	else	lookup_column_row_class_look st (cs, (symbolTable(st_stack st)))
+°
+=TEX
 !!!! GOT HERE !!!!
-=SML
-fun 	(ÛmaxBoundÝ : BoundInfo ­ Class) 
-			(upb c) = c
-|	maxBound	(constant c) = c;		
-=TEX
-=SML
-fun 	(ÛinnermostÝ : Scope list ­ Scope list) 
-			[] = []
-|	innermost	sl =	let 	val outer = rev(tl(rev sl))
-					val inner = hd(rev sl)
-					val {tables = tds,identifiers = ids} = inner
-				in 
-				if tds = [] then innermost outer @ [{tables = [],identifiers = ids}]
-				else [inner]
-				end;		
-=TEX
-=SML
-local 	fun 	(look : ColumnSpecification  ¸ Scope list ­ TsqlRepr ¸ Class)
-			(cs,[]) = raise noSuchColumn
-	|	look	(cs,sl) = 	
-			let	val outer = rev(tl(rev sl))
-				val {tables = t,identifiers = i} = hd(rev sl)
-			in 	case (find‰c‰o‰l‰u‰m‰n(cs,t),find‰i‰d‰e‰n‰t(cs,i)) of
-					([],[]) => look(cs,outer)
-				|	([(td,sc,tc)],[]) => 
-					let val u = maxBound(#col_class sc)
-					in
-					case (#class_name tc) of
-						anonètcê => raise internalError
-					|	nameètcê s => (column(#genCorr td,s),u)
-					|	constantètcê c => (constant_class c,u)
-					end
-				|	([],[id]) =>
-					(case (#cName id) of
-						none‰t => (constant_class (#lubèidê id),#lubèidê id)
-					|	anon‰t => raise internalError
-					|	name‰t s => (local_identifier s,#lubèidê id))
-				|	(xs,ys) => raise ambiguousName
-			end
-in
-fun 	(Ûlookupècol_spec_classêÝ : bool ¸ ColumnSpecification ­ TsqlRepr ¸ Class) 
-				(true,cs) = look(cs,innermost (!symbolTable))
-|	lookupècol_spec_classê	(false,cs) = look(cs,!symbolTable)
-end;
-=TEX
-=SML
-local 	fun 	(look : ColumnSpecification  ¸ Scope list ­ TsqlRepr)
-			(cs,[]) = raise noSuchColumn
-	|	look	(cs,sl) = 
-			let	val outer = rev(tl(rev sl))
-				val {tables = t,identifiers = i} = hd(rev sl)
-			in 	case (find‰c‰o‰l‰u‰m‰n(cs,t),find‰i‰d‰e‰n‰t(cs,i)) of
-					([],[]) => look(cs,outer)
-				|	([(td,sc,tc)],[]) => 
-						(case (#dinary_name tc) of
-							none‰t => raise internalError
-						|	anon‰t => raise internalError
-						|name‰t s => column(#genCorr td,s))
-				|	([],[id]) =>
-						(case (#info id) of
-							(st,dinary) => 
-								(local_identifier(#vName id))
-						|	(st,other) => constant_null)
-				|	(xs,ys) => raise ambiguousName
-					end
-in
-fun 	(Ûlookupècol_spec_dinaryêÝ : bool ¸ ColumnSpecification ­ TsqlRepr) 
-				(true,cs) = look(cs,innermost (!symbolTable))
-|	lookupècol_spec_dinaryê	(false,cs) = look(cs,!symbolTable)
-end;
-=TEX
-=SML
-local 	fun 	(look : ColumnSpecification  ¸ Scope list ­ TsqlRepr)
-			(cs,[]) = raise noSuchColumn
-	|	look	(cs,sl) = 
-			let	val outer = rev(tl(rev sl))
-				val {tables = t,identifiers = i} = hd(rev sl)
-			in 	case (find‰c‰o‰l‰u‰m‰n(cs,t),find‰i‰d‰e‰n‰t(cs,i)) of
-					([],[]) => look(cs,outer)
-				|	([(td,sc,tc)],[]) => 
-						(case (#dinary_name tc) of
-							none‰t => raise internalError
-						|	anon‰t => raise internalError
-						|name‰t s => column(#genCorr td,s))
-				|	([],[id]) =>
-						(case (#info id) of
-							(st,sterling) => 
-								(local_identifier(#vName id))
-						|	(st,other) => constant_null)
-				|	(xs,ys) => raise ambiguousName
-					end
-in
-fun 	(Ûlookupècol_spec_sterlingêÝ : bool ¸ ColumnSpecification ­ TsqlRepr) 
-				(true,cs) = look(cs,innermost (!symbolTable))
-|	lookupècol_spec_sterlingê	(false,cs) = look(cs,!symbolTable)
-end;
-=TEX
-=SML
-local	fun (project_implementation : TableDetail ­ TsqlCol list)
-		td = #implementation td
-	fun (extract_implementation : Scope ­ TsqlCol list)
-		sc = fold (op @) (map project_implementation (#tables sc))
-in
-fun 	(Ûlookupèlocal_col_implementationêÝ : unit ­ TsqlCol list) 
-	() = 	case (fold (op @)(map extract_implementation(innermost (!symbolTable)))) of 
-			[] => raise noScope
-		|	trs => trs
-end;
-=TEX
-=SML
-local	fun (project_columns : TableDetail ­ SsqlCol list)
-		td = #columns td
-	fun (extract_columns : Scope ­ SsqlCol list)
-		sc = fold (op @) (map project_columns (#tables sc))
-in
-fun 	(Ûlookupèlocal_col_infoêÝ : unit ­ SsqlCol list) 
-	() = 	case (fold (op @)(map extract_columns(innermost (!symbolTable)))) of 
-			[] => raise noScope
-		|	trs => trs
-end;
-=TEX
-=SML
-local	fun (look2 : string ¸ SsqlCol ¸ TsqlCol ­ TsqlRepr ¸ Class)
-		(corr,sc,tc) = 	let val u = maxBound(#col_class sc)
-				in	case (#class_name tc) of
-						anonètcê => raise internalError
-					|	nameètcê s => (column(corr,s),u)
-					|	constantètcê c => (constant_class c,u)
-				end
-	fun (look1 : TableDetail ­ (TsqlRepr ¸ Class) list)
-		td = at3 (map look2)(seq(length(#columns td),#genCorr td),
-						#columns td,#implementation td)		
-	fun (look : Scope ­ (TsqlRepr ¸ Class) list)
-		sc = fold (op @) (map look1 (#tables sc))
-in
-fun 	(Ûlookupèlocal_col_spec_classesêÝ : unit ­ (TsqlRepr ¸ Class) list) 
-	() = 	case (fold (op @)(map look (innermost (!symbolTable)))) of 
-			[] => raise noScope
-		|	trs => trs
-end;
-=TEX
-=SML
-local	fun (look2 : string ¸ TsqlCol ­ TsqlRepr)
-		(corr,tc) = 	case (#sterling_name tc) of
-					none‰t => constant_null
-				|	anon‰t => raise internalError
-				|	name‰t s => column(corr,s)
-	fun (look1 : TableDetail ­ TsqlRepr list)
-		td = at2 (map look2)(seq(length(#columns td),#genCorr td),
-							#implementation td)		
-	fun (look : Scope ­ TsqlRepr list)
-		sc = fold (op @) (map look1 (#tables sc))
-in
-fun 	(Ûlookupèlocal_col_spec_sterlingsêÝ : unit ­ TsqlRepr list) 
-	() = 	case (fold (op @)(map look (innermost (!symbolTable)))) of 
-			[] => raise noScope
-		|	trs => trs
-end;
-=TEX
-=SML
-local	fun (look1 : TableDetail ­ TsqlRepr)
-		td = 	case (#rowClass td) of
-					anonètcê => raise internalError
-				|	nameètcê s => column(#genCorr td,s)
-				|	constantètcê c => constant_class c
-	fun (look : Scope ­ TsqlRepr list)
-		sc = (map look1 (#tables sc))
-in
-fun 	(Ûlookupèlocal_row_classesêÝ : unit ­ TsqlRepr list) 
-	() = 	case (fold (op @)(map look (innermost (!symbolTable)))) of 
-			[] => raise noScope
-		|	trs => trs
-end;
-=TEX
-=SML
-local 	fun 	(look : ColumnSpecification  ¸ Scope list ­ TsqlRepr)
-			(cs,[]) = raise noSuchColumn
-	|	look	(cs,sl) = 	
-			let	val outer = rev(tl(rev sl))
-				val {tables = t,identifiers = i} = hd(rev sl)
-			in 	case (find‰c‰o‰l‰u‰m‰n(cs,t),find‰i‰d‰e‰n‰t(cs,i)) of
-					([],[]) => look(cs,outer)
-				|	([(td,sc,tc)],[]) => 
-					(case (#rowClass td) of
-						anonètcê => raise internalError
-					|	nameètcê s => column(#genCorr td,s)
-					|	constantètcê c => constant_class c)
-				|	([],[id]) => constant_class (query_class())
-				|	(xs,ys) => raise ambiguousName
-			end
-in
-fun 	(Ûlookupècolumn_row_classêÝ : bool ¸ ColumnSpecification ­ TsqlRepr) 
-				(true,cs) = look(cs,innermost (!symbolTable))
-|	lookupècolumn_row_classê	(false,cs) = look(cs,!symbolTable)
-end;
-=TEX
 =SML
 local	fun (look1 : TableSpecification ¸ TableDetail ­ TsqlRepr list)
 		(ts,td) = 	case (#tableName td) of
@@ -660,7 +762,7 @@ fun 	(Ûrepr_colÝ : TsqlRepr ­ Col_specètsqlê)
 =TEX
 =SML
 fun 	(Ûall_data_columnsèlocalêÝ : unit ­ Col_specètsqlê list) () 
-					= map repr_col(lookupèlocal_col_spec_sterlingsê());
+					= map repr_col(lookup‰l‰o‰c‰a‰l‰_‰c‰o‰l‰_‰s‰p‰e‰c‰_‰s‰t‰e‰r‰l‰i‰n‰g‰s());
 =TEX
 =SML
 fun 	(Ûbinop_typeÝ : Op ¸ SwordType ¸ SwordType ­ SwordType) 
@@ -1094,7 +1196,7 @@ fun 	(Ûconvertècol_specêÝ : Col_specèssqlê ­ ColumnSpecification)
 =TEX
 =SML
 fun 	(Ûclass_columnÝ : Col_specèssqlê­ (Col_specètsqlê,Class)Sum) cs = 
-	case 	(lookupècol_spec_classê(true,convertècol_specê cs)) of 
+	case 	(lookup‰c‰o‰l‰_‰s‰p‰e‰c‰_‰c‰l‰a‰s‰s(true,convertècol_specê cs)) of 
 		(local_identifier name, lub_cl) => inL(denote_col_spec‰t name)
 	|	(column(gen_corr,gen_col), lub_cl) => 
 						inL(absolute_col_spec‰t([],gen_corr,gen_col))
@@ -1110,7 +1212,7 @@ fun 	(Ûdenote_nameÝ : TsqlRepr ­ Valueètsqlê)
 =TEX	
 =SML
 fun 	(Ûcolumn_data_testÝ : Col_specèssqlê ­ Valueètsqlê list) cs =
-		let	val (tr,u) = lookupècol_spec_classê(false,convertècol_specê cs) 
+		let	val (tr,u) = lookup‰c‰o‰l‰_‰s‰p‰e‰c‰_‰c‰l‰a‰s‰s(false,convertècol_specê cs) 
 		in
 		if 	client_clearance()  dom u
 		then []
@@ -1455,7 +1557,7 @@ fun 	(Ûconstant_valueèdataêÝ : Constant_valueèssqlê ­ Valueètsqlê)
 =TEX
 =SML
 local	fun 	(look : Col_specèssqlê ­ TsqlRepr)
-			cs = lookupècol_spec_dinaryê(false,convertècol_specê cs)
+			cs = lookup‰c‰o‰l‰_‰s‰p‰e‰c‰_‰d‰i‰n‰a‰r‰y(false,convertècol_specê cs)
 in
 fun 	(Ûdinary_columnsÝ : Col_specèssqlê list ­ Col_specètsqlê list)
 		css = map repr_col (remove_nulls(map look css))
@@ -1463,7 +1565,7 @@ end;
 =TEX
 =SML
 local	fun 	(look : Col_specèssqlê ­ TsqlRepr)
-			cs = lookupècol_spec_sterlingê(false,convertècol_specê cs)
+			cs = lookup‰c‰o‰l‰_‰s‰p‰e‰c‰_‰s‰t‰e‰r‰l‰i‰n‰g(false,convertècol_specê cs)
 in
 fun 	(Ûsterling_columnsÝ : Col_specèssqlê list ­ Col_specètsqlê list)
 		css = map repr_col (remove_nulls(map look css))
@@ -1553,15 +1655,15 @@ fun 	(ÛvalueèdataêÝ : Valueèssqlê ­ Valueètsqlê)
 =TEX
 =SML
 |	valueèdataê	(contents‰s cs) = 
-				(case lookupècol_spec_sterlingê(false,convertècol_specê cs) of
+				(case lookup‰c‰o‰l‰_‰s‰p‰e‰c‰_‰s‰t‰e‰r‰l‰i‰n‰g(false,convertècol_specê cs) of
 					constant_null => denote_null‰t
 				|	tr => contents‰t(repr_col tr))
 |	valueèdataê	(sterling_contents‰s cs) = 
-				(case lookupècol_spec_sterlingê(false,convertècol_specê cs) of
+				(case lookup‰c‰o‰l‰_‰s‰p‰e‰c‰_‰s‰t‰e‰r‰l‰i‰n‰g(false,convertècol_specê cs) of
 					constant_null => denote_null‰t
 				|	tr => contents‰t(repr_col tr))
 |	valueèdataê	(dinary_contents‰s cs) = 
-				(case lookupècol_spec_dinaryê(false,convertècol_specê cs) of
+				(case lookup‰c‰o‰l‰_‰s‰p‰e‰c‰_‰d‰i‰n‰a‰r‰y(false,convertècol_specê cs) of
 					constant_null => denote_null‰t
 				|	tr => contents‰t(repr_col tr))
 =TEX
@@ -1581,7 +1683,7 @@ fun 	(ÛvalueèdataêÝ : Valueèssqlê ­ Valueètsqlê)
 =TEX
 =SML
 |	valueèdataê	joined_row_existence‰s = 	
-				let val 	ns = lookupèlocal_row_classesê()
+				let val 	ns = lookup‰l‰o‰c‰a‰l‰_‰r‰o‰w‰_‰c‰l‰a‰s‰s‰e‰s()
 				in (fold(curry binop‰t lub_op)(map denote_name ns))
 				end
 =TEX
@@ -1982,7 +2084,7 @@ and 	(Ûselect_listètypeêÝ : Select_listèssqlê ­ ExpType list)
 					| 	f (st,nullType) = (st,sterling)
 					| 	f (nullType,dt) = (dt,dinary)
 					|	f (st,dt) = (st,sterling)
-				in map f(map t(lookupèlocal_col_infoê()))
+				in map f(map t(lookup‰l‰o‰c‰a‰l‰_‰c‰o‰l‰_‰i‰n‰f‰o()))
 				end
 |	select_listètypeê (select_values‰s vals) = map select_valueètypeê vals
 =TEX
@@ -2178,7 +2280,7 @@ and 	(Ûfrom_specèinfoêÝ : From_specèssqlê ­
 =TEX		
 =SML
 and 	(Ûselect_listèinfoêÝ : Select_listèssqlê ­ SsqlCol list)
-			all_columns‰s = lookupèlocal_col_infoê()
+			all_columns‰s = lookup‰l‰o‰c‰a‰l‰_‰c‰o‰l‰_‰i‰n‰f‰o()
 |	select_listèinfoê (select_values‰s vals) = map select_valueèinfoê vals
 =TEX
 =SML
@@ -2472,7 +2574,7 @@ and 	(Ûinternal_valueèclassêÝ : Valueèssqlê ­ InternalExpClass)
 				in	case #row_class ti of
 						upb u =>
 						let	val c = fold(curry binop‰t lub_op)(map 
-								denote_name(lookupèlocal_row_classesê()))
+								denote_name(lookup‰l‰o‰c‰a‰l‰_‰r‰o‰w‰_‰c‰l‰a‰s‰s‰e‰s()))
 						in simple(variable(c,u))
 						end
 					| 	constant u => simple(constantèecê u)
@@ -2503,7 +2605,7 @@ and 	(Ûinternal_valueèclassêÝ : Valueèssqlê ­ InternalExpClass)
 =TEX
 =SML
 |	internal_valueèclassê	(contents‰s col) = 
-				let val (tr,u) = lookupècol_spec_classê(false,convertècol_specê col)
+				let val (tr,u) = lookup‰c‰o‰l‰_‰s‰p‰e‰c‰_‰c‰l‰a‰s‰s(false,convertècol_specê col)
 				in	case tr of
 						constant_class c => simple(constantèecê c)
 					| 	other => simple(variable(denote_name tr,u))
@@ -2511,7 +2613,7 @@ and 	(Ûinternal_valueèclassêÝ : Valueèssqlê ­ InternalExpClass)
 =TEX
 =SML
 |	internal_valueèclassê	(sterling_contents‰s col) = 
-				let val (tr,u) = lookupècol_spec_classê(false,convertècol_specê col)
+				let val (tr,u) = lookup‰c‰o‰l‰_‰s‰p‰e‰c‰_‰c‰l‰a‰s‰s(false,convertècol_specê col)
 				in	case tr of
 						constant_class c => simple(constantèecê c)
 					| 	other => simple(variable(denote_name tr,u))
@@ -2519,7 +2621,7 @@ and 	(Ûinternal_valueèclassêÝ : Valueèssqlê ­ InternalExpClass)
 =TEX
 =SML
 |	internal_valueèclassê	(dinary_contents‰s col) = 
-				let val (tr,u) = lookupècol_spec_classê(false,convertècol_specê col)
+				let val (tr,u) = lookup‰c‰o‰l‰_‰s‰p‰e‰c‰_‰c‰l‰a‰s‰s(false,convertècol_specê col)
 				in	case tr of
 						constant_class c => simple(constantèecê c)
 					| 	other => simple(variable(denote_name tr,u))
@@ -2530,7 +2632,7 @@ and 	(Ûinternal_valueèclassêÝ : Valueèssqlê ­ InternalExpClass)
 				let val (ti,ci) = lookup‰c‰o‰l‰u‰m‰n‰_‰i‰n‰f‰o(convertècol_specê col)
 				in	case #row_class ti of
 						upb u =>
-						let 	val rc = lookupècolumn_row_classê
+						let 	val rc = lookup‰c‰o‰l‰u‰m‰n‰_‰r‰o‰w‰_‰c‰l‰a‰s‰s
 									(false,convertècol_specê col)
 							val c = denote_name rc
 						in 	simple(variable(c,u))
@@ -2636,7 +2738,7 @@ and 	(Ûtuple_listèclassêÝ : Tuple_listèssqlê  ­ Tuple_listètsqlê )
 						= tuple_listèclassê tul
 and 	(Ûselect_listèclassêÝ : Select_listèssqlê ­ Select_listètsqlê)
 			all_columns‰s = 
-				let val (trs,classes) = split(lookupèlocal_col_spec_classesê())
+				let val (trs,classes) = split(lookup‰l‰o‰c‰a‰l‰_‰c‰o‰l‰_‰s‰p‰e‰c‰_‰c‰l‰a‰s‰s‰e‰s())
 				in select_values‰t(map anonymous_value‰t (map denote_name trs))
 				end
 |	select_listèclassê (select_values‰s vals) = select_values‰t(map select_valueèclassê vals)
@@ -2657,7 +2759,7 @@ and 	(Ûselect_valueèclassêÝ : Select_valueèssqlê ­ Select_valueètsqlê)
 =SML
 and 	(Ûselect_listèmakeêÝ : Select_listèssqlê ¸ TsqlClassName ¸ TsqlCol list ­ Select_valueètsqlê list)
 			(all_columns‰s,to_rc,to_tcs) = 
-				let	val rcs = lookupèlocal_row_classesê()
+				let	val rcs = lookup‰l‰o‰c‰a‰l‰_‰r‰o‰w‰_‰c‰l‰a‰s‰s‰e‰s()
 					val rc = (fold(curry binop‰t lub_op)(map denote_name rcs))
 				in
 				(case to_rc of
@@ -2668,7 +2770,7 @@ and 	(Ûselect_listèmakeêÝ : Select_listèssqlê ¸ TsqlClassName ¸ TsqlCol list ­ S
 				end
 				@
 				(fold (op @)(at2(map makeèsvê)
-					(lookupèlocal_col_implementationê(),to_tcs)))
+					(lookup‰l‰o‰c‰a‰l‰_‰c‰o‰l‰_‰i‰m‰p‰l‰e‰m‰e‰n‰t‰a‰t‰i‰o‰n(),to_tcs)))
 =TEX
 =SML
 |	select_listèmakeê (select_values‰s vals,to_rc,to_tcs) = 
@@ -2679,12 +2781,12 @@ and 	(Ûselect_listèmakeêÝ : Select_listèssqlê ¸ TsqlClassName ¸ TsqlCol list ­ S
 				|	make	constant_null = denote_null‰t
 			in	(case to_rc of
 						anonètcê => 
-						let val rcvs = map make(lookupèlocal_row_classesê())
+						let val rcvs = map make(lookup‰l‰o‰c‰a‰l‰_‰r‰o‰w‰_‰c‰l‰a‰s‰s‰e‰s())
 						in [anonymous_value‰t
 							(fold(curry binop‰t lub_op)rcvs)]
 						end
 					|	nameètcê s => 
-						let val rcvs = map make(lookupèlocal_row_classesê())
+						let val rcvs = map make(lookup‰l‰o‰c‰a‰l‰_‰r‰o‰w‰_‰c‰l‰a‰s‰s‰e‰s())
 						in [anonymous_value‰t
 							(fold(curry binop‰t lub_op)rcvs)]
 						end
@@ -2816,7 +2918,7 @@ fun 	(Ûtuple_listèmake_outerêÝ : Tuple_listèssqlê ¸ bool ¸ TsqlClassName ¸ TsqlC
 							else 	denote_true‰t
 				val max_rc = fold (op lub)(map upb_row_class
 								(lookupèlocal_table_infoê()))	
-				val rcs = map denote_name(lookupèlocal_row_classesê())
+				val rcs = map denote_name(lookup‰l‰o‰c‰a‰l‰_‰r‰o‰w‰_‰c‰l‰a‰s‰s‰e‰s())
 				val rvis = binop‰t(dom_op,(cc,fold(curry binop‰t lub_op)rcs))
 				val w = 	if client_clearance() dom max_rc
 						then wchk
@@ -2886,7 +2988,7 @@ fun 	(Ûtuple_listèmake_outerêÝ : Tuple_listèssqlê ¸ bool ¸ TsqlClassName ¸ TsqlC
 							else 	denote_true‰t
 				val max_rc = fold (op lub)(map upb_row_class
 								(lookupèlocal_table_infoê()))	
-				val rcs = map denote_name(lookupèlocal_row_classesê())
+				val rcs = map denote_name(lookup‰l‰o‰c‰a‰l‰_‰r‰o‰w‰_‰c‰l‰a‰s‰s‰e‰s())
 				val rvis = binop‰t(dom_op,(cc,fold(curry binop‰t lub_op)rcs))
 				val w = 	if client_clearance() dom max_rc
 						then wchk
@@ -2957,7 +3059,7 @@ fun 	(Ûtuple_listèmake_outerêÝ : Tuple_listèssqlê ¸ bool ¸ TsqlClassName ¸ TsqlC
 							else 	denote_true‰t
 				val max_rc = fold (op lub)(map upb_row_class
 								(lookupèlocal_table_infoê()))	
-				val rcs = map denote_name(lookupèlocal_row_classesê())
+				val rcs = map denote_name(lookup‰l‰o‰c‰a‰l‰_‰r‰o‰w‰_‰c‰l‰a‰s‰s‰e‰s())
 				val rvis = binop‰t(dom_op,(cc,fold(curry binop‰t lub_op)rcs))
 				val w = 	if client_clearance() dom max_rc
 						then wchk
