@@ -173,21 +173,20 @@ declare_infix(200, "-->");
 ‹	¥	∂d∑ÓØ 0 < d ± µy∑ Abs(y - x) < d ± ≥y = x ¥ Abs(f y - c) < e
 ∞
 
-We write $(u {-}{-}{-}{>} h) (a, b)$ to indicate that the sequence of functions $u_n$, indexed by
-natural numbers, tends uniformly to the limit function $h$ in the
-closed neighbourhood $[a, b]$ as $n$ tends to infinity. The definition requires $a < b$.
+We write $(u {-}{-}{-}{>} h) X$ to indicate that the sequence of functions $u_n$, indexed by
+natural numbers, tends uniformly to the limit function $h$ on the
+set $X$ as $n$ tends to infinity. The definition requires $a < b$.
 %%%%
 %%%%
 =SML
 declare_infix(200, "--->");
 
 πHOLCONST
-‹ $€--->› : (Ó ≠ Ø ≠ Ø) ≠ (Ø ≠ Ø) ≠ Ø ∏ Ø ≠ BOOL
+‹ $€--->› : (Ó ≠ Ø ≠ Ø) ≠ (Ø ≠ Ø) ≠ Ø SET ≠ BOOL
 ˜¸¸¸¸¸¸
-‹µu h a b∑
-‹	(u ---> h) (a, b)
-‹ §	a < b ±
-‹	µe∑ÓØ 0 < e ¥ ∂n∑µm y∑ n º m ± a º  y ± y º  b ¥ Abs(u m y - h y) < e
+‹µu h X∑
+‹	(u ---> h) X
+‹ §	µe∑ÓØ 0 < e ¥ ∂n∑µm y∑ n º m ± y ç X ¥ Abs(u m y - h y) < e
 ∞
 %%%%
 %%%%
@@ -1324,6 +1323,20 @@ a(∂_tac¨b + Abs c2Æ THEN asm_rewrite_tac[]);
 a(spec_nth_asm_tac 13 ¨mÆ THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 val €times_lim_seq_thm› = save_pop_thm "times_lim_seq_thm";
 =TEX
+Now we prove that the negative of a sequence which has a limit has
+thenegative of the limit as its limit:
+%%%%
+%%%%
+=SML
+set_goal([], ¨µs c∑ s -> c ¥ (Ãm∑~(s m)) ->  ~cÆ);
+a(rewrite_tac[lim_seq_def] THEN REPEAT strip_tac);
+a(all_asm_fc_tac[]);
+a(∂_tac¨nÆ THEN REPEAT strip_tac);
+a(LIST_DROP_NTH_ASM_T [2] all_fc_tac);
+a(pure_rewrite_tac[pc_rule1 "Ø_lin_arith" prove_rule[] ¨~(s m) + c = ~ (s m + ~c)Æ]);
+a(asm_rewrite_tac[Ø_abs_minus_thm]);
+val €minus_lim_seq_thm› = save_pop_thm "minus_lim_seq_thm";
+=TEX
 We can now show by polynomial induction that polynomial functions preserve limits.
 As we will see shortly, this shows that every polynomial function is continuous.
 %%%%
@@ -1520,6 +1533,28 @@ a(POP_ASM_T ante_tac THEN spec_nth_asm_tac 3 ¨nÆ);
 a(LEMMA_T¨≥ÓØ 0 º s n + ~cÆ (fn th => rewrite_tac[th, Ø_abs_def]) THEN
 	PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 val €lim_seq_upper_bound_thm› = save_pop_thm "lim_seq_upper_bound_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µs b c∑ s -> b ± s -> c¥ b = cÆ);
+a(rewrite_tac[lim_seq_def] THEN contr_tac);
+a(lemma_tac¨b < c ≤ c < bÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "1" *** *)
+a(lemma_tac¨ÓØ 0 < (1/2)*(c + ~b)Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(LIST_DROP_NTH_ASM_T [4, 5] all_fc_tac);
+a(REPEAT_N 2 (POP_ASM_T (ante_tac o µ_elim¨n'+nÆ)));
+a(rewrite_tac[]);
+a(cases_tac¨ÓØ 0 º (s (n' + n) + ~c)Æ THEN cases_tac ¨ÓØ 0 º s (n' + n) + ~bÆ THEN
+	asm_rewrite_tac[Ø_abs_def] THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(lemma_tac¨ÓØ 0 < (1/2)*(b + ~c)Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(LIST_DROP_NTH_ASM_T [4, 5] all_fc_tac);
+a(REPEAT_N 2 (POP_ASM_T (ante_tac o µ_elim¨n'+nÆ)));
+a(rewrite_tac[]);
+a(cases_tac¨ÓØ 0 º (s (n' + n) + ~c)Æ THEN cases_tac ¨ÓØ 0 º s (n' + n) + ~bÆ THEN
+	asm_rewrite_tac[Ø_abs_def] THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+val €lim_seq_unique_thm› = save_pop_thm "lim_seq_unique_thm";
 =TEX
 %%%%
 %%%%
@@ -4253,6 +4288,34 @@ val €lim_fun_upper_bound_thm› = save_pop_thm "lim_fun_upper_bound_thm";
 =TEX
 %%%%
 %%%%
+=SML
+set_goal([], ¨µu s t x∑ (u --> s) x ± (u --> t) x ¥ s = tÆ);
+a(rewrite_tac[lim_fun_def] THEN contr_tac);
+a(lemma_tac¨s < t ≤ t < sÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "1" *** *)
+a(lemma_tac¨ÓØ 0 < (1/2)*(t + ~s)Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(LIST_DROP_NTH_ASM_T [4, 5] all_fc_tac);
+a(lemma_tac¨∂d1∑ÓØ 0 < d1 ± ÓØ 0 º d1 ± d1 < d ± d1 < d'Æ THEN1
+	(cases_tac ¨d º d'Æ THEN_LIST [∂_tac¨(1/2)*dÆ, ∂_tac¨(1/2)*d'Æ]
+	THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(LIST_DROP_NTH_ASM_T [5, 7] (MAP_EVERY (ante_tac o µ_elim¨d1 + xÆ)));
+a(asm_rewrite_tac[Ø_plus_assoc_thm, Ø_abs_def]);
+a(cases_tac¨ÓØ 0 º u (d1 + x) + ~ tÆ THEN cases_tac ¨ÓØ 0 º u (d1 + x) + ~ sÆ THEN
+	asm_rewrite_tac[] THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(lemma_tac¨ÓØ 0 < (1/2)*(s + ~t)Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(LIST_DROP_NTH_ASM_T [4, 5] all_fc_tac);
+a(lemma_tac¨∂d1∑ÓØ 0 < d1 ± ÓØ 0 º d1 ± d1 < d ± d1 < d'Æ THEN1
+	(cases_tac ¨d º d'Æ THEN_LIST [∂_tac¨(1/2)*dÆ, ∂_tac¨(1/2)*d'Æ]
+	THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(LIST_DROP_NTH_ASM_T [5, 7] (MAP_EVERY (ante_tac o µ_elim¨d1 + xÆ)));
+a(asm_rewrite_tac[Ø_plus_assoc_thm, Ø_abs_def]);
+a(cases_tac¨ÓØ 0 º u (d1 + x) + ~ tÆ THEN cases_tac ¨ÓØ 0 º u (d1 + x) + ~ sÆ THEN
+	asm_rewrite_tac[] THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+val €lim_fun_unique_thm› = save_pop_thm "lim_fun_unique_thm";
+=TEX
+%%%%
+%%%%
 %%%%
 %%%%
 \subsection{Uniform Convergence}
@@ -4263,12 +4326,12 @@ val €lim_fun_upper_bound_thm› = save_pop_thm "lim_fun_upper_bound_thm";
 We now prove some basic facts about limits of locally uniformly convergent
 sequences of functions.
 
-Firstly, constant sequences are uniformly convergent at $x$ in any
-interval $[a, b]$ with $a < x < b$.
+Firstly, constant sequences are uniformly convergent at $x$ on any
+iset $X$
 %%%%
 %%%%
 =SML
-set_goal([], ¨µh a b∑ a < b ¥ ((Ãm∑ h) ---> h) (a, b)Æ);
+set_goal([], ¨µh X∑ ((Ãm∑ h) ---> h) XÆ);
 a(REPEAT strip_tac THEN asm_rewrite_tac[unif_lim_seq_def]);
 a(REPEAT strip_tac THEN asm_rewrite_tac[]);
 val €const_unif_lim_seq_thm› = save_pop_thm "const_unif_lim_seq_thm";
@@ -4281,16 +4344,16 @@ for the limit of sequences of numbers.
 %%%%
 %%%%
 =SML
-set_goal([], ¨µu1 h1 a b u2 h2∑
-	(u1 ---> h1) (a, b)
-±	(u2 ---> h2) (a, b)
-¥	((Ãm y∑u1 m y + u2 m y) ---> (Ãy∑h1 y + h2 y)) (a, b)Æ);
+set_goal([], ¨µu1 h1 X u2 h2∑
+	(u1 ---> h1) X
+±	(u2 ---> h2) X
+¥	((Ãm y∑u1 m y + u2 m y) ---> (Ãy∑h1 y + h2 y)) XÆ);
 a(rewrite_tac[unif_lim_seq_def] THEN REPEAT strip_tac);
 a(lemma_tac ¨ÓØ 0 < e / ÓØ 2 Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 a(spec_nth_asm_tac 4 ¨e / ÓØ 2Æ THEN spec_nth_asm_tac 4  ¨e / ÓØ 2Æ);
 a(∂_tac¨n + n'Æ THEN REPEAT strip_tac);
 a(lemma_tac¨n º m ± n' º mÆ THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
-a(LIST_GET_NTH_ASM_T [6, 7] all_fc_tac);
+a(LIST_GET_NTH_ASM_T [5, 6] all_fc_tac);
 a(LEMMA_T ¨
 	(u1 m y + u2 m y) + ~(h1 y) + ~(h2 y) =
 	(u1 m y + ~(h1 y)) + (u2 m y + ~(h2 y))Æ
@@ -4307,19 +4370,22 @@ is itself bounded:
 %%%%
 %%%%
 =SML
-set_goal([], ¨µu g a b c∑
-	(u ---> g)  (a, b)
-±	(µy m∑a º y ± y º b ¥ Abs(u m y) < c)
-¥	(∂d∑ µy∑a º y ± y º b ¥ Abs(g y) < d)Æ);
+set_goal([], ¨µu g X c∑
+	(u ---> g)  X
+±	(µy m∑y ç X ¥ Abs(u m y) < c)
+¥	(∂d∑ µy∑y ç X ¥ Abs(g y) < d)Æ);
 a(rewrite_tac[unif_lim_seq_def] THEN REPEAT strip_tac);
+a(cases_tac¨X = {}Æ THEN1 asm_rewrite_tac[]);
+a(POP_ASM_T (PC_T1 "sets_ext1" strip_asm_tac));
 a(lemma_tac¨ÓØ 0 < cÆ THEN1
-	(DROP_NTH_ASM_T 1 (ante_tac o list_µ_elim[¨aÆ, ¨m:ÓÆ]) THEN
-	asm_rewrite_tac[Ø_º_def] THEN strip_asm_tac (µ_elim¨u m aÆØ_0_º_abs_thm)
+	(DROP_NTH_ASM_T 2 (ante_tac o list_µ_elim[¨xÆ, ¨m:ÓÆ]) THEN
+	asm_rewrite_tac[Ø_º_def] THEN strip_asm_tac (µ_elim¨u m xÆØ_0_º_abs_thm)
 	THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(DROP_NTH_ASM_T 2 discard_tac);
 a(LIST_DROP_NTH_ASM_T [3] all_fc_tac);
 a(∂_tac¨ÓØ 2*cÆ THEN REPEAT strip_tac);
-a(DROP_NTH_ASM_T 3 (strip_asm_tac o rewrite_rule[] o µ_elim¨nÆ));
-a(LIST_DROP_NTH_ASM_T [1, 5] all_fc_tac);
+a(DROP_NTH_ASM_T 2 (strip_asm_tac o rewrite_rule[] o µ_elim¨nÆ));
+a(LIST_DROP_NTH_ASM_T [1, 4] all_fc_tac);
 a(DROP_NTH_ASM_T 1 (strip_asm_tac o µ_elim¨nÆ));
 a(bc_thm_tac Ø_º_less_trans_thm THEN ∂_tac¨ Abs( ~(u n y + ~ (g y)) + u n y )Æ);
 a(strip_tac THEN1 (conv_tac (ONCE_MAP_C Ø_anf_conv) THEN REPEAT strip_tac));
@@ -4349,7 +4415,7 @@ a(bc_thm_tac (pc_rule1"Ø_lin_arith" prove_rule[]¨µa b x y:Ø∑ a < b ± x < y ¥ a +
 a(ALL_FC_T rewrite_tac[Ø_abs_less_times_thm]);
 val €times_unif_lemma1› = pop_thm();
 =TEX
-Another lemma:
+
 %%%%
 %%%%
 =SML
@@ -4372,43 +4438,46 @@ We now give result on the product of two sequences of functions with uniform lim
 %%%%
 %%%%
 =SML
-set_goal([], ¨µu g v h a b c d∑
-	(u ---> g)  (a, b)
-±	(v ---> h)  (a, b)
-±	(µy m∑a º y ± y º b ¥ Abs(u m y) < c)
-±	(µy m∑a º y ± y º b ¥ Abs(v m y) < d)
-¥	((Ãm y∑u m y*v m y) ---> (Ãy∑g y*h y)) (a, b)Æ);
+set_goal([], ¨µu g v h X c d∑
+	(u ---> g)  X
+±	(v ---> h)  X
+±	(µy m∑ y ç X ¥ Abs(u m y) < c)
+±	(µy m∑ y ç X ¥ Abs(v m y) < d)
+¥	((Ãm y∑u m y*v m y) ---> (Ãy∑g y*h y)) XÆ);
 a(REPEAT strip_tac);
-a(lemma_tac¨∂B∑µy m∑ a º y ± y º b ¥ Abs(u m y + g y) < BÆ);
+a(lemma_tac¨∂B∑µy m∑ y ç X ¥ Abs(u m y + g y) < BÆ);
 (* *** Goal "1" *** *)
 a(all_fc_tac[bounded_unif_limit_thm]);
 a(∂_tac¨c + d''Æ THEN REPEAT strip_tac THEN
 	bc_thm_tac Ø_º_less_trans_thm THEN
 	∂_tac¨Abs(u m y) + Abs(g y)Æ THEN rewrite_tac[Ø_abs_plus_thm]);
 a(bc_thm_tac (pc_rule1"Ø_lin_arith" prove_rule[] ¨µa b x y:Ø∑ a < b ± x < y ¥ a + x < b + yÆ));
-a(LIST_GET_NTH_ASM_T [3, 6] (ALL_FC_T rewrite_tac));
+a(LIST_GET_NTH_ASM_T [2, 5] (ALL_FC_T rewrite_tac));
 (* *** Goal "2" *** *)
-a(lemma_tac¨∂C∑µy m∑ a º y ± y º b ¥ Abs(v m y + h y) < CÆ);
+a(lemma_tac¨∂C∑µy m∑y ç X ¥ Abs(v m y + h y) < CÆ);
 (* *** Goal "2.1" *** *)
 a(all_fc_tac[bounded_unif_limit_thm]);
 a(∂_tac¨d + d'Æ THEN REPEAT strip_tac THEN
 	bc_thm_tac Ø_º_less_trans_thm THEN
 	∂_tac¨Abs(v m y) + Abs(h y)Æ THEN rewrite_tac[Ø_abs_plus_thm]);
 a(bc_thm_tac (pc_rule1"Ø_lin_arith" prove_rule[] ¨µa b x y:Ø∑ a < b ± x < y ¥ a + x < b + yÆ));
-a(LIST_GET_NTH_ASM_T [4, 6] (ALL_FC_T rewrite_tac));
+a(LIST_GET_NTH_ASM_T [3, 5] (ALL_FC_T rewrite_tac));
 (* *** Goal "2.2" *** *)
 a(LIST_DROP_NTH_ASM_T [5, 6] (MAP_EVERY ante_tac));
 a(rewrite_tac[unif_lim_seq_def] THEN REPEAT strip_tac);
+a(cases_tac¨X = {}Æ THEN1 asm_rewrite_tac[]);
+a(POP_ASM_T (PC_T1 "sets_ext1" strip_asm_tac));
 a(lemma_tac¨ÓØ 0 < BÆ THEN1
-	(DROP_NTH_ASM_T 6 (ante_tac o list_µ_elim[¨aÆ, ¨m:ÓÆ]) THEN
+	(DROP_NTH_ASM_T 6 (ante_tac o list_µ_elim[¨xÆ, ¨m:ÓÆ]) THEN
 	asm_rewrite_tac[Ø_º_def] THEN
-	strip_asm_tac (µ_elim¨u m a + g aÆØ_0_º_abs_thm) THEN
+	strip_asm_tac (µ_elim¨u m x + g xÆØ_0_º_abs_thm) THEN
 	PC_T1 "Ø_lin_arith" asm_prove_tac[]));
 a(lemma_tac¨ÓØ 0 < CÆ THEN1
-	(DROP_NTH_ASM_T 6 (ante_tac o list_µ_elim[¨aÆ, ¨m:ÓÆ]) THEN
+	(DROP_NTH_ASM_T 6 (ante_tac o list_µ_elim[¨xÆ, ¨m:ÓÆ]) THEN
 	asm_rewrite_tac[Ø_º_def] THEN
-	strip_asm_tac (µ_elim¨v m a + h aÆØ_0_º_abs_thm) THEN
+	strip_asm_tac (µ_elim¨v m x + h xÆØ_0_º_abs_thm) THEN
 	PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(DROP_NTH_ASM_T 3 discard_tac);
 a(lemma_tac¨∂D E∑ ÓØ 0 < D ± ÓØ 0 < E ± (1/2)*(B * E + C * D) < eÆ THEN1
 	(bc_thm_tac times_unif_lemma2 THEN REPEAT strip_tac));
 a(DROP_NTH_ASM_T 8 (strip_asm_tac o µ_elim¨DÆ));
@@ -4421,16 +4490,17 @@ a(bc_thm_tac times_unif_lemma1 THEN REPEAT strip_tac THEN  all_asm_fc_tac[]
 	THEN asm_rewrite_tac[]);
 val €times_unif_lim_seq_thm› = save_pop_thm "times_unif_lim_seq_thm";
 =TEX
-Now we show that a uniformly convergent sequence of functions
+Now we show that a sequence of functions converging uniformly on a closed interval
 with a continuous limit is uniformly bounded:
 %%%%
 %%%%
 =SML
 set_goal([], ¨µu h a b∑
-	(u ---> h)  (a, b)
+	a < b
+±	(u ---> h)  (ClosedInterval a b)
 ±	(µy∑a º y ± y º b ¥ h CtsAt y)
 ¥	(∂c n∑µm y∑n º m ± a º y ± y º b ¥ Abs(u m y) < c)Æ);
-a(rewrite_tac[unif_lim_seq_def] THEN REPEAT strip_tac);
+a(rewrite_tac[unif_lim_seq_def, closed_interval_def] THEN REPEAT strip_tac);
 a(DROP_NTH_ASM_T  2 (strip_asm_tac o µ_elim¨ÓØ 1Æ));
 a(lemma_tac¨a º bÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 a(all_fc_tac[cts_abs_bounded_thm]);
@@ -4447,7 +4517,7 @@ a(all_asm_fc_tac[] THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 val €unif_lim_seq_bounded_thm› = save_pop_thm "unif_lim_seq_bounded_thm";
 =TEX
 Now one of the main results of this section: if a sequence
-of functions, all continuous at some point $x$, is uniformly convergent
+of functions, all continuous at some point $x$, is uniformly convergent in an open interval containing $x$
 at $x$, then the limit function is continuous at $x$.
 We prove a little lemma first:
 %%%%
@@ -4473,8 +4543,8 @@ many subscripts for comfort!
 %%%%
 =SML
 set_goal([], ¨µu h x a b∑
-	(u ---> h) (a, b) ± a < x ± x < b ± (µm∑u m CtsAt x) ¥ h CtsAt xÆ);
-a(rewrite_tac[cts_at_def, unif_lim_seq_def, lim_seq_def] THEN REPEAT strip_tac);
+	(u ---> h) (OpenInterval a b) ± a < x ± x < b ± (µm∑u m CtsAt x) ¥ h CtsAt xÆ);
+a(rewrite_tac[cts_at_def, unif_lim_seq_def, lim_seq_def, open_interval_def] THEN REPEAT strip_tac);
 a(lemma_tac¨ÓØ 0 < (1/3)*eÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 a(spec_nth_asm_tac 6 ¨(1/3)*eÆ);
 a(SPEC_NTH_ASM_T 1 ¨nÆ ante_tac THEN rewrite_tac[] THEN REPEAT strip_tac);
@@ -4492,7 +4562,7 @@ a(REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(pure_rewrite_tac[pc_rule1"Ø_lin_arith" prove_rule[]¨µz∑h y + ~z = ~(z + ~(h y))Æ,
 	Ø_abs_minus_thm]);
-a(GET_NTH_ASM_T 7 bc_thm_tac THEN rewrite_tac[Ø_º_def]);
+a(GET_NTH_ASM_T 7 bc_thm_tac);
 a(LIST_GET_NTH_ASM_T [2] (ALL_FC_T rewrite_tac));
 (* *** Goal "2" *** *)
 a(GET_NTH_ASM_T 5 bc_thm_tac THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
@@ -4504,9 +4574,9 @@ Any uniformly convergent sequence of functions is a Cauchy sequence:
 %%%%
 %%%%
 =SML
-set_goal([], ¨µu f a b∑
-	(u ---> f) (a, b)
-¥	µe∑ ÓØ 0 < e ¥∂n∑µk m∑n º k ± n º m ¥ µy∑a º y ± y º b ¥ Abs(u k y - u m y) < eÆ);
+set_goal([], ¨µu f X∑
+	(u ---> f) X
+¥	µe∑ ÓØ 0 < e ¥∂n∑µk m∑n º k ± n º m ¥ µy∑y ç X ¥ Abs(u k y - u m y) < eÆ);
 a(rewrite_tac[unif_lim_seq_def] THEN REPEAT strip_tac);
 a(lemma_tac¨ÓØ 0 < (1/2)*eÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 a(DROP_NTH_ASM_T 2 discard_tac THEN all_asm_fc_tac[]);
@@ -4523,33 +4593,32 @@ val €unif_lim_seq_cauchy_seq_thm ›= save_pop_thm "unif_lim_seq_cauchy_seq_thm";
 =TEX
 Uniform Cauchy sequences of functions converge uniformly. This is a bit easier than
 the equivalent result for numeric sequences, because that result is now available to give
-us the poitnwise limit functon with little extra work. We just then have to show that
-uniform the Cauchy condition implies that the convergence to the point-wise limit is uniform.
+us the pointwise limit functon with little extra work. We just then have to show that
+the uniform Cauchy condition implies that the convergence to the point-wise limit is uniform.
 %%%%
 %%%%
 =SML
-set_goal([], ¨µu a b∑
-	a < b
-±	(µe∑ ÓØ 0 < e ¥∂n∑µk m∑n º k ± n º m ¥ µy∑a º y ± y º b ¥ Abs(u k y - u m y) < e)
-¥	∂f∑(u ---> f) (a, b)Æ);
+set_goal([], ¨µu X∑
+	(µe∑ ÓØ 0 < e ¥∂n∑µk m∑n º k ± n º m ¥ µy∑ y ç X ¥ Abs(u k y - u m y) < e)
+¥	∂f∑(u ---> f) XÆ);
 a(rewrite_tac[unif_lim_seq_def] THEN REPEAT strip_tac);
-a(lemma_tac¨∂f∑µy∑ a º y ± y º b ¥ (Ãm∑u m y) -> f yÆ THEN1 prove_∂_tac THEN REPEAT strip_tac);
+a(lemma_tac¨∂f∑µy∑ y ç X ¥ (Ãm∑u m y) -> f yÆ THEN1 prove_∂_tac THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
-a(cases_tac¨a º y' ± y' º bÆ THEN asm_rewrite_tac[]);
+a(cases_tac¨y' ç XÆ THEN asm_rewrite_tac[]);
 a(bc_thm_tac cauchy_seq_lim_seq_thm THEN REPEAT strip_tac THEN rewrite_tac[]);
-a(LIST_DROP_NTH_ASM_T [4] all_fc_tac);
+a(LIST_DROP_NTH_ASM_T [3] all_fc_tac);
 a(∂_tac¨nÆ THEN REPEAT strip_tac THEN all_asm_fc_tac[]);
 (* *** Goal "2" *** *)
 a(∂_tac¨fÆ THEN REPEAT strip_tac);
 a(lemma_tac¨ÓØ 0 < (1/2)*eÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 a(LIST_DROP_NTH_ASM_T [2, 4] all_fc_tac);
 a(∂_tac¨nÆ THEN REPEAT strip_tac);
-a(LIST_DROP_NTH_ASM_T [6] (ALL_FC_T (MAP_EVERY ante_tac)));
+a(LIST_DROP_NTH_ASM_T [5] (ALL_FC_T (MAP_EVERY ante_tac)));
 a(rewrite_tac[lim_seq_def] THEN STRIP_T (fn th => all_fc_tac[th]));
 a(POP_ASM_T (strip_asm_tac o µ_elim¨n' + mÆ));
 a(lemma_tac ¨Abs (u m y + ~ (u (n'+m) y)) < 1 / 2 * eÆ);
 (* *** Goal "2.1" *** *)
-a(DROP_NTH_ASM_T 5 (ante_tac o list_µ_elim[¨mÆ, ¨n'+mÆ]));
+a(DROP_NTH_ASM_T 4 (ante_tac o list_µ_elim[¨mÆ, ¨n'+mÆ]));
 a(LEMMA_T ¨n º n' + mÆ asm_rewrite_thm_tac THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
 a(STRIP_T (strip_asm_tac o µ_elim¨yÆ));
 (* *** Goal "2.2" *** *)
@@ -4561,6 +4630,45 @@ a(∂_tac¨Abs ((u m y + ~ (u (n' + m) y)) + (u (n' + m) y + ~ (f y)))Æ
 	THEN rewrite_tac[Ø_abs_plus_thm]);
 a(conv_tac(ONCE_MAP_C Ø_anf_conv) THEN REPEAT strip_tac);
 val €cauchy_seq_unif_lim_seq_thm ›= save_pop_thm "cauchy_seq_unif_lim_seq_thm";
+=TEX
+
+%%%%
+%%%%
+=SML
+set_goal([], ¨µu f X x∑
+	(u ---> f) X
+±	x ç X
+¥	(Ãm∑u m x) -> f xÆ);
+a(rewrite_tac[unif_lim_seq_def, lim_seq_def] THEN REPEAT strip_tac);
+a(LIST_DROP_NTH_ASM_T [3] all_fc_tac);
+a(∂_tac¨nÆ THEN REPEAT strip_tac THEN all_asm_fc_tac[]);
+val €unif_lim_seq_pointwise_lim_seq_thm›= save_pop_thm "unif_lim_seq_pointwise_lim_seq_thm";
+=TEX
+
+%%%%
+%%%%
+=SML
+set_goal([], ¨µu f g X x c∑
+	(u ---> f) X
+±	x ç X
+±	(Ãm∑ u m x) -> c
+¥	f x = cÆ);
+a(REPEAT strip_tac THEN all_fc_tac[unif_lim_seq_pointwise_lim_seq_thm]);
+a(all_fc_tac[lim_seq_unique_thm]);
+val €unif_lim_seq_pointwise_unique_thm›= save_pop_thm "unif_lim_seq_pointwise_unique_thm";
+=TEX
+
+%%%%
+%%%%
+=SML
+set_goal([], ¨µu f g X x∑
+	(u ---> f) X
+±	(u ---> g) X
+±	x ç X
+¥	f x = g xÆ);
+a(REPEAT strip_tac THEN all_fc_tac[unif_lim_seq_pointwise_lim_seq_thm]);
+a(all_fc_tac[lim_seq_unique_thm]);
+val €unif_lim_seq_unique_thm ›= save_pop_thm "unif_lim_seq_unique_thm";
 =TEX
 The following is theorem 7.11 from Rudin (p. 149) with the restriction (for
 minor technical convenience) that the point $x$ of interest is
@@ -4574,8 +4682,7 @@ be convergent at $x$.
 %%%%
 =SML
 set_goal([], ¨µu f a b x s∑
-	(u ---> f) (a, x)
-±	(u ---> f) (x, b)
+	(u ---> f) (OpenInterval a x ¿ OpenInterval x b)
 ±	a < x ± x < b
 ±	(µm∑ (u m --> s m) x)
 ¥	∂c∑ (f --> c) x ± s -> c
@@ -4585,10 +4692,9 @@ a(REPEAT strip_tac THEN lemma_tac¨∂c∑s -> cÆ);
 a(rewrite_tac[lim_seq_§_cauchy_seq_thm] THEN REPEAT strip_tac);
 a(lemma_tac¨ÓØ 0 < (1/2)*eÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 a(DROP_NTH_ASM_T 2 discard_tac THEN all_fc_tac[unif_lim_seq_cauchy_seq_thm]);
-a(∂_tac¨n + n'Æ THEN REPEAT strip_tac);
-a(lemma_tac¨n º k ± n' º k ± n º m ± n' º mÆ THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
-a(DROP_NTH_ASM_T 7 (strip_asm_tac o rewrite_rule[] o list_µ_elim[¨kÆ, ¨mÆ]));
-a(DROP_NTH_ASM_T 8 (strip_asm_tac o rewrite_rule[] o list_µ_elim[¨kÆ, ¨mÆ]));
+a(∂_tac¨nÆ THEN REPEAT strip_tac);
+a(DROP_NTH_ASM_T 3 (strip_asm_tac o
+	pc_rule1 "sets_ext1" rewrite_rule[open_interval_def] o list_µ_elim[¨kÆ, ¨mÆ]));
 a(lemma_tac¨((Ãz∑~(u m z)) -->  ~(s m)) xÆ THEN1
 	(bc_thm_tac comp_lim_fun_thm
 	THEN asm_rewrite_tac[minus_cts_thm]));
@@ -4605,50 +4711,48 @@ a(bc_thm_tac lim_fun_upper_bound_thm);
 a(∂_tac¨Ã z∑ Abs (u k z + ~ (u m z))Æ THEN ∂_tac¨xÆ THEN ∂_tac¨cÆ);
 a(asm_rewrite_tac[] THEN REPEAT strip_tac);
 a(rewrite_tac[Ø_º_def] THEN ≤_left_tac);
-a(lemma_tac¨y º x ≤ x º yÆ THEN1 PC_T1 "Ø_lin_arith" prove_tac[]);
+a(lemma_tac¨y < x ≤ x < yÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 (* *** Goal "1.1" *** *)
-a(DROP_NTH_ASM_T 11 bc_thm_tac);
-a(REPEAT strip_tac THEN rewrite_tac[Ø_º_def] THEN ALL_ASM_FC_T rewrite_tac[]);
+a(DROP_NTH_ASM_T 10 (bc_thm_tac o rewrite_rule[]));
+a(LIST_DROP_NTH_ASM_T [4] all_fc_tac THEN REPEAT strip_tac);
 (* *** Goal "1.2" *** *)
-a(DROP_NTH_ASM_T 10 bc_thm_tac);
-a(REPEAT strip_tac THEN rewrite_tac[Ø_º_def] THEN ALL_ASM_FC_T rewrite_tac[]);
+a(DROP_NTH_ASM_T 10 (bc_thm_tac o rewrite_rule[]));
+a(LIST_DROP_NTH_ASM_T [4] all_fc_tac THEN REPEAT strip_tac);
 (* *** Goal "2" *** *)
 a(∂_tac¨cÆ THEN asm_rewrite_tac[lim_fun_def] THEN REPEAT strip_tac);
 a(POP_ASM_T (fn th => lemma_tac¨ÓØ 0 < (1/3)*eÆ THEN1
 	(ante_tac th THEN PC_T1 "Ø_lin_arith" asm_prove_tac[])));
-a(DROP_NTH_ASM_T 6 (fn th => all_fc_tac[rewrite_rule[unif_lim_seq_def]th]));
-a(DROP_NTH_ASM_T 7 (fn th => all_fc_tac[rewrite_rule[unif_lim_seq_def]th]));
-a(DROP_NTH_ASM_T 4 (fn th => all_fc_tac[rewrite_rule[lim_seq_def]th]));
-a(DROP_NTH_ASM_T 5 (fn th => all_fc_tac[rewrite_rule[lim_fun_def](µ_elim¨n+n'Æth)]));
-a(POP_ASM_T (strip_asm_tac o rewrite_rule[plus_assoc_thm] o list_µ_elim[¨n + n'Æ, ¨n''Æ]));
-a(DROP_NTH_ASM_T 6 discard_tac THEN all_fc_tac[axbd_thm]);
+a(DROP_NTH_ASM_T 6 (fn th => all_fc_tac
+	[pc_rule1"sets_ext1" rewrite_rule[unif_lim_seq_def, open_interval_def]th]));
+a(DROP_NTH_ASM_T 3 (fn th => all_fc_tac[rewrite_rule[lim_seq_def]th]));
+a(DROP_NTH_ASM_T 4 (fn th => all_fc_tac[rewrite_rule[lim_fun_def](µ_elim¨n'Æth)]));
+a(POP_ASM_T (strip_asm_tac o µ_elim¨n+n'Æ));
+a(DROP_NTH_ASM_T 5 discard_tac THEN all_fc_tac[axbd_thm]);
 a(∂_tac¨c'Æ THEN REPEAT strip_tac);
 a(bc_thm_tac Ø_º_less_trans_thm THEN ∂_tac ¨
-	Abs(f y - u  (n+n'+n'') y) + Abs(u (n+n'+n'') y - s (n+n'+n'')) + Abs(s(n+n'+n'') - c)Æ
+	Abs(f y - u  (n+n') y) + Abs(u (n+n') y - s (n+n')) + Abs(s(n+n') - c)Æ
 	THEN rewrite_tac[rewrite_rule[]abs_abcd_thm] THEN REPEAT strip_tac);
-a(lemma_tac ¨Abs(f y + ~(u (n+n'+n'') y)) < (1/3)*e
-	± Abs(u (n+n'+n'') y + ~(s(n+n'+n''))) < (1/3)*e
-	± Abs(s(n+n'+n'') + ~c) < (1/3)*eÆ
+a(lemma_tac ¨Abs(f y + ~(u (n+n') y)) < (1/3)*e
+	± Abs(u (n+n') y + ~(s(n+n'))) < (1/3)*e
+	± Abs(s(n+n') + ~c) < (1/3)*eÆ
 	THEN_LIST [id_tac, PC_T1 "Ø_lin_arith" asm_prove_tac[]]);
 a(REPEAT strip_tac);
 (* *** Goal "2.1" *** *)
-a(LEMMA_T ¨f y + ~ (u (n + n' + n'') y) =~ ((u (n + n' +n'') y) + ~(f y))Æ
+a(LEMMA_T ¨f y + ~ (u (n + n' ) y) =~ ((u (n + n') y) + ~(f y))Æ
 	(fn th => pure_rewrite_tac[th, Ø_abs_minus_thm]) THEN1
 	PC_T1 "Ø_lin_arith" prove_tac[]);
-a(lemma_tac¨y º x ≤ x º yÆ THEN1 PC_T1 "Ø_lin_arith" prove_tac[]);
+a(lemma_tac¨y < x ≤ x < yÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 (* *** Goal "2.1.1" *** *)
-a(DROP_NTH_ASM_T 10 bc_thm_tac);
-a(REPEAT strip_tac THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
-a(rewrite_tac[Ø_º_def] THEN  ALL_ASM_FC_T rewrite_tac[]);
+a(DROP_NTH_ASM_T 10 (bc_thm_tac o rewrite_rule[]));
+a(LIST_DROP_NTH_ASM_T [4] all_fc_tac THEN REPEAT strip_tac);
 (* *** Goal "2.1.2" *** *)
-a(DROP_NTH_ASM_T 11 bc_thm_tac);
-a(REPEAT strip_tac THEN rewrite_tac[Ø_º_def] THEN  ALL_ASM_FC_T rewrite_tac[]);
+a(DROP_NTH_ASM_T 10 (bc_thm_tac o rewrite_rule[]));
+a(LIST_DROP_NTH_ASM_T [4] all_fc_tac THEN REPEAT strip_tac);
 (* *** Goal "2.2" *** *)
 a(DROP_NTH_ASM_T 6 bc_thm_tac THEN REPEAT strip_tac);
 a(PC_T1"Ø_lin_arith" asm_prove_tac[]);
 (* *** Goal "2.3" *** *)
 a(DROP_NTH_ASM_T 8 bc_thm_tac THEN REPEAT strip_tac);
-a(PC_T1"lin_arith" asm_prove_tac[]);
 val €lim_fun_lim_seq_interchange_thm› = save_pop_thm "lim_fun_lim_seq_interchange_thm";
 =TEX
 The following is a slight weakening of theorem 7.17 from Rudin (p. 152)
@@ -4658,11 +4762,11 @@ with the same restriction as in the previous theorem.
 =SML
 (*
 set_goal([], ¨µdu df x0 y0 A B a b u ∑
-	(du ---> df) (A, B)
+	(du ---> df) (OpenInterval A B)
 ±	(µy m∑ A < y ± y < B ¥ (u m HasDeriv du m y) y)
 ±	A < a ± a < x0 ± x0 < b ± b < B
 ±	((Ãm∑ u m x0) ->  y0)
-¥	∂f∑ (u ---> f) (a, b) ± µy∑ a º y ± y º b ¥ (f HasDeriv df y) y
+¥	∂f∑ (u ---> f)  (ClosedInterval a b) ± µy∑ a º y ± y º b ¥ (f HasDeriv df y) y
 Æ);
 a(REPEAT strip_tac);
 (* *** Goal "1" *** *)
@@ -4679,6 +4783,7 @@ a(lemma_tac ¨
 Æ);
 (* *** Goal "1.1" *** *)
 a(REPEAT strip_tac THEN all_fc_tac[unif_lim_seq_cauchy_seq_thm]);
+a(POP_ASM_T (strip_asm_tac o pc_rule1 "sets_ext1" rewrite_rule[open_interval_def]));
 a(∂_tac¨nÆ THEN REPEAT strip_tac);
 a(LEMMA_T¨∂ z d∑
 	x < z ± z < t ± ((Ãw∑u n' w + ~(u m w)) HasDeriv d) z
@@ -4706,7 +4811,7 @@ a(rewrite_tac[pc_rule1"Ø_lin_arith" prove_rule[]¨µa b c:Ø∑a*b + ~(a*c) = a* (b +
 a(bc_thm_tac Ø_0_º_0_º_times_thm THEN strip_tac THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 a(LEMMA_T¨Abs (du n' z + ~ (du m z)) < e Æ
 	(fn th => ante_tac th  THEN  PC_T1 "Ø_lin_arith"  prove_tac[]));
-a(lemma_tac ¨A º z ± z º BÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(lemma_tac ¨A < z ± z < BÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 a(LIST_GET_NTH_ASM_T [11] (all_fc_tac o map (rewrite_rule[])));
 (* *** Goal "1.2" *** *)
 a(REPEAT strip_tac);
@@ -4729,10 +4834,10 @@ a(LEMMA_T ¨ÓØ 0 º x + ~tÆ (fn th => conv_tac(RIGHT_C (rewrite_conv[th, Ø_abs_def
 	THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 a(DROP_NTH_ASM_T 8 bc_thm_tac THEN REPEAT strip_tac);
 (* *** Goal "2" *** *)
-a(lemma_tac ¨∂ f∑ (u ---> f) (a, b)Æ);
+a(lemma_tac ¨∂ f∑ (u ---> f) (ClosedInterval a b)Æ);
 (* *** Goal "2.1" *** *)
-a(bc_thm_tac cauchy_seq_unif_lim_seq_thm THEN REPEAT strip_tac
-	THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(bc_thm_tac cauchy_seq_unif_lim_seq_thm THEN REPEAT strip_tac);
+a(PC_T1"sets_ext1" rewrite_tac[closed_interval_def]);
 a(LEMMA_T¨ÓØ 0 < (1/2)*eÆ
 	(fn th => POP_ASM_T discard_tac THEN strip_asm_tac th
 	THEN all_fc_tac[lim_seq_cauchy_seq_thm] THEN POP_ASM_T (strip_asm_tac o rewrite_rule[]))
@@ -4783,27 +4888,68 @@ a(cases_tac¨ÓØ 0 º y + ~x0Æ THEN asm_rewrite_tac[Ø_abs_def]
 (* *** Goal "2.2" *** *)
 a(∂_tac¨fÆ THEN DROP_NTH_ASM_T 8 ante_tac);
 a(rewrite_tac[deriv_lim_fun_thm] THEN REPEAT strip_tac);
-a(DROP_NTH_ASM_T 3 (ante_tac o µ_elim¨yÆ));
-a(lemma_tac¨∂s∑µm∑s m = du m yÆ THEN1 prove_∂_tac);
-a(TOP_ASM_T (rewrite_thm_tac o conv_rule (ONCE_MAP_C eq_sym_conv)));
-a(lemma_tac ¨A < y ± y < BÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-a(LIST_GET_NTH_ASM_T [1, 2] rewrite_tac THEN REPEAT strip_tac);
-
-
-
-
-
-a(rewrite_tac[caratheodory_deriv_thm] THEN REPEAT strip_tac);
-a(lemma_tac¨∂G∑µm∑
-	(µ y'∑ u m y' + ~ (u m y) = G m y' * (y' + ~ y))
-±	G m CtsAt y
-±	G m y = du m yÆ THEN1 prove_∂_tac);
+a(lemma_tac ¨∂g∑((Ãm∑Ã y'∑ (u m y' + ~ (u m y)) / (y' + ~ y)) ---> g) (OpenInterval A y ¿ OpenInterval y B)Æ);
 (* *** Goal "2.2.1" *** *)
-a(REPEAT strip_tac THEN DROP_NTH_ASM_T 3 bc_thm_tac);
+a(bc_thm_tac cauchy_seq_unif_lim_seq_thm THEN rewrite_tac[] THEN REPEAT strip_tac);
+a(lemma_tac¨ÓØ 0 < (1/2)*eÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(DROP_NTH_ASM_T 2 discard_tac);
+a(LIST_DROP_NTH_ASM_T [6] all_fc_tac);
+a(∂_tac¨NÆ THEN PC_T1 "sets_ext1" rewrite_tac[open_interval_def] THEN REPEAT strip_tac);
+(* *** Goal "2.2.1.1" *** *)
+a(lemma_tac¨y' < B ± A < y ± y < BÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(list_spec_nth_asm_tac 8 [¨kÆ, ¨mÆ, ¨yÆ, ¨y'Æ]);
+a(lemma_tac¨≥y' + ~y = ÓØ 0Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(ALL_FC_T rewrite_tac [Ø_over_times_recip_thm]);
+a(rewrite_tac[pc_rule1 "Ø_lin_arith" prove_rule[]¨µa b c d e: Ø∑
+	(a + b) * c + ~((d + ~e) * c) = (a + ~d + b + e)*cÆ, 	Ø_abs_times_thm]);
+a(ALL_FC_T rewrite_tac [Ø_abs_recip_thm]);
+a(lemma_tac¨ÓØ 0 º Abs (y' + ~ y)Æ THEN1 rewrite_tac [Ø_0_º_abs_thm]);
+a(lemma_tac¨≥Abs (y' + ~ y) = ÓØ 0Æ THEN1 asm_rewrite_tac [Ø_abs_eq_0_thm]);
+a(lemma_tac¨ÓØ 0 < Abs (y' + ~ y)Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(ALL_FC_T1 fc_§_canon once_rewrite_tac [µ_elim¨Abs(y' + ~y)Æ Ø_times_mono_§_thm]);
+a(once_rewrite_tac[pc_rule1 "Ø_lin_arith" prove_rule[]¨µa b c: Ø∑ a*b*c = b*a*cÆ]);
+a(ALL_FC_T rewrite_tac[Ø_recip_clauses]);
+a(bc_thm_tac Ø_º_less_trans_thm);
+a(∂_tac¨Abs (y' + ~ y) * 1 / 2 * eÆ THEN REPEAT strip_tac);
+a(bc_thm_tac Ø_times_mono_thm);
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "2.2.1.2" *** *)
+a(lemma_tac¨A < y' ± A < y ± y < BÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(list_spec_nth_asm_tac 8 [¨kÆ, ¨mÆ, ¨yÆ, ¨y'Æ]);
+a(lemma_tac¨≥y' + ~y = ÓØ 0Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(ALL_FC_T rewrite_tac [Ø_over_times_recip_thm]);
+a(rewrite_tac[pc_rule1 "Ø_lin_arith" prove_rule[]¨µa b c d e: Ø∑
+	(a + b) * c + ~((d + ~e) * c) = (a + ~d + b + e)*cÆ, 	Ø_abs_times_thm]);
+a(ALL_FC_T rewrite_tac [Ø_abs_recip_thm]);
+a(lemma_tac¨ÓØ 0 º Abs (y' + ~ y)Æ THEN1 rewrite_tac [Ø_0_º_abs_thm]);
+a(lemma_tac¨≥Abs (y' + ~ y) = ÓØ 0Æ THEN1 asm_rewrite_tac [Ø_abs_eq_0_thm]);
+a(lemma_tac¨ÓØ 0 < Abs (y' + ~ y)Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(ALL_FC_T1 fc_§_canon once_rewrite_tac [µ_elim¨Abs(y' + ~y)Æ Ø_times_mono_§_thm]);
+a(once_rewrite_tac[pc_rule1 "Ø_lin_arith" prove_rule[]¨µa b c: Ø∑ a*b*c = b*a*cÆ]);
+a(ALL_FC_T rewrite_tac[Ø_recip_clauses]);
+a(bc_thm_tac Ø_º_less_trans_thm);
+a(∂_tac¨Abs (y' + ~ y) * 1 / 2 * eÆ THEN REPEAT strip_tac);
+a(bc_thm_tac Ø_times_mono_thm);
 a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 (* *** Goal "2.2.2" *** *)
-a(∂_tac¨dfÆ THEN REPEAT strip_tac);
-(* *** Goal "2.2.2.1" *** *)
+a(lemma_tac¨A < y ± y < BÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(LEMMA_T¨∂s∑µm∑s m = du m yÆ (strip_asm_tac o  conv_rule (ONCE_MAP_C eq_sym_conv))
+	THEN1 prove_∂_tac);
+a(DROP_NTH_ASM_T 7 (ante_tac o µ_elim¨yÆ));
+a(LIST_GET_NTH_ASM_T [1,2,3] rewrite_tac);
+a(pure_once_rewrite_tac[prove_rule[]
+	¨(Ã y'∑ (u m y' + ~ (u m y)) / (y' + ~ y)) = (Ãm y'∑ (u m y' + ~ (u m y)) / (y' + ~ y)) mÆ]);
+a(REPEAT strip_tac THEN all_fc_tac[lim_fun_lim_seq_interchange_thm]);
+a(lemma_tac¨µt∑t ç OpenInterval A y ¿ OpenInterval y B ¥ g t = (Ã y'∑ (f y' + ~ (f y)) / (y' + ~ y)) tÆ);
+a(PC_T1 "predicates"  REPEAT strip_tac THEN bc_thm_tac unif_lim_seq_pointwise_unique_thm);
+a(∂_tac¨OpenInterval A y ¿ OpenInterval y BÆ THEN
+	∂_tac¨(Ã m y'∑ (u m y' + ~ (u m y)) / (y' + ~ y))Æ THEN
+	PC_T1 "predicates" REPEAT strip_tac);
+a(POP_ASM_T (strip_asm_tac o rewrite_rule[open_interval_def]));
+(* *** Goal "2.2.2.1.1" *** *)
+
+unif_lim_seq_unique_thm;
+
 
 val €unif_lim_seq_deriv_thm› = save_pop_thm "unif_lim_seq_deriv_thm";
 *)
