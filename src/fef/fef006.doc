@@ -8,7 +8,7 @@
 \TPPproject{DRA FRONT END FILTER PROJECT}  %% Mandatory field
 %\TPPvolume{}
 %\TPPpart{}
-\TPPtitle{Security Conjectures for the SSQL Abstract Machine}  %% Mandatory field
+\TPPtitle{Security Conjecture for the SSQL Abstract Machine}  %% Mandatory field
 \TPPref{DS/FMU/FEF/006}  %% Mandatory field
 \def\SCCSversion{$Revision$
 }
@@ -21,7 +21,7 @@
 \TPPauthor{G.~M.~Prout & WIN01}  %% Mandatory field
 %\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
 \TPPauthorisation{R.B.~Jones & HAT Manager}
-\TPPabstract{The formal specification of the SSQL abstract machine and  the conjectures
+\TPPabstract{The formal specification of the SSQL abstract machine and  the conjecture
 to be proven in order to prove its security. This contributes to  the
 DRA front end filter project RSRE 1C/6130.}
 %\TPPabstractB{}
@@ -75,7 +75,7 @@ during  the transcription of the specification.
 \section{GENERAL}
 \subsection{Scope}
 This document gives a formal specification of  the SSQL abstract machine
-and a formal specification of the security conjectures required to
+and a formal specification of the security conjecture required to
 be proven in order to prove the security of the SSQL semantics. It constitutes deliverable D4 of work package 1a, as given
 in section 7 of the Secure Database Technical Proposal, \cite{DS/FMU/017}.
 
@@ -107,20 +107,77 @@ on components, as specified in section \ref{CRITCOMP}. Finally, in section \ref{
 we formalise the overall security conjecture that the SSQL abstract machine is secure.
 
 \section{PRELIMINARIES}
-The following ICL HOL instructions set up the new theory $fef006$.
+The following ICL HOL instructions set up the new theory $fef006$ and set the context 
+for the proof tools.
 
 =SML 
 open_theory "fef005";
 new_theoryÛ"fef006"Ý;
-set_cache_theories ["hol"];
-repeat pop_pc;
-push_pc "prove_¶";
+push_merge_pcs ["sets_ext","prove_¶"];
 =TEX
 
-\section{CONSTRUCTION OF AN ABSTRACT MACHINE} \label{CONSTR}
+\section{CONSTRUCTION OF AN SSQL ABSTRACT MACHINE} \label{CONSTR}
 \subsection{Types of Components}
-An abstract machine is to be built from a transition function and an initial state.
-The transition function is to be built from three components of type $HIDE$, $PROCESS$ and $USTATE$.
+As stated in \cite{DS/FMU/017}, we model an SSQL  abstract machine as a pair
+consisting of a state transition function and an initial state.
+The transition function is to be built from the three components
+$hide$ and $updateState$, specified in  \cite{DS/FMU/FEF/004}, and  $processQuery$, specified in  \cite{DS/FMU/FEF/005}. 
+We first give abbreviation definitions for the types $Hide$ of the $hide$ component,
+$Process$ of the $processQuery$ component and $Ustate$ of the $updateState$ component.
+
+=SML
+declare_type_abbrev(Û"Hide"Ý,[],” Class ¸ State ­ State®);
+=TEX
+
+=SML
+declare_type_abbrev(Û"Process"Ý,[],” Query ¸ Class ¸ State ­ Effect®);
+=TEX
+
+=SML
+declare_type_abbrev(Û"Ustate"Ý,[],” Class ¸ Effect ¸ State ­ 
+				State ¸ (Class ¸ (Data LIST LIST ¸ Errors))®);
+=TEX
+
+We also give an abbreviation definition for the type of state transition functions, $Stf$.
+
+=SML
+declare_type_abbrev(Û"Stf"Ý,[],” (Query ¸ Class) ¸ State ­ 
+				State ¸ (Class ¸ (Data LIST LIST ¸ Errors))®);
+=TEX
+
+We define a function, $mkTf$, which builds a transition function from three components: a component
+of type $Hide$, a component of type $Process$ and a component of type $Ustate$. The resulting transition function
+updates the original state of the database by using the
+result of processing a query on the hidden state of the database. 
+
+¹HOLCONST
+Ü	ÛmkTfÝ : Hide ­ Process ­ Ustate ­ Stf
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü
+Ü	µh:Hide; p:Process; u:Ustate; q : Query; c : Class; s : State
+Ü	·
+Ü	(mkTf h p u) ((q,c),s) = u(c,p(q,c,h(c,s)),s)
+° 
+
+An abstract machine is constructed from a pair consisting of a 
+transition function and some initial state, of type $State$.
+
+=SML
+declare_type_abbrev(Û"Am"Ý,[],” Stf ¸ State®);
+=TEX
+
+An SSQL abstract machine is one which is constructed from the
+transition function built from the three components
+$hide$, $processQuery$ and $updateState$
+, and an initial state $isstate$. 
+
+
+¹HOLCONST
+Ü	ÛisstateÝ : State
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü	T
+° 
+
 
 
 =SML
@@ -300,6 +357,12 @@ Finally, we formalise the correctness conjecture that the behaviour of the SSQL 
 
 The proof of this conjecture follows directly from the definition of $SSQLam$, the proof of the unwinding result of 
 section \ref{ARCH} and the proof of the component correctness conjecture of section \ref{COMP}.
+
+\section{CLOSING DOWN}
+The following ICL HOL instruction restores the previous proof context.
+=SML
+pop_pc();
+=TEX
 
 
 \newpage
