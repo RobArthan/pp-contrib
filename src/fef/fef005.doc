@@ -13,7 +13,7 @@
 \def\SCCSversion{$Revision$
 }
 \TPPissue{\SCCSversion}  %% Mandatory field
-\TPPdate{\FormatDate{92/05/28
+\TPPdate{\FormatDate{$Date$
 }}  %% Mandatory field (with sensible default)
 \TPPstatus{Draft}			%% Mandatory field
 \TPPtype{Specification}
@@ -64,8 +64,11 @@ DRA front end filter project RSRE 1C/6130.}
 \subsection{Changes History}
 \begin{description}
 \item[2.1]  First approved version.
-\item[Issue \SCCSversion ({\FormatDate{92/05/28
-}}) ]  New proof context.
+\item[Issue \SCCSversion ({\FormatDate{$Date$
+}}) ]  Changes made because of changes to HOL library theories. $Flatten$ now $Flat$.The
+composition operator $ª$ only works with two functions, or two sets of pairs. In the 
+case where it is required to compose a set of pairs with a function, $Graph$  is first
+applied to the function part to give a set of pairs. $InverseRelation$ now the usual symbol.
 \end{description}
 
 \subsection{Changes Forecast}
@@ -236,7 +239,7 @@ dummy values.
 ‹	µ clear : Class; cols : ColSpec ; r: Row
 ‹	∑	cleanRow clear cols r 
 ‹		= 
-‹		MkRow (R_exist r)((filterRow cols (R_data r)) ª (replaceData clear))
+‹		MkRow (R_exist r)((filterRow cols (R_data r)) ª Graph(replaceData clear))
 ∞
 
 \subsubsection{Clean all Rows in a Table}
@@ -296,7 +299,7 @@ directory will either be hidden or modified by $cleanTable$.
 ‹		=
 ‹		MkDirectory 
 ‹		(if	(clear dominates (Dir_class dir)) 
-‹		then 	(Dir_tables dir ª cleanTable clear) 
+‹		then 	(Dir_tables dir ª Graph(cleanTable clear)) 
 ‹		else 	{})
 ‹		(Dir_exist dir)
 ‹		(Dir_class dir)
@@ -313,7 +316,7 @@ cleaned by $cleanDirectory$.
 ‹	µ clear : Class; s : State
 ‹	∑ 	hide(clear,s) 
 ‹		= 
-‹		(s í {dir | clear dominates (Dir_exist dir)}) ª cleanDirectory clear
+‹		(s í {dir | clear dominates (Dir_exist dir)}) ª Graph(cleanDirectory clear)
 ∞
 
 
@@ -366,6 +369,8 @@ exists in a particular state.
 ‹		=
 ‹		∂â1 dir ∑ (Front i,dir) ç s ± Last i ç Dom(Dir_tables dir)
 ∞
+
+The  operator $@$ is the partial function application operator.
 
 πHOLCONST
 ‹	€changeSpec› : Tab ≠ TableSpec ≠ State ≠ State
@@ -496,12 +501,12 @@ Now the effect of an update on a row.  A new row is only returned if all updates
 ‹	µ clear table_class:Class; us:Num ™ Update; r:Row
 ‹	∑	updateRow clear table_class (us,r)
 ‹		=
-‹		let 	us' = 	RelCombine us (R_data r) ª (updateField clear table_class)
+‹		let 	us' = 	RelCombine us (R_data r) ª Graph(updateField clear table_class)
 ‹		in
-‹		let 	es = RelList(Squash((us' í {x|isError x}) ª destError))  
+‹		let 	es = RelList(Squash((us' í {x|isError x}) ª Graph destError))  
 ‹		in
 ‹		if 	es = []
-‹		then	giveVal(MkRow (R_exist r)((R_data r) ´ (us' ª destVal)))
+‹		then	giveVal(MkRow (R_exist r)((R_data r) ´ (us' ª Graph destVal)))
 ‹		else	giveError es
 ∞
 
@@ -519,17 +524,17 @@ Finally, the $updateQuery$ function. A check is made to prevent access to hidden
 ‹		in
 ‹		if	≥((Dom (ﬁ (Ran us))) Ä colnums) 
 ‹		then	(s,[noSuchColumn])
-‹		else 	let 	us' = InverseRelation(revealRow  clear ts) ª us
+‹		else 	let 	us' = InvRel(revealRow  clear ts) ª us
 ‹			in
 ‹			let	pr = RelCombine us' (ListRel(TS_rows ts)) 
-‹						ª (updateRow clear (TS_class ts))
+‹						ª Graph(updateRow clear (TS_class ts))
 ‹			in	
-‹			let 	es = RelList(Squash((pr í {x|isError x}) ª destError))
+‹			let 	es = RelList(Squash((pr í {x|isError x}) ª Graph destError))
 ‹			in	if 	es = []
 ‹				then	let	rs =  RelList(ListRel(TS_rows ts)
-‹								´(pr ª destVal))
+‹								´ (pr ª Graph destVal))
 ‹					in 	(changeSpec i(replaceRows ts rs) s,[])
-‹				else	(s,Flatten es)
+‹				else	(s,Flat es)
 ∞
 
 
@@ -537,7 +542,7 @@ Finally, the $updateQuery$ function. A check is made to prevent access to hidden
 
 We first provide a function that given a full table name returns a table. 
 This will only be applied in the case where the table
-name is valid. (The  operator $@$ is the partial function application operator.) 
+name is valid.  
 
 πHOLCONST
 ‹	€getTable› : Tab ≠ State ≠ TableSpec
