@@ -128,6 +128,25 @@ declare_infix(200, "CtsAt");
 ˜¸¸¸¸¸¸
 ‹ µf x∑ f CtsAt x § µe∑ÓØ 0 < e ¥ ∂d∑ÓØ 0 < d ± µy∑ Abs(y - x) < d ¥ Abs(f y - f x) < e
 ∞
+\subsection{Derivatives}
+Now we give the usual $\epsilon-\delta$ definition for the derivative of
+a function, $f$ at a point $x$. 
+The notion of a derivative as formulated here is really a ternary
+relation: ``$f$ has derivative $c$ at $x$''.
+We represent this as the infix operation between $f$ and $c$ whose
+value is the propositional function that characterises the values$x$ for
+which the derivative $f$ is $c$.
+=SML
+declare_infix(200, "HasDeriv");
+πHOLCONST
+‹ $€HasDeriv› : (Ø ≠ Ø) ≠ Ø ≠ Ø ≠ BOOL
+˜¸¸¸¸¸¸
+‹ µf c x∑
+‹	(f HasDeriv c) x §
+‹	µe∑ÓØ 0 < e ¥ ∂d∑
+‹		ÓØ 0 < d
+‹	±	µy∑ Abs(y - x) < d ± ≥y = x ¥ Abs((f y - f x)/(y-x) - c) < e
+∞
 \section{THEOREMS}
 \subsection{The Definitions and Their Consistency}
 We give bindings for the definitions and discharge any consistency
@@ -157,6 +176,7 @@ val €times_coeffs_def› = get_spec¨TimesCoeffsÆ;
 val €to_def› = get_spec¨$ToÆ;
 val €lim_seq_def› = get_spec¨$-->Æ;
 val €cts_at_def› = get_spec¨$CtsAtÆ;
+val €has_deriv_def› = get_spec¨$HasDerivÆ;
 =TEX
 The next one is an omission in {\Product} V2.5.1:
 =SML
@@ -656,7 +676,7 @@ a(rewrite_tac[pc_rule1 "Ø_lin_arith" prove_rule[]¨
 a(ALL_FC_T rewrite_tac[Ø_times_recip_thm]);
 val €Ø_less_recip_less_thm› = save_pop_thm "Ø_less_recip_less_thm";
 =TEX
-\subsection{The Archimedean Property}
+\subsubsection{The Archimedean Property}
 We present the archimedean property in two guises:
 the usual formulation, any real is bounded above by some natural number:
 =SML
@@ -896,6 +916,42 @@ set_goal([], ¨µf t∑ f ç PolyFunc ¥ f CtsAt tÆ);
 a(rewrite_tac[cts_lim_seq_thm] THEN REPEAT strip_tac
 	THEN ALL_FC_T rewrite_tac[poly_lim_seq_thm]);
 val €poly_cts_thm› = save_pop_thm "poly_cts_thm";
+=TEX
+\subsection{Derivatives}
+Following Harrison, we make much use of Carath\'{e}odory's characterisation
+of the derivative in terms of the continuity of a certain function:
+=SML
+set_goal([], ¨µf c x∑
+	(f HasDeriv c) x
+§	(∂g∑ (µy∑f y - f x = g(y)*(y - x)) ± g CtsAt x ± g x = c)
+Æ);
+a(rewrite_tac[has_deriv_def, cts_at_def] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(∂_tac¨Ãz∑ if z = x then c else (f z - f x)/(z - x)Æ
+	THEN rewrite_tac[] THEN REPEAT strip_tac);
+(* *** Goal "1.1" *** *)
+a(cases_tac¨y = xÆ THEN asm_rewrite_tac[]);
+a(lemma_tac¨≥(y + ~x) = ÓØ 0Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(rename_tac[(¨xÆ, "x'")] THEN
+	ALL_FC_T rewrite_tac[Ø_over_times_recip_thm]);
+a(rewrite_tac[pc_rule1 "Ø_lin_arith" prove_rule[]¨µa b∑(a*b)*(y + ~x') = a * (y + ~x') * bÆ]);
+a(ALL_FC_T rewrite_tac[Ø_times_recip_thm]);
+(* *** Goal "1.2" *** *)
+a(all_asm_fc_tac[]);
+a(∂_tac¨dÆ THEN REPEAT strip_tac);
+a(lemma_tac¨Abs(ÓØ 0) = ÓØ 0Æ THEN1 rewrite_tac[Ø_abs_0_thm]);
+a(cases_tac¨y = xÆ THEN1 asm_rewrite_tac[]);
+a(ALL_ASM_FC_T asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(all_asm_fc_tac[]);
+a(∂_tac¨dÆ THEN REPEAT strip_tac);
+a(asm_rewrite_tac[]);
+a(lemma_tac¨≥(y + ~x) = ÓØ 0Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(rename_tac[(¨xÆ, "x'")] THEN
+	ALL_FC_T rewrite_tac[Ø_over_times_recip_thm]);
+a(rewrite_tac[Ø_times_assoc_thm] THEN ALL_FC_T rewrite_tac[Ø_times_recip_thm]);
+a(all_var_elim_asm_tac1 THEN DROP_NTH_ASM_T 4 bc_thm_tac THEN REPEAT strip_tac);
+val €caratheodory_deriv_thm› = save_pop_thm "caratheodory_deriv_thm";
 =TEX
 \subsection{Epilogue}
 =TEX
