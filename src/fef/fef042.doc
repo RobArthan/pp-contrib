@@ -83,12 +83,6 @@ in section 7 of the Proposal for Phase 3, \cite{DS/FMU/FEF/039}.
 
 \subsection{Introduction}
 An index of the names used in the formal specification may be found in Section \ref{INDEX}. 
-A listing of the theory $fef042$ created by processing this document using \Product{}
-may be found at the end of this document.
-
-\Note{For the time being, the script of this document contains boths specs and proofs.
-The proofs are at the end of the script and aren't included in the printed document.}
-
 
 \subsection{The Specification}
 The HOL specification here represents an attempt to capture the key ideas from \cite[section 3]{securityprops}.
@@ -110,7 +104,7 @@ However, the class at the top node of an object (e.g. in an output stream) is ta
 \end{enumerate}
 
 \subsection{Setting Up}
-The following \Product{} instructions set up the new theory $fef040$ and set the context 
+The following \Product{} instructions set up the new theory $fef042$ and set the context 
 for the proof tools.
 The parent theory is the theory $fef040$ which contains some general material about multi-level security policies of the sort we are interested in.
 =SML
@@ -121,7 +115,9 @@ new_parent "wrk057";
 new_parent "fef036";
 push_pc"hol";
 =TEX
+
 \section{POLICY}\label{POLICY}
+
 It seems most convenient to view the treatment of SWORD in \cite{securityprops} in terms of a security policy on the DBMS as seen by the trusted clients.
 This is like the view taken in the single-level formulation of the policy given in \cite{DS/FMU/FEF/003}.
 Thus SWORD receives an input stream comprising clearance-query pairs and generates an output stream of multi-level objects.
@@ -133,8 +129,8 @@ This requires us to define when we consider a pair of inputs or outputs as looki
 
 The remaining subsections of this section develop the necessary definitions starting with the multi-level objects which are the inputs and outputs to the system.
 
-
 \subsection{Objects}\label{Objects}
+
 The Z specification in \cite{securityprops} starts (in section 3 of that document) with a formalisation of the classified, structured objects with which the SSQL abstract machine is to deal.
 The classification and the structure of an object are given there by positing the existence of three functions as follows:
 =GFT Informal Z
@@ -409,234 +405,9 @@ The following \Product{} instruction restores the previous proof context.
 =SML
 pop_pc();
 =TEX
-=IGN
-output_theory{theory = "fef042",out_file = "fef042th.doc"};
-=TEX
-\newpage
-\HOLindexOff
-\input{fef042th.tex}
-\HOLindexOn
 \newpage
 \twocolumn[\section{INDEX} \label{INDEX}]
 \small
 \printindex
 
 \end{document}
-=SML
-(delete_pc"'tree" handle Fail _ => ());
-new_pc"'tree";
-set_∂_cd_thms[tree_prim_rec_thm] "'tree";
-set_merge_pcs ["'tree", "hol"];
-=SML
-push_goal([], ¨µx y∑ MkTree x = MkTree y ¥ x = yÆ);
-a(REPEAT strip_tac);
-a(lemma_tac¨∂f∑ µz∑ f(MkTree z) = zÆ THEN1 prove_∂_tac);
-a(lemma_tac¨y = f(MkTree x)Æ THEN1
-	(GET_NTH_ASM_T 2 rewrite_thm_tac THEN POP_ASM_T rewrite_thm_tac));
-a(POP_ASM_T rewrite_thm_tac THEN POP_ASM_T rewrite_thm_tac);
-val €mk_tree_one_one_thm› = save_pop_thm"mk_tree_one_one_thm";
-=TEX
-=SML
-push_goal([], ¨µt∑ ∂x∑ t = MkTree xÆ);
-a(REPEAT strip_tac);
-a(gen_induction_tac tree_induction_thm ¨tÆ);
-a(∂_tac¨xÆ THEN REPEAT strip_tac);
-val €mk_tree_onto_thm› = save_pop_thm"mk_tree_onto_thm";
-=TEX
-=SML
-push_consistency_goal¨MkObjÆ;
-a(lemma_tac¨∂mk_obj∑µ c: Class; t : Text; os : Obj LIST∑
-	mk_obj (c, t, os) = MkTree ((c, t), os)Æ
-	THEN1 prove_∂_tac);
-a(lemma_tac¨∂object_class object_text object_refers∑
-	µctos: (Class ∏ Text) ∏ Obj LIST∑
-	object_class (MkTree (ctos)) = Fst (Fst ctos)
-±	object_text (MkTree (ctos)) = Snd(Fst ctos)
-±	object_refers (MkTree (ctos)) = Snd ctosÆ
-	THEN1 prove_∂_tac);
-a(∂_tac ¨(mk_obj, object_class, object_text, object_refers)Æ);
-a(asm_rewrite_tac[]);
-save_consistency_thm¨MkObjÆ(pop_thm());
-=TEX
-=SML
-push_goal([], ¨µ d∑ ∂â1 h∑ µ c t os∑
-	h (MkObj (c, t, os)) = d c t (Map h os)Æ);
-a(REPEAT strip_tac);
-a(strip_asm_tac (µ_elim ¨(Ãx:(Class ∏ Text) ∏ Obj LIST; y∑
-	d (Fst(Fst x)) (Snd(Fst x)) y)Æ tree_prim_rec_thm));
-a(∂â1_tac¨hÆ THEN asm_rewrite_tac[get_spec¨MkObjÆ]);
-a(REPEAT strip_tac);
-a(lemma_tac¨µ ctos∑ h' (MkTree ctos) =
-		d (Fst (Fst ctos)) (Snd (Fst ctos)) (Map h' (Snd ctos))Æ
-	THEN REPEAT strip_tac);
-(* *** Goal "1" *** *)
-a(LEMMA_T¨ctos = ((Fst (Fst ctos), Snd (Fst ctos)), Snd ctos)Æ
-	once_rewrite_thm_tac THEN1 rewrite_tac[]);
-a(TOP_ASM_T pure_rewrite_thm_tac);
-a(rewrite_tac[]);
-(* *** Goal "2" *** *)
-a(lemma_tac¨µ x
-           ∑ h' (MkTree x)
-               = (Ã x y∑ d (Fst (Fst x)) (Snd (Fst x)) y) x (Map h' (Snd x))Æ
-	THEN1 asm_rewrite_tac[]);
-a(all_asm_fc_tac[]);
-val €obj_prim_rec_thm› = save_pop_thm"obj_prim_rec_thm";
-=TEX
-=SML
-push_goal([], ¨
-(µ x∑ MkObj x = MkTree ((Fst x, Fst(Snd x)), Snd(Snd x))) ±
-µ ctos∑	objectClass(MkTree ctos) = Fst (Fst ctos)
-±	 objectContains(MkTree ctos) = Snd (Fst ctos)
-±	 objectRefers(MkTree ctos) = Snd ctos
-Æ);
-a(lemma_tac ¨µ x∑ MkObj x = MkTree ((Fst x, Fst(Snd x)), Snd(Snd x))Æ);
-(* *** Goal "1" *** *)
-a(strip_tac);
-a(LEMMA_T ¨x = (Fst x, (Fst(Snd x)), Snd(Snd x))Æ once_rewrite_thm_tac
-	THEN1 rewrite_tac[]);
-a(pure_rewrite_tac[get_spec¨MkObjÆ]);
-a(rewrite_tac[]);
-(* *** Goal "2" *** *)
-a(ante_tac (get_spec¨MkObjÆ) THEN asm_rewrite_tac[]);
-a(strip_tac THEN strip_tac);
-a(LEMMA_T ¨ctos = ((Fst (Fst ctos), Snd (Fst ctos)), Snd ctos)Æ once_rewrite_thm_tac
-	THEN1 rewrite_tac[]);
-a(pure_asm_rewrite_tac[]);
-a(rewrite_tac[]);
-val €object_clauses› = save_pop_thm"object_clauses";
-=TEX
-=SML
-=TEX
-=SML
-push_consistency_goal¨output_seqÆ;
-a(lemma_tac ¨∂os : Req LIST ≠ 'State Machine ≠ 'State ≠ Obj LIST∑
-	µr rs mch s∑
-	os [] mch s = []
-±	os (Cons r rs) mch s =
-	Cons
-	(Output mch (s, r))
-	(os rs mch (Next mch (s, r)))Æ
-	THEN1 prove_∂_tac);
-a(∂_tac¨Ãmch (s, rs)∑ os rs mch sÆ);
-a(asm_rewrite_tac[]);
-save_consistency_thm¨output_seqÆ(pop_thm());
-=TEX
-Following is lengthy but not really difficult.
-The basic idea is to define a propositional function by primitive recursion over trees which represents the set function required for the witness.
-The proof is then just a check that the formula defining the propositional function is essentially the same as the one the witness is required to satisfy.
-This involves (inter alia) two inductive proofs of two little lemmas about the formulae which are used to ``combine the recursive applications''.
-=SML
-push_consistency_goal¨identicalObjÆ;
-a(lemma_tac ¨∂io : Obj ≠ Class ≠ Obj ≠ BOOL∑ µctos c oâ2∑
-	io (MkTree ctos) c oâ2 §
-	∂ câ1 tâ1 osâ1 câ2 tâ2 osâ2∑
-		(MkTree ctos) = MkObj (câ1, tâ1, osâ1)
-	±	oâ2 = MkObj (câ2, tâ2, osâ2)
-	±	câ1 = câ2
-	±	(	c dominates câ1
-		¥	tâ1 = tâ2
-		±	Length osâ1 = Length osâ2
-		±	µp o2∑ (p, o2) ç
-			Elems (Combine (Map io (Snd ctos)) osâ2)
-			¥	p c o2)Æ
-	THEN1 prove_∂_tac);
-a(∂_tac¨Ãc∑ {(o1, o2) | io o1 c o2}Æ THEN
-	PC_T1 "sets_ext1" asm_rewrite_tac[object_clauses]);
-a(PC_T1 "sets_ext1" REPEAT strip_tac);
-(* *** Goal "1" *** *)
-a(strip_asm_tac(µ_elim¨x1Æ mk_tree_onto_thm) THEN var_elim_nth_asm_tac 1);
-a(strip_asm_tac(µ_elim¨x2Æ mk_tree_onto_thm) THEN var_elim_nth_asm_tac 1);
-a(MAP_EVERY ∂_tac[
-	¨Fst(Fst x)Æ, ¨Snd(Fst x)Æ, ¨Snd xÆ,
-	¨Fst(Fst x')Æ, ¨Snd(Fst x')Æ, ¨Snd x'Æ]
-	THEN rewrite_tac[]);
-a(POP_ASM_T ante_tac THEN asm_rewrite_tac[object_clauses]);
-a(strip_tac);
-(* *** Goal "1.1" *** *)
-a(all_fc_tac[mk_tree_one_one_thm]);
-a(MAP_EVERY var_elim_nth_asm_tac [1,1,2]);
-a(asm_rewrite_tac[]);
-(* *** Goal "1.2" *** *)
-a(all_fc_tac[mk_tree_one_one_thm]);
-a(MAP_EVERY var_elim_nth_asm_tac [1,1,3,3]);
-a(POP_ASM_T ante_tac THEN asm_rewrite_tac[]);
-a(POP_ASM_T ante_tac);
-a(intro_µ_tac(¨osâ1Æ, ¨osâ1Æ));
-a(list_induction_tac¨osâ2Æ);
-(* *** Goal "1.2.1" *** *)
-a(rewrite_tac[get_spec¨LengthÆ, length_0_thm]);
-a(REPEAT_N 2 strip_tac THEN asm_rewrite_tac(map get_spec
-	[¨CombineÆ, ¨MapÆ, ¨ElemsÆ]));
-(* *** Goal "1.2.2" *** *)
-a(rewrite_tac[get_spec¨LengthÆ, length_0_thm]);
-a(REPEAT µ_tac);
-a(strip_asm_tac(µ_elim¨osâ1Æ list_cases_thm) THEN var_elim_nth_asm_tac 1
-	THEN rewrite_tac[get_spec¨LengthÆ]);
-a(PC_T1 "sets_ext1" rewrite_tac(map get_spec [¨CombineÆ, ¨MapÆ, ¨ElemsÆ]));
-a(REPEAT strip_tac);
-(* *** Goal "1.2.2.1" *** *)
-a(MAP_EVERY var_elim_nth_asm_tac [1,1]);
-a(list_spec_nth_asm_tac 2 [¨io x'Æ, ¨xÆ]);
-(* *** Goal "1.2.2.2" *** *)
-a(lemma_tac¨µ p o2∑ (p, o2) ç Elems (Combine (Map io list2) osâ2) ¥ p c o2Æ
-	THEN1 (REPEAT strip_tac THEN all_asm_fc_tac[]));
-a(all_asm_fc_tac[]);
-(* *** Goal "2" *** *)
-a(asm_rewrite_tac[]);
-a(rename_tac[] THEN rewrite_tac[object_clauses]);
-a(MAP_EVERY ∂_tac[
-	¨câ1Æ, ¨tâ1Æ, ¨osâ1Æ,
-	¨câ2Æ, ¨tâ2Æ, ¨osâ2Æ]
-	THEN asm_rewrite_tac[]);
-(* *** Goal "3" *** *)
-a(asm_rewrite_tac[]);
-a(MAP_EVERY ∂_tac[
-	¨câ2Æ, ¨tâ2Æ, ¨osâ1Æ,
-	¨câ2Æ, ¨tâ2Æ, ¨osâ2Æ]
-	THEN asm_rewrite_tac[]);
-a(rewrite_tac[object_clauses]);
-a(REPEAT strip_tac);
-a(LIST_DROP_NTH_ASM_T [1,3,4] (MAP_EVERY ante_tac));
-a(LIST_DROP_NTH_ASM_T [1,2,3,4,5,6] discard_tac);
-a(intro_µ_tac(¨osâ1Æ, ¨osâ1Æ));
-a(list_induction_tac¨osâ2Æ);
-(* *** Goal "3.1" *** *)
-a(rewrite_tac[get_spec¨LengthÆ, length_0_thm]);
-a(REPEAT µ_tac);
-a(strip_asm_tac(µ_elim¨osâ1Æ list_cases_thm) THEN var_elim_nth_asm_tac 1
-	THEN rewrite_tac[get_spec¨LengthÆ]);
-a(PC_T1 "sets_ext1" rewrite_tac(map get_spec [¨CombineÆ, ¨MapÆ, ¨ElemsÆ]));
-(* *** Goal "3.2" *** *)
-a(rewrite_tac[get_spec¨LengthÆ, length_0_thm]);
-a(REPEAT µ_tac);
-a(strip_asm_tac(µ_elim¨osâ1Æ list_cases_thm) THEN var_elim_nth_asm_tac 1
-	THEN rewrite_tac[get_spec¨LengthÆ]);
-a(PC_T1 "sets_ext1" rewrite_tac(map get_spec [¨CombineÆ, ¨MapÆ, ¨ElemsÆ]));
-a(REPEAT strip_tac);
-(* *** Goal "3.2.1" *** *)
-a(MAP_EVERY var_elim_nth_asm_tac [1,1]);
-a(list_spec_nth_asm_tac 1 [¨x'Æ, ¨xÆ]);
-(* *** Goal "3.2.2" *** *)
-a(lemma_tac¨µ x1 x2∑ (x1, x2) ç Elems (Combine list2 osâ2) ¥ io x1 c x2Æ
-	THEN1 (REPEAT strip_tac THEN all_asm_fc_tac[]));
-a(all_asm_fc_tac[]);
-save_consistency_thm¨identicalObjÆ(pop_thm());
-=TEX
-=SML
-push_consistency_goal¨FilterObjÆ;
-a(rewrite_tac[object_clauses]);
-a(lemma_tac ¨∂f : Class ≠ Obj ≠ Obj∑ µ c dtos∑
-	f c (MkTree dtos) =
-	let (d, t) = Fst dtos
-	in	if c dominates d
-                   then MkTree ((d, t), Map (f c) (Snd dtos))
-                   else MkTree ((d, Arbitrary), Arbitrary)Æ
-	THEN1 prove_∂_tac);
-a(∂_tac¨fÆ THEN asm_rewrite_tac[let_def]);
-save_consistency_thm¨FilterObjÆ(pop_thm());
-=TEX
-Some results about {\it sameRequests}
-set_goal ([], ¨LiftRel sameRequests ç IndexedEquivÆ);
-a (rewrite_tac (map get_spec [¨LiftRelÆ,¨IndexedEquivÆ]));
-a (rewrite_tac (map get_spec [¨LiftRelÆ,¨sameRequestsÆ,¨IndexedEquivÆ]));
-=SML
