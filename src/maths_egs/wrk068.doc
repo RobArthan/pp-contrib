@@ -7,7 +7,7 @@ Copyright (c) 2004 Lemma 1 Ltd.
 This file is supplied under the GNU General Public Licence (GPL) version 2.
 
 See the file LICENSE supplied with ProofPower source for the terms of the GPL
-or visit the OpenSource web site at http://www.opensource.org/
+or visit the OpenSource web site at http:/www.opensource.org/
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
@@ -164,6 +164,8 @@ The apparent extra complication actually achieves an economy, because when you a
 As an example, we define the operations on a group $G$ to be total functions on the universe of the type of its elements whose behaviour outside the carrier set of $G$ is immaterial.
 We require the operations on a subgroup $H$ of $G$ to  be represented by the same total functions.
 This involves no loss of generality and removes a great deal of complexity in both specifications and proofs.
+It may be objected that this approach results in the wrong notion of equality between groups (since the same group can be represented using two different ways of totalising the operations).
+However, in normal algeebraic practice, one almost never needs to assert equality between two groups that are not known to be subgroups of some other group, and in that case equality has the usual meaning.
 
 This document is a {\Product} literate script. It contains all the metalanguage (ML) commands required to create three theories, populate them with the formal definitions and prove and record all the theorems.
 The three theories,  ``equiv\_rel'', ``groups'' and ``group\_egs'' are described in sections~\ref{equivrel}, ~\ref{groups} and ~\ref{groupegs} respectively.
@@ -220,7 +222,7 @@ We will often use the infix symbol
 =TEX
 \ as a variable ranging over binary relations, sometimes with a subscript if there are several relations involved.
 This symbol appears preceded by a `\$' where infix notation is not being used.
-(If we are not going to use infix notation, we use $R$ and $S$ as variables ranging over relations.
+(If we are not going to use infix notation, we use $R$ and $S$ as variables ranging over relations).
 =SML
 declare_infix(210, "¶");
 declare_infix(210, "¶â1");
@@ -272,16 +274,16 @@ EquivClass(X, $¶)
 ‹ µ X $¶∑ QuotientSet X ($¶) = {A | ∂x∑ x ç X ± A = EquivClass(X, $¶) x}
 ∞
 
-We adopt Paulson's notation, writing
+We introduce an alias to let us write
 =INLINEFT
-X//¶
+X / ¶
 =TEX
 \ for the quotient set.
-Since we want to use the same notation for other things, we introduce it as an alias, so that it can be overloaded later.
+This overloads arithmetic division (and will be further overloaded later for the quotient group construction).
 
 =SML
-declare_infix(300, "//");
-declare_alias("//", ¨QuotientSetÆ);
+declare_infix(300, "/");
+declare_alias("/", ¨QuotientSetÆ);
 =TEX
 We say a function $f$ respects an equivalence relation
 =INLINEFT
@@ -321,8 +323,8 @@ The consistency of this definition is not proved automatically, and the developm
 ‹ µ x∑ Contents {x} = x
 ∞
 Given any function $f : X \rightarrow Y$, the relation, $R_f$, say, defined so that $x\,R_f\,y$ holds iff. $f(x) = f(y)$ is an equivalence relation.
-$f$ respects an equivalence relation $R$ iff. $R$ is no coarser than $R_f$ (i.e., iff. every $R$-equivalence class is contained in an $R_f$-equivalence class).
-Given such an $R$, $f$ induces a function, $\overline{f}$, from the quotient of $X//R$ to $Y$.
+$f$ respects an equivalence relation $R$ iff. $R$ refines $R_f$.
+Given such an $R$, $f$ induces a function, $\overline{f}$, from the quotient of $X/R$ to $Y$.
 The following function is the function comprising the union over all $R$ of the corresponding $\overline{f}$ extended to a total function in an unspecified way.
 We write it using the postfix notation
 =INLINEFT
@@ -374,11 +376,11 @@ The next block of theorems begins with two theorems which show, in effect, that 
 \ that $f$ respects on $X$,
 $f$ factors through the projection of $X$ onto
 =INLINEFT
-X // ¶
+X / ¶
 =TEX
 , the induced function from
 =INLINEFT
-X // ¶
+X / ¶
 =TEX
 \ to $Y$ being given by
 =INLINEFT
@@ -520,7 +522,7 @@ When working with a specific group, the definitions can easily be expanded to gi
 
 However, the syntax is not particular convenient to write for complex expressions, mainly because it forces the writer to write all the brackets in an expression explicitly.
 An extension to the concrete syntax of {\ProductHOL} is being considered which would remedy this.
-The extension would allow a form of ternary infix (and postfix) operator.
+The extension would allow a form of ternary infix operator.
 What we are currently writing as  $(x.y)G$ would become $x\,{.G}\,y$.
 One would be allowed to write $x\,{.G}\,y{.G}\,z$ with no brackets.
 Brackets would only be required when they are significant.
@@ -585,7 +587,7 @@ For us, a homomorphism is given by a total function  whose behaviour outside the
 ∞
 
 One only needs to specify that a homomorphism preserves the multiplication, since a homomorphism in that sense will automatically preserve the unit element and inverses as shown by the first two theorems in the following block.
-The third and fourth are just extracts from the definition of a homomorphism that are technically useful.
+The third and fourth present these facts and the properties in the definition in a convenient form.
 
 \ThmsII{%
 =GFT
@@ -639,7 +641,7 @@ If $K$ and $H$ are subgroups of $G$ and the carrier set of $K$ is contianed in t
 then $K$ is subgroup of $H$.
 Two subgroups are equal iff. there carrier sets are equal.
 
-\ThmsI|{%
+\ThmsII{%
 =GFT
 trivial_subgroups_thm
 subgroup_trans_thm
@@ -666,6 +668,24 @@ id_homomorphism_thm
 =GFT
 one_homomorphism_thm
 comp_homomorphism_thm
+=TEX
+}
+
+If $A$ is a subset of the carrier set of a group $G$, we write $A \cap G$ for the structure with the same operations as $G$ and with carrier set the intersection of $A$ and the carrier set of $G$.
+In the narrative and in the names of theorems we refer to this as the restriction of $G$ tp $A$.
+
+πHOLCONST
+‹ €Restriction› : 'a SET ≠ 'a GROUP  ≠ 'a GROUP
+˜¸¸¸¸¸¸
+‹ µ A G∑ Restriction A G = (A ° Car G, (Ãx y∑ (x.y)G), One G, (Ãx∑(x õ~)G))
+∞
+=SML
+declare_alias("°", ¨RestrictionÆ);
+=TEX
+$A \cap G$ is a group iff. $A$ contains the unit element and is closed under multiplication and inverse.
+\ThmsI{%
+=GFT
+restriction_subgroup_thm
 =TEX
 }
 
@@ -752,10 +772,34 @@ declare_alias(".", ¨ElemTimesSetÆ);
 declare_alias(".", ¨SetTimesElemÆ);
 declare_alias("õ~", ¨SetInverseÆ);
 =TEX
+If $H$ and $K$ are groups with elements of the same type, we will write $H.K$ for the structure with the set product of the carrier sets as its carrier set under the operations of $H$ (which will agree with those of $K$ under our conventions if they are both subgroups of some other group).
+πHOLCONST
+‹ €GroupTimesGroup› :'a GROUP ≠ 'a GROUP ≠ 'a GROUP
+˜¸¸¸¸¸¸
+‹ µH K∑ GroupTimesGroup H K = ((Car H.Car K)H, (Ãx y∑(x.y)H), One H, (Ãx∑(x õ~)H))
+∞
+
+=SML
+declare_alias(".", ¨GroupTimesGroupÆ);
+=TEX
+
+The product of two subgroups can be expressed as a restirction.
+The produc is itself a subgroup if either of the two subgroups is normal.
+We just prove this for the case when the second subgroup is normal.
+
+\ThmsII{%
+=GFT
+group_product_restriction_thm
+=TEX
+}{%
+=GFT
+group_product_subgroup_thm
+=TEX
+}
 
 \subsection{Cosets}
 
-If $H$ is a subgroup of $G$ and $x$ is an element of $G$, the right coset generated by $x$  is then the set $x.H$ and the left coset generated by $x$ is $H.x$.
+If $H$ is a subgroup of $G$ and $x$ is an element of $G$, the right coset generated by $x$  is the set $x.H$ and the left coset generated by $x$ is $H.x$.
 I.e., perhaps confusingly, a right coset is a left translate of $H$. Some texts call these left cosets (and then, perhaps confusingly, left congruence is equivalence modulo right translation by elements of $H$).
 Our terminology follows \cite{Cohn74}.
 
@@ -773,7 +817,7 @@ right_coset_eq_thm
 \subsection{The Quotient Group Construction}
 If $G$ is a group and $H$ is a normal subgroup, then the multiplication and inverse operations on $G$ induce a multiplication  and inverse operation on the set of right cosets of $H$ which make it into a group in such a way that the projection onto the set of right cosets is a homomorphism.
 Following our approach of embedding the operations of an algebraic structure in the most useful general extension to a total function, we make the following definition, which embeds the quotient group in the monoid of all subsets of $G$ under the multiplication of sets induced by the multiplication of $G$.
-This monoid contains all quotient groups of $G$ as submonoids (or, more precisely, it embeds it in the structure whose carrier set comprises all subsets of the universe of $G$ under the induced multiplication; this structure is not in general a monoid, but becomes one if its carrier set is restrictied to subsets of $G$).
+This monoid contains all quotient groups of $G$ as submonoids (or, more precisely, it embeds it in the structure whose carrier set comprises all subsets of the universe of $G$ under the induced multiplication; this structure is not in general a monoid, but becomes one if its carrier set is restrictid to subsets of $G$).
 
 
 πHOLCONST
@@ -787,9 +831,9 @@ This monoid contains all quotient groups of $G$ as submonoids (or, more precisel
 ‹	)
 ∞
 
-We write $G//H$ for the quotient of $G$ by $H$ by dint of the following alias declaration (overloading the alias for the quotient set operator).
+We write $G/H$ for the quotient of $G$ by $H$ by dint of the following alias declaration (overloading the alias for the quotient set operator).
 =SML
-declare_alias("//", ¨QuotientGroupÆ);
+declare_alias("/", ¨QuotientGroupÆ);
 =TEX
 
 We show that if $H$ is a normal subgroup of $G$, then the product and inverse operatioins of the quotient group are represented by the product and inverse operations of the group, i.e.,
@@ -844,8 +888,8 @@ An isomorphism is a one-to-one onto homomorphism
 ‹ ±	(µz∑ z ç Car H ¥ ∂x∑x ç Car G ± f x = z)
 ∞
 
-The following theorms lead up to the proof of the first isomorphism theorem (which says that if $f : G \rightarrow H$ is a homomorphism with kernel $K$, then $f$ factors thorugh a homomorphism $H//K \rightarrow G$ which gives an isomorphism between $H//K$ and the image of $f$).
-The proofs of earlier results have made some use of the equivalence class lemma library, this is where the result on induced functions is first used in anger.
+The following theorems lead up to the proof of the first isomorphism theorem (which says that if $f : G \rightarrow H$ is a homomorphism with kernel $K$, then $f$ factors thorugh a homomorphism $H/K \rightarrow G$ which gives an isomorphism between $H/K$ and the image of $f$).
+The proofs of earlier results have made some use of the equivalence class lemma library, but this is where the result on induced functions is first used in anger.
 
 \ThmsII{%
 =GFT
@@ -863,8 +907,24 @@ first_isomorphism_thm
 =TEX
 }
 
-We now prove the third isoomorphism theorem, which says that if $H$ and $K$ are normal subgroups of a group $G$, and $K$ is a subgroup of $H$, then there is an isomorphism between $G / H$ and $(G/K)/(H/K)$.
-We sneak up on this in a series of lemmas.
+The second isomorphism theorem says that if $H$ is a subgroup of $G$ and $K$ is a normal subgroup of $G$, then $H \cap K$ is  a normal subgroup of $H$ and the quotient $H/H \cap K$ is isomorphic to the quotient $H.K/K$.
+We prove this in a series of lemmas.
+
+\ThmsII{%
+=GFT
+second_isomorphism_lemma1
+second_isomorphism_lemma2
+second_isomorphism_lemma3
+=TEX
+}{%
+=GFT
+second_isomorphism_lemma4
+second_isomorphism_thm
+=TEX
+}
+
+We also prove the third isomorphism theorem, which says that if $H$ and $K$ are normal subgroups of a group $G$, and $K$ is a subgroup of $H$, then there is an isomorphism between $G / H$ and $(G/K)/(H/K)$.
+As with the second isomorphism theorem, we sneak up on this in a series of lemmas.
 
 \ThmsII{%
 =GFT
@@ -997,7 +1057,7 @@ val €refl_def› = get_spec¨ReflÆ;
 val €sym_def› = get_spec¨SymÆ;
 val €equiv_def› = get_spec¨EquivÆ;
 val €equiv_class_def› = get_spec¨EquivClassÆ;
-val €quotient_set_def› = get_spec¨$//Æ;
+val €quotient_set_def› = get_spec¨$/Æ;
 val €respects_def› = get_spec¨$RespectsÆ;
 val €refines_def› = get_spec¨$RefinesÆ;
 val €induced_def› = get_spec¨$õ-Æ;
@@ -1102,7 +1162,7 @@ val €respects_image_contents_thm› = save_pop_thm "respects_image_contents_thm";
 set_goal([], ¨
 	µX $¶∑
 		Equiv(X, $¶)
-	¥	µA∑ A ç X // ($¶) ¥ ∂x∑ x ç X ± A = EquivClass(X, $¶) x
+	¥	µA∑ A ç X / ($¶) ¥ ∂x∑ x ç X ± A = EquivClass(X, $¶) x
 
 Æ);
 a(rewrite_tac[ quotient_set_def]);
@@ -1110,7 +1170,7 @@ val €quotient_map_onto_thm› = save_pop_thm "quotient_map_onto_thm";
 =TEX
 =SML
 set_goal([], ¨
-	µX $¶∑ A ç X // ($¶) ± x ç A ¥ x ç X
+	µX $¶∑ A ç X / ($¶) ± x ç A ¥ x ç X
 Æ);
 a(rewrite_tac[ quotient_set_def, equiv_class_def] THEN REPEAT strip_tac);
 a(all_var_elim_asm_tac1);
@@ -1120,7 +1180,7 @@ val €quotient_ç_thm› = save_pop_thm "quotient_ç_thm";
 set_goal([], ¨
 	µX $¶∑
 		Equiv(X, $¶)
-	¥	A ç X // ($¶) ¥ ∂x∑ x ç X ± x ç A
+	¥	A ç X / ($¶) ¥ ∂x∑ x ç X ± x ç A
 Æ);
 a(rewrite_tac[ quotient_set_def, equiv_class_def, equiv_def, refl_def] THEN REPEAT strip_tac);
 a(all_var_elim_asm_tac1);
@@ -1154,7 +1214,7 @@ set_goal([], ¨
 	µX $¶ f ∑
 		Equiv(X, $¶)
 	±	(f Respects $¶) X
-	¥	µA x∑ A ç X // $¶ ± x ç A ¥ (f õ-) A = f x
+	¥	µA x∑ A ç X / $¶ ± x ç A ¥ (f õ-) A = f x
 Æ);
 a(rewrite_tac[quotient_set_def] THEN REPEAT strip_tac THEN all_var_elim_asm_tac1);
 a(TOP_ASM_T (strip_asm_tac o rewrite_rule[equiv_class_def]));
@@ -1171,7 +1231,7 @@ set_goal([], ¨
 	±	Equiv(Y, S)
 	±	(µy∑ y ç Y ¥ ((Ãx∑f x y) Respects R) X)
 	±	(µx∑ x ç X ¥ ((Ãy∑f x y) Respects S) Y)
-	¥	µA x B y∑ A ç X // R ± x ç A ± B ç Y // S ± y ç B
+	¥	µA x B y∑ A ç X / R ± x ç A ± B ç Y / S ± y ç B
 			¥ ((Ãx∑(f x õ-) B )õ-) A = f x y
 Æ);
 a(conv_tac (ONCE_MAP_C »_conv) THEN REPEAT strip_tac);
@@ -1196,7 +1256,7 @@ set_goal([], ¨
 	µX $¶ f ∑
 		Equiv(X, $¶)
 	±	(f Respects $¶) X
-	¥	∂g∑ µA x∑ A ç X // $¶ ± x ç A ¥ g A = f x
+	¥	∂g∑ µA x∑ A ç X / $¶ ± x ç A ¥ g A = f x
 Æ);
 a(REPEAT strip_tac);
 a(∂_tac¨f õ-Æ THEN REPEAT strip_tac);
@@ -1208,9 +1268,9 @@ set_goal([], ¨
 	µX $¶ f g h∑
 		Equiv(X, $¶)
 	±	(f Respects $¶) X
-	±	(µA x∑ A ç X // $¶ ± x ç A ¥ g A = f x)
-	±	(µA x∑ A ç X // $¶ ± x ç A ¥ h A = f x)
-	¥	(µA∑ A ç X // $¶  ¥ h A = g A)
+	±	(µA x∑ A ç X / $¶ ± x ç A ¥ g A = f x)
+	±	(µA x∑ A ç X / $¶ ± x ç A ¥ h A = f x)
+	¥	(µA∑ A ç X / $¶  ¥ h A = g A)
 Æ);
 a(REPEAT strip_tac);
 a(all_fc_tac[quotient_rep_∂_thm]);
@@ -1224,7 +1284,7 @@ set_goal([], ¨
 	±	Equiv(Y, S)
 	±	(µy∑ y ç Y ¥ ((Ãx∑f x y) Respects R) X)
 	±	(µx∑ x ç X ¥ ((Ãy∑f x y) Respects S) Y)
-	¥	∂g∑ µA x B y∑ A ç X // R ± x ç A ± B ç Y // S ± y ç B
+	¥	∂g∑ µA x B y∑ A ç X / R ± x ç A ± B ç Y / S ± y ç B
 			¥ g A B = f x y
 Æ);
 a(REPEAT strip_tac);
@@ -1239,9 +1299,9 @@ set_goal([], ¨
 	±	Equiv(Y, S)
 	±	(µy∑ y ç Y ¥ ((Ãx∑f x y) Respects R) X)
 	±	(µx∑ x ç X ¥ ((Ãy∑f x y) Respects S) Y)
-	±	(µA x B y∑ A ç X // R ± x ç A ± B ç Y // S ± y ç B ¥ g A B = f x y)
-	±	(µA x B y∑ A ç X // R ± x ç A ± B ç Y // S ± y ç B ¥ h A B = f x y)
-	¥	(µA B y∑ A ç X // R ± B ç Y // S ¥ h A B = g A B)
+	±	(µA x B y∑ A ç X / R ± x ç A ± B ç Y / S ± y ç B ¥ g A B = f x y)
+	±	(µA x B y∑ A ç X / R ± x ç A ± B ç Y / S ± y ç B ¥ h A B = f x y)
+	¥	(µA B y∑ A ç X / R ± B ç Y / S ¥ h A B = g A B)
 Æ);
 a(REPEAT strip_tac);
 a(all_fc_tac[quotient_rep_∂_thm]);
@@ -1268,10 +1328,12 @@ val €homomorphism_def› = get_spec¨HomomorphismÆ;
 val €subgroup_def› = get_spec¨SubgroupÆ;
 val €subgroup_def1› = pc_rule1 "sets_ext1" rewrite_rule[] (get_spec¨SubgroupÆ);
 val €unit_subgroup_def› = get_spec¨UnitSubgroupÆ;
+val €restriction_def› = get_spec¨RestrictionÆ;
 val €normal_subgroup_def› = get_spec¨NormalSubgroupÆ;
 val €kernel_def› = get_spec¨KernelÆ;
 val €right_congruent_def› = get_spec¨RightCongruentÆ;
 val €group_set_ops_def› = get_spec¨SetTimesSetÆ;
+val €group_product_def› = get_spec¨GroupTimesGroupÆ;
 val €quotient_group_def› = get_spec¨QuotientGroupÆ;
 val €image_def› = get_spec¨ImageÆ;
 val €isomorphism_def› = get_spec¨IsomorphismÆ;
@@ -1746,6 +1808,19 @@ a(all_asm_fc_tac[]);
 a(ALL_ASM_FC_T rewrite_tac[]);
 val €comp_homomorphism_thm› = save_pop_thm "comp_homomorphism_thm";
 =TEX
+=SML
+set_goal([], ¨
+	µA : 'a SET; G : 'a GROUP∑
+	G ç Group
+¥	(	A ° G ç Subgroup G
+	§	(µx y∑x ç A ± x ç Car G ± y ç A ± y ç Car G ¥ (x.y)G ç A)
+	±	(µx∑x ç A ± x ç Car G ¥ (x õ~)G ç A)
+	±	One G ç A)
+Æ);
+a(rewrite_tac[restriction_def, group_def, group_ops_def, subgroup_def1] THEN REPEAT strip_tac
+	THEN all_asm_fc_tac[]);
+val €restriction_subgroup_thm› = save_pop_thm "restriction_subgroup_thm";
+=TEX
 Without the custom tactics for groups, the first strip in the next theorem produces 13 subgoals rather than 4.
 =SML
 set_goal([], ¨
@@ -1812,6 +1887,65 @@ a(lemma_tac¨(x õ~)G ç Car GÆ THEN1 all_fc_tac[group_clauses1]);
 a(lemma_tac¨(y õ~)G ç Car GÆ THEN1 all_fc_tac[group_clauses1]);
 a(ALL_FC_T rewrite_tac[group_clauses2, arb_gen group_clauses3]);
 val €right_congruent_equiv_thm› = save_pop_thm "right_congruent_equiv_thm";
+=TEX
+=SML
+set_goal([], ¨
+	µG H K : 'a GROUP ∑
+	G ç Group ± H ç Subgroup G ± K ç Subgroup G
+¥	H.K = (Car H.Car K)G ° G
+Æ);
+a(rewrite_tac[group_product_def, restriction_def] THEN REPEAT µ_tac THEN ¥_tac);
+a(LIST_GET_NTH_ASM_T[1, 2] (MAP_EVERY (strip_asm_tac o rewrite_rule[subgroup_def1])));
+a(ALL_FC_T asm_rewrite_tac[subgroup_clauses]);
+a(asm_rewrite_tac[group_set_ops_def, group_ops_def]);
+a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(∂_tac¨aÆ THEN ∂_tac¨bÆ THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(all_var_elim_asm_tac1 THEN all_asm_fc_tac[] THEN group_ç_tac THEN REPEAT strip_tac);
+(* *** Goal "3" *** *)
+a(∂_tac¨aÆ THEN ∂_tac¨bÆ THEN asm_rewrite_tac[]);
+val €group_product_restriction_thm› = save_pop_thm "group_product_restriction_thm";
+=TEX
+=SML
+set_goal([], ¨
+	µG H K : 'a GROUP ∑
+	G ç Group ± H ç Subgroup G ± K ç NormalSubgroup G
+¥	H.K ç Subgroup G
+Æ);
+a(REPEAT strip_tac THEN POP_ASM_T (strip_asm_tac o rewrite_rule[normal_subgroup_def]));
+a(ALL_FC_T rewrite_tac[group_product_restriction_thm]);
+a(ALL_FC_T1 fc_§_canon rewrite_tac[restriction_subgroup_thm]);
+a(LIST_GET_NTH_ASM_T[2, 3] (MAP_EVERY (strip_asm_tac o rewrite_rule[subgroup_def1])));
+a(rewrite_tac[group_set_ops_def, group_ops_def] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_var_elim_asm_tac1);
+a(∂_tac¨(a.a')HÆ THEN ∂_tac¨(((a' õ~) G . (b . a') G) G.b')KÆ);
+a(REPEAT strip_tac);
+(* *** Goal "1.1" *** *)
+a(group_ç_tac THEN REPEAT strip_tac);
+(* *** Goal "1.2" *** *)
+a(group_ç_tac THEN REPEAT strip_tac);
+a(GET_NTH_ASM_T  15 bc_thm_tac);
+a(REPEAT strip_tac THEN all_asm_fc_tac[]);
+(* *** Goal "1.3" *** *)
+a(asm_rewrite_tac[] THEN group_nf_tac THEN REPEAT strip_tac THEN all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(all_var_elim_asm_tac1);
+a(∂_tac¨(a õ~)HÆ THEN ∂_tac¨(((a õ~) G õ~) G . ((b õ~)K . (a õ~)G) G) GÆ);
+a(REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(group_ç_tac THEN REPEAT strip_tac);
+(* *** Goal "2.2" *** *)
+a(GET_NTH_ASM_T  12 bc_thm_tac);
+a(group_ç_tac THEN REPEAT strip_tac THEN all_asm_fc_tac[]);
+(* *** Goal "2.3" *** *)
+a(asm_rewrite_tac[] THEN group_nf_tac THEN REPEAT strip_tac THEN all_asm_fc_tac[]);
+(* *** Goal "3" *** *)
+a(∂_tac¨One HÆ THEN ∂_tac¨One KÆ);
+a(group_ç_tac THEN REPEAT strip_tac);
+a(ALL_FC_T rewrite_tac[subgroup_clauses] THEN group_nf_tac THEN REPEAT strip_tac);
+val €group_product_subgroup_thm› = save_pop_thm "group_product_subgroup_thm";
 =TEX
 =SML
 set_goal([], ¨
@@ -1920,7 +2054,7 @@ val €quotient_group_inverse_thm› = save_pop_thm "quotient_group_inverse_thm";
 =SML
 set_goal([], ¨
 	µG : 'a GROUP; H : 'a GROUP; C : 'a SET∑
-	G ç Group ± C ç Car (G // H)
+	G ç Group ± C ç Car (G / H)
 ¥	∂x∑x ç Car G ± C = (x.Car H)G
 Æ);
 a(rewrite_tac[quotient_group_def, group_ops_def] THEN taut_tac);
@@ -1930,7 +2064,7 @@ val €quotient_group_rep_∂_thm› = save_pop_thm "quotient_group_rep_∂_thm";
 set_goal([], ¨
 	µG : 'a GROUP; H : 'a GROUP∑
 	G ç Group ± H ç NormalSubgroup G
-¥	G // H ç Group
+¥	G / H ç Group
 Æ);
 a(REPEAT strip_tac THEN rewrite_tac[group_def,
 	quotient_group_def, group_ops_def] THEN REPEAT strip_tac
@@ -1969,7 +2103,7 @@ val €quotient_group_group_thm› = save_pop_thm "quotient_group_group_thm";
 set_goal([], ¨
 	µG : 'a GROUP; H : 'a GROUP∑
 	G ç Group ± H ç NormalSubgroup G
-¥	(Ãx∑(x.Car H)G) ç Homomorphism (G, G // H)
+¥	(Ãx∑(x.Car H)G) ç Homomorphism (G, G / H)
 Æ);
 a(rewrite_tac[homomorphism_def] THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
@@ -1984,7 +2118,7 @@ val €quotient_group_homomorphism_thm› = save_pop_thm "quotient_group_homomorphis
 set_goal([], ¨
 	µG : 'a GROUP; H : 'a GROUP∑
 	G ç Group ± H ç NormalSubgroup G
-¥	Kernel ((Ãx∑(x.Car H)G))  (G, G // H) = H
+¥	Kernel ((Ãx∑(x.Car H)G))  (G, G / H) = H
 Æ);
 a(rewrite_tac[kernel_def, group_eq_group_thm, group_ops_def] THEN REPEAT strip_tac
 	THEN TOP_ASM_T (strip_asm_tac o rewrite_rule[normal_subgroup_def]));
@@ -2097,7 +2231,7 @@ val €homomorphism_respects_kernel_thm› =
 set_goal([], ¨
 	µG : 'a GROUP; H : 'a GROUP∑
 	G ç Group ± H ç NormalSubgroup G
-¥	Car (G//H) = Car G // RightCongruent H G
+¥	Car (G/H) = Car G / RightCongruent H G
 Æ);
 a(REPEAT strip_tac THEN rewrite_tac[quotient_group_def, group_ops_def]);
 a(rewrite_tac[quotient_set_def]);
@@ -2131,7 +2265,7 @@ set_goal([], ¨
 	K ç NormalSubgroup G ± K ç Subgroup (Kernel f (G, H))
 ¥	∂g∑
 		(µx∑x  ç Car G ¥ g ((x.Car K)G) = f  x)
-	±	g ç Homomorphism((G // K), Image f (Car G) H)
+	±	g ç Homomorphism((G / K), Image f (Car G) H)
 Æ);
 a(REPEAT strip_tac);
 a(lemma_tac ¨∂g∑µx∑x  ç Car G ¥ g ((x.Car K)G) = f  xÆ);
@@ -2228,7 +2362,7 @@ set_goal([], ¨
 	G ç Group ± H ç Group ± f ç Homomorphism(G, H)
 ¥	∂g∑
 		(µx∑x  ç Car G ¥ g ((x.Car(Kernel f (G, H))) G) = f  x)
-	±	g ç Isomorphism((G // Kernel f (G, H)), Image f (Car G) H)
+	±	g ç Isomorphism((G / Kernel f (G, H)), Image f (Car G) H)
 Æ);
 a(REPEAT strip_tac);
 a(all_fc_tac[kernel_normal_subgroup_thm]);
@@ -2259,13 +2393,206 @@ val €first_isomorphism_thm› = save_pop_thm "first_isomorphism_thm";
 =SML
 set_goal([], ¨
 	µG H K : 'a GROUP∑
+	G ç Group ± H ç Subgroup G ± K ç NormalSubgroup G
+¥	K ç NormalSubgroup (H.K) 
+Æ);
+a(REPEAT strip_tac THEN bc_thm_tac subgroup_normal_subgroup_thm);
+a(GET_NTH_ASM_T 1 (strip_asm_tac o rewrite_rule[normal_subgroup_def]));
+a(GET_NTH_ASM_T 2 (strip_asm_tac o rewrite_rule[subgroup_def1]));
+a(GET_NTH_ASM_T 8 (strip_asm_tac o rewrite_rule[subgroup_def1]));
+a(∂_tac ¨GÆ  THEN asm_rewrite_tac[]);
+a(REPEAT strip_tac THEN1 all_fc_tac[group_product_subgroup_thm]);
+a(rewrite_tac[subgroup_def, group_product_def,
+	group_set_ops_def, group_ops_def] THEN REPEAT strip_tac
+	THEN_TRY SOLVED_T (ALL_FC_T rewrite_tac[subgroup_clauses]));
+a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac);
+a(∂_tac¨One HÆ THEN ∂_tac¨xÆ);
+a(group_ç_tac THEN REPEAT strip_tac);
+a(ALL_FC_T rewrite_tac[subgroup_clauses] THEN group_nf_tac THEN REPEAT strip_tac);
+a(all_asm_fc_tac[]);
+val €second_isomorphism_lemma1› = save_pop_thm "second_isomorphism_lemma1";
+=TEX
+=SML
+set_goal([], ¨
+	µG H K : 'a GROUP∑
+	G ç Group ± H ç Subgroup G ± K ç NormalSubgroup G
+¥	H ç Subgroup (H.K) 
+Æ);
+a(REPEAT strip_tac THEN rewrite_tac[subgroup_def, group_product_def,
+	group_set_ops_def, group_ops_def] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac);
+a(∂_tac¨xÆ THEN ∂_tac¨One HÆ);
+a(GET_NTH_ASM_T 3 (strip_asm_tac o rewrite_rule[subgroup_def1]));
+a(group_nf_tac THEN asm_rewrite_tac[]);
+a(ALL_FC_T asm_rewrite_tac[subgroup_clauses]);
+a(DROP_NTH_ASM_T 7 discard_tac);
+a(GET_NTH_ASM_T 6 (strip_asm_tac o rewrite_rule[normal_subgroup_def]));
+a(ALL_FC_T asm_rewrite_tac[conv_rule (ONCE_MAP_C eq_sym_conv) subgroup_clauses]);
+a(GET_NTH_ASM_T 2 (strip_asm_tac o rewrite_rule[subgroup_def1]));
+a(group_ç_tac THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(GET_NTH_ASM_T 2 (ante_tac o rewrite_rule[subgroup_def1]) THEN taut_tac);
+val €second_isomorphism_lemma2› = save_pop_thm "second_isomorphism_lemma2";
+=TEX
+=SML
+set_goal([], ¨
+	µG H K : 'a GROUP∑
+	G ç Group ± H ç Subgroup G ± K ç NormalSubgroup G
+¥	Kernel (Ãx∑(x.Car K)G) (H, ((H.K) : 'a GROUP)/K) = Car K ° H
+Æ);
+a(REPEAT strip_tac THEN rewrite_tac[kernel_def, group_product_def,
+	group_set_ops_def, group_ops_def, restriction_def,
+	quotient_group_def] THEN REPEAT strip_tac);
+a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(LEMMA_T ¨x ç {z|∂ b∑ b ç Car K ± z = (x . b) G}Æ ante_tac);
+(* *** Goal "1.1" *** *)
+a(REPEAT strip_tac);
+a(GET_NTH_ASM_T 4 (fn th => all_fc_tac[rewrite_rule[subgroup_def1]th]));
+a(∂_tac¨One GÆ THEN group_nf_tac THEN REPEAT strip_tac);
+a(GET_NTH_ASM_T 4 (strip_asm_tac o rewrite_rule[normal_subgroup_def]));
+a(ALL_FC_T asm_rewrite_tac[conv_rule (ONCE_MAP_C eq_sym_conv) subgroup_clauses]);
+a(GET_NTH_ASM_T 2 (strip_asm_tac o rewrite_rule[subgroup_def1]));
+a(group_ç_tac THEN REPEAT strip_tac);
+(* *** Goal "1.2" *** *)
+a(POP_ASM_T pure_rewrite_thm_tac THEN rewrite_tac[] THEN REPEAT strip_tac);
+a(all_var_elim_asm_tac1 THEN ALL_FC_T rewrite_tac[subgroup_clauses]);
+a(group_nf_tac THEN REPEAT strip_tac);
+a(GET_NTH_ASM_T 3 (strip_asm_tac o rewrite_rule[normal_subgroup_def]));
+a(GET_NTH_ASM_T 2 (strip_asm_tac o rewrite_rule[subgroup_def1]));
+a(all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(all_var_elim_asm_tac1);
+a(∂_tac¨(x.b)KÆ);
+a(GET_NTH_ASM_T 4 (strip_asm_tac o rewrite_rule[normal_subgroup_def]));
+a(GET_NTH_ASM_T 2 (strip_asm_tac o rewrite_rule[subgroup_def1]));
+a(REPEAT strip_tac THEN1 (group_ç_tac THEN REPEAT strip_tac));
+a(GET_NTH_ASM_T 11 (strip_asm_tac o rewrite_rule[subgroup_def1]));
+a(asm_rewrite_tac[] THEN ALL_FC_T rewrite_tac[subgroup_clauses]);
+a(all_asm_fc_tac[] THEN group_nf_tac THEN REPEAT strip_tac);
+(* *** Goal "2.2" *** *)
+a(all_var_elim_asm_tac1);
+a(∂_tac¨((x õ~)K.b)KÆ);
+a(GET_NTH_ASM_T 4 (strip_asm_tac o rewrite_rule[normal_subgroup_def]));
+a(GET_NTH_ASM_T 2 (strip_asm_tac o rewrite_rule[subgroup_def1]));
+a(REPEAT strip_tac THEN1 (group_ç_tac THEN REPEAT strip_tac));
+a(GET_NTH_ASM_T 11 (strip_asm_tac o rewrite_rule[subgroup_def1]));
+a(asm_rewrite_tac[] THEN ALL_FC_T rewrite_tac[subgroup_clauses]);
+a(all_asm_fc_tac[] THEN group_nf_tac THEN REPEAT strip_tac);
+val €second_isomorphism_lemma3› = save_pop_thm "second_isomorphism_lemma3";
+=TEX
+=SML
+set_goal([], ¨
+	µG H K : 'a GROUP∑
+	G ç Group ± H ç Subgroup G ± K ç NormalSubgroup G
+¥	(Ãx∑(x.Car K)G) ç Homomorphism(H, ((H.K) : 'a GROUP)/K)
+Æ);
+a(REPEAT strip_tac THEN all_fc_tac[
+	group_product_subgroup_thm,
+	second_isomorphism_lemma1,
+	second_isomorphism_lemma2]);
+a(GET_NTH_ASM_T 3 (strip_asm_tac o rewrite_rule[subgroup_def1]));
+a(all_fc_tac[µ_elim¨(H.K) : 'a GROUPÆquotient_group_homomorphism_thm]);
+a(POP_ASM_T ante_tac);
+a(LEMMA_T ¨(Ã x:'a∑ (x . Car K) ((H . K):'a GROUP)) = (Ã x∑ (x . Car K) G)Æ
+	rewrite_thm_tac THEN1
+		(rewrite_tac[group_product_def, group_ops_def, group_set_ops_def] THEN
+			GET_NTH_ASM_T 9 (rewrite_thm_tac o rewrite_rule[subgroup_def1])));
+a( strip_tac THEN
+	LEMMA_T ¨(Ã x:'a∑ (x . Car K) G)  = (Ãx:'a∑ (Ã x:'a∑ (x . Car K) G) ((Ãx:'a∑x) x))Æ
+		once_rewrite_thm_tac THEN1 rewrite_tac[]);
+a(bc_thm_tac comp_homomorphism_thm);
+a(∂_tac¨(H.K) : 'a GROUPÆ);
+a(GET_NTH_ASM_T 10 (asm_rewrite_thm_tac o rewrite_rule[subgroup_def1]));
+a(ALL_FC_T rewrite_tac[arb_gen quotient_group_group_thm, subgroup_homomorphism_thm]);
+val €second_isomorphism_lemma4› = save_pop_thm "second_isomorphism_lemma4";
+=TEX
+=SML
+set_goal([], ¨
+	µG H K : 'a GROUP∑
+	G ç Group ± H ç Subgroup G ± K ç NormalSubgroup G
+¥	∂g∑
+	(µx∑x ç Car H ¥ g ((x. (Car K ° Car H))G) = (x. Car K) G)
+±	g ç Isomorphism(H / (Car K ° H), ((H.K) : 'a GROUP)/K)
+Æ);
+a(REPEAT strip_tac THEN all_fc_tac[
+	group_product_subgroup_thm,
+	second_isomorphism_lemma1,
+	second_isomorphism_lemma2,
+	second_isomorphism_lemma3,
+	second_isomorphism_lemma4]);
+a(lemma_tac ¨H ç GroupÆ THEN1
+	GET_NTH_ASM_T 7 (strip_asm_tac o rewrite_rule[subgroup_def1]));
+a(lemma_tac ¨((H.K):'a GROUP) ç GroupÆ THEN1
+	GET_NTH_ASM_T 6 (strip_asm_tac o rewrite_rule[subgroup_def1]));
+a(lemma_tac ¨((H.K):'a GROUP) / K ç GroupÆ THEN1
+	all_fc_tac[arb_gen quotient_group_group_thm]);
+a(all_fc_tac[arb_gen first_isomorphism_thm]);
+a(POP_ASM_T ante_tac THEN POP_ASM_T ante_tac THEN asm_rewrite_tac[]);
+a(LEMMA_T ¨Car (Car K ° H) = Car K ° Car HÆ rewrite_thm_tac
+	THEN1 (rewrite_tac[restriction_def, group_ops_def]));
+a(LEMMA_T ¨µ x:'a; A: 'a SET∑ (x . A) H =(x. A)GÆ
+	rewrite_thm_tac THEN1
+		(rewrite_tac[group_ops_def, group_set_ops_def] THEN
+			GET_NTH_ASM_T 10 (rewrite_thm_tac o
+				rewrite_rule[subgroup_def1])));
+a(REPEAT strip_tac THEN ∂_tac¨gÆ);
+a(asm_rewrite_tac[]);
+a(POP_ASM_T ante_tac THEN LEMMA_T ¨
+		Image (Ã x:'a∑ (x . Car K) G) (Car H) (((H . K) : 'a GROUP) / K)
+	= 	((H.K) : 'a GROUP)/KÆ
+	rewrite_thm_tac);
+a(all_fc_tac[image_subgroup_thm]);
+a(lemma_tac¨((H.K) : 'a GROUP)/K ç Subgroup (((H.K) : 'a GROUP)/K)Æ
+	THEN1 all_fc_tac[trivial_subgroups_thm]);
+a(ALL_FC_T1 fc_§_canon rewrite_tac[subgroup_eq_thm]);
+a(rewrite_tac[image_def, group_ops_def, group_product_def, group_set_ops_def,
+	quotient_group_def]);
+a(GET_NTH_ASM_T 13 (rewrite_thm_tac o rewrite_rule[subgroup_def1]));
+a(lemma_tac ¨K ç Subgroup GÆ THEN1
+	GET_NTH_ASM_T 12 (strip_asm_tac o rewrite_rule[normal_subgroup_def]));
+a(lemma_tac ¨K ç GroupÆ THEN1
+	GET_NTH_ASM_T 1 (strip_asm_tac o rewrite_rule[subgroup_def1]));
+a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac THEN all_var_elim_asm_tac1);
+(* *** Goal "1" *** *)
+a(∂_tac¨x'Æ THEN REPEAT strip_tac);
+a(∂_tac¨x'Æ THEN ∂_tac¨One KÆ THEN group_ç_tac THEN REPEAT strip_tac);
+a(ALL_FC_T rewrite_tac[subgroup_clauses]);
+a(group_nf_tac THEN REPEAT strip_tac);
+a(GET_NTH_ASM_T 16 (strip_asm_tac o rewrite_rule[subgroup_def1]));
+a(all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(∂_tac ¨aÆ THEN  REPEAT strip_tac);
+a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac THEN all_var_elim_asm_tac1);
+(* *** Goal "2.1" *** *)
+a(∂_tac ¨(b.b')KÆ THEN group_ç_tac THEN REPEAT strip_tac);
+a(GET_NTH_ASM_T 5 (rewrite_thm_tac o rewrite_rule[subgroup_def]));
+a(GET_NTH_ASM_T 18 (strip_asm_tac o rewrite_rule[subgroup_def1]));
+a(GET_NTH_ASM_T 8 (strip_asm_tac o rewrite_rule[subgroup_def1]));
+a(all_asm_fc_tac[]);
+a(group_nf_tac THEN REPEAT strip_tac);
+(* *** Goal "2.2" *** *)
+a(∂_tac ¨((b õ~)K.b')KÆ THEN group_ç_tac THEN REPEAT strip_tac);
+a(GET_NTH_ASM_T 5 (rewrite_thm_tac o rewrite_rule[subgroup_def]));
+a(GET_NTH_ASM_T 18 (strip_asm_tac o rewrite_rule[subgroup_def1]));
+a(GET_NTH_ASM_T 8 (strip_asm_tac o rewrite_rule[subgroup_def1]));
+a(all_asm_fc_tac[]);
+a(group_nf_tac THEN REPEAT strip_tac);
+val €second_isomorphism_thm› = save_pop_thm "second_isomorphism_thm";
+=TEX
+=SML
+set_goal([], ¨
+	µG H K : 'a GROUP∑
 	G ç Group ± H ç NormalSubgroup G ± K ç NormalSubgroup G ± K ç Subgroup H
 ¥	∂g∑
 		(µx∑x  ç Car G ¥ g ((x.Car K)G) = (x.Car H)G)
-	±	g ç Homomorphism(G // K, G // H)
+	±	g ç Homomorphism(G / K, G / H)
 Æ);
 a(REPEAT strip_tac);
-a(LEMMA_T ¨(G//K, G // H) = (G//K, Image ((Ãx∑(x.Car H)G)) (Car G) (G//H))Æ rewrite_thm_tac);
+a(LEMMA_T ¨(G/K, G / H) = (G/K, Image ((Ãx∑(x.Car H)G)) (Car G) (G/H))Æ rewrite_thm_tac);
 (* *** Goal "1" *** *)
 a(rewrite_tac[group_eq_group_thm, image_def, group_ops_def]);
 a(rewrite_tac[quotient_group_def, group_ops_def]);
@@ -2284,8 +2611,8 @@ set_goal([], ¨
 	G ç Group ± H ç NormalSubgroup G ± K ç NormalSubgroup G ± K ç Subgroup H
 ¥	∂g∑
 		(µx∑x  ç Car G ¥ g ((x.Car K)G) = (x.Car H)G)
-	±	g ç Homomorphism(G // K, G // H)
-	±	Car(Kernel g (G // K, G //H)) = Car(H // K)
+	±	g ç Homomorphism(G / K, G / H)
+	±	Car(Kernel g (G / K, G /H)) = Car(H / K)
 Æ);
 a(REPEAT strip_tac);
 a(all_fc_tac [third_isomorphism_lemma1]);
@@ -2342,7 +2669,7 @@ val €third_isomorphism_lemma3› = save_pop_thm "third_isomorphism_lemma3";
 set_goal([], ¨
 	µG H K : 'a GROUP∑
 	G ç Group ± H ç NormalSubgroup G ± K ç NormalSubgroup G ± K ç Subgroup H
-¥	(H // K) ç Subgroup (G // K)
+¥	(H / K) ç Subgroup (G / K)
 Æ);
 a(REPEAT strip_tac);
 a(rewrite_tac[subgroup_def1]);
@@ -2363,9 +2690,9 @@ set_goal([], ¨
 	G ç Group ± H ç NormalSubgroup G ± K ç NormalSubgroup G ± K ç Subgroup H
 ¥	∂g∑
 		(µx∑x  ç Car G ¥ g ((x.Car K)G) = (x.Car H)G)
-	±	g ç Homomorphism(G // K, G // H)
-	±	Kernel g (G // K, G // H) = H // K
-	±	Image g (Car (G // K)) (G // H) = G // H
+	±	g ç Homomorphism(G / K, G / H)
+	±	Kernel g (G / K, G / H) = H / K
+	±	Image g (Car (G / K)) (G / H) = G / H
 Æ);
 a(REPEAT strip_tac);
 a(all_fc_tac [third_isomorphism_lemma2, third_isomorphism_lemma4]);
@@ -2373,7 +2700,7 @@ a(all_fc_tac[arb_gen quotient_group_group_thm]);
 a(∂_tac¨gÆ THEN asm_rewrite_tac[]);
 a(all_fc_tac[kernel_normal_subgroup_thm]);
 a(TOP_ASM_T (strip_asm_tac o rewrite_rule[normal_subgroup_def]));
-a(lemma_tac¨G // H  ç Subgroup (G//H)Æ THEN1 all_fc_tac[trivial_subgroups_thm]);
+a(lemma_tac¨G / H  ç Subgroup (G/H)Æ THEN1 all_fc_tac[trivial_subgroups_thm]);
 a(all_fc_tac[image_subgroup_thm]);
 a(ALL_FC_T1 fc_§_canon asm_rewrite_tac[subgroup_eq_thm]);
 a(rewrite_tac[image_def, quotient_group_def, group_ops_def] THEN
@@ -2391,8 +2718,8 @@ set_goal([], ¨
 	µG H K : 'a GROUP∑
 	G ç Group ± H ç NormalSubgroup G ± K ç NormalSubgroup G ± K ç Subgroup H
 ¥	∂g∑
-		(µx∑x  ç Car G ¥ g (((x.Car K)G.Car (H//K)) (G//K)) = (x. Car H)G)
-	±	g ç Isomorphism((G // K) // (H // K), G // H)
+		(µx∑x  ç Car G ¥ g (((x.Car K)G.Car (H/K)) (G/K)) = (x. Car H)G)
+	±	g ç Isomorphism((G / K) / (H / K), G / H)
 Æ);
 a(REPEAT strip_tac);
 a(all_fc_tac[third_isomorphism_lemma5]);
@@ -2403,7 +2730,7 @@ a(all_fc_tac[arb_gen quotient_group_group_thm]);
 a(all_fc_tac[first_isomorphism_thm]);
 a(REPEAT_N 2 (POP_ASM_T ante_tac) THEN asm_rewrite_tac[] THEN REPEAT strip_tac);
 a(∂_tac¨g'Æ THEN REPEAT strip_tac);
-a(lemma_tac¨(x.Car K)G ç Car (G // K)Æ THEN1 rewrite_tac[quotient_group_def, group_ops_def]);
+a(lemma_tac¨(x.Car K)G ç Car (G / K)Æ THEN1 rewrite_tac[quotient_group_def, group_ops_def]);
 (* *** Goal "1" *** *)
 a(∂_tac¨xÆ THEN  REPEAT strip_tac);
 (* *** Goal "2" *** *)
