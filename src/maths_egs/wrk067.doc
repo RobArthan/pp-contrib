@@ -52,7 +52,7 @@ doctex wrk067.doc  wrk067[1234].th.doc ; docdvi wrk067
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2004/04/11 14:42:01 $%
+\date{\FormatDate{$Date: 2004/05/04 16:51:15 $%
 }}
 \begin{document}
 \begin{titlepage}
@@ -93,7 +93,7 @@ give a groupoid modulo homotopy equivalence.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK067; issue $Revision: 1.28 $%
+Reference: LEMMA1/HOL/WRK067; issue $Revision: 1.29 $%
 
 
 \end{centering}
@@ -405,21 +405,30 @@ set_merge_pcs["basic_hol1", "'sets_alg", "'˙", "'Ø"];
 %%%%
 %%%%
 
-\section{HOMOTOPY THEORY --- DEFINITIONS}
+\section{PATHS AND HOMOTOPY--- DEFINITIONS}
 =SML
 force_delete_theory"homotopy" handle Fail _ => ();
 open_theory"topology_Ø";
 new_theory"homotopy";
 set_merge_pcs["basic_hol1", "'sets_alg", "'˙", "'Ø"];
 =TEX
-\subsection{Path Connectedness}
+We define the path space of a space in the usual way.
+For convenience, our paths are continuous functions on the whole real line.
+For the time being we do not define a topology on the path space (this was historically a slightly thorny topic in the literature and the ``modern'' solution via $k$-ification seems out of place at this stage).
 %%%%
 %%%%
-Continuing along the way towards the elements of algebraic topology, we now consider
-path connectedness. Here is the definition of a path connected set. For technical convenience,
-we require a path to be a continuous function on the whole real line, although the behaviour of
-the path outside the closed interval $[0, 1]$ is irrelevant. This involves no
-loss of generality.
+
+=SML
+πHOLCONST
+‹ €PathSpace› : 'a SET SET ≠ (Ø ≠ 'a) SET
+˜¸¸¸¸¸¸
+‹ µ‘∑	PathSpace ‘ =
+‹	{	f
+‹	|	f ç (OpenâR, ‘) Continuous}
+∞
+=TEX
+We now consider
+path connectedness. Here is the definition of a path connected set.
 %%%%
 %%%%
 
@@ -432,13 +441,25 @@ declare_postfix(300, "PathConnected");
 ‹	{	A
 ‹	|	A Ä Space ‘
 ‹	±	µx y∑ x ç A ± y ç A 
-‹	¥	∂f∑ 	f ç (OpenâR, ‘) Continuous
+‹	¥	∂f∑ 	f ç PathSpace ‘
 ‹		±	(µ t∑ f t ç A)
 ‹		±	f (ÓØ 0) = x
 ‹		±	f (ÓØ 1) = y}
 ∞
+=SML
+πHOLCONST
+‹ €LocallyPathConnected› : 'a SET SET SET
+˜¸¸¸¸¸¸
+‹ µ‘∑	‘ ç LocallyPathConnected
+‹ §	µx A∑x ç A ± A ç ‘ ¥ ∂B∑B ç ‘ ± x ç B ± B Ä A ± B ç ‘ PathConnected
+∞
 =TEX
-\subsection{Homotopy}
+=TEX
+%%%%
+%%%%
+%%%%
+%%%%
+=TEX
 Continuing along the way towards the elements of algebraic topology, we now consider
 the notion of a homotopy. Here and elsewhere it is convenient to model functions
 continuous on the unit interval by functions continuous on the whole line.
@@ -473,21 +494,6 @@ declare_postfix(300, "HomotopyClass");
 ∞
 =TEX
 \subsection{The Path Groupoid}
-=TEX
-We define the path space of a space in the usual way.
-For convenience, our paths are continuous functions on the whole real line.
-For the time being we do not define a topology on the path space (this was historically a slightly thorny topic in the literature and the ``modern'' solution via $k$-ification seems out of place at this stage).
-%%%%
-%%%%
-
-=SML
-πHOLCONST
-‹ €PathSpace› : 'a SET SET ≠ (Ø ≠ 'a) SET
-˜¸¸¸¸¸¸
-‹ µ‘∑	PathSpace ‘ =
-‹	{	f
-‹	|	f ç (OpenâR, ‘) Continuous}
-∞
 =TEX
 Now we define addition of paths:
 =SML
@@ -2342,6 +2348,99 @@ a(rewrite_tac[metric_def] THEN REPEAT strip_tac);
 a(lemma_tac¨D(x, x) = ÓØ 0Æ THEN asm_rewrite_tac[]);
 val €open_ball_neighbourhood_thm› = save_pop_thm "open_ball_neighbourhood_thm";
 =TEX
+
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µD1 D2∑
+	D1 ç Metric ± D2 ç Metric
+¥	(Ã((x1, x2), (y1, y2))∑ D1(x1, y1) + D2(x2, y2)) ç Metric
+Æ);
+a(rewrite_tac[metric_def] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(bc_thm_tac (pc_rule1 "Ø_lin_arith" prove_rule[]
+	¨µx y∑ÓØ 0 º x ± ÓØ 0 º y ¥ ÓØ 0 º x + yÆ) THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(lemma_tac ¨ÓØ 0 º D1(Fst x, Fst y) ± ÓØ 0 º D2(Snd x, Snd y)Æ
+	THEN1 asm_rewrite_tac[]);
+a(lemma_tac ¨D1(Fst x, Fst y) = ÓØ 0 ± D2(Snd x, Snd y) = ÓØ 0Æ
+	THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(all_asm_fc_tac[]);
+a(pure_once_rewrite_tac[prove_rule[]¨µp∑p = (Fst p, Snd p)Æ]);
+a(pure_asm_rewrite_tac[] THEN rewrite_tac[]);
+(* *** Goal "3" *** *)
+a(LEMMA_T¨x = y ± (µx∑ D1(x, x) = ÓØ 0) ± (µy∑D2(y, y) = ÓØ 0)Æ rewrite_thm_tac
+	THEN LIST_GET_NTH_ASM_T [1, 4, 8] rewrite_tac);
+(* *** Goal "4" *** *)
+a(GET_NTH_ASM_T 6 (rewrite_thm_tac o µ_elim¨Fst yÆ));
+a(GET_NTH_ASM_T 2 (rewrite_thm_tac o µ_elim¨Snd yÆ));
+(* *** Goal "5" *** *)
+a(bc_thm_tac (pc_rule1 "Ø_lin_arith" prove_rule[]¨µa b c d e f:Ø∑a º c + e ± b º d + f ¥ a + b º (c + d) + e + fÆ));
+a(asm_rewrite_tac[]);
+val €product_metric_thm› = save_pop_thm "product_metric_thm";
+=TEX
+
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µD1 D2∑
+	D1 ç Metric ± D2 ç Metric
+¥	MetricTopology (Ã((x1, x2), (y1, y2))∑ D1(x1, y1) + D2(x2, y2))  =
+	(MetricTopology D1 ∏âT MetricTopology D2)
+Æ);
+a(rewrite_tac[metric_def, metric_topology_def, product_topology_def] THEN
+	PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(LIST_DROP_NTH_ASM_T [2] all_fc_tac);
+a(lemma_tac¨ÓØ 0 < (1/2)*eÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(∂_tac¨{x1 | D1(x', x1)  < (1/2)*e}Æ THEN ∂_tac¨{x2 | D2(y, x2)  < (1/2)*e}Æ THEN REPEAT strip_tac);
+(* *** Goal "1.1" *** *)
+a(∂_tac¨(1/2)*e - D1(x' , x'')Æ THEN REPEAT strip_tac THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(lemma_tac¨D1(x', y') º D1(x', x'') + D1(x'', y')Æ THEN1 GET_NTH_ASM_T 11 rewrite_thm_tac);
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "1.2" *** *)
+a(∂_tac¨(1/2)*e - D2(y , x'')Æ THEN REPEAT strip_tac THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(lemma_tac¨D2(y, y') º D2(y, x'') + D2(x'', y')Æ THEN1 GET_NTH_ASM_T 7 rewrite_thm_tac);
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "1.3" *** *)
+a(LEMMA_T ¨µx∑ D1(x, x) = ÓØ 0Æ asm_rewrite_thm_tac
+	THEN1 LIST_GET_NTH_ASM_T [1, 11] rewrite_tac);
+(* *** Goal "1.4" *** *)
+a(LEMMA_T ¨µx∑ D2(x, x) = ÓØ 0Æ asm_rewrite_thm_tac
+	THEN LIST_GET_NTH_ASM_T [1, 7] rewrite_tac);
+(* *** Goal "1.5" *** *)
+a(rewrite_tac[∏_def] THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+a(DROP_NTH_ASM_T 4 (bc_thm_tac o rewrite_rule[]));
+a(rewrite_tac[] THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(DROP_NTH_ASM_T 2 (ante_tac o list_µ_elim[¨Fst x'Æ, ¨Snd x'Æ]));
+a(rewrite_tac[] THEN REPEAT strip_tac);
+a(LIST_DROP_NTH_ASM_T [4, 5] all_fc_tac);
+a(cases_tac¨e < e'Æ);
+(* *** Goal "2.1" *** *)
+a(∂_tac¨eÆ THEN REPEAT strip_tac);
+a(bc_thm_tac (pc_rule1 "sets_ext1" prove_rule[]¨µa x y∑ a Ä x ± y ç a ¥ y ç xÆ));
+a(∂_tac¨A ∏ BÆ THEN REPEAT strip_tac);
+a(lemma_tac ¨ÓØ 0 º D1 (Fst x', Fst y) ± ÓØ 0 º  D2 (Snd x', Snd y)Æ
+	THEN1 LIST_GET_NTH_ASM_T [14, 18] rewrite_tac);
+a(lemma_tac ¨D1 (Fst x', Fst y) < e' ± D2 (Snd x', Snd y) < eÆ
+	THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(LIST_DROP_NTH_ASM_T[7, 9] all_fc_tac);
+a(rewrite_tac[∏_def] THEN REPEAT strip_tac);
+(* *** Goal "2.2" *** *)
+a(∂_tac¨e'Æ THEN REPEAT strip_tac);
+a(bc_thm_tac (pc_rule1 "sets_ext1" prove_rule[]¨µa x y∑ a Ä x ± y ç a ¥ y ç xÆ));
+a(∂_tac¨A ∏ BÆ THEN REPEAT strip_tac);
+a(lemma_tac ¨ÓØ 0 º D1 (Fst x', Fst y) ± ÓØ 0 º  D2 (Snd x', Snd y)Æ
+	THEN1 LIST_GET_NTH_ASM_T [14, 18] rewrite_tac);
+a(lemma_tac ¨D1 (Fst x', Fst y) < e' ± D2 (Snd x', Snd y) < eÆ
+	THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(LIST_DROP_NTH_ASM_T[7, 9] all_fc_tac);
+a(rewrite_tac[∏_def] THEN REPEAT strip_tac);
+val €product_metric_topology_thm› = save_pop_thm "product_metric_topology_thm";
+=TEX
 %%%%
 %%%%
 
@@ -2920,100 +3019,6 @@ set_goal([], ¨
 a(PC_T1 "sets_ext1" rewrite_tac[metric_topology_def, open_Ø_delta_thm, d_Ø_def] THEN REPEAT strip_tac);
 val €d_Ø_open_Ø_thm› = save_pop_thm "d_Ø_open_Ø_thm";
 =TEX
-
-%%%%
-%%%%
-
-=SML
-set_goal([], ¨µD1 D2∑
-	D1 ç Metric ± D2 ç Metric
-¥	(Ã((x1, x2), (y1, y2))∑ D1(x1, y1) + D2(x2, y2)) ç Metric
-Æ);
-a(rewrite_tac[metric_def, d_Ø_2_def1] THEN REPEAT strip_tac);
-(* *** Goal "1" *** *)
-a(bc_thm_tac (pc_rule1 "Ø_lin_arith" prove_rule[]
-	¨µx y∑ÓØ 0 º x ± ÓØ 0 º y ¥ ÓØ 0 º x + yÆ) THEN asm_rewrite_tac[]);
-(* *** Goal "2" *** *)
-a(lemma_tac ¨ÓØ 0 º D1(Fst x, Fst y) ± ÓØ 0 º D2(Snd x, Snd y)Æ
-	THEN1 asm_rewrite_tac[]);
-a(lemma_tac ¨D1(Fst x, Fst y) = ÓØ 0 ± D2(Snd x, Snd y) = ÓØ 0Æ
-	THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-a(all_asm_fc_tac[]);
-a(pure_once_rewrite_tac[prove_rule[]¨µp∑p = (Fst p, Snd p)Æ]);
-a(pure_asm_rewrite_tac[] THEN rewrite_tac[]);
-(* *** Goal "3" *** *)
-a(LEMMA_T¨x = y ± (µx∑ D1(x, x) = ÓØ 0) ± (µy∑D2(y, y) = ÓØ 0)Æ rewrite_thm_tac
-	THEN LIST_GET_NTH_ASM_T [1, 4, 8] rewrite_tac);
-(* *** Goal "4" *** *)
-a(GET_NTH_ASM_T 6 (rewrite_thm_tac o µ_elim¨Fst yÆ));
-a(GET_NTH_ASM_T 2 (rewrite_thm_tac o µ_elim¨Snd yÆ));
-(* *** Goal "5" *** *)
-a(bc_thm_tac (pc_rule1 "Ø_lin_arith" prove_rule[]¨µa b c d e f:Ø∑a º c + e ± b º d + f ¥ a + b º (c + d) + e + fÆ));
-a(asm_rewrite_tac[]);
-val €product_metric_thm› = save_pop_thm "product_metric_thm";
-=TEX
-
-%%%%
-%%%%
-
-=SML
-set_goal([], ¨µD1 D2∑
-	D1 ç Metric ± D2 ç Metric
-¥	MetricTopology (Ã((x1, x2), (y1, y2))∑ D1(x1, y1) + D2(x2, y2))  =
-	(MetricTopology D1 ∏âT MetricTopology D2)
-Æ);
-a(rewrite_tac[metric_def, metric_topology_def, product_topology_def] THEN
-	PC_T1 "sets_ext1" REPEAT strip_tac);
-(* *** Goal "1" *** *)
-a(LIST_DROP_NTH_ASM_T [2] all_fc_tac);
-a(lemma_tac¨ÓØ 0 < (1/2)*eÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-a(∂_tac¨{x1 | D1(x', x1)  < (1/2)*e}Æ THEN ∂_tac¨{x2 | D2(y, x2)  < (1/2)*e}Æ THEN REPEAT strip_tac);
-(* *** Goal "1.1" *** *)
-a(∂_tac¨(1/2)*e - D1(x' , x'')Æ THEN REPEAT strip_tac THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-a(lemma_tac¨D1(x', y') º D1(x', x'') + D1(x'', y')Æ THEN1 GET_NTH_ASM_T 11 rewrite_thm_tac);
-a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-(* *** Goal "1.2" *** *)
-a(∂_tac¨(1/2)*e - D2(y , x'')Æ THEN REPEAT strip_tac THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-a(lemma_tac¨D2(y, y') º D2(y, x'') + D2(x'', y')Æ THEN1 GET_NTH_ASM_T 7 rewrite_thm_tac);
-a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-(* *** Goal "1.3" *** *)
-a(LEMMA_T ¨µx∑ D1(x, x) = ÓØ 0Æ asm_rewrite_thm_tac
-	THEN1 LIST_GET_NTH_ASM_T [1, 11] rewrite_tac);
-(* *** Goal "1.4" *** *)
-a(LEMMA_T ¨µx∑ D2(x, x) = ÓØ 0Æ asm_rewrite_thm_tac
-	THEN LIST_GET_NTH_ASM_T [1, 7] rewrite_tac);
-(* *** Goal "1.5" *** *)
-a(rewrite_tac[∏_def] THEN PC_T1 "sets_ext1" REPEAT strip_tac);
-a(DROP_NTH_ASM_T 4 (bc_thm_tac o rewrite_rule[]));
-a(rewrite_tac[] THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-(* *** Goal "2" *** *)
-a(DROP_NTH_ASM_T 2 (ante_tac o list_µ_elim[¨Fst x'Æ, ¨Snd x'Æ]));
-a(rewrite_tac[] THEN REPEAT strip_tac);
-a(LIST_DROP_NTH_ASM_T [4, 5] all_fc_tac);
-a(cases_tac¨e < e'Æ);
-(* *** Goal "2.1" *** *)
-a(∂_tac¨eÆ THEN REPEAT strip_tac);
-a(bc_thm_tac (pc_rule1 "sets_ext1" prove_rule[]¨µa x y∑ a Ä x ± y ç a ¥ y ç xÆ));
-a(∂_tac¨A ∏ BÆ THEN REPEAT strip_tac);
-a(lemma_tac ¨ÓØ 0 º D1 (Fst x', Fst y) ± ÓØ 0 º  D2 (Snd x', Snd y)Æ
-	THEN1 LIST_GET_NTH_ASM_T [14, 18] rewrite_tac);
-a(lemma_tac ¨D1 (Fst x', Fst y) < e' ± D2 (Snd x', Snd y) < eÆ
-	THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-a(LIST_DROP_NTH_ASM_T[7, 9] all_fc_tac);
-a(rewrite_tac[∏_def] THEN REPEAT strip_tac);
-(* *** Goal "2.2" *** *)
-a(∂_tac¨e'Æ THEN REPEAT strip_tac);
-a(bc_thm_tac (pc_rule1 "sets_ext1" prove_rule[]¨µa x y∑ a Ä x ± y ç a ¥ y ç xÆ));
-a(∂_tac¨A ∏ BÆ THEN REPEAT strip_tac);
-a(lemma_tac ¨ÓØ 0 º D1 (Fst x', Fst y) ± ÓØ 0 º  D2 (Snd x', Snd y)Æ
-	THEN1 LIST_GET_NTH_ASM_T [14, 18] rewrite_tac);
-a(lemma_tac ¨D1 (Fst x', Fst y) < e' ± D2 (Snd x', Snd y) < eÆ
-	THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-a(LIST_DROP_NTH_ASM_T[7, 9] all_fc_tac);
-a(rewrite_tac[∏_def] THEN REPEAT strip_tac);
-val €product_metric_topology_thm› = save_pop_thm "product_metric_topology_thm";
-=TEX
-
 %%%%
 %%%%
 
@@ -3051,35 +3056,37 @@ a(ALL_FC_T rewrite_tac[product_metric_topology_thm]);
 a(rewrite_tac[d_Ø_open_Ø_thm]);
 val €d_Ø_2_open_Ø_∏_open_Ø_thm› = save_pop_thm "d_Ø_2_open_Ø_∏_open_Ø_thm";
 =TEX
+=TEX
 %%%%
 %%%%
-\section{HOMOTOPY THEORY --- THEOREMS}
+\section{PATHS AND HOMOTOPY--- THEOREMS}
 =SML
 open_theory "homotopy";
 set_merge_pcs["basic_hol1", "'sets_alg", "'˙", "'Ø"];
 =TEX
 \subsection{The Definitions}
 =SML
+val €path_space_def› = get_spec¨$PathSpaceÆ;
 val €path_connected_def› = get_spec¨$PathConnectedÆ;
+val €locally_path_connected_def› = get_spec¨LocallyPathConnectedÆ;
 val €homotopy_def› = get_spec¨$HomotopyÆ;
 val €homotopy_class_def› = get_spec¨$HomotopyClassÆ;
-val €path_space_def› = get_spec¨$PathSpaceÆ;
 val €path_plus_def› = get_spec¨$+âPÆ;
 val €path_0_def› = get_spec¨0âPÆ;
 val €path_minus_def› = get_spec¨~âPÆ;
 =TEX
+\subsection{Theorems}
 Path-connectedness implies connectedness, because a path, as the continuous image of
 a connected set is itself connected.
 %%%%
 %%%%
-\subsection{Path Connectedness}
 =SML
 set_goal([], ¨µ‘ X∑
 	‘ ç Topology
 ±	X ç ‘ PathConnected
 ¥	X ç ‘ Connected
 Æ);
-a(rewrite_tac[path_connected_def] THEN REPEAT strip_tac);
+a(rewrite_tac[path_connected_def, path_space_def] THEN REPEAT strip_tac);
 a(bc_thm_tac connected_pointwise_bc_thm THEN REPEAT strip_tac);
 a(list_spec_nth_asm_tac 3 [¨xÆ, ¨yÆ]);
 a(ante_tac(list_µ_elim[¨fÆ, ¨Universe:Ø SETÆ, ¨OpenâRÆ, ¨‘Æ] image_connected_thm));
@@ -3096,8 +3103,6 @@ val €path_connected_connected_thm› = save_pop_thm "path_connected_connected_thm"
 =TEX
 %%%%
 %%%%
-\subsection{Homotopy Classes}
-
 =SML
 set_goal([], ¨µ” X ‘ f∑
 	” ç Topology
@@ -3894,6 +3899,92 @@ a(ALL_FC_T (MAP_EVERY ante_tac) [path_plus_minus_thm]);
 a(rewrite_tac[path_minus_minus_thm]);
 a(rewrite_tac[path_0_def, path_minus_def]);
 val €path_minus_plus_thm› = save_pop_thm "path_minus_plus_thm";
+=TEX
+Connectedness implies path-connectedness under suitable hypotheses, whcih we take to be that the surrounding space is locally path-connected and that the set in quesion is open.
+%%%%
+%%%%
+=SML
+set_goal([], ¨µ‘ A∑
+	‘ ç Topology
+±	‘ ç LocallyPathConnected
+±	A ç ‘
+±	A ç ‘ Connected
+¥	A ç ‘ PathConnected
+Æ);
+a(rewrite_tac[path_connected_def, connected_def, locally_path_connected_def]
+	THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(lemma_tac¨{z | ∂ f∑ f ç PathSpace ‘ ± (µ t∑ f t ç A) ± f (ÓØ 0) = x ± f (ÓØ 1) = z} ç ‘Æ);
+(* *** Goal "1" *** *)
+a(ALL_FC_T1 fc_§_canon once_rewrite_tac[open_open_neighbourhood_thm]
+	THEN REPEAT strip_tac);
+a(lemma_tac¨x' ç AÆ THEN1 (all_var_elim_asm_tac1 THEN asm_rewrite_tac[]));
+a(list_spec_nth_asm_tac 11 [¨x'Æ, ¨AÆ]);
+a(∂_tac¨BÆ THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+a(list_spec_nth_asm_tac 2 [¨x'Æ, ¨x''Æ]);
+a(∂_tac¨f +âP f'Æ THEN REPEAT strip_tac THEN_TRY SOLVED_T (asm_rewrite_tac[path_plus_def]));
+(* *** Goal "1.1" *** *)
+a(bc_thm_tac path_plus_path_thm THEN asm_rewrite_tac[]);
+(* *** Goal "1.2" *** *)
+a(rewrite_tac[path_plus_def]);
+a(cases_tac¨t º 1/2Æ THEN asm_rewrite_tac[]);
+a(LEMMA_T¨f' (ÓØ 2 * (t + ~ (1 / 2))) ç BÆ ante_tac THEN1 asm_rewrite_tac[]);
+a(DROP_NTH_ASM_T 9 ante_tac THEN PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "2" *** *)
+a(lemma_tac¨{z | z ç A ± ≥ ∂ f∑ f ç PathSpace ‘ ± (µ t∑ f t ç A) ± f (ÓØ 0) = x ± f (ÓØ 1) = z} ç ‘Æ);
+(* *** Goal "2.1" *** *)
+a(ALL_FC_T1 fc_§_canon once_rewrite_tac[open_open_neighbourhood_thm]
+	THEN REPEAT strip_tac);
+a(list_spec_nth_asm_tac 9 [¨x'Æ, ¨AÆ]);
+a(∂_tac¨BÆ THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "2.1.1" *** *)
+a(LIST_DROP_NTH_ASM_T [1, 4] (MAP_EVERY ante_tac) THEN PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "2.1.2" *** *)
+a(swap_nth_asm_concl_tac 10 THEN REPEAT strip_tac);
+a(list_spec_nth_asm_tac 6 [¨x''Æ, ¨x'Æ]);
+a(∂_tac¨f +âP f'Æ THEN REPEAT strip_tac THEN_TRY SOLVED_T (asm_rewrite_tac[path_plus_def]));
+(* *** Goal "2.1.2.1" *** *)
+a(bc_thm_tac path_plus_path_thm THEN asm_rewrite_tac[]);
+(* *** Goal "2.1.2.2" *** *)
+a(rewrite_tac[path_plus_def]);
+a(cases_tac¨t º 1/2Æ THEN asm_rewrite_tac[]);
+a(LEMMA_T¨f' (ÓØ 2 * (t + ~ (1 / 2))) ç BÆ ante_tac THEN1 asm_rewrite_tac[]);
+a(DROP_NTH_ASM_T 13 ante_tac THEN PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "2.2" *** *)
+a(lemma_tac¨
+	A Ä {z | ∂ f∑ f ç PathSpace ‘ ± (µ t∑ f t ç A) ± f (ÓØ 0) = x ± f (ÓØ 1) = z}
+	¿ {z | z ç A ± ≥ ∂ f∑ f ç PathSpace ‘ ± (µ t∑ f t ç A) ± f (ÓØ 0) = x ± f (ÓØ 1) = z}Æ
+	THEN1 PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "2.2.1" *** *)
+a(spec_nth_asm_tac 4 ¨fÆ);
+a(POP_ASM_T ante_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2.2.2" *** *)
+a(lemma_tac¨
+	A ° {z | ∂ f∑ f ç PathSpace ‘ ± (µ t∑ f t ç A) ± f (ÓØ 0) = x ± f (ÓØ 1) = z}
+	° {z | z ç A ± ≥ ∂ f∑ f ç PathSpace ‘ ± (µ t∑ f t ç A) ± f (ÓØ 0) = x ± f (ÓØ 1) = z} = {}Æ
+	THEN1 PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "2.2.2.1" *** *)
+a(spec_nth_asm_tac 1 ¨fÆ);
+a(POP_ASM_T ante_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2.2.2.2" *** *)
+a(DROP_NTH_ASM_T 7 (ante_tac o list_µ_elim
+	[¨{z | ∂ f∑ f ç PathSpace ‘ ± (µ t∑ f t ç A) ± f (ÓØ 0) = x ± f (ÓØ 1) = z}Æ,
+	¨{z | z ç A ± ≥ ∂ f∑ f ç PathSpace ‘ ± (µ t∑ f t ç A) ± f (ÓØ 0) = x ± f (ÓØ 1) = z}Æ]));
+a(asm_rewrite_tac[]);
+a(REPEAT_N 4 (POP_ASM_T discard_tac) THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "2.2.2.2.1" *** *)
+a(spec_nth_asm_tac 1 ¨yÆ);
+a(∂_tac ¨fÆ THEN asm_rewrite_tac[]);
+(* *** Goal "2.2.2.2.2" *** *)
+a(i_contr_tac THEN spec_nth_asm_tac 1 ¨xÆ);
+a(swap_nth_asm_concl_tac 1 THEN REPEAT strip_tac);
+a(∂_tac¨Ãt:Ø∑ xÆ THEN asm_rewrite_tac[path_space_def]);
+a(bc_thm_tac const_continuous_thm THEN REPEAT strip_tac);
+(* *** Goal "2.2.2.2.2.1" *** *)
+a(accept_tac open_Ø_topology_thm);
+(* *** Goal "2.2.2.2.2.2" *** *)
+a(LIST_DROP_NTH_ASM_T [3, 4] (MAP_EVERY ante_tac) THEN PC_T1 "sets_ext1" prove_tac[]);
+val €open_connected_path_connected_thm› = save_pop_thm "open_connected_path_connected_thm";
 =TEX
 \subsection{Epilogue}
 =TEX
