@@ -1845,13 +1845,11 @@ val €JoinedRowExistence_OK2_lemma› = save_pop_thm"JoinedRowExistence_OK2_lemma";
 \section{INTERFACE}
 =TEX
 \subsection{Induction Principle}
-The following theorem takes a minute or so to compute so we give
-a name to it here (to make the proof of the induction theorem easier
-to modify, e.g. if the definitions change).
 =SML
-(* Temporarily commented out until we know what is needed
 val table_computation_rw_thm =
 	rewrite_rule[get_spec¨•â2Æ] (get_spec¨TableComputationsÆ);
+=TEX
+=SML
 set_goal([], ¨µcc:Class∑
 	µtcs : TABLE_COMP SET; vcs : VALUE_COMP SET∑
 		(µci∑ DenoteConstant ci ç vcs)
@@ -1862,18 +1860,18 @@ set_goal([], ¨µcc:Class∑
 	±	(µf e∑ e ç vcs ¥ MonOp f e ç vcs)
 	±	(µf e1 e2∑ e1 ç vcs ± e2 ç vcs ¥ BinOp f e1 e2 ç vcs)
 	±	(µf e1 e2 e3∑ e1 ç vcs ± e2 ç vcs ± e3 ç vcs ¥ TriOp f e1 e2 e3 ç vcs)
-	±	(µcc el∑ Elems el Ä vcs ¥ BinOpAnd cc el ç vcs)
-	±	(µcc el∑ Elems el Ä vcs ¥ BinOpOr cc el ç vcs)
+	±	(µel∑ Elems el Ä vcs ¥ BinOpAnd cc el ç vcs)
+	±	(µel∑ Elems el Ä vcs ¥ BinOpOr cc el ç vcs)
 
-	±	(µcc te cel ee∑ te ç vcs ± Elems(Map Fst cel) Ä vcs ±
+	±	(µte cel ee∑ te ç vcs ± Elems(Map Fst cel) Ä vcs ±
 				Elems(Map Snd cel) Ä vcs ± ee ç vcs ¥
 					CaseVal cc te cel ee ç vcs)
-	±	(µcc cel ee∑ Elems(Map Fst cel) Ä vcs ±
+	±	(µcel ee∑ Elems(Map Fst cel) Ä vcs ±
 				Elems(Map Snd cel) Ä vcs ± ee ç vcs  ¥
 					Case cc cel ee ç vcs)
 
-	±	(µcc e∑ e ç vcs ¥ SetFuncAllAnd cc e ç vcs)
-	±	(µcc e∑ e ç vcs ¥ SetFuncAllOr cc e ç vcs)
+	±	(µe∑ e ç vcs ¥ SetFuncAllAnd cc e ç vcs)
+	±	(µe∑ e ç vcs ¥ SetFuncAllOr cc e ç vcs)
 	±	(µe∑ e ç vcs ¥ CountNonNull e ç vcs)
 	±	(µe∑ e ç vcs ¥ CountDistinct e ç vcs)
 	±	(µe∑ e ç vcs ¥ CommonValue e ç vcs)
@@ -1881,10 +1879,10 @@ set_goal([], ¨µcc:Class∑
 	±	(µf e∑ e ç vcs ¥ SetFuncAll f e ç vcs)
 	±	(µf e∑ e ç vcs ¥ SetFuncDistinct f e ç vcs)
 
-	±	(µcc te∑ te ç tcs ¥ ExistsTuples cc te ç vcs)
-	±	(µcc te∑ te ç tcs ¥ SingleValue cc te ç vcs)
+	±	(µte∑ te ç tcs ¥ ExistsTuples cc te ç vcs)
+	±	(µte∑ te ç tcs ¥ SingleValue cc te ç vcs)
 
-	±	(µcc∑ JoinedRowExistence cc ç vcs)
+	±	(JoinedRowExistence cc ç vcs)
 =TEX
 =SML
 	±	(µi∑ TableContents i ç tcs)
@@ -1899,7 +1897,7 @@ set_goal([], ¨µcc:Class∑
 			± Elems tel Ä tcs) ± e1 ç vcs ± e2 ç vcs
 				¥ Evaluate cc esl tel e1 ml nl e2 ç tcs)	*)
 	¥	TableComputations cc Ä tcs
-	±	ValueComputations cc Ä vcs
+	±	ValueComputations1 cc Ä vcs
 Æ);
 a(REPEAT µ_tac THEN strip_tac
 	THEN rewrite_tac[table_computation_rw_thm]
@@ -1914,11 +1912,9 @@ a(POP_ASM_T (strip_asm_tac o µ_elim¨vcsÆ)
 	THEN asm_rewrite_tac[]);
 val table_computation_induction_thm =
 	save_pop_thm"table_computation_induction_thm";
-*)
 =TEX
 \section{CLOSING DOWN}
 =TEX
-
 \newpage
 \HOLindexOff
 \input{fef033th.tex}
@@ -1929,6 +1925,110 @@ val table_computation_induction_thm =
 \printindex
 
 \end{document}
-  
+=TEX
+The following stuff uses the OK and OK2 lemmas for the various value
+computations to reduce the OKness of all $TableComputations$ to the
+conjectures about table computations proved in \cite{DS/FMU/FEF/035}.
+=IGN
+val €value_conjs› = map (curry mk_µ ¨c:ClassÆ)
+[
+¨µci∑ DenoteConstant ci ç OK_VC c ° OK_VC2 cÆ,
+¨µi∑ Contents i ç OK_VC c ° OK_VC2 cÆ,
+¨µi∑ Classification i ç OK_VC c ° OK_VC2 cÆ,
+¨CountAll ç OK_VC c ° OK_VC2 cÆ,
 
-a(TOP_ASM_T (asm_tac o conv_rule (RAND_C eq_sym_conv)));
+¨µf e∑ e ç OK_VC c ° OK_VC2 c ¥ MonOp f e ç OK_VC c ° OK_VC2 cÆ,
+¨µf e1 e2∑ e1 ç OK_VC c ° OK_VC2 c ± e2 ç OK_VC c ° OK_VC2 c ¥ BinOp f e1 e2 ç OK_VC c ° OK_VC2 cÆ,
+¨µf e1 e2 e3∑ e1 ç OK_VC c ° OK_VC2 c ± e2 ç OK_VC c ° OK_VC2 c ± e3 ç OK_VC c ° OK_VC2 c ¥ TriOp f e1 e2 e3 ç OK_VC c ° OK_VC2 cÆ,
+¨µel∑ Elems el Ä OK_VC c ° OK_VC2 c ¥ BinOpAnd c el ç OK_VC c ° OK_VC2 cÆ,
+¨µel∑ Elems el Ä OK_VC c ° OK_VC2 c ¥ BinOpOr c el ç OK_VC c ° OK_VC2 cÆ,
+
+¨µte cel ee∑
+	te ç OK_VC c ° OK_VC2 c ± Elems(Map Fst cel) Ä OK_VC c ° OK_VC2 c ±
+	Elems(Map Snd cel) Ä OK_VC c ° OK_VC2 c ± ee ç OK_VC c ° OK_VC2 c ¥
+			CaseVal c te cel ee ç OK_VC c ° OK_VC2 cÆ,
+¨µcel ee∑ Elems(Map Fst cel) Ä OK_VC c ° OK_VC2 c ±
+	Elems(Map Snd cel) Ä OK_VC c ° OK_VC2 c ± ee ç OK_VC c ° OK_VC2 c  ¥
+		Case c cel ee ç OK_VC c ° OK_VC2 cÆ,
+
+¨µe∑ e ç OK_VC c ° OK_VC2 c ¥ SetFuncAllAnd c e ç OK_VC c ° OK_VC2 cÆ,
+¨µe∑ e ç OK_VC c ° OK_VC2 c ¥ SetFuncAllOr c e ç OK_VC c ° OK_VC2 cÆ,
+¨µe∑ e ç OK_VC c ° OK_VC2 c ¥ CountNonNull e ç OK_VC c ° OK_VC2 cÆ,
+¨µe∑ e ç OK_VC c ° OK_VC2 c ¥ CountDistinct e ç OK_VC c ° OK_VC2 cÆ,
+¨µe∑ e ç OK_VC c ° OK_VC2 c ¥ CommonValue e ç OK_VC c ° OK_VC2 cÆ,
+
+¨µf e∑ e ç OK_VC c ° OK_VC2 c ¥ SetFuncAll f e ç OK_VC c ° OK_VC2 cÆ,
+¨µf e∑ e ç OK_VC c ° OK_VC2 c ¥ SetFuncDistinct f e ç OK_VC c ° OK_VC2 cÆ,
+
+¨µte∑ te ç OK_TC c ° OK_TC2 c ¥ ExistsTuples c te ç OK_VC c ° OK_VC2 cÆ,
+¨µte∑ te ç OK_TC c ° OK_TC2 c ¥ SingleValue c te ç OK_VC c ° OK_VC2 cÆ,
+¨JoinedRowExistence c ç OK_VC c ° OK_VC2 cÆ
+];
+=TEX
+=IGN
+val ths = map (pc_rule1"sets_ext1"prove_rule[]) [
+	¨µx a b∑x ç a ° b § x ç a ± x ç bÆ,
+	¨µc a b∑c Ä a ° b § c Ä a ± c Ä bÆ];
+=TEX
+=IGN
+val theory_thms =
+	map
+	(fn (_, t) =>
+		((hd o rev o strip_¥ o snd o strip_µ o concl) t, t))
+	((get_thms"fef033")
+	drop
+	(fn t =>
+		let	val x = (fst o dest_app o snd o dest_app o hd o rev o
+					strip_¥ o snd o strip_µ o concl o snd) t
+		in	not(x =$ ¨OK_VCÆ) andalso not(x =$ ¨OK_VC2Æ) 
+		end	handle Fail _ => true));
+=TEX
+=IGN
+val tac : TACTIC = (fn gl as (_, cnc) =>
+	let	val th = snd(find theory_thms
+			(fn (t, _) =>
+				(term_match cnc t; true) handle Fail _ => false));
+	in	SOLVED_T (all_fc_tac[th] THEN asm_rewrite_tac[])
+			ORELSE rewrite_tac[th]
+	end	gl
+);
+=TEX
+=IGN
+fun rule t = (
+	tac_proof(([], t), once_rewrite_tac ths THEN REPEAT strip_tac THEN tac)
+);
+=TEX
+=IGN
+val value_lemmas = map rule value_conjs;
+=TEX
+=IGN
+set_goal([
+	¨µ c i∑ TableContents i ç OK_TC c ° OK_TC2 cÆ,
+	¨µ c esl tel e1 ml nl e2∑
+			Elems (Map Fst esl) Ä OK_VC c ° OK_VC2 c
+		±	Elems tel Ä OK_TC c ° OK_TC2 c
+		±	e1 ç OK_VC c ° OK_VC2 c
+		±	e2 ç OK_VC c ° OK_VC2 c
+         		 ¥ AllTuples c esl tel e1 ml nl e2 ç OK_TC c ° OK_TC2 cÆ],
+	¨µc∑	TableComputations c Ä OK_TC cÆ);
+a(strip_tac);
+a(ante_tac(list_µ_elim[¨c:ClassÆ, ¨OK_TC c ° OK_TC2 cÆ, ¨OK_VC c ° OK_VC2 cÆ]
+		table_computation_induction_thm)
+	THEN asm_rewrite_tac value_lemmas);
+a(PC_T1 "sets_ext1" prove_tac[]);
+val €fef035_lemma› = save_pop_thm"fef035_lemma";
+=TEX
+=IGN
+set_goal([
+	¨µ c i∑ TableContents i ç OK_TC c ° OK_TC2 cÆ,
+	¨µ c esl tel e1 ml nl e2∑
+			Elems (Map Fst esl) Ä OK_VC c ° OK_VC2 c
+		±	Elems tel Ä OK_TC c ° OK_TC2 c
+		±	e1 ç OK_VC c ° OK_VC2 c
+		±	e2 ç OK_VC c ° OK_VC2 c
+         		 ¥ AllTuples c esl tel e1 ml nl e2 ç OK_TC c ° OK_TC2 cÆ],
+	¨TableComputationsSecureÆ);
+a(strip_asm_tac fef035_lemma);
+a(strip_asm_tac OK_TC_lemma);
+a(PC_T1 "sets_ext1" asm_prove_tac[]);
+val €fef033_lemma› = save_pop_thm"fef033_lemma";
