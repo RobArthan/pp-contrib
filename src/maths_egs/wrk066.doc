@@ -2573,10 +2573,43 @@ a(all_asm_fc_tac[] THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 a(REPEAT strip_tac THEN ∂_tac ¨zÆ THEN asm_rewrite_tac[]);
 val €cts_limit_unique_thm› = save_pop_thm"cts_limit_unique_thm";
 =TEX
+The following theorem is a sometimes useful criterion for continuity, allowing
+us to focus attention on values inside an arbitrarily small open interval containing
+the point at which continuity is asserted:
+%%%%
+%%%%
+=SML
+set_goal([], ¨µf a b x∑
+	f x ç OpenInterval a b
+±	(µc d∑ f x ç OpenInterval c d  ± ClosedInterval c d Ä OpenInterval a b ¥ 
+		∂s t∑x ç OpenInterval s t ± µy∑y ç OpenInterval s t ¥ f y ç OpenInterval c d)
+¥	f CtsAt xÆ);
+a(rewrite_tac[open_interval_def, closed_interval_def, cts_at_def, Ä_def] THEN REPEAT strip_tac);
+a(lemma_tac¨ÓØ 0 < b + ~(f x) ± ÓØ 0 < f x + ~aÆ THEN1
+	PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(strip_asm_tac (list_µ_elim[¨eÆ, ¨f x + ~aÆ, ¨b + ~(f x)Æ] Ø_bound_below_3_thm));
+a(lemma_tac¨a < f x + ~d ± f x + d < bÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(DROP_NTH_ASM_T 10 (ante_tac o list_µ_elim[¨f x + ~dÆ, ¨f x + dÆ]));
+a(asm_rewrite_tac[]);
+a(LEMMA_T ¨~ d < ÓØ 0 ± (µ x'∑ f x + ~ d º x' ± x' º f x + d ¥ a < x' ± x' < b)Æ
+	rewrite_thm_tac THEN1
+	(REPEAT strip_tac THEN_LIST
+		[PC_T1 "Ø_lin_arith" asm_prove_tac[],
+		all_asm_fc_tac[] THEN PC_T1 "Ø_lin_arith" asm_prove_tac[],
+		all_asm_fc_tac[] THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]]));
+a(REPEAT strip_tac THEN all_asm_fc_tac[]);
+a(lemma_tac¨ÓØ 0 < x + ~s ± ÓØ 0 < t + ~xÆ THEN1
+	PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(strip_asm_tac (list_µ_elim[¨x + ~sÆ, ¨t + ~xÆ] Ø_bound_below_2_thm));
+a(∂_tac¨d'Æ THEN ALL_FC_T1 fc_§_canon asm_rewrite_tac [Ø_abs_diff_bounded_thm]);
+a(µ_tac THEN ¥_tac);
+a(lemma_tac¨s < y ± y < tÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(LIST_DROP_NTH_ASM_T [11] all_fc_tac THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+val €cts_open_interval_thm› = save_pop_thm "cts_open_interval_thm";
+=TEX
 The following theorem says that if a function is Darboux continuous (i.e., if it
 satisfies the conclusion of the intermediate value theorem) and monotonic
 increasing in an interval then it is continuous.
-The proof hits the linear arithmetic decision procedure rather hard.
 %%%%
 %%%%
 =SML
@@ -2585,53 +2618,40 @@ set_goal([], ¨µf a b x∑
 ±	(µy∑ y ç OpenInterval (f a) (f b) ¥ ∂x∑a < x ± x < b  ± f x = y)
 ±	 x ç OpenInterval a b
 ¥	f CtsAt xÆ);
-a(rewrite_tac[cts_at_def, open_interval_def, closed_interval_def] THEN REPEAT strip_tac);
-a(lemma_tac¨f a < f x ± f x < f bÆ THEN1 
-	(REPEAT strip_tac THEN GET_NTH_ASM_T 5 bc_thm_tac THEN
-		PC_T1 "Ø_lin_arith" asm_prove_tac[]));
-a(lemma_tac¨ÓØ 0 < f  b + ~(f x) ± ÓØ 0 < f x + ~(f a)Æ THEN1
-	PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-a(strip_asm_tac (list_µ_elim[¨eÆ, ¨f x + ~(f a)Æ, ¨f b + ~(f x)Æ] Ø_bound_below_3_thm));
-a(lemma_tac¨f a < f x + ~d ± f x + ~d < f b ± f a < f x + d ± f x + d < f bÆ THEN1	
-	PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-a(LIST_GET_NTH_ASM_T [16] all_fc_tac);
-a(rename_tac[(¨x'Æ, "U"), (¨x''Æ, "L")] THEN
-	LIST_DROP_NTH_ASM_T [1, 2, 3, 14, 15, 18, 19] discard_tac);
-a(lemma_tac¨f L < f x ± f x < f UÆ THEN1
-	(DROP_NTH_ASM_T 12 ante_tac THEN asm_rewrite_tac[]
-		THEN PC_T1 "Ø_lin_arith" prove_tac[]));
+a(rewrite_tac[open_interval_def, closed_interval_def] THEN REPEAT strip_tac);
+a(bc_thm_tac cts_open_interval_thm THEN
+	rewrite_tac[open_interval_def, Ä_def, closed_interval_def] );
+a(∂_tac¨f bÆ THEN ∂_tac¨f aÆ THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(DROP_NTH_ASM_T 4 bc_thm_tac THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(DROP_NTH_ASM_T 4 bc_thm_tac THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "3" *** *)
+a(lemma_tac¨c º dÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(spec_nth_asm_tac 2  ¨cÆ THEN spec_nth_asm_tac 4 ¨dÆ);
+a(LIST_DROP_NTH_ASM_T [11] all_fc_tac THEN all_var_elim_asm_tac1);
+a(rename_tac[(¨x'Æ, "U"), (¨x''Æ, "L")] THEN ∂_tac¨L:ØÆ THEN ∂_tac¨U:ØÆ);
+(* *** Goal "3.1" *** *)
 a(lemma_tac¨≥x = L ± ≥x = UÆ THEN1 (contr_tac THEN all_var_elim_asm_tac1));
 a(lemma_tac¨≥x <  LÆ THEN1
 	(contr_tac THEN LEMMA_T¨f x < f LÆ 
 		(fn th => ante_tac th THEN GET_ASM_T ¨f L < f xÆ ante_tac
 			THEN PC_T1 "Ø_lin_arith" prove_tac[])
-		THEN GET_NTH_ASM_T 24 bc_thm_tac
+		THEN GET_NTH_ASM_T 18 bc_thm_tac
 		THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
 a(lemma_tac¨≥U < xÆ THEN1
 	(contr_tac THEN LEMMA_T¨f U < f xÆ 
 		(fn th => ante_tac th THEN GET_ASM_T ¨f x < f UÆ ante_tac
 			THEN PC_T1 "Ø_lin_arith" prove_tac[])
-		THEN GET_NTH_ASM_T 25 bc_thm_tac
+		THEN GET_NTH_ASM_T 19 bc_thm_tac
 		THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
-a(lemma_tac¨L < x ± x < U ± ÓØ 0 < x + ~L ± ÓØ 0 < U + ~xÆ THEN1
-	PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-a(LIST_DROP_NTH_ASM_T [5, 6, 7, 8] discard_tac);
-a(strip_asm_tac (list_µ_elim[¨x + ~LÆ, ¨U + ~xÆ] Ø_bound_below_2_thm));
-a(∂_tac¨d'Æ THEN REPEAT strip_tac);
-a(POP_ASM_T ante_tac THEN ALL_FC_T1 fc_§_canon rewrite_tac [Ø_abs_diff_bounded_thm]);
-a(REPEAT strip_tac);
-(* *** Goal "1" *** *)
-a(lemma_tac¨L < yÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-a(bc_thm_tac Ø_less_trans_thm THEN ∂_tac¨f LÆ);
-a(REPEAT strip_tac THEN_LIST [
-		asm_rewrite_tac[] THEN PC_T1 "Ø_lin_arith" asm_prove_tac[],
-		GET_NTH_ASM_T 31 bc_thm_tac THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]]);
-(* *** Goal "2" *** *)
-a(lemma_tac¨y < UÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-a(bc_thm_tac Ø_less_trans_thm THEN ∂_tac¨f UÆ);
-a(REPEAT strip_tac THEN_LIST [
-		GET_NTH_ASM_T 31 bc_thm_tac THEN PC_T1 "Ø_lin_arith" asm_prove_tac[],
-		asm_rewrite_tac[] THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]]);
+a(lemma_tac¨L < x ± x < UÆ THEN1 
+	(LIST_DROP_NTH_ASM_T (interval 5 19) discard_tac
+		THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(LIST_DROP_NTH_ASM_T [3, 4, 5, 6] discard_tac);
+a(asm_rewrite_tac[] THEN REPEAT strip_tac
+	THEN DROP_NTH_ASM_T 19 bc_thm_tac THEN
+		PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 val €darboux_cts_mono_thm› = save_pop_thm "darboux_cts_mono_thm";
 =TEX
 %%%%
