@@ -333,8 +333,10 @@ any desired post-condition:
 ∞
 
 We will now give a model of a more useful pre-condition calculator.
-The treatment of if-then-else is made more readable using the
-following two variants on range restriction and anti-restriction:
+There are some preliminaries to take care of:
+the treatment of if-then-else is made more readable using the
+following two variants on the theme of range restriction and
+range anti-restriction:
 πZ
 ‹ fun 7 _ íâ* _, _ Åâ* _
 ∞
@@ -347,11 +349,24 @@ following two variants on range restriction and anti-restriction:
 ‹µ R : X ™ Y; T :  Y ∑
 ‹	R Åâ* T = {x : X; y : Y | (x, y) ç R ± (µz : Y | (x, z) ç R ∑ z é T)}
 à¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+The useful pre-condition calculator will use a heuristic to propose
+a specification for the body of a while-loop. The following loose specification
+suggests how this id done in the Compliance Notation, which actually insists
+syntactically that the body of a loop be given as a specification statement.
+The soundness of the pre-condition calculator is independent of
+the heuristic --- it has to be, because as the following definition shows,
+one possibility is that the specification is just taken from the program.
+πZAX
+‹ €guess_spec› : PROG ≠ SPEC
+˜¸¸¸¸¸¸
+‹ µs : SPEC; p : PROG ∑ guess_spec(Spec(s, p)) = s
+∞
 Now we can define the useful pre-condition calculator.
 πZAX
 ‹ €prec_calc› : PREC_CALC
 ˜¸¸¸¸¸¸
-‹ µt, postc, postcâ1 : STATE_TRANSFORMER; pâ1, pâ2 : PROG; c, precâ1 : PRED∑
+‹ µt, postc, postcâ1 : STATE_TRANSFORMER; pâ1, pâ2 : PROG; c, precâ1 : PRED;
+‹  body_prec : PRED; body_postc : STATE_TRANSFORMER∑
 ‹
 ‹	prec_calc (Atom t, postc) = {s, s' : STATE | {s'} Ú t Ä {s} Ú postc}
 ‹
@@ -360,13 +375,13 @@ Now we can define the useful pre-condition calculator.
 ‹ ±	prec_calc (If(c, pâ1, pâ2), postc) =
 ‹		(prec_calc(pâ1, postc) íâ* c) ¿ (prec_calc(pâ2, postc) Åâ* c)
 ‹
-‹ ±	(∂ body_postc : STATE_TRANSFORMER; bef, aft : PRED
-‹	 |	bef = dom (prec_calc(pâ1, body_postc) ° (id STATE))
-‹	 ±	aft = ran body_postc
-‹	 ∑	prec_calc (While(c, pâ1), postc) =
+‹ ±	((body_prec, body_postc) = guess_spec pâ1
+‹	 ¥	prec_calc (While(c, pâ1), postc) =
 ‹			postc Å c ¿
 ‹			{ ss' : dom postc ∏ c
-‹			| c Ä bef ± dom postc ∏ (aft \ c) Ä postc })
+‹			| c Ä body_prec
+‹			± body_prec Ä dom (prec_calc(pâ1, body_postc) ° (id STATE))
+‹			± dom postc ∏ (body_postc®body_prec© \ c) Ä postc })
 ‹
 ‹ ±	prec_calc (Spec((precâ1, postcâ1), pâ1), postc) =
 ‹		{ s : STATE; s' : STATE | {s'} Ú postcâ1 Ä {s} Ú postc } í
@@ -639,46 +654,34 @@ a(rewrite_tac[strong_rres_thm, strong_rantires_thm] THEN
 	PC_T1 "z_library_ext" prove_tac[]);
 (* *** Goal "4" *** *)
 a(REPEAT strip_tac);
-a(strip_asm_tac(nth 3 (strip_±_rule(rewrite_rule[](z_µ_elimÒ
-	(t¶postc', postc¶postc',
-	postcâ1¶postc', pâ1¶p1,
-	pâ2¶p1, c¶c, precâ1¶c)Æ(±_right_elim prec_calc_thm))))) THEN asm_rewrite_tac[]);
-a(POP_ASM_T discard_tac THEN all_var_elim_asm_tac1);
-a(z_spec_nth_asm_tac 1 Òbody_postcÆ THEN DROP_ASMS_T (ante_tac o hd));
+a(lemma_tacÒ∂body_prec:U; body_postc:U∑ (body_prec, body_postc) = guess_spec p1Æ
+	THEN1 (z_∂_tacÒ(body_prec¶(guess_spec p1).1, body_postc¶(guess_spec p1).2)Æ
+		THEN PC_T1 "z_library_ext" REPEAT strip_tac));
+a(ALL_FC_T rewrite_tac[prec_calc_thm]);
+a(POP_ASM_T discard_tac THEN POP_ASM_T (ante_tac o z_µ_elimÒbody_postcÆ));
 a(rewrite_tac[semantics_thm, refines_thm] THEN REPEAT strip_tac);
-a(REPEAT_N 4 (PC_T1 "z_library_ext" once_rewrite_tac[]) THEN REPEAT strip_tac);
+a(REPEAT_N 4 (PC_T1 "z_library_ext" once_rewrite_tac[]));
+a(REPEAT_UNTIL is_¥ z_strip_tac THEN rewrite_tac[]);
+a(bc_thm_tac(prove_rule[]¨µa b c∑(b ¥ c) ¥ (a ± b ¥ c)Æ));
+a(REPEAT strip_tac);
 (* *** Goal "4.1" *** *)
-a(lemma_tacÒ≥y' ç cÆ THEN1 PC_T1 "z_library_ext" asm_prove_tac[]);
+a(lemma_tacÒ≥y ç cÆ THEN1 PC_T1 "z_library_ext" asm_prove_tac[]);
 a(fc_tac[while_lemma] THEN PC_T1 "z_library_ext" asm_prove_tac[]);
 (* *** Goal "4.2" *** *)
 a(fc_tac[while_lemma] THEN_TRY all_var_elim_asm_tac);
-a(lemma_tacÒz ç dom (prec_calc (p1, body_postc) ° (id _))Æ THEN1
-	(LIST_GET_NTH_ASM_T [3, 6] (MAP_EVERY ante_tac) THEN
-	PC_T1 "z_library_ext" prove_tac[]));
+a(lemma_tacÒz ç body_prec ± z ç dom (prec_calc (p1, body_postc) ° (id _))Æ THEN1
+	(LIST_GET_NTH_ASM_T [3, 6, 7] (MAP_EVERY ante_tac) THEN
+	PC_T1 "z_sets_ext" prove_tac[]));
 a(lemma_tacÒ(z, z) ç prec_calc (p1, body_postc)Æ THEN1
 	(LIST_GET_NTH_ASM_T [1] (MAP_EVERY ante_tac) THEN
 	PC_T1 "z_library_ext" prove_tac[]));
-a(rename_tac[(ÒyÆ, "yy")] THEN lemma_tacÒ(z, x2) ç body_postcÆ THEN1
-	(LIST_GET_NTH_ASM_T [1, 4, 12] (MAP_EVERY ante_tac) THEN
+a(lemma_tacÒ(z, x2) ç body_postcÆ THEN1
+	(LIST_GET_NTH_ASM_T [1, 5, 13] (MAP_EVERY ante_tac) THEN
 		PC_T1 "z_library_ext" prove_tac[]));
-a(LIST_GET_NTH_ASM_T [1, 4, 8, 11] (MAP_EVERY ante_tac) THEN
-		PC_T1 "z_library_ext" prove_tac[]);
-(* *** Goal "4.3" *** *)
-a(rename_tac[(ÒyÆ, "yy")] THEN lemma_tacÒ≥y' ç cÆ THEN1
-	PC_T1 "z_library_ext" asm_prove_tac[]);
-a(fc_tac[while_lemma] THEN PC_T1 "z_library_ext" asm_prove_tac[]);
-(* *** Goal "4.4" *** *)
-a(fc_tac[while_lemma] THEN_TRY all_var_elim_asm_tac);
-a(lemma_tacÒz ç dom (prec_calc (p1, body_postc) ° (id _))Æ THEN1
-	(LIST_GET_NTH_ASM_T [3, 7] (MAP_EVERY ante_tac) THEN
-	PC_T1 "z_library_ext" prove_tac[]));
-a(lemma_tacÒ(z, z) ç prec_calc (p1, body_postc)Æ THEN1
-	(LIST_GET_NTH_ASM_T [1] (MAP_EVERY ante_tac) THEN
-	PC_T1 "z_library_ext" prove_tac[]));
-a(rename_tac[(ÒyÆ, "yy")] THEN lemma_tacÒ(z, x2) ç body_postcÆ THEN1
-	(LIST_GET_NTH_ASM_T [1, 4, 12] (MAP_EVERY ante_tac) THEN
+a(lemma_tacÒx2 ç body_postc®body_prec©Æ THEN1
+	(LIST_GET_NTH_ASM_T [1, 4] (MAP_EVERY ante_tac) THEN
 		PC_T1 "z_library_ext" prove_tac[]));
-a(LIST_GET_NTH_ASM_T [1, 4, 9, 12] (MAP_EVERY ante_tac) THEN
+a(LIST_GET_NTH_ASM_T [1, 6, 10, 14] (MAP_EVERY ante_tac) THEN
 		PC_T1 "z_library_ext" prove_tac[]);
 (* *** Goal "5" *** *)
 a(REPEAT strip_tac);
