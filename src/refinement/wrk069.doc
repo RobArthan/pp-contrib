@@ -97,7 +97,7 @@ In our model, a predicate on states is just a set of states, i.e., the denotatio
 usual syntactic notion of a predicate.
 
 πZ
-‹ €PRED›[S] ¶ S
+‹ €PRED›[X] ¶ X
 ∞
 
 Syntactically, a pre-condition is a predicate whose free variables are program variables and a post-condition is a predicate whose free variables are
@@ -125,13 +125,13 @@ We therefore keep a separate record of the pre-condition.
 So a specification is a pair comprising a predicate giving the pre-condition
 and a binary relation on states giving the post-condition.
 πZ
-‹ €PRE_COND›[S] ¶ PRED[S]
+‹ €PRE_COND›[X] ¶ PRED[X]
 ∞
 πZ
-‹ €POST_COND›[S] ¶ S ™ S
+‹ €POST_COND›[X, Y] ¶ X ™ Y
 ∞
 πZ
-‹ €SPEC›[S] ¶ PRE_COND[S] ∏ POST_COND[S]
+‹ €SPEC›[X, Y] ¶ PRE_COND[X] ∏ POST_COND[X, Y]
 ∞
 
 To give examples in the sequel, we will borrow some syntax from the Compliance Notation, in 
@@ -234,10 +234,10 @@ made by $s_2$ in a state satisfying the pre-condition of $s_1$
 is a response that could also be made by $s_1$. This
 includes the possibility that $s_2$ may be unable to respond where $s_1$ can.
 
-ù[ S ]úúúúúúúúúúú
-‹ €_ √ _› : SPEC[S] ™ SPEC[S]
+ù[ X, Y ]úúúúúúúúúúú
+‹ €_ √ _› : SPEC[X, Y] ™ SPEC[X, Y]
 ˜¸¸¸¸¸¸
-‹ µprecâ1, precâ2 : PRE_COND[S]; postcâ1, postcâ2 : POST_COND[S]∑
+‹ µprecâ1, precâ2 : PRE_COND[X]; postcâ1, postcâ2 : POST_COND[X, Y]∑
 ‹	(precâ1, postcâ1) √ (precâ2, postcâ2)
 ‹ §	precâ1 Ä precâ2
 ‹ ±	precâ1 Ú postcâ2 Ä postcâ1
@@ -247,9 +247,9 @@ We now explore the properties of the refinement relation. First of all, we note 
 refinement is a pre-order (i.e., it is reflexive and transitive):
 πZ
 ‹ refinement_pre_order_cnj ?Ù 
-‹	(µ sâ1, sâ2 , sâ3: SPEC∑
+‹	µ sâ1, sâ2 , sâ3: SPEC∑
 ‹		sâ1 √ sâ1
-‹±		(sâ1 √ sâ2 ± sâ2 √ sâ3 ¥ sâ1 √ sâ3))
+‹±		(sâ1 √ sâ2 ± sâ2 √ sâ3 ¥ sâ1 √ sâ3)
 ∞
 
 However, refinement is not antisymmetric, i.e., it is possible to have
@@ -270,10 +270,10 @@ in isolation includes the possibility that $X$ be negative in the before-state.
 }.
 To remedy this, where necessary, let us say that two specifications are equivalent if they refine one another:
 
-ù[ S ]úúúúúúúúúúú
-‹ €_ È _› : SPEC[S] ™ SPEC[S]
+ù[X, Y]úúúúúúúúúúú
+‹ €_ È _› : SPEC[X, Y] ™ SPEC[X, Y]
 ˜¸¸¸¸¸¸
-‹ µsâ1, sâ2 : SPEC[S]∑
+‹ µsâ1, sâ2 : SPEC[X, Y]∑
 ‹	sâ1 È sâ2 § sâ1 √ sâ2 ± sâ2 √ sâ1
 à¸¸¸¸¸¸¸¸¸¸¸¸¸¸
 
@@ -284,59 +284,61 @@ Rather than work with equivalence classes in the sequel, we will work with canon
 representatives when necessary.
 These canonical representatives are defined by the following which reduces a specification
 to a normal form in which the post-condition is empty outside the pre-condition.
-ù[ S ]úúúúúúúúúúú
-‹ €_ Á$Í› : SPEC[S] ≠ SPEC[S]
+ù[X, Y]úúúúúúúúúúú
+‹ €_ Á$Í› : SPEC[X, Y] ≠ SPEC[X, Y]
 ˜¸¸¸¸¸¸
-‹ µprec : PRE_COND; postc : POST_COND∑
+‹ µprec : PRE_COND[X]; postc : POST_COND[X, Y]∑
 ‹	(prec, postc)Á$Í = (prec, prec Ú postc)
 à¸¸¸¸¸¸¸¸¸¸¸¸¸¸
 
 The reduction operator (which is useful enough to be worth the dollar in its name!) is
 idempotent:
 πZ
-‹ reduce_reduce_cnj ?Ù (µ s : SPEC∑ (sÁ$Í)Á$Í = sÁ$Í)
+‹ reduce_reduce_cnj ?Ù µ s : SPEC∑ (sÁ$Í)Á$Í = sÁ$Í
 ∞
 The following theorem shows that the reduction operator does indeed pick
 a canonical representative from each $\equiv$-equivalence class: 
 πZ
-‹ equiv_cnj ?Ù (µ sâ1, sâ2 : SPEC∑ sâ1 È sâ2 § sâ1Á$Í = sâ2Á$Í)
+‹ equiv_cnj ?Ù µ sâ1, sâ2 : SPEC∑ sâ1 È sâ2 § sâ1Á$Í = sâ2Á$Í
 ∞
 
 Our next theorem says that
 refinement is independent of choice of representative in each equivalence class:
 =GFT
 πZ
-‹ refinement_reduce_cnj ?Ù (µ sâ1, sâ2 : SPEC∑ sâ1 √ sâ1 § sâ1Á$Í √ sâ1Á$Í)
+‹ refinement_reduce_cnj ?Ù µ sâ1, sâ2 : SPEC∑ sâ1 √ sâ1 § sâ1Á$Í √ sâ1Á$Í
 ∞
 Let use define the {\em reduced} specifications to be those in the range of the reduction operator:
-ù[ S ]úúúúúúúúúúú
-‹ €REDUCED› : SPEC[S] 
+ù[X, Y]úúúúúúúúúúú
+‹ €REDUCED› : SPEC[X, Y] 
 ˜¸¸¸¸¸¸
 ‹ 	REDUCED  = {s : SPEC∑ sÁ$Í}
 à¸¸¸¸¸¸¸¸¸¸¸¸¸¸
 
 When restricted to reduced specifications, refinement does indeed become antisymmetric:
 πZ
-‹ refinement_antisym_cnj ?Ù (µ sâ1, sâ2 : REDUCED∑ sâ1 √ sâ2 ± sâ2 √ sâ1 ¥ sâ1 = sâ2)
+‹ refinement_antisym_cnj ?Ù µ sâ1, sâ2 : REDUCED∑ sâ1 √ sâ2 ± sâ2 √ sâ1 ¥ sâ1 = sâ2
 ∞
 We now want to show that refinement of reduced specifications is a complete lattice.
 We now define constants that help us state this and other results. First of all constants
 relating to tops, bottoms etc. We use upper-case namesfor the contituents of specifications
 and mixed upper-lower case names for specifications. 
-ù[ S ]úúúúúúúúúúú
-‹ €TRUE›, €FALSE› : PRE_COND[S];
-‹ €ABORT› : POST_COND[S];
-‹ €SKIP›, €CHAOS› : PRE_COND[S] ≠ POST_COND[S];
-‹ €Skip›, €Abort›, €Chaos› : PRE_COND[S] ≠ SPEC[S];
-‹ €Bottom› , €Top›: SPEC[S]
+ù[X]úúúúúúúúúúú
+‹ €TRUE›, €FALSE› : PRE_COND[X]
 ˜¸¸¸¸¸¸
-‹ 	TRUE = S;
-‹	FALSE = ö;
+‹ 	TRUE = X;
+‹	FALSE = ö
+à¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+
+ù[X, Y]úúúúúúúúúúú
+‹ €ABORT› : POST_COND[X, Y];
+‹ €CHAOS› : PRE_COND[X] ≠ POST_COND[X, Y];
+‹ €Abort›, €Chaos› : PRE_COND[X] ≠ SPEC[X, Y];
+‹ €Bottom› , €Top›: SPEC[X, Y]
+˜¸¸¸¸¸¸
 ‹	ABORT = ö;
-‹	µ prec : PRE_COND[S]∑
-‹		SKIP prec = id prec
-‹	±	CHAOS prec = prec ∏ S
-‹	±	Skip prec = (prec, SKIP prec)
+‹	µ prec : PRE_COND[X]∑
+‹		CHAOS prec = prec ∏ Y
 ‹	±	Abort prec = (prec, ABORT)
 ‹	±	Chaos prec = (prec, CHAOS prec);
 ‹	Bottom = Chaos ö;
@@ -345,77 +347,77 @@ and mixed upper-lower case names for specifications.
 
 Bottom and top are indeed the bottom and top elements of the pre-order:
 πZ
-‹ bottom_top_cnj ?Ù (µ s : SPEC∑ Bottom √ s √ Top)
+‹ bottom_top_cnj ?Ù µ s : SPEC∑ Bottom √ s √ Top
 ∞
 
 Meets (greatest lower bounds) turn out to be straightforward to define and verify:
-ù[ S ]úúúúúúúúúúú
-‹ €Meet› : SPEC[S] ≠ SPEC[S]
+ù[X, Y]úúúúúúúúúúú
+‹ €Meet› : SPEC[X, Y] ≠ SPEC[X, Y]
 ˜¸¸¸¸
-‹µA :  SPEC[S]∑ Meet A = (•{s : A∑ s.1}, ﬁ{s : A∑ s.2})
+‹µA :  SPEC[X, Y]∑ Meet A = (•{s : A∑ s.1}, ﬁ{s : A∑ s.2})
 à¸¸¸¸¸¸¸¸¸¸¸¸¸¸
 Now we can state the conjecture that meets are indeed greatest lower bounds.
 
 πZ
 ‹ refinement_meet_cnj ?Ù 
-‹	(µ A : SPEC∑ µt : A∑ Meet A √ t;
-‹	µ A : SPEC; s : SPEC∑ (µt : A∑ s √ t) ¥ s √ Meet A)
+‹	µ A : SPEC∑ µt : A∑ Meet A √ t;
+‹	µ A : SPEC; s : SPEC∑ (µt : A∑ s √ t) ¥ s √ Meet A
 ∞
 
 Joins turn out to be trickier. We first define a function that maps
 a specification, $s$ say to the post-condition that allows precisely those
 state transitions that $s$ forbids forbids:
-ù[ S ]úúúúúúúúúúú
-‹ €Forbidden› : SPEC[S] ≠ POST_COND[S]
+ù[X, Y]úúúúúúúúúúú
+‹ €Forbidden› : SPEC[X, Y] ≠ POST_COND[X, Y]
 ˜¸¸¸¸
-‹µs : SPEC[S]∑
+‹µs : SPEC[X, Y]∑
 ‹	Forbidden s = CHAOS (s.1) \ s.2
 à¸¸¸¸¸¸¸¸¸¸¸¸¸¸
 A more explicit equation for fobidden sets is useful:
 πZ
 ‹ forbidden_def_cnj ?Ù 
-‹	(µ s : SPEC∑ 
-‹		Forbidden s = { x, y : U | x ç s.1 ± ≥(x, y) ç s.2})
+‹	µ s : SPEC∑ 
+‹		Forbidden s = { x : U; y : U | x ç s.1 ± ≥(x, y) ç s.2}
 ∞
 The following conjecture is useful to check the definition of the forbiden function and in proving
 later results.
 πZ
 ‹ forbidden_cnj ?Ù 
-‹	(µ sâ1, sâ2 : SPEC∑ 
-‹		sâ1 √ sâ2 § sâ1.1 Ä sâ2.1 ± sâ2.2 ° (Forbidden sâ1) = ö)
+‹	µ sâ1, sâ2 : SPEC∑ 
+‹		sâ1 √ sâ2 § sâ1.1 Ä sâ2.1 ± sâ2.2 ° (Forbidden sâ1) = ö
 ∞
 
 Now we can define joins. The pre-condition of the join of a set of
 specifications is just the union of the individual pre-conditions.
 The post-condition is obtained from  the union of the post-conditions by
 removing all transitions that are forbidden by some specification in the set.
-ù[ S ]úúúúúúúúúúú
-‹ €Join› : SPEC[S] ≠ SPEC[S]
+ù[X, Y]úúúúúúúúúúú
+‹ €Join› : SPEC[X, Y] ≠ SPEC[X, Y]
 ˜¸¸¸¸
-‹µA :  SPEC[S]∑
+‹µA :  SPEC[X, Y]∑
 ‹	Join A = (ﬁ{s : A∑ s.1}, (ﬁ{s : A∑(sÁ$Í).2}) \ (ﬁ{s : A∑Forbidden s}))
 à¸¸¸¸¸¸¸¸¸¸¸¸¸¸
 In elementary working with join it is often more convenient to
 have more explicit set comprehensions:
 πZ
 ‹ join_def_cnj ?Ù 
-‹	(µ A : SPEC∑ Join A = 
+‹	µ A : SPEC∑ Join A = 
 ‹		({s : A; x : U | x ç s.1∑ x},
-‹		{s : A; x, y : U
+‹		{s : A; x : U;  y : U
 ‹		| x ç s.1 ± (x, y) ç s.2 ± (µt : A∑ x ç t.1 ¥ (x, y) ç t.2)
-‹		∑ (x, y)}))
+‹		∑ (x, y)})
 ∞
 It is useful to be able to calculate the forbidden set of a join
 πZ
 ‹ forbidden_join_cnj ?Ù 
-‹	(µ A : SPEC∑ 
-‹		Forbidden(Join A) = ﬁ{s : A∑ Forbidden s})
+‹	µ A : SPEC∑ 
+‹		Forbidden(Join A) = ﬁ{s : A∑ Forbidden s}
 ∞
 Now we can state the theorem that our joins are indeed least upper bounds.
 πZ
 ‹ refinement_join_cnj ?Ù  
-‹	(µ A : SPEC∑ µt : A∑ t √ Join A;
-‹	µ A : SPEC; s : SPEC∑ (µt : A∑ t √ s) ¥ Join A √ s)
+‹	µ A : SPEC∑ µt : A∑ t √ Join A;
+‹	µ A : SPEC; s : SPEC∑ (µt : A∑ t √ s) ¥ Join A √ s
 ∞
 
 Given that arbitrary meets and joins exist, we can now define binary meets and joins in terms of them.
@@ -424,10 +426,10 @@ specification will note that the passage from the language of set-theoretic incl
 intersection, to the language of refinement, meets and joins involves not only squaring off
 the corners of the symbols but also looking at them upside down in a mirror. This is perhaps
 unfortunate, but it is the tradition and we feel obliged to follow it.
-ù[ S ]úúúúúúúúúúú
-‹ €_%sqcap%_›, €_%sqcup%_›: SPEC[S] ∏ SPEC[S] ≠ SPEC[S]
+ù[X, Y]úúúúúúúúúúú
+‹ €_%sqcap%_›, €_%sqcup%_›: SPEC[X, Y] ∏ SPEC[X, Y] ≠ SPEC[X, Y]
 ˜¸¸¸¸
-‹µsâ1, sâ2 : SPEC[S]∑
+‹µsâ1, sâ2 : SPEC[X, Y]∑
 ‹	sâ1 %sqcap% sâ2 = Meet{sâ1, sâ2}
 ‹±	sâ1 %sqcup% sâ2 = Join{sâ1, sâ2}
 à¸¸¸¸¸¸¸¸¸¸¸¸¸¸
@@ -435,15 +437,15 @@ unfortunate, but it is the tradition and we feel obliged to follow it.
 The following formulae for binary meets and joins are often simpler to use
 (and probably easier to understand) than the general definitions:
 πZ
-‹ meet2_cnj ?Ù (µsâ1, sâ2 : SPEC∑ sâ1 %sqcap% sâ2 = (sâ1.1 ° sâ2.1, sâ1.2 ¿ sâ2.2))
+‹ meet2_cnj ?Ù µsâ1, sâ2 : SPEC∑ sâ1 %sqcap% sâ2 = (sâ1.1 ° sâ2.1, sâ1.2 ¿ sâ2.2)
 ∞
 πZ
-‹ join2_cnj ?Ù (µsâ1, sâ2 : SPEC∑
+‹ join2_cnj ?Ù µsâ1, sâ2 : SPEC∑
 ‹	sâ1 %sqcup% sâ2 =
 ‹	 (	sâ1.1 ¿ sâ2.1, 
 ‹		((sâ1.1 ° sâ1.1) Ú (sâ1.2 ° sâ2.2))
 ‹	 ¿	((sâ1.1 \ sâ2.1) Ú sâ1.2)
-‹	 ¿	((sâ2.1 \ sâ1.1) Ú sâ2.2)))
+‹	 ¿	((sâ2.1 \ sâ1.1) Ú sâ2.2))
 ∞
 
 \newpage
@@ -489,7 +491,12 @@ set_u_simp_eqn_cxt (u_simp_eqn_cxt [refcalc_u_thm]) "'refcalc";
 set_merge_pcs["'refcalc", "z_library1"];
 =TEX
 =SML
-val z_get_u_spec = z_gen_pred_elim[ÒUÆ] o z_get_spec;
+fun  z_get_u_spec tm = (
+	(z_gen_pred_elim(dest_z_tupleÒ(U, U)Æ) o z_get_spec) tm
+	handle Fail _ => (z_gen_pred_elim[ÒUÆ] o z_get_spec) tm
+);
+=TEX
+=SML
 set_goal([], Òµ sâ1, sâ2 : U∑
 	sâ1 √ sâ2
 	§ sâ1.1 Ä sâ2.1
@@ -512,9 +519,9 @@ a(rewrite_tac[z_get_u_spec Ò(_Á$Í)Æ]);
 val €reduce_def› = save_pop_thm "reduce_def";
 =TEX
 =SML
-
 val €equiv_def› = save_thm( "equiv_def" , ±_right_elim (z_get_u_specÒ(_È_)Æ));
-val €skip_def› = save_thm( "true_def" , ±_right_elim (z_get_u_specÒSKIPÆ));
+val €true_def› = save_thm( "true_def" , ±_right_elim (z_get_u_specÒTRUEÆ));
+val €abort_def› = save_thm( "abort_def" , ±_right_elim (z_get_u_specÒABORTÆ));
 val €forbidden_def› = save_thm( "forbidden_def" , ±_right_elim (z_get_u_specÒForbiddenÆ));
 val €meet_def› = save_thm( "meet_def" , ±_right_elim (z_get_u_specÒMeetÆ));
 val €join_def› = save_thm( "join_def" , ±_right_elim (z_get_u_specÒJoinÆ));
@@ -555,7 +562,7 @@ val €refinement_antisym_thm› = save_pop_thm "refinement_antisym_thm";
 =TEX
 =SML
 set_goal([], get_conjecture"-" "bottom_top_cnj");
-a(rewrite_tac[skip_def, refines_def] THEN REPEAT strip_tac);
+a(rewrite_tac[abort_def, true_def, refines_def] THEN REPEAT strip_tac);
 val €bottom_top_thm› = save_pop_thm "bottom_top_thm";
 =TEX
 =SML
@@ -580,7 +587,7 @@ val €refinement_meet_thm› = save_pop_thm "refinement_meet_thm";
 =TEX
 =SML
 set_goal([], get_conjecture"-" "forbidden_def_cnj");
-a(rewrite_tac[refines_def, forbidden_def, skip_def] THEN REPEAT strip_tac);
+a(rewrite_tac[refines_def, forbidden_def, abort_def, true_def] THEN REPEAT strip_tac);
 a(PC_T1 "z_library_ext" asm_prove_tac[] THEN REPEAT strip_tac);
 val €forbidden_def1› = save_pop_thm "forbidden_def1";
 =TEX
@@ -600,7 +607,7 @@ a(asm_prove_tac[]);
 (* *** Goal "1.2" *** *)
 a(z_∂_tacÒs.1Æ THEN REPEAT strip_tac THEN asm_prove_tac[]);
 (* *** Goal "2" *** *)
-a(LEMMA_T Òﬁ {s : A | true∑ s.1 Ú s.2} = {s : A; x, y : U | x ç s.1 ± (x, y) ç s.2∑ (x, y)}Ærewrite_thm_tac);
+a(LEMMA_T Òﬁ {s : A | true∑ s.1 Ú s.2} = {s : A; x : U;  y : U | x ç s.1 ± (x, y) ç s.2∑ (x, y)}Ærewrite_thm_tac);
 (* *** Goal "2.1" *** *)
 a(PC_T1 "z_library_ext" REPEAT strip_tac);
 (* *** Goal "2.1.1" *** *)
@@ -611,8 +618,8 @@ a(all_var_elim_asm_tac);
 a(z_∂_tacÒs.1 Ú s.2Æ THEN PC_T1 "z_library_ext" asm_prove_tac[]);
 a(z_∂_tacÒsÆ THEN PC_T1 "z_library_ext" asm_prove_tac[]);
 (* *** Goal "2.2" *** *)
-a(LEMMA_TÒ ﬁ {s : A | true∑ {x, y : U | x ç s.1 ± ≥ (x, y) ç s.2}} =
-	{s : A; x, y : U | x ç s.1 ± ≥(x, y) ç s.2∑ (x, y)}Ærewrite_thm_tac);
+a(LEMMA_TÒ ﬁ {s : A | true∑ {x : U;  y : U | x ç s.1 ± ≥ (x, y) ç s.2}} =
+	{s : A; x : U;  y : U | x ç s.1 ± ≥(x, y) ç s.2∑ (x, y)}Ærewrite_thm_tac);
 (* *** Goal "2.2.1" *** *)
 a(PC_T1 "z_library_ext" REPEAT strip_tac);
 (* *** Goal "2.2.1.1" *** *)
@@ -620,7 +627,7 @@ a(z_∂_tacÒ(s¶s, x¶x1, y¶x2)Æ THEN asm_rewrite_tac[]);
 a(z_spec_nth_asm_tac 2 Ò(x1¶x1, x2¶x2)Æ THEN REPEAT strip_tac);
 (* *** Goal "2.2.1.2" *** *)
 a(all_var_elim_asm_tac);
-a(z_∂_tacÒ{x, y:U|x ç s.1 ± ≥ (x, y) ç s.2}Æ THEN asm_rewrite_tac[]);
+a(z_∂_tacÒ{x : U;  y : U|x ç s.1 ± ≥ (x, y) ç s.2}Æ THEN asm_rewrite_tac[]);
 a(z_∂_tacÒsÆ THEN REPEAT strip_tac);
 (* *** Goal "2.2.2" *** *)
 a(PC_T1 "z_sets_ext" REPEAT strip_tac);
@@ -640,8 +647,8 @@ val €join_def_thm› = save_pop_thm "join_def_thm";
 =SML
 set_goal([], get_conjecture"-" "forbidden_join_cnj");
 a(rewrite_tac[join_def_thm, forbidden_def1, refcalc_u_thm] THEN REPEAT strip_tac);
-a(LEMMA_TÒ ﬁ {s : A | true∑ {x, y : U | x ç s.1 ± ≥ (x, y) ç s.2}} =
-	{s : A; x, y : U | x ç s.1 ± ≥(x, y) ç s.2∑ (x, y)}Ærewrite_thm_tac);
+a(LEMMA_TÒ ﬁ {s : A | true∑ {x : U; y : U | x ç s.1 ± ≥ (x, y) ç s.2}} =
+	{s : A; x : U; y : U | x ç s.1 ± ≥(x, y) ç s.2∑ (x, y)}Ærewrite_thm_tac);
 (* *** Goal "1" *** *)
 a(PC_T1 "z_library_ext" REPEAT strip_tac);
 (* *** Goal "1.1" *** *)
@@ -649,7 +656,7 @@ a(z_∂_tacÒ(s¶s, x¶x1, y¶x2)Æ THEN asm_rewrite_tac[]);
 a(z_spec_nth_asm_tac 2 Ò(x1¶x1, x2¶x2)Æ THEN REPEAT strip_tac);
 (* *** Goal "1.2" *** *)
 a(all_var_elim_asm_tac);
-a(z_∂_tacÒ{x, y:U|x ç s.1 ± ≥ (x, y) ç s.2}Æ THEN asm_rewrite_tac[]);
+a(z_∂_tacÒ{x : U;  y : U|x ç s.1 ± ≥ (x, y) ç s.2}Æ THEN asm_rewrite_tac[]);
 a(z_∂_tacÒsÆ THEN REPEAT strip_tac);
 (* *** Goal "2" *** *)
 a(PC_T1 "z_library_ext" REPEAT strip_tac THEN all_var_elim_asm_tac1);
