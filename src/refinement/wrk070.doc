@@ -17,9 +17,12 @@ new_script{name = "SUM", state=initial_cn_state};
 ¹CN
 package ÛsumÝ is
   type ÛdataÝ is range -1000 .. 1000;
-  ÛaccÝ : data;
+  Ûacc_negÝ, Ûacc_posÝ : data;
   procedure Ûsum_posÝ (x : in data)
-  „ ACC [ 0 ¼ X, X = 0 ± ACC = 0 ² X > 0 ± ACC = ACC‰0 + X ];
+  „ ACC_NEG, ACC_POS [ ~10 ¼ X ¼ 10,
+          X < 0 ± ACC_NEG = ACC_NEG‰0 + X ± ACC_POS = ACC_POS‰0 ²
+          X = 0 ± ACC_NEG = ACC_POS = 0 ²
+          X > 0 ± ACC_POS = ACC_POS‰0 + X ± ACC_NEG = ACC_NEG‰0 ];
 end sum;
 °
 =TEX
@@ -29,45 +32,68 @@ new_script{name = "SUM_BODY", state=get_cn_state()};
 ¹CN
 package body ÛsumÝ is
   procedure Ûsum_posÝ (x : in data)
-  „ ACC [ X ¼ 0 ± ACC = 0 ² X > 0 ± ACC = ACC‰0 + X ]
+  „ ACC_NEG, ACC_POS [
+          X < 0 ± ACC_NEG = ACC_NEG‰0 + X ± ACC_POS = ACC_POS‰0 ²
+          X = 0 ± ACC_NEG = ACC_POS = 0 ²
+          X > 0 ± ACC_POS = ACC_POS‰0 + X ± ACC_NEG = ACC_NEG‰0]
   is
   begin
-    if     x < 0
-    then   „ ACC [ ACC = 0 ] (then_part)
-    else   „ ACC [ ACC = ACC‰0 + X ] (else_part)
+    if     x = 0
+    then   acc_neg := 0; acc_pos := 0;
+    else   „ ACC_NEG, ACC_POS [ X ½ 0,
+           X ½ 0 ±
+          (X < 0 ± ACC_NEG = ACC_NEG‰0 + X ± ACC_POS = ACC_POS‰0 ²
+           X > 0 ± ACC_POS = ACC_POS‰0 + X ± ACC_NEG = ACC_NEG‰0) 	] (else_part)
     end if;
   end sum_pos;
 end sum;
 °
 ¹CN
- (then_part) Ã acc := 0;
+ (else_part) Ã
+        if x <= 0
+        then acc_neg := acc_neg + x;
+        else acc_pos := acc_pos + x;
+        end if;
 °
-¹CN
- (else_part) Ã acc := acc + x;
-°
+\Hide{
+=SML
+set_pc"cn1";
+val vcs = rev(map (hd ** snd) (get_conjectures "-"));
+fun try_tactic acc tac ((vc as (name, term))::more) = (
+	(delete_thm name handle Fail _ => t_thm);
+	(save_thm(name, tac_proof(([], term), tac)); try_tactic acc tac more)
+	handle Fail _ => try_tactic (vc::acc) tac more
+) | try_tactic acc _ [] = rev acc;
+val vcs1 = try_tactic []
+	(cn_vc_simp_tac[] THEN REPEAT strip_tac) vcs;
+val vcs2 = try_tactic []
+	(cn_vc_simp_tac[] THEN PC_T1 "z_lin_arith" asm_prove_tac[]) vcs1;
+=TEX
+}
 =SML
 output_z_document{script = "SUM", out_file="refine1.zed"};
 output_z_document{script = "SUM_BODY", out_file="refine2.zed"};
 =TEX
 \Hide{
 =SH
-sed -e '/^[a-zA-Z(]/{
+sed -e '/^$/d' -e '/^[a-zA-Z(]/{
 	i\
 	=SML
-}' < refine1.zed | sieve tex > refine1.zed.tex
-sed -e '/^[a-zA-Z(]/{
+}' < refine1.zed | sed -e '/^	/s/	//' | sieve tex > refine1.zed.tex
+sed -e '/^$/d' -e '/^[a-zA-Z(]/{
 	i\
 	=SML
-}' < refine2.zed | sieve tex > refine2.zed.tex
+}' < refine2.zed | sed -e '/^	/s/	//' | sieve tex > refine2.zed.tex
 =TEX
 }
 =IGN
 print_z_document "SUM";
 print_z_document "SUM_BODY";
 =TEX
-{\underscoreoff\subsection{Z Documents}
-\include{refine1.zed}
-\include{refine2.zed}}
+{\ftlinepenalty=9999
+\underscoreoff\subsection{Z Documents}
+\input{refine1.zed.tex}
+\input{refine2.zed.tex}}
 \section{A Z Model}
 \subsection{Preamble}
 =SML
