@@ -1,0 +1,183 @@
+######################################################################
+#
+#	$IdL$
+#	maths_egs.mkf
+#	makefile for the mathematical case studies
+######################################################################
+
+# suffixes known
+.SUFFIXES: .db .doc .dvi .ldd .log .lot .sh .doc .tex .tch
+
+# Control for RCS checking out: expand keywords to values only
+# (needed for document dates)
+COFLAGS=-kv
+
+# default make target.  displays a list of more useful targets
+
+default:
+	@echo "The following are some of the more useful make commands:"
+	@echo " "
+	@echo "make -f maths_egs.mkf build          - builds the database"
+	@echo "make -f maths_egs.mkf doc            - builds the documents"
+	@echo "make -f maths_egs.mkf rcs            - build the source with RCS repository"
+	@echo "make -f maths_egs.mkf src            - build the source"
+	@echo "make -f maths_egs.mkf packinglist    - list the Z source file names"
+	@echo " "
+	@echo " "
+
+######################################################################
+#
+#	Makefile Definitions
+#
+######################################################################
+
+PRODNAME=PPMathsEgs
+SHORTNAME=maths_egs
+PRODUCT=$(PRODNAME)
+CWD=$(shell pwd)
+HAVERCS=$(shell (test -d RCS && echo y ) || echo n)
+
+DBNAME=	maths_egs
+
+RELDIR=release
+
+# The documents
+SMLDOCS=
+SMLDOCS+=	wrk066.doc
+SMLDOCS+=	wrk067.doc
+
+# Variations on the documents
+SMLFILES=	$(SMLDOCS:.doc=.sml)
+LDDFILES=	$(SMLDOCS:.doc=.ldd)
+DVIFILES=	$(SMLDOCS:.doc=.dvi)
+
+# packing list for a source release (target src)
+PACKINGLIST=
+PACKINGLIST+= wrk066.doc
+PACKINGLIST+= wrk067.doc
+PACKINGLIST+= fmu.bib
+PACKINGLIST+= maths_egs.mkf
+
+######################################################################
+#
+# Dependencies - determining the order of compilation
+#
+######################################################################
+wrk066.ldd: db.ldd
+wrk067.ldd: wrk066.ldd
+$(DVIFILES): fmu.bib
+
+######################################################################
+#
+#	Building the database
+#
+######################################################################
+
+db: wrk067.ldd
+
+db.ldd:
+	pp_make_database -f -p hol $(DBNAME)
+	touch db.ldd
+# useful target to print out the names of all the files in the source $(RELDIR)
+packinglist:
+	@echo $(PACKINGLIST)
+
+
+######################################################################
+#
+#	Constructing source release directories
+#
+######################################################################
+
+reldir:
+	if [ "$${PPTARGETDIR:-}" = "" ]; \
+	then \
+		rm -rf $(RELDIR); \
+	fi
+	[ -d   $(RELDIR) ] || mkdir $(RELDIR)
+	
+
+srcdir:	reldir
+	[ -d   $(RELDIR)/src ] || mkdir $(RELDIR)/src
+
+docdir:	reldir
+	[ -d   $(RELDIR)/doc ] || mkdir $(RELDIR)/doc
+
+
+rcsrel:	srcdir
+	[ -d   $(RELDIR)/src/RCS ] || mkdir $(RELDIR)/src/RCS
+	@for f in $(PACKINGLIST); \
+	do \
+		cp RCS/$$f,v $(RELDIR)/src/RCS/$$f,v; \
+	done
+	chmod -R a-w $(RELDIR)
+	chmod -R g-w $(RELDIR)
+	chmod -R u+w $(RELDIR)
+
+rcs:	rcsrel
+	cd $(RELDIR) && tar cvf $(CWD)/$(PRODUCT).rcs.tar ./*
+	cd $(CWD) && gzip $(PRODUCT).rcs.tar && \
+	mv $(PRODUCT).rcs.tar.gz $(PRODUCT).rcs.tgz
+
+srcrel: srcdir $(DISTPACKINGLIST)
+	@for f in $(DISTPACKINGLIST); \
+	do \
+		cp $$f $(RELDIR)/src/$$f; \
+	done
+	chmod -R a-w $(RELDIR)
+	chmod -R g-w $(RELDIR)
+	chmod -R u+w $(RELDIR)
+
+docrel: docdir $(DVIFILES)
+	@for f in $(DVIFILES); \
+	do \
+		cp $$f $(RELDIR)/doc/$$f; \
+	done
+	chmod -R a-w $(RELDIR)
+	chmod -R g-w $(RELDIR)
+	chmod -R u+w $(RELDIR)
+
+src:	srcrel
+	cd $(RELDIR) && tar cvf $(CWD)/$(PRODUCT).src.tar ./*
+	cd $(CWD) && gzip $(PRODUCT).src.tar && \
+	mv $(PRODUCT).src.tar.gz $(PRODUCT).src.tgz
+
+doc:	docrel srcrel
+	cd $(RELDIR) && tar cvf $(CWD)/$(PRODUCT).doc.tar ./*
+	cd $(CWD) && gzip $(PRODUCT).doc.tar && \
+	mv $(PRODUCT).doc.tar.gz $(PRODUCT).doc.tgz
+
+######################################################################
+#
+#	Tidying Up
+#
+######################################################################
+
+clean:
+	rcsclean
+	rm -f $(SMLFILES) $(LDDFILES)
+	rm -f *.aux *.bbl *.blg *.idx *.log *.lot *.sid *.sml *.tex *.toc db.ldd *.th.doc
+
+######################################################################
+#
+#	Generic Rules
+#
+######################################################################
+
+%.ldd: %.sml
+	@rm -f $@ $*.err 2>/dev/null
+	@echo "Compiling (code)" $<
+	@pp -d $(DBNAME) -f $< >$*.err
+	@mv $*.err $@
+
+
+%.sml: %.doc
+	docsml $*
+
+%.tex: %.doc %.ldd
+	doctex $* $**.th.doc
+
+%.dvi: %.tex
+	BIBINPUTS=.:/usr/local/pp/tex: texdvi -b $* >/dev/null </dev/null
+	texdvi $* >/dev/null </dev/null
+	texdvi $*
