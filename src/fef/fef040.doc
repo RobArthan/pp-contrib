@@ -255,6 +255,7 @@ val Ûconj_040_1Ý = ¬
 	µbm· bm  secure ¤ bm  ml_secure (LiftRel same_ins) (LiftRel same_outs)
 ®;
 =TEX
+\pagebreak
 \section{RESULT LABELLING}
 \subsection{Observations}
 The general way we are modelling structured multi-level objects requires us to use indirect means to handle the idea of a component of an object labelled with a class.
@@ -277,7 +278,7 @@ This notion may be formalised as follows:
 =INLINEFT
 ~A
 =TEX
-\ is ProofPower-HOL notation for the complement of the set $A$.)
+\ is {\ProductHOL} notation for the complement of the set $A$.)
 
 That is to say
 =INLINEFT
@@ -289,28 +290,29 @@ Influenced s x f
 \Note{Should one be using uncurried functions here: $Influenced(s, x, f)$?}
 
 We model the process of examining a labelled component of an object in the output of a system by a pair of functions, $(C, V)$: $C$ computing the class; and $V$ computing the value.
-We will call such a pair an {\em observation}:
+The information-flow properties of such a pair will be considered relative to the class, $cc$ say of the client to whom the result of the observation may be revealed.
+We will call such a triple comprising $c$, $C$ and $V$ an {\em observation}:
 =SML
-declare_type_abbrev(Û"OBSERVATION"Ý,["'a", "'b"], ¬: ('a ­ Class) ¸ ('a ­ 'b)®);
+declare_type_abbrev(Û"OBSERVATION"Ý,["'a", "'b"],
+	¬: Class ¸ ('a ­ Class) ¸ ('a ­ 'b)®);
 =TEX
-The labelled value produced when an object is observed is defined by the following function (which converts a pair of functions into a function returning pairs):
+The labelled value produced when an object is observed is defined by the following function (which converts the pair of functions into a function returning pairs):
 
 ¹HOLCONST
 Ü	ÛObservedValueÝ : ('a, 'b) OBSERVATION ­ 'a ­ (Class ¸ 'b)
 ÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüü
-ÜµC V x·
-Ü	ObservedValue (C, V) x = (C x, V x)
+Üµc C V x·
+Ü	ObservedValue (c, C, V) x = (C x, V x)
 °
 
 We can think of the labelled values resulting from observations as (single-level) classified objects using the following parameterised equivalence relation, (cf. the filtering operation which are performed on database cells in the single-level formulation of SWORD).
-For the time being, despite earlier remarks, we take it that the class in a labelled value is {\em not} part of the information revealed to the user.
 
 ¹HOLCONST
 Ü	ÛSameLabValÝ : Class ­ (Class ¸ 'b) ª (Class ¸ 'b)
 ÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüü
 Üµc·	SameLabVal c =
 Ü	{	((c‰1, v‰1), (c‰2, v‰2))
-Ü	|	(c dominates c‰1 ¤ c dominates c‰2)
+Ü	|	(c‰1 = c‰2)
 Ü	±	(c dominates c‰1 ´ v‰1 = v‰2) }
 °
 
@@ -324,23 +326,87 @@ We will call an observation {\em bounded} if the following holds of it:
 Ü	ÛBoundedObsÝ : (Class ð ­ ('a ª 'a)) ­ ('a, 'b) OBSERVATION ð
 ÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüü
 Üµs·	BoundedObs s =
-Ü	{	(C, V) : ('a, 'b) OBSERVATION
-Ü	|	µx·	Influenced s x V € (C x)%downarrow% }
+Ü	{	(c, C, V) : ('a, 'b) OBSERVATION
+Ü	|	µx·	Influenced s x C € c %downarrow%
+Ü		±	Influenced s x V € (C x)%downarrow% }
 °
 
-The above definition is necessary for an observation to be secure in a certain sense, as asserted in the following conjecture:
+The boundedness is necessary for an observation to be secure in a certain sense, as asserted in the following conjecture:
 =SML
 val Ûconj_040_2Ý = ¬
-µs·		s  IndexedEquiv
-	´	µC V·	ObservedValue (C, V)  ml_secure s (LiftRel SameLabVal)
-		´	(C, V)  BoundedObs s
+µs·	s  IndexedEquiv
+´	µc C V·	ObservedValue (c, C, V)  ml_secure s (LiftRel SameLabVal)
+		´	(c, C, V)  BoundedObs s
 ®;
 =TEX
+However, boundedness is not sufficient in general.
+The problems arises with dependencies between the data which is visible at incomparable classes (e.g., arising from a state invariant linking values stored under incomparable classes).
+E.g. assume the lattice of classes comprises $\bot$, $\top$ and three incomparable classes $I$, $J$, and $K$, as shown in the following diagram:
+
+\def\IJKdiagram#1#2#3#4#5{%
+\def\normalisebaselines{\baselineskip20pt \lineskip3pt \lineskiplimit3pt}
+\matrix{%
+	& 		& #2	& 		&		&\cr
+	& \nearrow	& 	& \searrow	&		&\cr
+#1	& \rightarrow	& #3	& \rightarrow	& #5		&\cr
+	& \searrow	& 	& \nearrow	&		&\cr
+	& 		& #4	& 		&		&\cr
+}}
+
+$$\IJKdiagram{\bot}{I}{J}{K}{\top}$$
+
+As $c$ ranges over the possible classes, the sets
+=INLINEFT
+c%downarrow%
+=TEX
+\ which appear in the definition of $ml\_secure$ and the sets
+=INLINEFT
+~(c%uparrow%)
+=TEX
+\ which appear in the definition of $Influenced$
+are as shown in the following table:
+
+{\def\I{\bullet}\def\O{\circ}\def\IJK#1#2#3#4#5{\scriptsize$\IJKdiagram#1#2#3#4#5$}
+\begin{tabular}{|l|c|c|c|c|c|c|}\hline
+$c$	& $\bot$ & $I$ & $J$ & $K$ & $\top$ \\\hline
+=INLINEFT
+c%downarrow%
+=TEX
+	& \IJK{\I}{\O}{\O}{\O}{\O}	% bottom
+	& \IJK{\I}{\I}{\O}{\O}{\O}	% I
+	& \IJK{\I}{\O}{\I}{\O}{\O}	% J
+	& \IJK{\I}{\O}{\O}{\I}{\O}	% K
+	& \IJK{\I}{\I}{\I}{\I}{\I}	% top
+\\\hline
+=INLINEFT
+~(c%uparrow%)
+=TEX
+	& \IJK{\O}{\O}{\O}{\O}{\O}	% bottom
+	& \IJK{\I}{\O}{\I}{\I}{\O}	% I
+	& \IJK{\I}{\I}{\O}{\I}{\O}	% J
+	& \IJK{\I}{\I}{\I}{\O}{\O}	% K
+	& \IJK{\I}{\I}{\I}{\I}{\O}	% top
+\\\hline
+\end{tabular}}
+
+Now, let us assume that objects are triples of integers, $(x_I, x_J, x_K)$, and that the indexed equivalence, $s$, on these objects is obtained by classifying each component $x_c$ at $c$ (so that clients at class $\bot$ can see nothing, clients at classes $I$, $J$ and $K$ can see $x_I$, $x_J$ and $x_K$, respectively, and clients at class $\top$ can see everything).
+Let us assume in addition that the objects are constrained to satisfy the invariant $x_I + x_J + x_K = 0$.
+Consider any function $V$ with domain the set of triples satisfying this invariant.
+Because of the invariant, the value of $V$ on any object $x$ is determined by the values of any two of the three components of $x$.
+By reference to the table showing the values of
+=INLINEFT
+~(c%uparrow%)
+=TEX
+\ above, we find that for any state $x$, $Influenced\,s\,x\,V = \{\bot\}$.
+However, it is clearly not secure to classify an arbitrary function on the set of objects as computing a value at class $\bot$.
+E.g. the function $V_I$ which maps $(x_I, x_J, x_K)$ to $x_I$ must be classified at or above $I$ in order to be secure.
+
+
 =IGN
 val Ûconj_040_3Ý = ¬
-µs·		s  IndexedEquiv ± s(Universe) = Id Universe
-	´	µC V·	(C, V)  BoundedObs s
-		´	ObservedValue (C, V)  ml_secure s (LiftRel SameLabVal)
+µs·		s  IndexedEquiv ± s Universe = Id Universe
+	´	µc C V·	(c, C, V)  BoundedObs s
+		´	ObservedValue (c, C, V)  ml_secure s (LiftRel SameLabVal)
 ®;
 =TEX
 \section{CLOSING DOWN}
@@ -572,35 +638,50 @@ set_goal([], ¬LiftRel SameLabVal  IndexedEquiv®);
 a(bc_tac[lift_rel_indexed_equiv_thm] THEN rewrite_tac[same_lab_val_equiv_thm]);
 val Ûlift_rel_same_lab_val_equiv_thmÝ =
 	save_pop_thm"lift_rel_same_lab_val_equiv_thm";
+=TEX
+=SML
+set_pc"hol2";
+set_goal([], ¬
+	µc d·c dominates d ´ SameLabVal c € SameLabVal d
+®);
+a(rewrite_tac(map get_spec[¬SameLabVal®]) THEN REPEAT strip_tac);
+a(all_fc_tac[get_spec¬$dominates®]);
+val Ûsame_lab_val_anti_mono_thmÝ = save_pop_thm"same_lab_val_anti_mono_thm";
+=TEX
+=SML
+set_pc"hol";
+set_goal([], ¬
+µc·	(LiftRel SameLabVal)(c %downarrow%) = SameLabVal c
+®);
+a(bc_tac[equiv_anti_mono_lift_rel_thm] THEN
+	rewrite_tac[same_lab_val_equiv_thm, same_lab_val_anti_mono_thm]);
+val Ûlift_rel_same_lab_val_down_set_thmÝ =
+	save_pop_thm"lift_rel_same_lab_val_down_set_thm";
 =TEX 
 =IGN SML
 set_pc"hol";
 set_goal([], conj_040_2);
-a(rewrite_tac(lift_rel_same_lab_down_thm:: map get_spec
+a(rewrite_tac(lift_rel_same_lab_val_down_set_thm:: map get_spec
 	[¬BoundedObs®, ¬ObservedValue®, ¬SameLabVal®,
 	¬ml_secure®, ¬Influenced®]) THEN
 	PC_T1 "hol2" REPEAT strip_tac);
 (* *** Goal "1" *** *)
-a(rename_tac[(¬x'®, "c")] THEN cases_tac¬µd·d dominates c®);
-(* *** Goal "1.1" *** *)
-a(lemma_tac ¬c dominates lattice_bottom ± lattice_bottom dominates c®
-	THEN1 asm_rewrite_tac[get_spec¬lattice_bottom®]);
-a(all_fc_tac[get_spec¬lattice_bottom®]);
-(* *** Goal "1.2" *** *)
-a(list_spec_nth_asm_tac 5 [¬d®, ¬x®, ¬y®]);
+a(rename_tac[(¬x'®, "d")] THEN rewrite_tac[get_spec¬$%downarrow%®]);
+a(cases_tac¬µe·e dominates d® THEN1 asm_rewrite_tac[]);
+a(list_spec_nth_asm_tac 4 [¬e®, ¬x®, ¬y®]);
 a(all_fc_tac[up_down_thm3]);
-a(LIST_GET_NTH_ASM_T [9]
+a(LIST_GET_NTH_ASM_T [8]
 	(ALL_FC_T (PC_T1 "sets_ext" all_fc_tac) o
 		map (rewrite_rule[get_spec¬IndexedEquiv®])));
 (* *** Goal "2" *** *)
-a(rename_tac[(¬x'®, "c")] THEN rewrite_tac[get_spec¬$%downarrow%®]);
+a(rename_tac[(¬x'®, "d")] THEN rewrite_tac[get_spec¬$%downarrow%®]);
 a(contr_tac);
-a(lemma_tac¬C x dominates C x® THEN1 rewrite_tac[get_spec¬lattice_bottom®]);
-a(list_spec_nth_asm_tac 5 [¬C x®, ¬x®, ¬y®]);
 a(all_fc_tac[up_down_thm3]);
-a(LIST_GET_NTH_ASM_T [9]
+a(LIST_GET_NTH_ASM_T [7]
 	(ALL_FC_T (PC_T1 "sets_ext" all_fc_tac) o
 		map (rewrite_rule[get_spec¬IndexedEquiv®])));
+a(list_spec_nth_asm_tac 6 [¬C x®, ¬x®, ¬y®]);
+a(swap_nth_asm_concl_tac 1 THEN rewrite_tac[get_spec¬lattice_bottom®]);
 val Ûthm_040_2Ý = save_pop_thm"thm_040_2";
 =TEX 
 =SML
@@ -623,73 +704,34 @@ val Ûdown_¥_comp_up_thmÝ = save_pop_thm"down_¥_comp_up_thm";
 =IGN SML
 set_pc"hol";
 set_goal([], conj_040_3);
-a(rewrite_tac(lift_rel_same_lab_down_thm:: map get_spec
+a(rewrite_tac(lift_rel_same_lab_val_down_set_thm:: map get_spec
 	[¬BoundedObs®, ¬ObservedValue®, ¬SameLabVal®,
 	¬ml_secure®, ¬Influenced®]) THEN
 	PC_T1 "hol2" REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(rewrite_tac[lift_rel_same_lab_val_equiv_thm]);
 (* *** Goal "2" *** *)
-a(cases_tac¬c = lattice_top®);
+a(cases_tac¬c' = lattice_top®);
 (* *** Goal "2.1" *** *)
 a(var_elim_nth_asm_tac 1);
 a(POP_ASM_T (strip_asm_tac o rewrite_rule[up_down_clauses]));
 a(all_asm_fc_tac[]);
 a(POP_ASM_T (rewrite_thm_tac o rewrite_rule[get_spec¬Id®]));
 (* *** Goal "2.2" *** *)
+a(lemma_tac¬³c' dominates lattice_top®);
+a(contr_tac THEN lemma_tac¬lattice_top dominates  c'® THEN1
+	rewrite_tac[get_spec¬lattice_top®]);
+a(all_fc_tac[get_spec¬lattice_top®]);
+(* *** Goal "2.2.2" *** *)
+a(all_fc_tac[up_down_thm3]);
+a(PC_T1 "hol2" (spec_nth_asm_tac 5) ¬i‰1®);
+a(PC_T1 "hol2" (spec_nth_asm_tac 2) ¬i‰1®);
+
+
+
+a(LIST_GET_NTH_ASM_T [7]
+	(all_fc_tac o map (rewrite_rule[get_spec¬IndexedEquiv®])));
 
 
 
 val Ûthm_040_3Ý = save_pop_thm"thm_040_3";
-
-=IGN
-\section{STATE MACHINES}
-Behavioural models for systems are obtained from state machines.
-We model a state machine as a pair comprising an initial state and a transition function:
-=SML
-=IGN ¹HOLLABPROD ÛMACHINEÝ
-Ü	Init	: 'STATE;
-Ü	TrF	: 'OBJ ¸ 'STATE ­ 'STATE ¸ 'OBJ
-°
-=IGN
-Given such a state machine, we may construct its behavioural model as follows:
-=IGN ¹HOLCONST
-Ü	Ûml_behavioursÝ : ('OBJ, 'STATE) MACHINE ­ 'OBJ ML_BEHAVIOURS
-÷üüüüüüüüüüüüüüü
-Üµm : ('OBJ, 'STATE) MACHINE·
-Ü	ml_behaviours m =
-Ü	let	step i (st, resl) =
-Ü		let	(st', res) = TrF(m)(i, st)
-Ü		in	(st', resl ë [res])
-Ü	in	Ìil· Snd(Fold step (Rev il) (Init m, []))
-°
-
-
-
-=IGN
-val Ûrun_machine_convÝ =
-	(rewrite_conv(map get_spec[¬Let®, ¬MkMACHINE®, ¬ml_behaviours®])
-	THEN_C
-	PC_C1 "hol2" rewrite_conv(map get_spec[¬Fold®, ¬Rev®, ¬Append®]));
-
-run_machine_conv
-¬	(let	counter = MkMACHINE 0 (Ì(i, s)· (s + i, s + i))
-	in	ml_behaviours counter)
-	[1;2;3;4]
-®;
-
-
-run_machine_conv
-¬	(let	counter =
-		MkMACHINE 0
-		(Ì(i, s)· if i > s then (i, i) else (s, s))
-	in	ml_behaviours counter)
-	[1;3;2;4;1;5;4;3;2;7;8;0]
-®;
-
-run_machine_conv
-¬	(let	counter = MkMACHINE (0, 0) (Ì(i, (acc, ct))· ((acc + i, ct + 1), (acc + i) Div (ct + 1)))
-	in	ml_behaviours counter)
-	[1;5;15;20]
-®;
-
