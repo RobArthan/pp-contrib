@@ -98,6 +98,7 @@ print_z_document "SUM_BODY";
 \subsection{Preamble}
 =SML
 open_theory"z_library";
+set_pc"z_library1";
 force_delete_theory"refinement" handle Fail _ => ();
 new_theory"refinement";
 ReaderWriterSupport.PrettyNames.add_new_symbols[
@@ -165,12 +166,12 @@ mingle semantic and syntactic domains to simplify later work. We also use a tree
 structure rather than a linear list for sequential composition, since that is semantically
 harmless, and, again, helps to keep things simple later on.
 πZ
-‹ €PROGRAM1› ::=
-‹	€Atom1› (STATE_TRANSFORMER)
-‹ |	€Seq1› (PROGRAM1 ∏ PROGRAM1)
-‹ |	€If1› (PREDICATE ∏ PROGRAM1 ∏ PROGRAM1)
-‹ |	€While1› (PREDICATE ∏ PROGRAM1)
-‹ |	€Spec1› (SPECIFICATION ∏ PROGRAM1)
+‹ €PROGRAM› ::=
+‹	€Atom› (STATE_TRANSFORMER)
+‹ |	€Seq› (PROGRAM ∏ PROGRAM)
+‹ |	€If› (PREDICATE ∏ PROGRAM ∏ PROGRAM)
+‹ |	€While› (PREDICATE ∏ PROGRAM)
+‹ |	€Spec› (SPECIFICATION ∏ PROGRAM)
 ∞
 The following function gives the semantics of this first notion of a program.
 The semantic value of a program is a state transformer.
@@ -178,14 +179,14 @@ In the semantics, the specifications in the syntactic category Spec are just
 ignored --- it is the actual code that determines the semantics, not our aspirations
 for it.
 πZAX
-‹ €semantics1› : PROGRAM1 ≠ STATE_TRANSFORMER
+‹ €semantics› : PROGRAM ≠ STATE_TRANSFORMER
 ˜¸¸¸¸¸¸
-‹ µt : STATE_TRANSFORMER; pâ1, pâ2 : PROGRAM1; c : PREDICATE; s : SPECIFICATION∑
-‹	semantics1 (Atom1 t) = t
-‹ ±	semantics1 (Seq1 (pâ1, pâ2)) = semantics1 pâ1 ª semantics1 pâ2
-‹ ±	semantics1 (If1(c, pâ1, pâ2)) = semantics1 pâ2 ´ (c Ú semantics1 pâ1)
-‹ ±	semantics1 (While1(c, pâ1)) = (c Ú semantics1 pâ1)Á*Í Å c
-‹ ±	semantics1 (Spec1(s, pâ1)) = semantics1 pâ1
+‹ µt : STATE_TRANSFORMER; pâ1, pâ2 : PROGRAM; c : PREDICATE; s : SPECIFICATION∑
+‹	semantics (Atom t) = t
+‹ ±	semantics (Seq (pâ1, pâ2)) = semantics pâ1 ª semantics pâ2
+‹ ±	semantics (If(c, pâ1, pâ2)) = semantics pâ2 ´ (c Ú semantics pâ1)
+‹ ±	semantics (While(c, pâ1)) = (c Ú semantics pâ1)Á*Í Å c
+‹ ±	semantics (Spec(s, pâ1)) = semantics pâ1
 ∞
 It is in the above that the convenience of dealing with partial correctness
 begins to become apparent. The semantics of a while-loop says that the
@@ -219,6 +220,36 @@ We write $t_1 \sqsubseteq t2$ to mean that $t_2$ refines $t_1$.
 ‹	tâ1 √ tâ2 § dom tâ1 Ä dom tâ2 ± dom tâ1 Ú tâ2 Ä tâ1
 ∞
 
+If $t_1$ and $t_2$ are any two state transformers.
+The $t_1$ {\em cut-down} of $t_2$ is the largest set of states, $c$ say,
+such that $t_2$ refines the restriction of $t_1$ to $c$.
+We write this as $t_1 \downarrow t_2$.
+
+πZ
+‹ function 7 _ %downarrow% _
+∞
+πZAX
+‹ €_ %downarrow% _› : STATE_TRANSFORMER ∏ STATE_TRANSFORMER ≠ STATE
+˜¸¸¸¸¸¸
+‹ µtâ1, tâ2 : STATE_TRANSFORMER∑
+‹	tâ1 %downarrow% tâ2 = ﬁ{c : STATE | c Ú tâ1 √ tâ2}
+∞
+The following conjecture states the main properties of the cut-down.
+πZ
+‹ cutdown_clauses_cnj ?Ù
+‹	µtâ1, tâ2 : STATE_TRANSFORMER∑
+‹	tâ1 %downarrow% tâ2 Ú tâ1 √ tâ2
+‹ ±	(µc : STATE | c Ú tâ1 √ tâ2 ∑ c Ä tâ1 %downarrow% tâ2)
+∞
+
+There are many equivalent ways of formulating the above definition.
+The following conjecture records one alternative giving a pointwise
+construction.
+πZ
+‹ cutdown_pointwise_cnj ?Ù
+‹	µtâ1, tâ2 : STATE_TRANSFORMER∑
+‹	tâ1 %downarrow% tâ2 = {s : STATE | s ç dom tâ1 ¥ {s} Ú tâ1 √ tâ2}
+∞
 \subsection{Program Correctness}
 Intuitively, a program is correct if every part of it that has a specification
 satisfies that specification. We relativise this notion to a notion
@@ -234,15 +265,108 @@ c %models% p
 ‹ relation _ %models% _
 ∞
 πZAX
-‹ €_ %models% _› : PREDICATE ™ PROGRAM1
+‹ €_ %models% _› : PREDICATE ™ PROGRAM
 ˜¸¸¸¸¸¸
-‹ µt : STATE_TRANSFORMER; pâ1, pâ2 : PROGRAM1; câ1, câ2 : PREDICATE; s : SPECIFICATION∑
-‹	(câ1 %models% (Atom1 t))
-‹ ±	(câ1 %models% (Seq1 (pâ1, pâ2)) § câ1 %models% pâ1 ± semantics1 pâ1 ®câ1© %models% pâ2)
-‹ ±	(câ1 %models% (If1(câ2, pâ1, pâ2)) § câ1 ° câ2 %models% pâ1 ± câ1 \ câ2 %models% pâ2)
-‹ ±	(câ1 %models% (While1(câ2, pâ1)) § (câ1 ° dom (semantics1(While1(câ2, pâ1)))) %models% pâ1)
-‹ ±	(câ1 %models% (Spec1(s, pâ1)) § câ1 ° dom s %models% pâ1 ± câ1 Ú s √ semantics1 pâ1)
+‹ µt : STATE_TRANSFORMER; pâ1, pâ2 : PROGRAM; câ1, câ2 : PREDICATE; s : SPECIFICATION∑
+‹	(câ1 %models% (Atom t))
+‹ ±	(câ1 %models% (Seq (pâ1, pâ2)) § câ1 %models% pâ1 ± semantics pâ1 ®câ1© %models% pâ2)
+‹ ±	(câ1 %models% (If(câ2, pâ1, pâ2)) § câ1 ° câ2 %models% pâ1 ± câ1 \ câ2 %models% pâ2)
+‹ ±	(câ1 %models% (While(câ2, pâ1)) § (câ1 ° dom (semantics(While(câ2, pâ1)))) %models% pâ1)
+‹ ±	(câ1 %models% (Spec(s, pâ1)) § câ1 ° dom s %models% pâ1 ± câ1 Ú s √ semantics pâ1)
 ∞
+\subsection{Precondition Calculation}
+A pre-condition calculator is a function that takes a program and a post-condition as
+its argument and returns a predicate that, we hope, gives the pre-condition for
+achieving the post-condition. In practice, such a function might conceptually
+be partial, because, for example, there may be atomic statement forms that are
+intractable. However, these can always be handled by returning an empty
+pre-condition, so we take pre-condition calculators to be total functions.
+πZ
+‹ €PREC_CALC› ¶ PROGRAM ∏ PREDICATE ≠ PREDICATE
+∞
+A pre-condition calculator is sound if the pre-condition it returns
+for any program and post-condition is such that execution of the
+program in any state satisfying the pre-condition will indeed result
+in a state satisfying the post-condition.
+πZAX
+‹ €sound_prec_calc› : PREC_CALC
+˜¸¸¸¸¸¸
+‹ µpc : PREC_CALC∑
+‹	pc ç sound_prec_calc
+‹ §	(µprog : PROGRAM; postc, prec : PREDICATE
+‹	|	prec = pc (prog, postc)
+‹	∑	semantics prog ®prec© Ä postc)
+∞
+The notion of soundness is a purely semantic one: it does not require
+those parts of the program that have specifications actually to satisfy
+those specifications. The stronger notion of correctness imposes
+this requirement. To formulate this for a given program and post-condition,
+{\it postc}, say, for which the pre-condition calculator returns the
+pre-condition, {\it prec}, say, we take the relation
+{\it postc} $\times$ {\it prec} as the specification of the program and
+require that the resulting program be correct with respect to this specification
+in any state.
+πZAX
+‹ €correct_prec_calc› : PREC_CALC
+˜¸¸¸¸¸¸
+‹ µpc : PREC_CALC∑
+‹	pc ç sound_prec_calc
+‹ §	(µprog : PROGRAM; postc, prec : PREDICATE
+‹	|	prec = pc (prog, postc)
+‹	∑	STATE %models% Spec(prec ∏ postc, prog))
+∞
+We can now formulate the conjecture that correctness for pre-condition calculators is indeed a stronger
+notion than soundness.
+πZ
+‹ correct_prec_calc_sound_cnj ?Ù correct_prec_calc Ä sound_prec_calc
+∞
+
+\subsection{Proofs}
+=SML
+set_goal([], ÒSTATE_TRANSFORMER = UÆ);
+a(rewrite_tac(map z_get_spec[ÒSTATEÆ, ÒSTATE_TRANSFORMERÆ, Ò(_™_)Æ]));
+val €state_transformer_u_thm› = save_pop_thm "state_transformer_u_thm";
+=TEX
+=SML
+val €state_u_thm› = save_thm("state_u_thm",
+	(z_get_spec ÒSTATEÆ));
+val €refines_thm› = save_thm("refines_thm",
+	rewrite_rule[state_transformer_u_thm] (z_get_spec Ò(_√_)Æ));
+val €cutdown_thm› = save_thm("cutdown_thm",
+	rewrite_rule[state_transformer_u_thm, state_u_thm] (z_get_spec Ò(_%downarrow%_)Æ));
+=TEX
+=SML
+set_goal([], get_conjecture "-" "cutdown_clauses_cnj");
+a(rewrite_tac[state_transformer_u_thm, state_u_thm, refines_thm, cutdown_thm] THEN
+	REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(PC_T1 "z_library_ext" prove_tac[]);
+(* *** Goal "2" *** *)
+a(PC_T1 "z_library_ext" REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(z_∂_tacÒ{x1}Æ THEN PC_T1 "z_library_ext" asm_prove_tac[]);
+(* *** Goal "2.2" *** *)
+a(PC_T1 "z_library_ext" asm_prove_tac[]);
+(* *** Goal "3" *** *)
+a(PC_T1 "z_library_ext" REPEAT strip_tac);
+a(z_∂_tacÒ{x1}Æ THEN PC_T1 "z_library_ext" asm_prove_tac[]);
+val cutdown_clauses  = save_pop_thm"cutdown_clauses";
+=TEX
+=SML
+set_goal([], get_conjecture "-" "cutdown_pointwise_cnj");
+a(REPEAT strip_tac);
+a(rewrite_tac[state_transformer_u_thm, state_u_thm, refines_thm, cutdown_thm] THEN
+	PC_T "z_library_ext" strip_tac THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(PC_T1 "z_library_ext" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(PC_T1 "z_library_ext" asm_prove_tac[]);
+(* *** Goal "3" *** *)
+a(z_∂_tacÒ{x1}Æ THEN PC_T1 "z_library_ext" asm_prove_tac[]);
+(* *** Goal "4" *** *)
+a(z_∂_tacÒ{x1}Æ THEN REPEAT strip_tac);
+val cutdown_pointwise_thm  = save_pop_thm"cutdown_pointwise_thm";
+=TEX
 
 \subsection{Epilogue}
 =SML
