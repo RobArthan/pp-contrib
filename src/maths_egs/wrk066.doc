@@ -210,9 +210,10 @@ alive by replaying them interactively. Most readers of the printed document will
 therefore not wish to study that part of the document.
 
 
-There are several ways of motivating this material and my preference is for a topological and
+There are several ways of motivating this material and my preference is for a topological or
 geometric approach. From that point of view, almost the whole of the material in this document
-can be viewed as leading towards the results on the trigonometric functions in section~\ref{TheSineAndCosineFunctions} below.
+can be viewed as leading towards the results on the transcendental functions in section~\ref{SomeSpecialFunctions} below. The material is presented below in a bottom-up
+order in sections~\ref{Polynomials} to~\ref{SomeSpecialFunctions} below. 
 
 \subsection{Technical Prelude}
 
@@ -411,7 +412,7 @@ poly_roots_finite_thm
 =TEX
 }
 
-\subsection{Algebraic Results}
+\subsection{Algebraic Results}\label{AlgebraicResults}
 
 To deal with limits we will need a number of simple algebraic facts about
 the absolute value function, for example
@@ -477,12 +478,12 @@ are listed below:
 }
 
 
-\subsection{The Archimedean Property}
+\subsection{The Archimedean Property}\label{TheArchimedeanProperty}
 It is a consequence of the completeness of the real numbers that they are an archimedean
 ordered ring: given any $x, y > 0$ there is a natural number $m$ such that $y < mx$.
 The following theorems capture this property and some consequences.
 The archimedean division theorem says that given $d > 0$ and $y \ge 0$, there is a natural
-number $q$ and $r > 0$ such that $y = qd + r$ and $r < d$, and turns out to be an important
+number $q$ and a real number $r > 0$ such that $y = qd + r$ and $r < d$, and turns out to be an important
 lemma in the development of the properties of the transcendental functions.
 
 =GFT
@@ -493,7 +494,7 @@ lemma in the development of the properties of the transcendental functions.
 Ø_Ó_exp_tends_to_infinity_thm
 Ø_Ó_exp_tends_to_0_thm
 =TEX
-\subsection{Limits of Sequences of Numbers}
+\subsection{Limits of Sequences of Numbers}\label{LimitsOfSequencesOfNumbers}
 %%%%
 %%%%
 %%%%
@@ -544,7 +545,7 @@ The first few theorems on limits capture this observation and some consequences,
 poly_lim_seq_thm
 =TEX
 , which says that if $s_m$ is a sequence converging to a limit, $t$,
-and $f(x)$ is a polynomail, then the sequence $f(s_m)$ converges to $f(t)$.
+and $f(x)$ is a polynomial, then the sequence $f(s_m)$ converges to $f(t)$.
 
 None of this theory would be very interesting if there were no convergent sequences, so
 we show that the sequence whose $m$-th term is $x + 1/(m+1)$ converges to $x$ for any $x$.
@@ -599,7 +600,7 @@ lim_seq_diffs_tend_to_0_thm
 =TEX
 }
 
-\subsection{Continuity}
+\subsection{Continuity}\label{Continuity}
 %%%%
 %%%%
 %%%%
@@ -621,8 +622,11 @@ declare_infix(200, "Cts");
 ∞
 
 As observed in \cite{Harrison96}, several notions of limit arise and it is desirable to have
-common ways of dealing with them. Harrison's approach is via the general notion of
-convergence nets. We prefer a more homely way. As we shall state and prove later, 
+common ways of dealing with them. 
+Harrison's approach is via the general notion of convergence nets. 
+We prefer more homely ways around thiis problem.
+
+As we shall state and prove later, 
 to say that $f$ is continuous at $x$ is to say that $f(y)$ tends to $f(x)$ as $y$
 tends to $x$. As the first of our theorems,
 =INLINEFT
@@ -633,17 +637,77 @@ sequence $s_m$ whose limit is $x$, we have that the sequence $f(s_m)$ tends to $
 
 
 This approach makes the proofs of the continuity of functions formed from continuous functions
-by applying field-operations pointwise trivial applications of the analogous results on
+by functional composition
+and by applying field-operations pointwise trivial applications of the analogous results on
 sequences. I have not seen this useful observation made
 in any elementary textbook on the subject, the reason, I suspect being two-fold: {\em(i)}
 proving these results about continuity from the definitions is considered to be a good exercise
 for the student, and, {\em(ii)}, the analogue of this approach does not work in an arbitrary
-topological space. Nonetheless, it seems to work very well for us here, so well in fact that
+topological space (although spaces in which it fails are fairly exotic).
+Nonetheless, it seems to work very well for us here, so well, in fact, that
 we spend the time to prove a couple of variants of the result on continuity and limits
 of sequences which let us restrict attention to sequences which are confined to any
 given neighbourhood of the point at which continuity is asserted and which avoid that point.
 This immediately shows that continuity is a local property: if two functions, $f$ and $g$, agree in some
 open interval containing $x$ and $g$ is continuous at $x$, then so is $f$.
+
+At this point in the proof script, we introduce a few simple proof procedures to help with applying
+the results on the continuity of algebraic combinations of continuous functions. In practice,
+we will want to prove that specific combinations are continuous, e.g., $1 + 2f(x)$, given
+the continuity of $f$. However, it requires (a very special case) of higher-order matching
+to apply the theorems to the function $\lambda x \bullet 1 +2f(x)$. The proof procedures
+comprise: {\em (a)} a conversion to help put in the necessary $\eta$-redexes, e.g., to rewrite 
+$\lambda x \bullet 1 +2f(x)$ as $\lambda x \bullet (\lambda x \bullet 1)(x) + (\lambda x \bullet 2f(x)) x$
+so that it matches the statement of
+=INLINEFT
+plus_cts_thm
+=TEX
+; and, {\em(b)}, a tactic,
+=INLINEFT
+simple_cts_tac
+=TEX
+, which selects the right theorem to apply and uses the conversion to apply it.
+
+This heuristic for automatically proving continuity
+is very useful, but the implementation is very simple-minded (for example,
+it does not allow the user to extend the range of functions supported).
+Later on, we will give a more sophisticated analogue for calculating derivatives.
+We choose to defer a more sophisticated approach to automatic continuity proving
+to separate work on topology, since in any case, the particular functions we are really
+interested in in this document turn out to be continuous by dint of being differentiable.
+
+Once the basic facts about continuity of algebraic combinations of continuous
+functions are in place, we prove a few theorems for later use, for example, in reasoning
+about compact sets. Compact sets are defined in terms of open coverings and
+so it is useful to have a characterisation of continuity in terms of open sets.
+Following our approach of taking sequential convergence as basic, we first characterise
+sequential convergence in terms of open sets and then use that characterisation
+to derive one for continuity.
+
+Next we prove a uniqueness property for continuity:
+namely, that if $f$ is continuous at $x$, then $f(x)$ is uniquely determined
+by the values $f(y)$ where $y \not= x$ ranges over any given negbourhood of $x$.
+To do this, we first show that continuity of $f$ at $x$ implies a principle for
+estimating $f(x)$,
+=INLINEFT
+cts_estimate_thm
+=TEX
+\ and as a consequence a principle for showing that $f(x) = 0$
+=INLINEFT
+cts_estimate_0_thm
+=TEX
+. This latter principle applied to the difference of two functions $f$ and $g$ which
+are continuous and agree in some neighbourhood of $x$, except perhaps at $x$,
+shows that two such functions must agree at $x$, which is the uniqueness principle we want.
+
+The final result in this section on continuity states that a function which is both
+continuous in the sense of Darboux (i.e., it satisfies the conclusion of the intermediate
+value theorem) and monotonic increasing is continuous in the usual sense.
+This is preceded by a result which reduces the number of cases that need
+to be considered in proving the result on Darboux continuity: it says
+that if $f(x)$ lies in the open interval $(a, b)$, then when you test $f$ for continuity
+at $x$ using open intervals, you can assume the end-points of the
+``challenge'' interval, $(c, d)$ are both contained in $(a, b)$.
 
 \ThmsIII{%
 =GFT
@@ -681,21 +745,14 @@ cts_open_interval_thm
 darboux_cts_mono_thm
 =TEX
 }
-\subsection{Derivatives}
-The following gives the operation on lists of coefficients that
-corresponds to taking the derivative of a a polynomial function.
-πHOLCONST
-‹ €DerivCoeffs› : Ø LIST ≠ Ø LIST
-˜¸¸¸¸¸¸
-‹ 	DerivCoeffs [] = []
-‹±	(µc l∑
-‹	DerivCoeffs (Cons c l) = PlusCoeffs l (Cons (ÓØ 0) (DerivCoeffs l)))
-∞
+\subsection{Derivatives}\label{Derivatives}
+
 %%%%
 %%%%
 %%%%
 %%%%
-Now we give the usual $\epsilon$-$\delta$ definition for the derivative of
+We now turn to derivatives
+and give the standard $\epsilon$-$\delta$ definition for the derivative of
 a function, $f$ at a point $x$. 
 The notion of a derivative as formulated here is really a ternary
 relation: ``$f$ has derivative $c$ at $x$''.
@@ -715,6 +772,31 @@ declare_infix(200, "Deriv");
 ‹		ÓØ 0 < d
 ‹	±	µy∑ Abs(y - x) < d ± ≥y = x ¥ Abs((f y - f x)/(y-x) - c) < e
 ∞
+
+
+As usual, we will investigate the interaction of the field operations and functional composition
+with derivatives and use the results to say something about derivatives of polynomials.
+In order to state the result about polynomials, we need
+the following definitions, which gives the operation on lists of coefficients that
+corresponds to taking the derivative of a a polynomial function.
+πHOLCONST
+‹ €DerivCoeffs› : Ø LIST ≠ Ø LIST
+˜¸¸¸¸¸¸
+‹ 	DerivCoeffs [] = []
+‹±	(µc l∑
+‹	DerivCoeffs (Cons c l) = PlusCoeffs l (Cons (ÓØ 0) (DerivCoeffs l)))
+∞
+
+Following Harrison, we make much use of Carath\'{e}odory's characterisation
+of the derivative in terms of the existence of a continuous function satisfying certain conditions.
+This turns all the statements about derivatives into statements about continuity
+which are easy to prove once the necessary witnesses are supplied.
+
+After the results about derivatives of algebraic combinations of functions and polynomials,
+we show that the derivative is a local property and that the derivative is unique.
+For later use, we also provide the characterisation of derivatives in terms of limits of
+function values.
+
 \ThmsIII{%
 =GFT
 caratheodory_deriv_thm
@@ -749,6 +831,13 @@ deriv_unique_thm
 %%%%
 %%%%
 %%%%
+We proceed to prove our selection of the classical miscellany of extremely fruitful
+facts about continuous and differentiable functions.
+The selection was motivated both bottom-up, by picking results for their intrinsic interest
+and top-down by picking results that will be needed later.
+It is a little surprising that we did not find we needed l'H\^{o}pital's rule, but no doubt one day it
+will be added to the list.
+
 The notions of open, closed and compact sets are useful in stating some of these results.
 %%%%
 %%%%
@@ -774,6 +863,32 @@ of complementing a set with respect to the universe of its type..]
 ‹ CompactâR =
 ‹ {A | µ V∑ V Ä OpenâR ± A Ä ﬁV ¥ ∂W∑ W Ä V ± W ç Finite ± A Ä ﬁ W}
 ∞
+
+The first of our collection of ``classical'' theorems, which we call the ``curtain induction'' principle,
+is actually one that I have not seen in the literature, but which is very useful in proving
+Bolzano's principle of bisection and proving that (bounded) closed intervals are compact.
+It says that if a property $P$ is such that $P(x)$ entails $P(y)$ for every $y < x$ and
+if for any $x$, there is a $y < x$ such that $P(y)$ entails $P(z)$ for some $z > x$, then
+if $P$ holds anywhere it holds everywhere.
+One thinks of sliding a curtain from left to right across the real line starting
+at the given point where $P$ is known to hold. 
+This captures the essence of one kind of supremum argument in a fairly neat way.
+
+In general, when dealt with fully formally, reasoning about suprema is more slippery
+than one might think --- a problem that is slightly exacerbated by some small
+infelicities in the quantifier structure of theorems about suprema in the theory Ø.
+We therefore try to avoid direct reasoning about suprema in the proofs.
+
+With the curtain induction principle and one or two other lemmas, e.g., that the union
+of a finite chain of sets is actually a member of the chain, we can then reel off the fairly
+standard proofs of Bolzano's bisection principle, the fact that continuous functions
+are bounded and attain their bounds in closed intervals (more generally in compact sets),
+the intermediate value theorem, the mean value theorem etc.
+
+By contrast with Harrison's approach, later on, when we need explicit numerical estimates,
+for example, in demonstrating the existence of $\pi$, we tend to use these theorems, rather
+than obtaining numerical estimates from power series.
+
 \ThmsIII{%
 =GFT
 curtain_induction_thm
@@ -802,7 +917,10 @@ deriv_0_less_thm
 =TEX
 }
 
-\subsection{Excursus: Cantor's Theorem}
+\subsection{Excursus: Cantor's Theorem}\label{ExcursusCantorsTheorem}
+The next block of theorems is an excursion. We prove Cantor's theorem that
+the reals are uncountable. The proof is via nested intervals (and generalises
+to show that any perfect set in a metric space is uncountable --- see Rudin)
 
 \ThmsIII{%
 =GFT
@@ -822,6 +940,16 @@ nested_interval_intersection_thm
 }
 
 \subsection{Some Topology}\label{SomeTopology}
+
+In this section we show that the set of open and closed sets as we have defined them do
+indeed satisfy the rules for the open and closed sets of a a topological space.
+We then provide a selection of additional examples of open and closed sets.
+More interestingly, we then prove that compact sets are closed and contain
+their maximum and minimum elements (if they are non-empty). The empty set
+is compact, but the whole real line is not. Closed subsets of compact sets are closed.
+A set is compact iff. it is closed and bounded (the Heine-Borel theorem).
+Finally, Ø is topologically connected, i.e., it cannot be represented as the union of
+two disjoint open sets.
 
 \ThmsII{%
 =GFT
@@ -854,7 +982,9 @@ heine_borel_thm
 =TEX
 }
 
-\subsection{Cauchy Sequences}
+\subsection{Cauchy Sequences}\label{CauchySequences}
+
+
 \ThmsIII{%
 =GFT
 lim_seq_cauchy_seq_thm
@@ -877,7 +1007,7 @@ lim_seq_§_cauchy_seq_thm
 =TEX
 }
 
-\subsection{Liimits of Function Values}
+\subsection{Liimits of Function Values}\label{LiimitsOfFunctionValues}
 We will write $(f {-}{-}{>} c)x$ to indicate that $f(t)$
 tends to the limit $c$ as $t$ tends to $x$:
 %%%%
@@ -918,7 +1048,7 @@ inverse_deriv_thm
 =TEX
 }
 
-\subsection{Limits of Sequences of Functions}
+\subsection{Limits of Sequences of Functions}\label{LimitsOfSequencesOfFunctions}
 We write $(u {-}{-}{-}{>} h) X$ to indicate that the sequence of functions $u_n$, indexed by
 natural numbers, tends uniformly to the limit function $h$ on the
 set $X$ as $n$ tends to infinity. The definition requires $a < b$.
@@ -958,7 +1088,7 @@ unif_lim_seq_deriv_thm
 =TEX
 }
 
-\subsection{Series and Power Series}
+\subsection{Series and Power Series}\label{SeriesAndPowerSeries}
 The {\em series} defined by a sequence of real terms is, to all intents and
 purposes, the sequence of partial sums of the sequence:
 %%%%
@@ -983,7 +1113,7 @@ subsequences of the sequence:
 ˜¸¸¸¸¸¸
 ‹ µs n∑ PowerSeries s n = PolyEval (s To n)
 ∞
-\subsubsection{Elementary Properties}
+\subsubsection{Elementary Properties}\label{PowerSeriesElementaryProperties}
 
 \ThmsIII{%
 =GFT
@@ -1009,7 +1139,7 @@ lim_series_bounded_thm
 =TEX
 }
 
-\subsubsection{Geometric Series}
+\subsubsection{Geometric Series}\label{PowerSeriesGeometricSeries}
 
 \ThmsII{%
 =GFT
@@ -1023,7 +1153,7 @@ geometric_series_thm1
 =TEX
 }
 
-\subsubsection{Convergence Tests}
+\subsubsection{Convergence Tests}\label{PowerSeriesConvergenceTests}
 
 \ThmsII{%
 =GFT
@@ -1039,7 +1169,7 @@ ratio_test_thm
 =TEX
 }
 
-\subsubsection{Convergence of Power Series and Their Derivatives}
+\subsubsection{Convergence of Power Series}\label{ConvergenceOfPowerSeries}
 
 \ThmsII{%
 =GFT
@@ -1094,7 +1224,7 @@ declare_postfix(330, "!");
 ∞
 =GFT
 =TEX
-\subsubsection{The Exponential Function}
+\subsubsection{The Exponential Function}\label{TheExponentialFunction}
 
 The exponential function, which we define by a differential equation with an initial condition.
 %%%%
@@ -1135,7 +1265,7 @@ exp_power_series_thm
 =TEX
 }
 
-\subsubsection{The Natural Logarithm Function}
+\subsubsection{The Natural Logarithm Function}\label{TheNaturalLogarithmFunction}
 The natural logarithm function, which we define as the left inverse of
 the exponential function:
 %%%%
@@ -1219,7 +1349,7 @@ sin_cos_minus_thm
 =TEX
 }
 
-\subsubsection{The number $\pi$}
+\subsubsection{The Number $\pi$}\label{TheNumberPi}
 
 Archimedes' constant, the generator of the group of roots of the sine function:
 %%%%
@@ -1269,7 +1399,7 @@ ArchimedesConstant_consistent
 =TEX
 }
 
-\subsubsection{Periodicity of the Sine and Cosine Functions}
+\subsubsection{Periodicity of the Sine and Cosine Functions}\label{PeriodicityOfTheSineAndCosineFunctions}
 
 
 \ThmsIII{%
@@ -4018,7 +4148,7 @@ fun aux2 (fv_map : (TERM * TERM) list)
 	)
 );
 in
-	fun sho_match  (ltm : TERM) (rtm : TERM) : (TERM * TERM) list = (
+	fun €sho_match›  (ltm : TERM) (rtm : TERM) : (TERM * TERM) list = (
 		force_value (aux2 [] [] ltm rtm)
 	);
 end;
@@ -4030,7 +4160,7 @@ We need functions for destructing and deconstructing terms of the form
 :
 =SML
 val €deriv_tm› = ¨$DerivÆ;
-fun dest_deriv(tm : TERM) : TERM * TERM * TERM = (
+fun €dest_deriv› (tm : TERM) : TERM * TERM * TERM = (
 	let	val (rator1, arg) = dest_app tm;
 		val (rator2, deriv) = dest_app rator1;
 		val (deriv, func) = dest_app rator2
@@ -4053,16 +4183,16 @@ a real number to a natural number power, we also throw in the result of composin
 the theorem with the chain rule if the operator in the theorem has its last argument
 not a real number.
 =SML
-fun asm_±_elim_rule (thm : THM) : THM = (
+fun €asm_±_elim_rule› (thm : THM) : THM = (
 	let	val (p, q) = dest_±(find (asms thm) is_±);
 	in	asm_±_elim_rule(prove_asm_rule (±_intro (asm_rule p) (asm_rule q)) thm)
 	end	handle Fail _ => thm
 );
-fun all_undisch_rule (thm : THM)  : THM = (
+fun €all_undisch_rule› (thm : THM)  : THM = (
 	all_undisch_rule (undisch_rule thm) handle Fail _ =>  thm
 );
-val Ø_type = îØÆ;
-fun deriv_preprocess (thms : THM list) :  (THM * TERM list)  list = (
+val €Ø_type› = îØÆ;
+fun €deriv_preprocess› (thms : THM list) :  (THM * TERM list)  list = (
 	let	fun heuristic fvs thm1 = (
 			let	val (func, _, _) = dest_deriv (concl thm1);
 				val last_arg = snd(dest_app(snd(dest_simple_Ã func)));
@@ -4089,27 +4219,27 @@ fun deriv_preprocess (thms : THM list) :  (THM * TERM list)  list = (
 =TEX
 We need some miscellaneous rules to support the main step:
 =SML
-fun ¬_elim_rule (tm : TERM) : THM = (
+fun €¬_elim_rule› (tm : TERM) : THM = (
 	undisch_rule (snd(§_elim(ONCE_MAP_C ¬_conv tm)))
 );
-fun thm_frees (thm : THM) : TERM list = (
+fun €thm_frees› (thm : THM) : TERM list = (
 	frees (list_mk_± (concl thm :: asms thm))
 );
-fun freshen (fixed : TERM list) (tms : TERM list) (thm : THM) : THM = (
+fun €freshen› (fixed : TERM list) (tms : TERM list) (thm : THM) : THM = (
 	let	val vs = thm_frees thm term_diff fixed;
 		val vs' = list_variant tms vs;
 		val subs = combine vs' vs;
 	in	asm_inst_term_rule subs thm
 	end
 );
-fun ¬_reduce_and_match (tm1 : TERM) (tm2 : TERM) : (TERM * TERM) list = (
+fun €¬_reduce_and_match› (tm1 : TERM) (tm2 : TERM) : (TERM * TERM) list = (
 	let	val tm1' = snd(dest_eq(concl (TRY_C(MAP_C ¬_conv) tm1)));
 		val tm2' = snd(dest_eq(concl (TRY_C(MAP_C ¬_conv) tm2)));
 		val (_, subs) = term_match tm1' tm2';
 	in	subs
 	end
 );
-fun ¬_eq_conv (tm2 : TERM) : CONV = (fn tm1 =>
+fun €¬_eq_conv› (tm2 : TERM) : CONV = (fn tm1 =>
 	(TRY_C (MAP_C ¬_conv) THEN_C (fn t => eq_sym_rule(TRY_C(MAP_C ¬_conv) tm2)))
 	tm1
 );
@@ -4137,7 +4267,7 @@ t Ù t
 the original $thm$ came from an assumption saying that a function has a derivative
 at exactly one point.
 =SML
-fun thm_step (fixed : TERM list) (tm : TERM)
+fun €thm_step› (fixed : TERM list) (tm : TERM)
 	((thm, fvs) : THM * TERM list) (acc_thm : THM) : THM = (
 	let	val (f_tm, deriv_tm, arg_tm) = dest_deriv tm;
 		val thm1 = freshen fvs (thm_frees acc_thm) thm;
@@ -4177,7 +4307,7 @@ input theorems and all of the assumptions of the theorem being accumulated
 attempting to elimiinate an assumption in favour of assertions about derivatives
 of simpler functions:
 =SML
-fun simple_deriv_step (fixed : TERM list)
+fun €simple_deriv_step› (fixed : TERM list)
 	(infos : (THM * TERM list) list) (acc_thm : THM) : THM OPT= (
 	let	fun thm_steps [] _ = Nil
 		|    thm_steps (_::more_asms) [] = thm_steps more_asms infos
@@ -4193,7 +4323,7 @@ Putting this all together gives the core algorithm which calculates the derivati
 term denoting a function at a given argument:
 =SML
 val var_y = ¨y:ØÆ;
-fun simple_deriv_rule (thms : THM list) : TERM -> TERM -> THM = (
+fun €simple_deriv_rule› (thms : THM list) : TERM -> TERM -> THM = (
 	let	val infos = deriv_preprocess thms;
 		fun go fixed thm = (
 			case simple_deriv_step fixed infos thm of
@@ -4221,7 +4351,7 @@ rules to do the various simplifications:
 
 The following rule conjoins all the assumptions of a theorem into one.
 =SML
-fun asm_±_intro_rule (thm : THM) : THM = (
+fun €asm_±_intro_rule› (thm : THM) : THM = (
 	case asms thm of
 		(asm1::asm2::_) => (
 		let	val thm1 = asm_rule (mk_±(asm1, asm2));
@@ -4236,9 +4366,9 @@ fun asm_±_intro_rule (thm : THM) : THM = (
 =TEX
 The following rule does the elimination of $\beta$- and $\eta$-redexes:
 =SML
-val Ø_»_axiom = inst_type_rule[(îØÆ, î'aÆ), (îØÆ, î'bÆ)] »_axiom;
-val ¬_Ø_»_elim_conv = ONCE_MAP_C (¬_conv AND_OR_C eq_match_conv Ø_»_axiom);
-fun asm_¬_»_elim_rule (thm : THM) : THM = (
+val €Ø_»_axiom› = inst_type_rule[(îØÆ, î'aÆ), (îØÆ, î'bÆ)] »_axiom;
+val €¬_Ø_»_elim_conv› = ONCE_MAP_C (¬_conv AND_OR_C eq_match_conv Ø_»_axiom);
+fun €asm_¬_»_elim_rule› (thm : THM) : THM = (
 	let		fun aux1 acc [] = acc
 		|   aux1 acc (asm::more) = (
 			aux1 (¬_Ø_»_elim_conv asm::acc) more
@@ -4259,7 +4389,7 @@ The following rule looks for assumptions which must  be the same by dint of the
 uniqueness of derivatives and identifies them. (Note this does not need the uniqueness
 theorem, in predicate logic it would be a weakening of the theorem).
 =SML
-fun deriv_dup_elim_rule (thm : THM) : THM = (
+fun €deriv_dup_elim_rule› (thm : THM) : THM = (
 	let	fun aux1 asm1 asm2 thm1 = (
 			let	val (f1, x1, y1) = dest_deriv asm1;
 				val (f2, x2, y2) = dest_deriv asm2;
@@ -4287,7 +4417,7 @@ fun deriv_dup_elim_rule (thm : THM) : THM = (
 Now the promised interface to the simple derivative rule (which essentially just composes the
 rules above in the right order):
 =SML
-fun deriv_rule (thms : THM list) : TERM -> TERM -> THM = (
+fun €deriv_rule› (thms : THM list) : TERM -> TERM -> THM = (
 	let	val rule = simple_deriv_rule thms;
 	in	fn tm => fn arg =>
 		let	val thm1 = rule tm arg;
@@ -4303,7 +4433,7 @@ fun deriv_rule (thms : THM list) : TERM -> TERM -> THM = (
 =TEX
 A tactical packaging for the rule:
 =SML
-fun DERIV_T (thms : THM list) (ttac : THM -> TACTIC) : TACTIC = (
+fun €DERIV_T› (thms : THM list) (ttac : THM -> TACTIC) : TACTIC = (
 	let	val rule = deriv_rule thms;
 	in	fn gl as (_, conc) =>
 		let	val (f, _, arg) = dest_deriv conc;
@@ -4315,7 +4445,7 @@ fun DERIV_T (thms : THM list) (ttac : THM -> TACTIC) : TACTIC = (
 =TEX
 A basic set of theorems for use with the rule, sufficient to attack many rational functions:
 =SML
-val rat_deriv_thms = [
+val €rat_deriv_thms› = [
 	const_deriv_thm,
 	id_deriv_thm,
 	plus_deriv_thm,
@@ -4329,8 +4459,8 @@ val rat_deriv_thms = [
 	rewrite_rule[](µ_elim¨3Æ power_deriv_thm),
 	comp_deriv_thm
 ];
-val rat_deriv_rule = deriv_rule rat_deriv_thms;
-val RAT_DERIV_T = DERIV_T rat_deriv_thms;
+val €rat_deriv_rule› = deriv_rule rat_deriv_thms;
+val €RAT_DERIV_T› = DERIV_T rat_deriv_thms;
 =IGN
 
 
@@ -9296,6 +9426,7 @@ val €trans_deriv_thms› = [
 	±_right_elim exp_def,
 	±_right_elim(±_right_elim sin_def)
 ] @ rat_deriv_thms;
+val €trans_deriv_rule› = deriv_rule trans_deriv_thms;
 val €TRANS_DERIV_T› = DERIV_T trans_deriv_thms;  
 =TEX
 With the aid of these it is very easy to follow the ``axiomatic'' development of
