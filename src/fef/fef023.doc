@@ -71,18 +71,19 @@ None.
 \pagebreak
 \section{GENERAL}
 \subsection{Scope}
-This document gives a formal specification in Standard ML of the SWORD front end filter of \cite{output}.
+This document gives a formal specification in Standard ML of the SWORD front end output filter of \cite{output}.
 
 \subsection{Introduction}
 \section{FILTER FUNCTIONS FOR SELECT QUERIES}
 =SML
+use_file "fef019";
 exception internalError;
 =TEX
 The type of the data is left as generic. The function 
-$class‰v$ returns the classification of a piece of data that is to
+$classèdataê$ returns the classification of a piece of data that is to
  be treated as a classification.
 =SML
-fun 	(Ûclass‰vÝ: 'v  -> Class) v  = raise notDefined "class‰v";
+fun 	(ÛclassèdataêÝ: 'DATA  -> Class) d  = raise notDefined "classèdataê";
 =TEX
 The user's clearance is supplied as parameter to the following functions.
 
@@ -93,31 +94,31 @@ of the where clause, removes the classification
 of the where clause from the head of the list and also 
 returns a boolean which is $true$ if the user is not cleared to see the where clause. 
 =SML
-fun 	(Ûfilter_where_rowÝ : 'v list * Class -> 'v list * bool) 
+fun 	(Ûfilter_where_rowÝ : 'DATA list * Class -> 'DATA list * bool) 
 				([],uc) = raise internalError
-|	filter_where_row 	(v::vs,uc) =  (vs, not (uc dom (class‰v v)));
+|	filter_where_row 	(d::ds,uc) =  (ds, not (uc dom (classèdataê d)));
 =TEX
 The function $filter\_where$ discards rows  where the user is not cleared to see the where clause and also returns a boolean $true$ if any rows have been discarded.
 =SML
-fun 	(Ûfilter_whereÝ : 'v list list * Class -> 'v list list * bool) 
+fun 	(Ûfilter_whereÝ : 'DATA list list * Class -> 'DATA list list * bool) 
 			([],uc) = ([],false)
-|	filter_where 	((vs::vss),uc) = 	let 	val(fds,msg) = filter_where_row(vs,uc)
-							val(fdss,msgs) = filter_where(vss,uc)
+|	filter_where 	((ds::dss),uc) = 	let 	val(fds,msg) = filter_where_row(ds,uc)
+							val(fdss,msgs) = filter_where(dss,uc)
 						in 	if msg then (fdss,true)
 							else (fds::fdss,msgs)
 						end;
 =TEX
 If the user is not cleared to see the data in a particular field, the string $not\_cleared$ is returned.
 =SML
-fun 	(Ûfilter_colsÝ : Class * ('v list * bool list)  -> ('v,string)Sum list ) 
+fun 	(Ûfilter_colsÝ : Class * ('DATA list * bool list)  -> ('DATA,string)Sum list ) 
 			(uc,([],[])) = []
-|	filter_cols	(uc,(v::c::vs,true::bs)) = 	
-			let 	val fv = 	if uc dom class‰v c
-						then Inl v
+|	filter_cols	(uc,(d::c::ds,true::bs)) = 	
+			let 	val fd = 	if uc dom classèdataê c
+						then Inl d
 						else Inr  "not_cleared"
-			in fv :: filter_cols(uc,(vs,bs))
+			in fd :: filter_cols(uc,(ds,bs))
 			end
-|	filter_cols	(uc,(v::vs,false::bs)) = Inl v :: filter_cols(uc,(vs,bs))
+|	filter_cols	(uc,(d::ds,false::bs)) = Inl d :: filter_cols(uc,(ds,bs))
 |	filter_cols 	other = raise internalError;	
 =TEX
 The boolean parameter to the function $filter\_select$ 
@@ -132,13 +133,14 @@ $mayNotBeComplete$
 message should be issued.
 
 =SML
-fun 	(Ûfilter_selectÝ : bool * bool list  * 'v list list * Class -> ('v,string)Sum list list * bool) 
-			(true,cls,vss,uc) = 	let val (fvss,nc) = filter_where(vss,uc)
+fun 	(Ûfilter_selectÝ : bool * bool list  * 'DATA list list * Class 
+							-> ('DATA,string)Sum list list * bool) 
+			(true,cls,dss,uc) = 	let val (fdss,nc) = filter_where(dss,uc)
 						in ((at2 (map(curry filter_cols uc))
-							(fvss,seq(length fvss,cls))),nc)
+							(fdss,seq(length fdss,cls))),nc)
 						end
-|	filter_select	(false,cls,vss,uc) = 	((at2 (map(curry filter_cols uc))
-							(vss,seq(length vss,cls))),false);	
+|	filter_select	(false,cls,dss,uc) = 	((at2 (map(curry filter_cols uc))
+							(dss,seq(length dss,cls))),false);	
 =TEX
 \newpage
 \twocolumn[\section{INDEX} \label{INDEX}]
