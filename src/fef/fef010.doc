@@ -65,7 +65,7 @@ DRA front end filter project RSRE 1C/6130.}
 \begin{description}
 \item[Issue \SCCSversion(\FormatDate{$Date$
 })] Consistency proof for $dominates$ extended because of 
-inclusion of $lub$ etc.
+inclusion of $glb$.
 
 \end{description}
 
@@ -121,97 +121,86 @@ We prove the consistency of $dominates$, $lattice\_bottom$, $
 lattice\_top$ and $lub$. 
 =SML
 push_consistency_goal¬$dominates®;
-a(cases_tac¬µ x y:Class · x = y®);
+a(cases_tac¬µ top bot:Class · top = bot®);
 (* *** Goal "1" *** *)
-a(¶_tac¬(Ì x y · T),x,x,Ì x y · x®);
+=TEX
+This is the case where $Class$ has only one element:
+=SML
+a(¶_tac¬(Ì x y · T),top,top,(Ì x y · x),(Ì x y · x)®);
 a(asm_rewrite_tac[]);
 (* *** Goal "2" *** *)
-a(¶_tac¬(Ì c‰1 c‰2 · c‰1 = x ² c‰2 = y ² c‰1 = c‰2),
-	y,
-	x,
-	Ì c‰1 c‰2 ·  	if c‰1 = y
-				then if c‰2 = y
-				then y
-				else if c‰2 = x
-				then x
-				else c‰2
-			else 	if c‰1 = x
-				then x
-			else 	if c‰2 = y then c‰1
-				else if c‰2 = x then x
-				else if c‰1 = c‰2 then c‰1
-					else x®);
-a(rewrite_tac[] THEN REPEAT strip_tac THEN_TRY asm_rewrite_tac[]);
 =TEX
+In this case, $top$ and $bot$ are given to be distinct elements of $Class$,
+we take the so-called flat lattice with $top$ as top, $bot$ as bottom and
+everything else incomparable (and in between).
+=SML
+a(¶_tac¬(
+	(Ì c‰1 c‰2 · c‰1 = top ² c‰2 = bot ² c‰1 = c‰2),
+	bot,
+	top,
+	(Ì c‰1 c‰2 ·  	if	c‰1 = top
+			then	top
+			else if	c‰1 = bot
+			then	c‰2
+			else if	c‰2 = c‰1 ² c‰2 = bot
+			then	c‰1
+			else	top),
+	(Ì c‰1 c‰2 ·  	if	c‰1 = bot
+			then	bot
+			else if	c‰1 = top
+			then	c‰2
+			else if	c‰2 = c‰1 ² c‰2 = top
+			then	c‰1
+			else	bot))
+
+®);
+a(rewrite_tac[] THEN REPEAT strip_tac
+	THEN_TRY asm_rewrite_tac[]
+	THEN_TRY SOLVED_T (PC_T1 "prop_eq" asm_prove_tac[])
+	THEN_TRY all_var_elim_asm_tac);
+=TEX
+This produces 11 subgoals but the proof is fairly mechanical:
 =SML
 (* *** Goal "2.1" *** *)
-a(DROP_NTH_ASM_T 3 ante_tac THEN DROP_NTH_ASM_T  2 
-	(rewrite_thm_tac o eq_sym_rule) THEN  asm_rewrite_tac[]);
+a(all_asm_ante_tac THEN cases_tac¬x = top® THEN asm_rewrite_tac[]);
+a(cases_tac¬x = bot® THEN asm_rewrite_tac[]);
+a(cases_tac¬y = x® THEN asm_rewrite_tac[]);
+a(cases_tac¬y = bot® THEN asm_rewrite_tac[]);
 (* *** Goal "2.2" *** *)
-a(DROP_NTH_ASM_T 3 ante_tac THEN POP_ASM_T  (rewrite_thm_tac o eq_sym_rule)
-	THEN  asm_rewrite_tac[]);
+a(all_asm_ante_tac THEN cases_tac¬x = top® THEN asm_rewrite_tac[]);
+a(cases_tac¬x = bot® THEN asm_rewrite_tac[]);
+a(cases_tac¬y = x® THEN asm_rewrite_tac[]);
+a(cases_tac¬y = bot® THEN asm_rewrite_tac[]);
 (* *** Goal "2.3" *** *)
-a(DROP_NTH_ASM_T 5 ante_tac THEN DROP_NTH_ASM_T  3 
-	(rewrite_thm_tac o eq_sym_rule) THEN  asm_rewrite_tac[]);
+a(GET_ASM_T ¬³ top = bot® (strip_asm_tac o conv_rule (ONCE_MAP_C eq_sym_conv)));
+a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[]);
 (* *** Goal "2.4" *** *)
-a(POP_ASM_T ante_tac THEN DROP_NTH_ASM_T  3 (rewrite_thm_tac o eq_sym_rule)
-	THEN  asm_rewrite_tac[]);
-=TEX
-=SML
+a(GET_ASM_T ¬³ top = bot® (strip_asm_tac o conv_rule (ONCE_MAP_C eq_sym_conv)));
+a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[]);
 (* *** Goal "2.5" *** *)
-a(DROP_NTH_ASM_T 2 ante_tac THEN  asm_rewrite_tac[]);
+a(cases_tac¬x = top® THEN asm_rewrite_tac[]);
+a(cases_tac¬x = bot® THEN asm_rewrite_tac[]);
 (* *** Goal "2.6" *** *)
-a(cases_tac¬x' = x®THEN asm_rewrite_tac[]);
-a(cases_tac¬y' = y®THEN asm_rewrite_tac[]);
-a(cases_tac¬y' = x®THEN asm_rewrite_tac[]);
-(* *** Goal "2.6.1" *** *)
-a(DROP_NTH_ASM_T 5 ante_tac THEN  asm_rewrite_tac[]);
-(* *** Goal "2.6.2" *** *)
-a(cases_tac¬x'=y'®THEN asm_rewrite_tac[]);
-a(DROP_NTH_ASM_T 6 ante_tac THEN  asm_rewrite_tac[]);
+a(cases_tac¬y = top® THEN asm_rewrite_tac[]);
+a(cases_tac¬y = bot® THEN asm_rewrite_tac[]);
 (* *** Goal "2.7" *** *)
-a(cases_tac¬x' = y®THEN asm_rewrite_tac[]);
-(* *** Goal "2.7.1" *** *)
-a(cases_tac¬y' = x®THEN asm_rewrite_tac[]);
-(* *** Goal "2.7.2" *** *)
-a(cases_tac¬x' = x®THEN asm_rewrite_tac[]);
-(* *** Goal "2.7.2.1" *** *)
-a(DROP_NTH_ASM_T 4 ante_tac THEN  asm_rewrite_tac[]);
-(* *** Goal "2.7.2.2" *** *)
-a(cases_tac¬y' = x®THEN asm_rewrite_tac[]);
-a(cases_tac¬x' = y'®THEN asm_rewrite_tac[]);
-a(DROP_NTH_ASM_T 6 ante_tac THEN  asm_rewrite_tac[]);
-=TEX
-=SML
+a(POP_ASM_T ante_tac THEN asm_rewrite_tac[]);
+a(cases_tac¬x = bot® THEN asm_rewrite_tac[]);
+a(cases_tac¬y = x® THEN asm_rewrite_tac[]);
+a(cases_tac¬y = top® THEN asm_rewrite_tac[]);
 (* *** Goal "2.8" *** *)
 a(POP_ASM_T ante_tac THEN asm_rewrite_tac[]);
+a(cases_tac¬x = bot® THEN asm_rewrite_tac[]);
+a(cases_tac¬x = top® THEN asm_rewrite_tac[]);
+a(cases_tac¬y = x® THEN asm_rewrite_tac[]);
 (* *** Goal "2.9" *** *)
-a(cases_tac¬y' = y®THEN asm_rewrite_tac[]);
-a(cases_tac¬y' = x®THEN asm_rewrite_tac[]);
+a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[]);
 (* *** Goal "2.10" *** *)
-a(cases_tac¬x' = y®THEN asm_rewrite_tac[]);
-a(cases_tac¬x' = x®THEN asm_rewrite_tac[]);
-=TEX
-=SML
+a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[]);
+a(cases_tac¬z = top® THEN asm_rewrite_tac[]);
 (* *** Goal "2.11" *** *)
-a(cases_tac¬x' = y®THEN asm_rewrite_tac[]);
-(* *** Goal "2.11.1" *** *)
-a(cases_tac¬y' = y®THEN asm_rewrite_tac[]);
-a(cases_tac¬y' = x®THEN asm_rewrite_tac[]);
-(* *** Goal "2.11.2" *** *)
-a(cases_tac¬x' = x®THEN asm_rewrite_tac[]);
-(* *** Goal "2.11.2.1" *** *)
-a(DROP_NTH_ASM_T 5 (rewrite_thm_tac o eq_sym_rule) THEN  POP_ASM_T 
-	(rewrite_thm_tac o eq_sym_rule)THEN asm_rewrite_tac[]);
-(* *** Goal "2.11.2.2" *** *)
-a(cases_tac¬y' = y®THEN asm_rewrite_tac[]);
-(* *** Goal "2.11.2.2.1" *** *)
-a(POP_ASM_T ante_tac THEN DROP_NTH_ASM_T 5 (rewrite_thm_tac o eq_sym_rule) 
-	THEN  DROP_NTH_ASM_T 5  rewrite_thm_tac THEN asm_rewrite_tac[]);
-(* *** Goal "2.11.2.2.2" *** *)
-a(cases_tac¬y' = x®THEN asm_rewrite_tac[]);
-a(LEMMA_T¬x' = y'®rewrite_thm_tac);
-a(DROP_NTH_ASM_T 7 (rewrite_thm_tac o eq_sym_rule) THEN  asm_rewrite_tac[]); 
+a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[]);
+a(cases_tac¬z = top® THEN asm_rewrite_tac[]);
 save_consistency_thm¬$dominates®(pop_thm());
 =TEX
 Now we retrieve the definition of $dominates$ with
