@@ -105,83 +105,6 @@ a(strip_tac THEN rewrite_tac[tac_proof(([], ¨µx∑∂z y∑ (y, z) = xÆ),
 		strip_tac THEN ∂_tac¨Snd xÆ THEN ∂_tac¨Fst xÆ THEN rewrite_tac[])]);
 save_consistency_thm¨TableComputationsÆ (pop_thm());
 =TEX
-\subsection{Induction Principle}
-The following theorem takes a minute or so to compute so we give
-a name to it here (to make the proof of the induction theorem easier
-to modify, e.g. if the definitions change).
-=SML
-(* **** The proof is commented out to save time until needed ****
-set_pc"hol";
-val table_computation_rw_thm =
-	rewrite_rule[get_spec¨•â2Æ] (get_spec¨TableComputationsÆ);
-set_pc"hol2";
-set_goal([], ¨µq : TABLE_COMP ≠ BOOL; p : VALUE_COMP ≠ BOOL∑ µcc : Class ∑
-		(µci∑ p(DenoteConstant ci))
-	±	(µi∑ p(Contents i))
-	±	(µi∑ p(Classification i))
-	±	p CountAll
-
-	±	(µf e∑ p e ¥ p(MonOp f e))
-	±	(µf e1 e2∑ p e1 ± p e2 ¥ p(BinOp f e1 e2))
-	±	(µf e1 e2 e3∑ p e1 ± p e2 ± p e3 ¥ p(TriOp f e1 e2 e3))
-	±	(µel∑ (µe∑e ç Elems el ¥ p e) ¥ p(BinOpAnd el))
-	±	(µel∑ (µe∑e ç Elems el ¥ p e) ¥ p(BinOpOr el))
-
-	±	(µcc te cel ee∑ p te ± (µe∑e ç Elems(Map Fst cel) ¥ p e) ±
-				(µe∑ e ç Elems(Map Snd cel) ¥ p e) ± p ee ¥
-					p(CaseVal cc te cel ee))
-	±	(µcc cel ee∑ (µe∑e ç Elems(Map Fst cel) ¥ p e) ±
-				(µe∑ e ç Elems(Map Snd cel) ¥ p e) ± p ee  ¥
-					p(Case cc cel ee))
-
-	±	(µe∑ p e ¥ p(SetFuncAllAnd e))
-	±	(µe∑ p e ¥ p(SetFuncAllOr e))
-	±	(µe∑ p e ¥ p(CountNonNull e))
-	±	(µe∑ p e ¥ p(CountDistinct e))
-	±	(µe∑ p e ¥ p(CommonValue e))
-
-	±	(µf e∑ p e ¥ p(SetFuncAll f e))
-	±	(µf e∑ p e ¥ p(SetFuncDistinct f e))
-
-	±	(µcc te∑ q te ¥ p(ExistsTuples cc te))
-	±	(µcc te∑ q te ¥ p(SingleValue cc te))
-
-	±	(µcc∑ p(JoinedRowExistence cc))
-=TEX
-=SML
-	±	(µi∑ q(TableContents i))
-
-	±	(µesl tel e1 ml nl e2∑ (µe∑e ç Elems(Map Fst esl) ¥ p e)
-			± (µte∑te ç Elems tel ¥ q te) ± p e1 ± p e2
-				¥ q(AllTuples cc esl tel e1 ml nl e2))
-(*	±	(µesl tel e1 ml nl e2∑ (µe∑e ç Elems(Map Fst esl) ¥ p e)
-			± (µte∑te ç Elems tel ¥ q te) ± p e1 ± p e2
-				¥ q(DistinctTuples cc esl tel e1 ml nl e2))
-	±	(µesl tel e1 ml nl e2∑ (µe∑e ç Elems(Map Fst esl) ¥ p e)
-			± (µte∑te ç Elems tel ¥ q te) ± p e1 ± p e2
-				¥ q(Evaluate cc esl tel e1 ml nl e2))	*)
-	¥	(µte∑ te ç TableComputations cc ¥ q te)
-	±	(µe∑ e ç ValueComputations cc ¥ p e)
-Æ);
-a(REPEAT strip_tac);
-(* *** Goal "1" *** *)
-a(swap_asm_concl_tac ¨te ç TableComputations ccÆ
-	THEN rewrite_tac[table_computation_rw_thm]
-	THEN strip_tac
-	THEN ∂_tac¨{te | q te}Æ
-	THEN POP_ASM_T rewrite_thm_tac
-	THEN ∂_tac¨{e | p e}Æ THEN asm_rewrite_tac[]);
-(* *** Goal "2" *** *)
-a(swap_asm_concl_tac ¨e ç ValueComputations ccÆ
-	THEN rewrite_tac[table_computation_rw_thm]
-	THEN strip_tac
-	THEN ∂_tac¨{e | p e}Æ
-	THEN POP_ASM_T rewrite_thm_tac
-	THEN ∂_tac¨{te | q te}Æ THEN asm_rewrite_tac[]);
-val table_computation_induction_thm =
-	save_pop_thm"table_computation_induction_thm";
-**** end of commented out section **** *)
-=TEX
 \section{AUXILIARY DEFINITIONS}
 πHOLCONST
 ‹	OK_TC : Class ≠ TABLE_COMP 
@@ -222,7 +145,6 @@ val table_computation_induction_thm =
 ‹	¥	Fst(vc tlâ0 rlâ0 râ0) = Fst(vc tlâ1 rlâ1 râ1)
 ∞
 =SML
-val €dominates_linear_conj› = ¨µc1 c2∑ c1 dominates c2 ≤ c2 dominates c1Æ;
 =TEX
 \section{LEMMAS}
 =SML
@@ -289,9 +211,95 @@ a(all_asm_fc_tac[]);
 val €Nth_HideDerTableRow_lemma› = save_pop_thm"Nth_HideDerTableRow_lemma";
 =TEX
 =SML
+push_goal([], ¨µc∑ DTR_row o HideDerTableRow c = DTR_rowÆ);
+a(PC_T1"hol2" REPEAT strip_tac);
+a(rewrite_tac(
+	map get_spec[¨$o:(('a≠'c)≠(('b≠'a)≠('b≠'c)))Æ,
+	¨HideDerTableRowÆ, ¨DTR_rowÆ, ¨LetÆ]));
+val €DTR_row_o_HideDerTableRow_lemma› = save_pop_thm"DTR_row_o_HideDerTableRow_lemma";
+=TEX
+=SML
 set_goal([], ¨µf a b c∑ f(if a then b else c) = (if a then f b else f c)Æ);
 a(REPEAT strip_tac THEN cases_tac¨a:BOOLÆ THEN asm_rewrite_tac[]);
 val €fun_if_thm› = save_pop_thm"fun_if_thm";
+=TEX
+=SML
+push_goal([], ¨µf list1 list2∑ Map f list1 = Map f list2 ¥
+	(list1 = [] § list2 = [])Æ);
+a(REPEAT µ_tac);
+a(strip_asm_tac (µ_elim ¨list1Æ list_cases_thm)
+	THEN strip_asm_tac (µ_elim ¨list2Æ list_cases_thm)
+	THEN_TRY asm_rewrite_tac[get_spec¨MapÆ]);
+val €map_eq_map_lemma› = save_pop_thm"map_eq_map_lemma";
+=TEX
+=SML
+push_goal([], ¨µc rl∑
+	rl ˘ {r|c dominates DTR_row r ± c dominates DTR_where r} = []
+	§
+	(Map (HideDerTableRow c) (rl ˘ {r|c dominates DTR_row r}))
+		˘ {r|c dominates DTR_where r} = []Æ);
+a(REPEAT µ_tac);
+a(list_induction_tac ¨rlÆ THEN asm_rewrite_tac(
+	map get_spec[¨LetÆ, ¨MapÆ, ¨DTR_rowÆ, ¨HideDerTableRowÆ, ¨$˘Æ]));
+(* *** Goal "1" *** *)
+a(strip_tac THEN cases_tac ¨c dominates DTR_row xÆ THEN asm_rewrite_tac(
+	map get_spec[¨LetÆ, ¨MapÆ, ¨DTR_rowÆ, ¨HideDerTableRowÆ, ¨$˘Æ]));
+a(cases_tac¨c dominates DTR_where xÆ THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(strip_tac THEN cases_tac ¨c dominates DTR_row xÆ THEN asm_rewrite_tac(
+	map get_spec[¨LetÆ, ¨MapÆ, ¨DTR_rowÆ, ¨HideDerTableRowÆ, ¨$˘Æ]));
+a(cases_tac¨c dominates DTR_where xÆ THEN asm_rewrite_tac[]);
+val €˘_null_map_hide_lemma› = save_pop_thm"˘_null_map_hide_lemma";
+=TEX
+=SML
+push_goal([], ¨µc rl∑
+	#(rl ˘ {r|c dominates DTR_row r ± c dominates DTR_where r})
+	=
+	#(Map (HideDerTableRow c) (rl ˘ {r|c dominates DTR_row r})
+		˘ {r|c dominates DTR_where r})Æ);
+a(REPEAT strip_tac);
+a(list_induction_tac ¨rlÆ THEN asm_rewrite_tac(
+	map get_spec[¨LengthÆ, ¨LetÆ, ¨MapÆ, ¨DTR_rowÆ, ¨HideDerTableRowÆ, ¨$˘Æ]));
+(* *** Goal "1" *** *)
+a(strip_tac THEN cases_tac ¨c dominates DTR_row xÆ THEN asm_rewrite_tac(
+	map get_spec[¨LengthÆ, ¨LetÆ, ¨MapÆ, ¨DTR_rowÆ, ¨HideDerTableRowÆ, ¨$˘Æ]));
+a(cases_tac ¨c dominates DTR_where xÆ THEN asm_rewrite_tac(
+	map get_spec[¨LengthÆ, ¨LetÆ, ¨MapÆ, ¨DTR_rowÆ, ¨HideDerTableRowÆ, ¨$˘Æ]));
+val €length_˘_map_hide_lemma› = save_pop_thm"length_˘_map_hide_lemma";
+=TEX
+=SML
+push_goal([], ¨µc rl1 rl2∑
+	Map (HideDerTableRow c) rl1 = Map(HideDerTableRow c) rl2
+	¥
+	Map (HideDerTableRow c) (rl1 ˘ {r | c dominates DTR_where r})
+	=
+	Map (HideDerTableRow c) (rl2 ˘ {r | c dominates DTR_where r})Æ);
+a(REPEAT_N 2 strip_tac);
+a(list_induction_tac ¨rl1Æ THEN asm_rewrite_tac(
+	map_null_thm::map get_spec[¨MapÆ, ¨$˘Æ]) THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(asm_rewrite_tac[get_spec¨$˘Æ]);
+(* *** Goal "2" *** *)
+a(POP_ASM_T ante_tac THEN strip_asm_tac(µ_elim¨rl2Ælist_cases_thm)
+	THEN all_var_elim_asm_tac1 THEN asm_rewrite_tac[get_spec¨MapÆ]);
+a(rewrite_tac(MkDerTableRow_lemma::
+	map get_spec[¨HideDerTableRowÆ, ¨LetÆ, ¨MapÆ, ¨$˘Æ])
+	THEN REPEAT strip_tac);
+a(all_asm_fc_tac[] THEN asm_rewrite_tac[]);
+a(cases_tac¨c dominates DTR_where x'Æ THEN asm_rewrite_tac[get_spec¨MapÆ]);
+a(rewrite_tac(MkDerTableRow_lemma::
+	map get_spec[¨HideDerTableRowÆ, ¨LetÆ, ¨MapÆ, ¨$˘Æ])
+	THEN REPEAT strip_tac);
+val €map_hide_map_hide_˘_lemma› = save_pop_thm"map_hide_map_hide_˘_lemma";
+=TEX
+=SML
+set_goal([], ¨µl a b∑ l ˘ (a ° b) = (l ˘ a) ˘ bÆ);
+a(REPEAT strip_tac);
+a(list_induction_tac ¨lÆ THEN asm_rewrite_tac(
+	map get_spec[¨$˘Æ]));
+a(strip_tac THEN PC_T1 "sets_ext1" rewrite_tac[]);
+a(cases_tac¨x ç aÆ THEN asm_rewrite_tac[get_spec¨$˘Æ]);
+val €˘_°_lemma› = save_pop_thm"˘_°_lemma";
 =TEX
 =SML
 push_goal([], ¨µxy list∑
@@ -415,28 +423,17 @@ val €lubl_Î_lemma› = save_pop_thm"lubl_Î_lemma";
 *)
 =TEX
 =SML
-push_goal([], ¨µcil∑
-	ListAnd (Map (ItemBool o Snd) cil) ¥
-	lubl(Map (Ã (c, u)∑ if ItemBool u then lattice_bottom else c) cil) =
-	lattice_bottomÆ);
-a(strip_tac);
+push_goal([], ¨µcc cil∑
+	cc dominates lubl (Map Fst cil)
+	¥
+	Map (Ã (c, i)∑ (c, (if cc dominates c then i else Arbitrary))) cil
+	= cil
+Æ);
+a(REPEAT µ_tac);
 a(list_induction_tac ¨cilÆ
-	THEN asm_rewrite_tac(lubl_lemma :: map get_spec[¨ListAndÆ, ¨MapÆ, ¨FoldÆ]));
+	THEN asm_rewrite_tac(dominates_lub_lemma::lubl_lemma :: map get_spec[¨MapÆ]));
 a(REPEAT strip_tac THEN asm_rewrite_tac[]);
-a(rewrite_tac[lub_lattice_bottom_thm]);
-val €ListAnd_true_lemma› = save_pop_thm "ListAnd_true_lemma";
-=TEX
-=SML
-push_goal([], ¨µcil∑
-	≥ ListOr (Map (ItemBool o Snd) cil) ¥
-	lubl(Map (Ã (c, u)∑ if ItemBool u then c else lattice_bottom) cil) =
-	lattice_bottomÆ);
-a(strip_tac);
-a(list_induction_tac ¨cilÆ
-	THEN asm_rewrite_tac(lubl_lemma :: map get_spec[¨ListOrÆ, ¨MapÆ]));
-a(REPEAT strip_tac THEN asm_rewrite_tac[]);
-a(rewrite_tac[lub_lattice_bottom_thm]);
-val €ListOr_false_lemma› = save_pop_thm "ListOr_false_lemma";
+val €dominates_lubl_map_hide_lemma› = save_pop_thm "dominates_lubl_map_hide_lemma";
 =TEX
 =SML
 push_goal([], ¨µb∑ ItemBool(BoolItem b) § bÆ);
@@ -449,78 +446,6 @@ a(LEMMA_T ¨VI_val(MkValuedItem sterling (BoolVal b))
 val €ItemBool_BoolItem_lemma› = save_pop_thm "ItemBool_BoolItem_lemma";
 =TEX
 =SML
-set_goal([], ¨µvc vcl∑
-	BinOpAnd [] = (Ãtl rl r∑ (lattice_bottom, BoolItem true))
-±	BinOpAnd (Cons vc vcl) =
-	(Ãtl rl r∑
-	let	(cr, ir) = BinOpAnd vcl tl rl r
-	in let	(c, i) = vc tl rl r
-	in let	br = ItemBool ir
-	in let 	b = ItemBool i
-	in	if	b ± br
-		then	(cr lub c, BoolItem true)
-		else if	b ± ≥br
-		then	(cr, BoolItem false)
-		else if	≥b ± br
-		then	(c, BoolItem false)
-		else	(c lub cr, BoolItem false))
-Æ);
-=TEX
-=SML
-a(PC_T1 "predicates1" rewrite_tac[]);
-a(rewrite_tac(lubl_lemma ::ItemBool_BoolItem_lemma ::
-	 map get_spec [¨BinOpAndÆ, ¨ListAndÆ, ¨MapÆ, ¨LetÆ]));
-a(REPEAT strip_tac);
-a(cases_tac¨ItemBool (Snd (vc x x' x''))Æ THEN
-	cases_tac¨ListAnd (Map (ItemBool o Snd) (Map (Ã e∑ e x x' x'') vcl))Æ THEN
-	asm_rewrite_tac[]);
-(* *** Goal "1" *** *)
-a(conv_tac (LEFT_C (once_rewrite_conv[lub_comm_thm])));
-a(REPEAT strip_tac);
-(* *** Goal "2" *** *)
-a(conv_tac (LEFT_C (once_rewrite_conv[lub_comm_thm])));
-a(rewrite_tac[lub_lattice_bottom_thm]);
-(* *** Goal "3" *** *)
-a(ALL_FC_T rewrite_tac [ListAnd_true_lemma]);
-a(rewrite_tac[lub_lattice_bottom_thm]);
-val €BinOpAnd_lemma› = save_pop_thm "BinOpAnd_lemma";
-=TEX
-=SML
-set_goal([], ¨µvc vcl∑
-	BinOpOr [] = (Ãtl rl r∑ (lattice_bottom, BoolItem false))
-±	BinOpOr (Cons vc vcl) =
-	(Ãtl rl r∑
-	let	(cr, ir) = BinOpOr vcl tl rl r
-	in let	(c, i) = vc tl rl r
-	in let	br = ItemBool ir
-	in let 	b = ItemBool i
-	in	if	b ± br
-		then	(cr lub c, BoolItem true)
-		else if	b ± ≥br
-		then	(c, BoolItem true)
-		else if	≥b ± br
-		then	(cr, BoolItem true)
-		else	(c lub cr, BoolItem false))
-Æ);
-=TEX
-=SML
-a(PC_T1 "predicates1" rewrite_tac[]);
-a(rewrite_tac(lubl_lemma ::ItemBool_BoolItem_lemma ::
-	 map get_spec [¨BinOpOrÆ, ¨ListOrÆ, ¨MapÆ, ¨LetÆ]));
-a(REPEAT strip_tac);
-a(cases_tac¨ItemBool (Snd (vc x x' x''))Æ THEN
-	cases_tac¨ListOr (Map (ItemBool o Snd) (Map (Ã e∑ e x x' x'') vcl))Æ THEN
-	asm_rewrite_tac[]);
-(* *** Goal "1" *** *)
-a(conv_tac (LEFT_C (once_rewrite_conv[lub_comm_thm])));
-a(REPEAT strip_tac);
-(* *** Goal "2" *** *)
-a(ALL_FC_T rewrite_tac [ListOr_false_lemma]);
-a(rewrite_tac[lub_lattice_bottom_thm]);
-(* *** Goal "3" *** *)
-a(conv_tac (LEFT_C (once_rewrite_conv[lub_comm_thm])));
-a(rewrite_tac[lub_lattice_bottom_thm]);
-val €BinOpOr_lemma› = save_pop_thm "BinOpOr_lemma";
 =TEX
 The following primitive recursive reformulation of $CaseVal$ could
 perhaps do the case analysis more economically. Nonetheless it
@@ -566,23 +491,6 @@ a(cases_tac ¨cc dominates Fst (tst x x' x'')Æ THEN
 	cases_tac ¨Snd (tst x x' x'') = Snd (Fst cev x x' x'')Æ THEN
 	asm_rewrite_tac[]);
 val €CaseVal_lemma› = save_pop_thm "CaseVal_lemma";
-=TEX
-=SML
-push_goal([dominates_linear_conj], ¨µc1 c2∑c1 glb c2 = c1 ≤ c1 glb c2 = c2Æ);
-a(REPEAT strip_tac);
-a(lemma_tac¨c1 dominates c2 ± c2 dominates c2Æ
-	THEN1 rewrite_tac[get_spec¨$glbÆ]);
-(* *** Goal "1" *** *)
-a(contr_tac THEN all_asm_fc_tac[]);
-a(lemma_tac¨c1 dominates c1Æ THEN1 rewrite_tac[get_spec¨$glbÆ]);
-a(all_fc_tac[get_spec¨$glbÆ]);
-a(lemma_tac¨c1 dominates c1 glb c2Æ THEN1 rewrite_tac[get_spec¨$glbÆ]);
-a(all_fc_tac[get_spec¨$glbÆ]);
-(* *** Goal "2" *** *)
-a(all_fc_tac[get_spec¨$glbÆ]);
-a(lemma_tac¨c2 dominates c1 glb c2Æ THEN1 rewrite_tac[get_spec¨$glbÆ]);
-a(all_fc_tac[get_spec¨$glbÆ]);
-val €dominates_linear_glb_lemma› = save_pop_thm "dominates_linear_glb_lemma";
 =TEX
 =SML
 (* Didn't need this
@@ -645,6 +553,8 @@ a(REPEAT µ_tac THEN §_tac THEN_TRY asm_rewrite_tac[get_spec¨$ÎÆ]);
 a(POP_ASM_T ante_tac THEN list_induction_tac¨l1ÆTHEN rewrite_tac[get_spec¨$ÎÆ]);
 val €Î_null_lemma› = save_pop_thm"Î_null_lemma";
 =TEX
+The following is probably not used anywhere. The first disjunct on the
+right could be omitted.
 =SML
 push_goal([],¨µ l ∑ Flat l = []  § l = [] ≤ µ x ∑ x ç Elems l ¥ x = []Æ);
 a µ_tac;
@@ -772,121 +682,183 @@ val €MonOp_OK_lemma› = save_pop_thm"MonOp_OK_lemma";
 \subsection{Binary}
 =SML
 set_goal([],
-	¨µc vcl∑ Elems vcl Ä OK_VC c ¥ BinOpAnd vcl ç OK_VC cÆ);
-a(REPEAT µ_tac);
-a(list_induction_tac¨vclÆ);
+	¨µcc cil1 cil2∑
+	Map (Ã(c, i)∑ (c, if cc dominates c then i else Arbitrary)) cil1 =
+	Map (Ã(c, i)∑ (c, if cc dominates c then i else Arbitrary)) cil2
+	¥	Fst(ComputeAnd cc cil1) = Fst(ComputeAnd cc cil2)
+	±	(cc dominates Fst(ComputeAnd cc cil1)
+		¥	Snd(ComputeAnd cc cil1) = Snd(ComputeAnd cc cil2))
+Æ);
+a(rewrite_tac(µ_elim¨FstÆ fun_if_thm :: µ_elim¨SndÆ fun_if_thm ::
+	map get_spec[¨ComputeAndÆ, ¨MapÆ, ¨LetÆ])
+	THEN REPEAT µ_tac THEN strip_tac);
+a(lemma_tac¨cil1 ˘ {(c, i)|cc dominates c ± ≥ ItemBool i}
+		= cil2 ˘ {(c, i)|cc dominates c ± ≥ ItemBool i}Æ);
 (* *** Goal "1" *** *)
-a(rewrite_tac(BinOpAnd_lemma :: map get_spec[¨OK_VCÆ, ¨LetÆ])
-	THEN REPEAT strip_tac);
+a(all_asm_ante_tac THEN intro_µ_tac(¨cil2Æ, ¨cil2Æ)
+	THEN list_induction_tac¨cil1Æ
+	THEN asm_rewrite_tac(map get_spec[¨$˘Æ, ¨MapÆ]));
+(* *** Goal "1.1" *** *)
+a(rewrite_tac[map_null_thm]);
+a(REPEAT strip_tac THEN asm_rewrite_tac[get_spec¨$˘Æ]);
+(* *** Goal "1.2" *** *)
+a(REPEAT strip_tac);
+a(strip_asm_tac(µ_elim¨cil2Ælist_cases_thm) THEN all_var_elim_asm_tac1
+	THEN POP_ASM_T ante_tac THEN rewrite_tac[get_spec¨MapÆ]);
+a(REPEAT strip_tac THEN all_asm_fc_tac[]);
+a(asm_rewrite_tac[get_spec¨$˘Æ]);
+a(cases_tac¨cc dominates Fst x'Æ THEN asm_rewrite_tac[]);
+a(DROP_NTH_ASM_T 4 ante_tac THEN asm_rewrite_tac[]);
+a(REPEAT strip_tac THEN asm_rewrite_tac[]);
+a(cases_tac¨≥ ItemBool (Snd x')Æ THEN asm_rewrite_tac[]);
+a(PC_T1 "prop_eq_pair" asm_prove_tac[]);
 (* *** Goal "2" *** *)
-a(PC_T1 "sets_ext" asm_prove_tac[get_spec¨ElemsÆ]);
-(* *** Goal "3" *** *)
-a(rewrite_tac(BinOpAnd_lemma :: map get_spec[¨OK_VCÆ, ¨MapÆ, ¨LetÆ]));
-a(strip_tac THEN strip_tac THEN REPEAT µ_tac);
-a(rewrite_tac[µ_elim¨SndÆfun_if_thm]);
-a(cases_tac¨ItemBool (Snd (x tlâ0 rlâ0 râ0))Æ
-	THEN cases_tac ¨ItemBool (Snd (BinOpAnd vcl tlâ0 rlâ0 râ0))Æ
-	THEN cases_tac ¨ItemBool (Snd (x tlâ1 rlâ1 râ1))Æ
-	THEN cases_tac ¨ItemBool (Snd (BinOpAnd vcl tlâ1 rlâ1 râ1))Æ
-	THEN asm_rewrite_tac[BoolItem_OneOne_lemma, dominates_lub_lemma]
-	THEN REPEAT strip_tac);
+a(asm_rewrite_tac[]);
+a(lemma_tac¨Map Fst cil1 = Map Fst cil2Æ);
+(* *** Goal "2.1" *** *)
+a(LEMMA_T¨
+	Map Fst(Map (Ã (c, i)∑
+		(c, (if cc dominates c then i else Arbitrary))) cil1) = 
+	Map Fst(Map (Ã (c, i)∑
+		(c, (if cc dominates c then i else Arbitrary))) cil2)Æ
+	(ante_tac o rewrite_rule[map_o_lemma])
+	THEN1 asm_rewrite_tac[]);
+a(LEMMA_T ¨
+	(Fst o (Ã (c, i:Item) ∑ (c, (if cc dominates c then i else Arbitrary))))
+	= FstÆ rewrite_thm_tac);
+a(PC_T1"hol2" rewrite_tac[]);
+(* *** Goal "2.2" *** *)
+a(cases_tac¨cil2 ˘ {(c, i)|cc dominates c ± ≥ItemBool i} = []Æ THEN
+	asm_rewrite_tac[]);
+a(strip_tac THEN LEMMA_T ¨cil1 = cil2Æ rewrite_thm_tac);
+a(lemma_tac¨cc dominates lubl (Map Fst cil1)Æ THEN1 asm_rewrite_tac[]);
+a(all_fc_tac[dominates_lubl_map_hide_lemma]);
+a(swap_nth_asm_concl_tac 8 THEN asm_rewrite_tac[]);
+val €ComputeAnd_lemma› = save_pop_thm"ComputeAnd_lemma";
 =TEX
-=SML
-(* *** Goal "3.1" *** *)
-a(lemma_tac¨≥Snd(BinOpAnd vcl tlâ0 rlâ0 râ0) = Snd(BinOpAnd vcl tlâ1 rlâ1 râ1)Æ
-	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
-a(DROP_ASM_T¨BinOpAnd vcl ç OK_VC cÆ
-	(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th]));
-(* *** Goal "3.2" *** *)
-a(lemma_tac¨≥Snd (x tlâ0 rlâ0 râ0) = Snd (x tlâ1 rlâ1 râ1)Æ
-	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
-a(LEMMA_T ¨x ç OK_VC cÆ
-	(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th])
-	THEN1 PC_T1 "sets_ext" asm_prove_tac[get_spec¨ElemsÆ]);
-(* *** Goal "3.3" *** *)
-a(lemma_tac¨≥Snd(BinOpAnd vcl tlâ0 rlâ0 râ0) = Snd(BinOpAnd vcl tlâ1 rlâ1 râ1)Æ
-	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
-a(DROP_ASM_T¨BinOpAnd vcl ç OK_VC cÆ
-	(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th]));
-=TEX
-=SML
-(* *** Goal "3.4" *** *)
-a(lemma_tac¨≥Snd(BinOpAnd vcl tlâ0 rlâ0 râ0) = Snd(BinOpAnd vcl tlâ1 rlâ1 râ1)Æ
-	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
-a(DROP_ASM_T¨BinOpAnd vcl ç OK_VC cÆ
-	(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th]));
-(* *** Goal "3.5" *** *)
-a(lemma_tac¨≥Snd (x tlâ0 rlâ0 râ0) = Snd (x tlâ1 rlâ1 râ1)Æ
-	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
-a(LEMMA_T ¨x ç OK_VC cÆ
-	(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th])
-	THEN1 PC_T1 "sets_ext" asm_prove_tac[get_spec¨ElemsÆ]);
-(* *** Goal "3.6" *** *)
-a(lemma_tac¨≥Snd (x tlâ0 rlâ0 râ0) = Snd (x tlâ1 rlâ1 râ1)Æ
-	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
-a(LEMMA_T ¨x ç OK_VC cÆ
-	(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th])
-	THEN1 PC_T1 "sets_ext" asm_prove_tac[get_spec¨ElemsÆ]);
-val €BinOpAnd_OK_lemma› = save_pop_thm"BinOpAnd_OK_lemma";
-=TEX
-
 =SML
 set_goal([],
-	¨µc vcl∑ Elems vcl Ä OK_VC c ¥ BinOpOr vcl ç OK_VC cÆ);
-a(REPEAT µ_tac);
-a(list_induction_tac¨vclÆ);
+	¨µc vcl∑ Elems vcl Ä OK_VC c ± Elems vcl Ä OK_VC2 c ¥ BinOpAnd c vcl ç OK_VC cÆ);
+a(rewrite_tac(
+	map get_spec[¨BinOpAndÆ, ¨OK_VCÆ, ¨OK_VC2Æ])
+	THEN REPEAT strip_tac THEN swap_nth_asm_concl_tac 1
+	THEN POP_ASM_T ante_tac THEN strip_tac);
+a(lemma_tac¨
+	Map (Ã (c', i)∑ (c', (if c dominates c' then i else Arbitrary)))
+	(Map (Ã e∑ e tlâ0 rlâ0 râ0) vcl) =
+	Map (Ã (c', i)∑ (c', (if c dominates c' then i else Arbitrary)))
+	(Map (Ã e∑ e tlâ1 rlâ1 râ1) vcl)Æ
+	THEN_LIST [id_tac, all_fc_tac[ComputeAnd_lemma]]);
+a(POP_ASM_T discard_tac THEN
+	asm_ante_tac ¨Elems vcl Ä OK_VC2 cÆ THEN asm_ante_tac ¨Elems vcl Ä OK_VC cÆ
+	THEN list_induction_tac¨vclÆ);
 (* *** Goal "1" *** *)
-a(rewrite_tac(BinOpOr_lemma :: map get_spec[¨OK_VCÆ, ¨LetÆ])
-	THEN REPEAT strip_tac);
+a(asm_rewrite_tac[get_spec¨MapÆ]);
 (* *** Goal "2" *** *)
-a(PC_T1 "sets_ext" asm_prove_tac[get_spec¨ElemsÆ]);
+a(PC_T1"sets_ext1" asm_prove_tac[get_spec¨ElemsÆ]);
 (* *** Goal "3" *** *)
-a(rewrite_tac(BinOpOr_lemma :: map get_spec[¨OK_VCÆ, ¨MapÆ, ¨LetÆ]));
-a(strip_tac THEN strip_tac THEN REPEAT µ_tac);
-a(rewrite_tac[µ_elim¨SndÆfun_if_thm]);
-a(cases_tac¨ItemBool (Snd (x tlâ0 rlâ0 râ0))Æ
-	THEN cases_tac ¨ItemBool (Snd (BinOpOr vcl tlâ0 rlâ0 râ0))Æ
-	THEN cases_tac ¨ItemBool (Snd (x tlâ1 rlâ1 râ1))Æ
-	THEN cases_tac ¨ItemBool (Snd (BinOpOr vcl tlâ1 rlâ1 râ1))Æ
-	THEN asm_rewrite_tac[BoolItem_OneOne_lemma, dominates_lub_lemma]
-	THEN REPEAT strip_tac);
+a(PC_T1"sets_ext1" asm_prove_tac[get_spec¨ElemsÆ]);
+(* *** Goal "4" *** *)
+a(asm_rewrite_tac(map get_spec[¨ElemsÆ, ¨MapÆ]) THEN REPEAT_N 3 strip_tac);
+a(LEMMA_T¨x ç OK_VC c ± x ç OK_VC2 cÆ	
+	(strip_asm_tac o rewrite_rule(map get_spec[¨OK_VCÆ, ¨OK_VC2Æ])) THEN1
+	PC_T1"sets_ext1" asm_prove_tac[get_spec¨ElemsÆ]);
+a(all_asm_fc_tac[] THEN asm_rewrite_tac[]);
+a(cases_tac¨c dominates Fst (x tlâ1 rlâ1 râ1)Æ THEN asm_rewrite_tac[]);
+a(lemma_tac¨c dominates Fst (x tlâ0 rlâ0 râ0)Æ THEN1 asm_rewrite_tac[]);
+a(contr_tac THEN all_asm_fc_tac[]);
+val €BinOpAnd_OK_lemma› = save_pop_thm"BinOpAnd_OK_lemma";
 =TEX
 =SML
-(* *** Goal "3.1" *** *)
-a(lemma_tac¨≥Snd(BinOpOr vcl tlâ0 rlâ0 râ0) = Snd(BinOpOr vcl tlâ1 rlâ1 râ1)Æ
-	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
-a(DROP_ASM_T¨BinOpOr vcl ç OK_VC cÆ
-	(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th]));
-(* *** Goal "3.2" *** *)
-a(lemma_tac¨≥Snd (x tlâ0 rlâ0 râ0) = Snd (x tlâ1 rlâ1 râ1)Æ
-	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
-a(LEMMA_T ¨x ç OK_VC cÆ
-	(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th])
-	THEN1 PC_T1 "sets_ext" asm_prove_tac[get_spec¨ElemsÆ]);
-(* *** Goal "3.3" *** *)
-a(lemma_tac¨≥Snd(BinOpOr vcl tlâ0 rlâ0 râ0) = Snd(BinOpOr vcl tlâ1 rlâ1 râ1)Æ
-	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
-a(DROP_ASM_T¨BinOpOr vcl ç OK_VC cÆ
-	(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th]));
-(* *** Goal "3.4" *** *)
+set_goal([],
+	¨µcc cil1 cil2∑
+	Map (Ã(c, i)∑ (c, if cc dominates c then i else Arbitrary)) cil1 =
+	Map (Ã(c, i)∑ (c, if cc dominates c then i else Arbitrary)) cil2
+	¥	Fst(ComputeOr cc cil1) = Fst(ComputeOr cc cil2)
+	±	(cc dominates Fst(ComputeOr cc cil1)
+		¥	Snd(ComputeOr cc cil1) = Snd(ComputeOr cc cil2))
+Æ);
+a(rewrite_tac(µ_elim¨FstÆ fun_if_thm :: µ_elim¨SndÆ fun_if_thm ::
+	map get_spec[¨ComputeOrÆ, ¨MapÆ, ¨LetÆ])
+	THEN REPEAT µ_tac THEN strip_tac);
+a(lemma_tac¨cil1 ˘ {(c, i)|cc dominates c ± ItemBool i}
+		= cil2 ˘ {(c, i)|cc dominates c ± ItemBool i}Æ);
+(* *** Goal "1" *** *)
+a(all_asm_ante_tac THEN intro_µ_tac(¨cil2Æ, ¨cil2Æ)
+	THEN list_induction_tac¨cil1Æ
+	THEN asm_rewrite_tac(map get_spec[¨$˘Æ, ¨MapÆ]));
+(* *** Goal "1.1" *** *)
+a(rewrite_tac[map_null_thm]);
+a(REPEAT strip_tac THEN asm_rewrite_tac[get_spec¨$˘Æ]);
+(* *** Goal "1.2" *** *)
+a(REPEAT strip_tac);
+a(strip_asm_tac(µ_elim¨cil2Ælist_cases_thm) THEN all_var_elim_asm_tac1
+	THEN POP_ASM_T ante_tac THEN rewrite_tac[get_spec¨MapÆ]);
+a(REPEAT strip_tac THEN all_asm_fc_tac[]);
+a(asm_rewrite_tac[get_spec¨$˘Æ]);
+a(cases_tac¨cc dominates Fst x'Æ THEN asm_rewrite_tac[]);
+a(DROP_NTH_ASM_T 4 ante_tac THEN asm_rewrite_tac[]);
+a(REPEAT strip_tac THEN asm_rewrite_tac[]);
+a(cases_tac¨≥ ItemBool (Snd x')Æ THEN asm_rewrite_tac[]);
+a(PC_T1 "prop_eq_pair" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(asm_rewrite_tac[]);
+a(lemma_tac¨Map Fst cil1 = Map Fst cil2Æ);
+(* *** Goal "2.1" *** *)
+a(LEMMA_T¨
+	Map Fst(Map (Ã (c, i)∑
+		(c, (if cc dominates c then i else Arbitrary))) cil1) = 
+	Map Fst(Map (Ã (c, i)∑
+		(c, (if cc dominates c then i else Arbitrary))) cil2)Æ
+	(ante_tac o rewrite_rule[map_o_lemma])
+	THEN1 asm_rewrite_tac[]);
+a(LEMMA_T ¨
+	(Fst o (Ã (c, i:Item) ∑ (c, (if cc dominates c then i else Arbitrary))))
+	= FstÆ rewrite_thm_tac);
+a(PC_T1"hol2" rewrite_tac[]);
+(* *** Goal "2.2" *** *)
+a(cases_tac¨cil2 ˘ {(c, i)|cc dominates c ± ItemBool i} = []Æ THEN
+	asm_rewrite_tac[]);
+a(strip_tac THEN LEMMA_T ¨cil1 = cil2Æ rewrite_thm_tac);
+a(lemma_tac¨cc dominates lubl (Map Fst cil1)Æ THEN1 asm_rewrite_tac[]);
+a(all_fc_tac[dominates_lubl_map_hide_lemma]);
+a(swap_nth_asm_concl_tac 8 THEN asm_rewrite_tac[]);
+val €ComputeOr_lemma› = save_pop_thm"ComputeOr_lemma";
 =TEX
 =SML
-a(lemma_tac¨≥Snd(BinOpOr vcl tlâ0 rlâ0 râ0) = Snd(BinOpOr vcl tlâ1 rlâ1 râ1)Æ
-	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
-a(DROP_ASM_T¨BinOpOr vcl ç OK_VC cÆ
-	(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th]));
-(* *** Goal "3.5" *** *)
-a(lemma_tac¨≥Snd (x tlâ0 rlâ0 râ0) = Snd (x tlâ1 rlâ1 râ1)Æ
-	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
-a(LEMMA_T ¨x ç OK_VC cÆ
-	(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th])
-	THEN1 PC_T1 "sets_ext" asm_prove_tac[get_spec¨ElemsÆ]);
-(* *** Goal "3.6" *** *)
-a(lemma_tac¨≥Snd(BinOpOr vcl tlâ0 rlâ0 râ0) = Snd(BinOpOr vcl tlâ1 rlâ1 râ1)Æ
-	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
-a(DROP_ASM_T¨BinOpOr vcl ç OK_VC cÆ
-	(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th]));
+set_goal([],
+	¨µc vcl∑ Elems vcl Ä OK_VC c ± Elems vcl Ä OK_VC2 c ¥ BinOpOr c vcl ç OK_VC cÆ);
+a(rewrite_tac(
+	map get_spec[¨BinOpOrÆ, ¨OK_VCÆ, ¨OK_VC2Æ])
+	THEN REPEAT strip_tac THEN swap_nth_asm_concl_tac 1
+	THEN POP_ASM_T ante_tac THEN strip_tac);
+a(lemma_tac¨
+	Map (Ã (c', i)∑ (c', (if c dominates c' then i else Arbitrary)))
+	(Map (Ã e∑ e tlâ0 rlâ0 râ0) vcl) =
+	Map (Ã (c', i)∑ (c', (if c dominates c' then i else Arbitrary)))
+	(Map (Ã e∑ e tlâ1 rlâ1 râ1) vcl)Æ
+	THEN_LIST [id_tac, all_fc_tac[ComputeOr_lemma]]);
+a(POP_ASM_T discard_tac THEN
+	asm_ante_tac ¨Elems vcl Ä OK_VC2 cÆ THEN asm_ante_tac ¨Elems vcl Ä OK_VC cÆ
+	THEN list_induction_tac¨vclÆ);
+(* *** Goal "1" *** *)
+a(asm_rewrite_tac[get_spec¨MapÆ]);
+(* *** Goal "2" *** *)
+a(PC_T1"sets_ext1" asm_prove_tac[get_spec¨ElemsÆ]);
+(* *** Goal "3" *** *)
+a(PC_T1"sets_ext1" asm_prove_tac[get_spec¨ElemsÆ]);
+(* *** Goal "4" *** *)
+a(asm_rewrite_tac(map get_spec[¨ElemsÆ, ¨MapÆ]) THEN REPEAT_N 3 strip_tac);
+a(LEMMA_T¨x ç OK_VC c ± x ç OK_VC2 cÆ	
+	(strip_asm_tac o rewrite_rule(map get_spec[¨OK_VCÆ, ¨OK_VC2Æ])) THEN1
+	PC_T1"sets_ext1" asm_prove_tac[get_spec¨ElemsÆ]);
+a(all_asm_fc_tac[] THEN asm_rewrite_tac[]);
+a(cases_tac¨c dominates Fst (x tlâ1 rlâ1 râ1)Æ THEN asm_rewrite_tac[]);
+a(lemma_tac¨c dominates Fst (x tlâ0 rlâ0 râ0)Æ THEN1 asm_rewrite_tac[]);
+a(contr_tac THEN all_asm_fc_tac[]);
 val €BinOpOr_OK_lemma› = save_pop_thm"BinOpOr_OK_lemma";
+=TEX
+=SML
 =TEX
 =SML
 set_goal([], ¨µc f vc1 vc2∑ vc1 ç OK_VC c ± vc2 ç OK_VC c 
@@ -1147,241 +1119,75 @@ a(bc_tac[SetFuncAll_OK_lemma]THEN asm_rewrite_tac[]);
 val €SetFuncDistinct_OK_lemma› = save_pop_thm"SetFuncDistinct_OK_lemma";
 =TEX
 =SML
-set_goal([], ¨µc vc∑ vc ç OK_VC c ¥ SetFuncAllAnd vc ç OK_VC cÆ);
-a(rewrite_tac(map get_spec[¨SetFuncAllAndÆ, ¨OK_VCÆ, ¨LetÆ])
-	THEN REPEAT strip_tac);
-a(lemma_tac ¨µ rl1 rl2 rlâ1
-∑ Map (HideDerTableRow c) rl1 = Map (HideDerTableRow c) rl2
-      ± Map (HideDerTableRow c) rlâ0 = Map (HideDerTableRow c) rlâ1
-    ¥ ≥ Snd
-          (if ListAnd (Map ItemBool (Snd (Split (Map (vc tlâ0 rl1) rlâ0))))
-              then
-                (lubl (Fst (Split (Map (vc tlâ0 rl1) rlâ0))),
-                  BoolItem
-                      (ListAnd
-                          (Map
-                              ItemBool
-                              (Snd (Split (Map (vc tlâ0 rl1) rlâ0))))))
-              else
-                (lubl
-                      (Map
-                          (Ã (c, u)
-                            ∑ if ItemBool u then lattice_bottom else c)
-                          (Map (vc tlâ0 rl1) rlâ0)),
-                  BoolItem
-                      (ListAnd
-                          (Map
-                              ItemBool
-                              (Snd (Split (Map (vc tlâ0 rl1) rlâ0)))))))
-=TEX
-=SML
-        = Snd
-          (if ListAnd (Map ItemBool (Snd (Split (Map (vc tlâ1 rl2) rlâ1))))
-              then
-                (lubl (Fst (Split (Map (vc tlâ1 rl2) rlâ1))),
-                  BoolItem
-                      (ListAnd
-                          (Map
-                              ItemBool
-                              (Snd (Split (Map (vc tlâ1 rl2) rlâ1))))))
-              else
-                (lubl
-                      (Map
-                          (Ã (c, u)
-                            ∑ if ItemBool u then lattice_bottom else c)
-                          (Map (vc tlâ1 rl2) rlâ1)),
-                  BoolItem
-                      (ListAnd
-                          (Map
-                              ItemBool
-                              (Snd (Split (Map (vc tlâ1 rl2) rlâ1)))))))
-=TEX
-=SML
-    ¥ ≥ c
-        dominates Fst
-          (if ListAnd (Map ItemBool (Snd (Split (Map (vc tlâ0 rl1) rlâ0))))
-              then
-                (lubl (Fst (Split (Map (vc tlâ0 rl1) rlâ0))),
-                  BoolItem
-                      (ListAnd
-                          (Map
-                              ItemBool
-                              (Snd (Split (Map (vc tlâ0 rl1) rlâ0))))))
-              else
-                (lubl
-                      (Map
-                          (Ã (c, u)
-                            ∑ if ItemBool u then lattice_bottom else c)
-                          (Map (vc tlâ0 rl1) rlâ0)),
-                  BoolItem
-                      (ListAnd
-                          (Map
-                              ItemBool
-                              (Snd (Split (Map (vc tlâ0 rl1) rlâ0)))))))Æ
-	THEN_LIST[id_tac, all_asm_fc_tac[]]);
-=TEX
-=SML
-a(LIST_DROP_NTH_ASM_T [1, 2, 3] (Combinators.K id_tac));
-a(list_induction_tac¨rlâ0Æ THEN REPEAT strip_tac);
+set_goal([], ¨µc vc∑ vc ç OK_VC c ± vc ç OK_VC2 c ¥ SetFuncAllAnd c vc ç OK_VC cÆ);
+a(rewrite_tac(map get_spec[¨SetFuncAllAndÆ, ¨OK_VCÆ, ¨OK_VC2Æ])
+	THEN REPEAT strip_tac THEN swap_nth_asm_concl_tac 1
+	THEN POP_ASM_T ante_tac THEN strip_tac);
+a(lemma_tac¨
+	Map (Ã (c', i)∑ (c', (if c dominates c' then i else Arbitrary)))
+	(Map (vc tlâ0 rlâ0) rlâ0) =
+	Map (Ã (c', i)∑ (c', (if c dominates c' then i else Arbitrary)))
+	(Map (vc tlâ1 rlâ1) rlâ1)Æ
+	THEN_LIST [id_tac, all_fc_tac[ComputeAnd_lemma]]);
+a(LEMMA_T¨
+	µrl0 rl1∑
+	Map (HideDerTableRow c) rl0 = Map (HideDerTableRow c) rl1
+	¥
+	Map (Ã (c', i)∑ (c', (if c dominates c' then i else Arbitrary)))
+	(Map (vc tlâ0 rlâ0) rl0) =
+	Map (Ã (c', i)∑ (c', (if c dominates c' then i else Arbitrary)))
+	(Map (vc tlâ1 rlâ1) rl1)Æ
+	(fn th => all_fc_tac[th]));
+a(strip_tac);
+a(list_induction_tac¨rl0Æ THEN asm_rewrite_tac[map_null_thm, get_spec¨MapÆ]);
+(* rewrite solves base case *)
+a(REPEAT strip_tac);
+a(strip_asm_tac(µ_elim¨rl1Æ list_cases_thm) THEN all_var_elim_asm_tac1);
 (* *** Goal "1" *** *)
-a(strip_asm_tac (µ_elim¨rlâ1Æ list_cases_thm));
-(* *** Goal "1.1" *** *)
-a(swap_nth_asm_concl_tac 2
-	 THEN asm_rewrite_tac(map get_spec[¨SplitÆ, ¨MapÆ]));
-(* *** Goal "1.2" *** *)
-a(swap_asm_concl_tac
-	¨Map (HideDerTableRow c) [] = Map (HideDerTableRow c) rlâ1Æ
-	THEN asm_rewrite_tac(map get_spec[¨MapÆ]));
+a(POP_ASM_T ante_tac THEN rewrite_tac[get_spec¨MapÆ]);
 (* *** Goal "2" *** *)
-a(strip_asm_tac (µ_elim¨rlâ1Æ list_cases_thm));
-(* *** Goal "2.1" *** *)
-a(swap_asm_concl_tac
-	¨Map (HideDerTableRow c) (Cons x rlâ0) = Map (HideDerTableRow c) rlâ1Æ
-	THEN asm_rewrite_tac(map get_spec[¨MapÆ]));
-=TEX
-=SML
-(* *** Goal "2.2" *** *)
-a(var_elim_nth_asm_tac 1);
-a(DROP_NTH_ASM_T 2 (strip_asm_tac o rewrite_rule[map_def]));
-a(DROP_NTH_ASM_T 5 (ante_tac o list_µ_elim[¨rl1Æ,¨rl2Æ,¨list2Æ]));
-a(asm_rewrite_tac[]);
-a(DROP_NTH_ASM_T 3 ante_tac THEN rewrite_tac[fst_snd_split_thm, lubl_lemma,
-	get_spec¨MapÆ, dominates_lub_lemma,get_spec¨ListAndÆ]);
-a(cases_tac¨ItemBool (Snd (vc tlâ0 rl1 x))Æ
-	THEN cases_tac¨ItemBool (Snd (vc tlâ1 rl2 x'))Æ
-	THEN cases_tac¨ListAnd (Map ItemBool (Map Snd (Map (vc tlâ0 rl1) rlâ0)))Æ	
-	THEN cases_tac¨ListAnd (Map ItemBool (Map Snd (Map (vc tlâ1 rl2) list2)))Æ
-	THEN asm_rewrite_tac[dominates_lub_lemma] THEN REPEAT strip_tac);
-=TEX
-=SML
-(* *** Goal "2.2.1" *** *)
-a(lemma_tac¨≥ Snd (vc tlâ0 rl1 x) =
-		Snd (vc tlâ1 rl2 x')Æ
-	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
-a(all_asm_fc_tac[]);
-(* *** Goal "2.2.2" *** *)
-a(lemma_tac¨≥ Snd (vc tlâ0 rl1 x) =
-		Snd (vc tlâ1 rl2 x')Æ
-	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
-a(all_asm_fc_tac[]);
+a(POP_ASM_T ante_tac THEN rewrite_tac[get_spec¨MapÆ]);
+a(strip_tac THEN ALL_ASM_FC_T rewrite_tac[]);
+a(cases_tac¨c dominates Fst (vc tlâ1 rlâ1 x')Æ THEN asm_rewrite_tac[]);
+a(lemma_tac¨c dominates Fst (vc tlâ0 rlâ0 x)Æ
+	THEN1 ALL_ASM_FC_T asm_rewrite_tac[]);
+a(contr_tac THEN all_asm_fc_tac[]);
 val €SetFuncAllAnd_OK_lemma› = save_pop_thm"SetFuncAllAnd_OK_lemma";
 =TEX
 =SML
-set_goal([], ¨µc vc∑ vc ç OK_VC c ¥ SetFuncAllOr vc ç OK_VC cÆ);
-a(rewrite_tac(map get_spec[¨SetFuncAllOrÆ, ¨OK_VCÆ, ¨LetÆ])
-	THEN REPEAT strip_tac);
-a(lemma_tac ¨µ rl1 rl2 rlâ1
-∑ Map (HideDerTableRow c) rl1 = Map (HideDerTableRow c) rl2
-      ± Map (HideDerTableRow c) rlâ0 = Map (HideDerTableRow c) rlâ1
-    ¥ ≥ Snd
-          (if ListOr (Map ItemBool (Snd (Split (Map (vc tlâ0 rl1) rlâ0))))
-              then
-                (lubl
-                      (Map
-                          (Ã (c, u)
-                            ∑ if ItemBool u then c else lattice_bottom)
-                          (Map (vc tlâ0 rl1) rlâ0)),
-                  BoolItem
-                      (ListOr
-                          (Map
-                              ItemBool
-                              (Snd (Split (Map (vc tlâ0 rl1) rlâ0))))))
-              else
-                (lubl (Fst (Split (Map (vc tlâ0 rl1) rlâ0))),
-                  BoolItem
-                      (ListOr
-                          (Map
-                              ItemBool
-                              (Snd (Split (Map (vc tlâ0 rl1) rlâ0)))))))
-=TEX
-=SML
-        = Snd
-          (if ListOr (Map ItemBool (Snd (Split (Map (vc tlâ1 rl2) rlâ1))))
-              then
-                (lubl
-                      (Map
-                          (Ã (c, u)
-                            ∑ if ItemBool u then c else lattice_bottom)
-                          (Map (vc tlâ1 rl2) rlâ1)),
-                  BoolItem
-                      (ListOr
-                          (Map
-                              ItemBool
-                              (Snd (Split (Map (vc tlâ1 rl2) rlâ1))))))
-              else
-                (lubl (Fst (Split (Map (vc tlâ1 rl2) rlâ1))),
-                  BoolItem
-                      (ListOr
-                          (Map
-                              ItemBool
-                              (Snd (Split (Map (vc tlâ1 rl2) rlâ1)))))))
-=TEX
-=SML
-    ¥ ≥ c
-        dominates Fst
-          (if ListOr (Map ItemBool (Snd (Split (Map (vc tlâ0 rl1) rlâ0))))
-              then
-                (lubl
-                      (Map
-                          (Ã (c, u)
-                            ∑ if ItemBool u then c else lattice_bottom)
-                          (Map (vc tlâ0 rl1) rlâ0)),
-                  BoolItem
-                      (ListOr
-                          (Map
-                              ItemBool
-                              (Snd (Split (Map (vc tlâ0 rl1) rlâ0))))))
-              else
-                (lubl (Fst (Split (Map (vc tlâ0 rl1) rlâ0))),
-                  BoolItem
-                      (ListOr
-                          (Map
-                              ItemBool
-                              (Snd (Split (Map (vc tlâ0 rl1) rlâ0)))))))Æ
-	THEN_LIST[id_tac, all_asm_fc_tac[]]);
-=TEX
-=SML
-a(LIST_DROP_NTH_ASM_T [1, 2, 3] (Combinators.K id_tac));
-a(list_induction_tac¨rlâ0Æ THEN REPEAT strip_tac);
+set_goal([], ¨µc vc∑ vc ç OK_VC c ± vc ç OK_VC2 c ¥ SetFuncAllOr c vc ç OK_VC cÆ);
+a(rewrite_tac(map get_spec[¨SetFuncAllOrÆ, ¨OK_VCÆ, ¨OK_VC2Æ])
+	THEN REPEAT strip_tac THEN swap_nth_asm_concl_tac 1
+	THEN POP_ASM_T ante_tac THEN strip_tac);
+a(lemma_tac¨
+	Map (Ã (c', i)∑ (c', (if c dominates c' then i else Arbitrary)))
+	(Map (vc tlâ0 rlâ0) rlâ0) =
+	Map (Ã (c', i)∑ (c', (if c dominates c' then i else Arbitrary)))
+	(Map (vc tlâ1 rlâ1) rlâ1)Æ
+	THEN_LIST [id_tac, all_fc_tac[ComputeOr_lemma]]);
+a(LEMMA_T¨
+	µrl0 rl1∑
+	Map (HideDerTableRow c) rl0 = Map (HideDerTableRow c) rl1
+	¥
+	Map (Ã (c', i)∑ (c', (if c dominates c' then i else Arbitrary)))
+	(Map (vc tlâ0 rlâ0) rl0) =
+	Map (Ã (c', i)∑ (c', (if c dominates c' then i else Arbitrary)))
+	(Map (vc tlâ1 rlâ1) rl1)Æ
+	(fn th => all_fc_tac[th]));
+a(strip_tac);
+a(list_induction_tac¨rl0Æ THEN asm_rewrite_tac[map_null_thm, get_spec¨MapÆ]);
+(* rewrite solves base case *)
+a(REPEAT strip_tac);
+a(strip_asm_tac(µ_elim¨rl1Æ list_cases_thm) THEN all_var_elim_asm_tac1);
 (* *** Goal "1" *** *)
-a(strip_asm_tac (µ_elim¨rlâ1Æ list_cases_thm));
-(* *** Goal "1.1" *** *)
-a(swap_nth_asm_concl_tac 2
-	 THEN asm_rewrite_tac(map get_spec[¨SplitÆ, ¨MapÆ]));
-(* *** Goal "1.2" *** *)
-a(swap_asm_concl_tac
-	¨Map (HideDerTableRow c) [] = Map (HideDerTableRow c) rlâ1Æ
-	THEN asm_rewrite_tac(map get_spec[¨MapÆ]));
+a(POP_ASM_T ante_tac THEN rewrite_tac[get_spec¨MapÆ]);
 (* *** Goal "2" *** *)
-a(strip_asm_tac (µ_elim¨rlâ1Æ list_cases_thm));
-(* *** Goal "2.1" *** *)
-a(swap_asm_concl_tac
-	¨Map (HideDerTableRow c) (Cons x rlâ0) = Map (HideDerTableRow c) rlâ1Æ
-	THEN asm_rewrite_tac(map get_spec[¨MapÆ]));
-=TEX
-=SML
-(* *** Goal "2.2" *** *)
-a(var_elim_nth_asm_tac 1);
-a(DROP_NTH_ASM_T 2 (strip_asm_tac o rewrite_rule[map_def]));
-a(DROP_NTH_ASM_T 5 (ante_tac o list_µ_elim[¨rl1Æ,¨rl2Æ,¨list2Æ]));
-a(asm_rewrite_tac[]);
-a(DROP_NTH_ASM_T 3 ante_tac THEN rewrite_tac[fst_snd_split_thm, lubl_lemma,
-	get_spec¨MapÆ, dominates_lub_lemma,get_spec¨ListOrÆ]);
-a(cases_tac¨ItemBool (Snd (vc tlâ0 rl1 x))Æ
-	THEN cases_tac¨ItemBool (Snd (vc tlâ1 rl2 x'))Æ
-	THEN cases_tac¨ListOr (Map ItemBool (Map Snd (Map (vc tlâ0 rl1) rlâ0)))Æ
-	THEN cases_tac¨ListOr (Map ItemBool (Map Snd (Map (vc tlâ1 rl2) list2)))Æ
-	THEN asm_rewrite_tac[dominates_lub_lemma] THEN REPEAT strip_tac);
-(* *** Goal "2.2.1" *** *)
-a(lemma_tac¨≥ Snd (vc tlâ0 rl1 x) =
-		Snd (vc tlâ1 rl2 x')Æ
-	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
-a(all_asm_fc_tac[]);
-(* *** Goal "2.2.2" *** *)
-a(lemma_tac¨≥ Snd (vc tlâ0 rl1 x) =
-		Snd (vc tlâ1 rl2 x')Æ
-	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
-a(all_asm_fc_tac[]);
+a(POP_ASM_T ante_tac THEN rewrite_tac[get_spec¨MapÆ]);
+a(strip_tac THEN ALL_ASM_FC_T rewrite_tac[]);
+a(cases_tac¨c dominates Fst (vc tlâ1 rlâ1 x')Æ THEN asm_rewrite_tac[]);
+a(lemma_tac¨c dominates Fst (vc tlâ0 rlâ0 x)Æ
+	THEN1 ALL_ASM_FC_T asm_rewrite_tac[]);
+a(contr_tac THEN all_asm_fc_tac[]);
 val €SetFuncAllOr_OK_lemma› = save_pop_thm"SetFuncAllOr_OK_lemma";
 =TEX
 \subsection{Count Functions}
@@ -1407,159 +1213,97 @@ a(ALL_FC_T rewrite_tac [SetFuncAll_OK_lemma]);
 val €CommonValue_OK_lemma› = save_pop_thm"CommonValue_OK_lemma";
 =TEX
 \subsection{$ExistsTuples$}
-=SML
-set_goal([], ¨µc tc∑ tc ç OK_TC c ¥ ExistsTuples c tc ç OK_VC cÆ);
-a(rewrite_tac(BoolItem_OneOne_lemma::dominates_lub_lemma::
-	map get_spec[¨OK_TCÆ, ¨OK_VCÆ, ¨ExistsTuplesÆ, ¨LetÆ])
-	THEN REPEAT strip_tac);
-(* *** Goal "1" *** *)
-a(cases_tac¨≥HideDerTable c (Snd (tc tlâ0)) = HideDerTable c (Snd (tc tlâ1))Æ
-	THEN1 all_asm_fc_tac[]);
-a(strip_asm_tac (µ_elim
-	¨DT_rows (Snd (tc tlâ0)) ˘
-		{r|c dominates DTR_row r ± c dominates DTR_where r}Æ
-	list_cases_thm));
-a(swap_nth_asm_concl_tac 2 THEN asm_rewrite_tac(
-	MkDerTable_lemma::dominates_lub_lemma::
-	map get_spec[¨HideDerTableÆ, ¨HideDerTableDataÆ, ¨$˘Æ, ¨LetÆ, ¨MapÆ]));
 =TEX
 =SML
+set_goal([], ¨µc tc∑ tc ç OK_TC c ± tc ç OK_TC2 c ¥ ExistsTuples c tc ç OK_VC cÆ);
+a(rewrite_tac(BoolItem_OneOne_lemma :: dominates_lub_lemma ::
+	µ_elim¨FstÆfun_if_thm :: µ_elim¨SndÆfun_if_thm ::
+	map get_spec[¨OK_TCÆ, ¨OK_TC2Æ, ¨OK_VCÆ, ¨ExistsTuplesÆ, ¨LetÆ]));
+a(REPEAT strip_tac THEN POP_ASM_T ante_tac);
+a(all_asm_fc_tac[]);
+a(asm_rewrite_tac[]);
+a(cases_tac ¨c dominates Fst (tc tlâ1)Æ THEN asm_rewrite_tac[BoolItem_OneOne_lemma]);
+a(cases_tac ¨HideDerTable c (Snd (tc tlâ0)) = HideDerTable c (Snd (tc tlâ1))Æ);
+(* *** Goal "1" *** *)
+a(POP_ASM_T ante_tac THEN rewrite_tac(MkDerTable_lemma::
+	map get_spec[¨HideDerTableÆ, ¨HideDerTableDataÆ, ¨LetÆ]));
+a(strip_tac);
+a(once_rewrite_tac[˘_null_map_hide_lemma]);
+a(asm_rewrite_tac[]);
 (* *** Goal "2" *** *)
-a(cases_tac¨≥HideDerTable c (Snd (tc tlâ0)) = HideDerTable c (Snd (tc tlâ1))Æ
-	THEN1 all_asm_fc_tac[]);
-a(strip_asm_tac (µ_elim
-	¨DT_rows (Snd (tc tlâ1)) ˘
-		{r|c dominates DTR_row r ± c dominates DTR_where r}Æ
-	list_cases_thm));
-a(swap_nth_asm_concl_tac 2 THEN asm_rewrite_tac(
-	MkDerTable_lemma::dominates_lub_lemma::
-	map get_spec[¨HideDerTableÆ, ¨HideDerTableDataÆ, ¨$˘Æ, ¨LetÆ, ¨MapÆ]));
+a(all_asm_fc_tac[]);
+a(POP_ASM_T ante_tac THEN asm_rewrite_tac[]);
 val €ExistsTuples_OK_lemma› = save_pop_thm"ExistsTuples_OK_lemma";
 =TEX
 \subsection{$SingleValue$}
 =SML
-set_goal([], ¨µc tc∑ tc ç OK_TC c ¥ SingleValue c tc ç OK_VC cÆ);
-a(rewrite_tac(map get_spec[¨OK_TCÆ, ¨OK_VCÆ, ¨SingleValueÆ, ¨LetÆ])
-	THEN REPEAT strip_tac);
-a(POP_ASM_T ante_tac THEN
-	cases_tac¨#
-      (DT_rows (Snd (tc tlâ0))
-          ˘ {r|c dominates DTR_row r ± c dominates DTR_where r})
-    = 1
-  ± #
-      (DTR_cols
-          (Head
-              (DT_rows (Snd (tc tlâ0))
-                  ˘ {r|c dominates DTR_row r ± c dominates DTR_where r})))
-    = 1Æ 
-	THEN cases_tac¨#
-      (DT_rows (Snd (tc tlâ1))
-          ˘ {r|c dominates DTR_row r ± c dominates DTR_where r})
-    = 1
-  ± #
-      (DTR_cols
-          (Head
-              (DT_rows (Snd (tc tlâ1))
-                  ˘ {r|c dominates DTR_row r ± c dominates DTR_where r})))
-    = 1Æ
-	THEN asm_rewrite_tac[] THEN REPEAT strip_tac);
-=TEX
-=SML
+set_goal([], ¨µc tc∑ tc ç OK_TC c ± tc ç OK_TC2 c ¥ SingleValue c tc ç OK_VC cÆ);
+a(rewrite_tac(BoolItem_OneOne_lemma :: dominates_lub_lemma ::
+	µ_elim¨FstÆfun_if_thm :: µ_elim¨SndÆfun_if_thm ::
+	map get_spec[¨OK_TCÆ, ¨OK_TC2Æ, ¨OK_VCÆ, ¨SingleValueÆ, ¨LetÆ]));
+a(REPEAT strip_tac THEN POP_ASM_T ante_tac);
+a(all_asm_fc_tac[] THEN asm_rewrite_tac[]);
+a(cases_tac ¨c dominates Fst (tc tlâ1)Æ THEN asm_rewrite_tac[]);
+a(cases_tac ¨≥HideDerTable c (Snd (tc tlâ0)) = HideDerTable c (Snd (tc tlâ1))Æ);
 (* *** Goal "1" *** *)
-a(rewrite_tac[dominates_lub_lemma]THEN REPEAT strip_tac);
-a(cases_tac¨≥HideDerTable c (Snd (tc tlâ0)) = HideDerTable c (Snd (tc tlâ1))Æ
-	THEN1 all_asm_fc_tac[]);
-a(DROP_NTH_ASM_T 7 (strip_asm_tac o rewrite_rule[length_1_thm]));
-a(DROP_NTH_ASM_T 6 (strip_asm_tac o rewrite_rule[length_1_thm]));
-a(DROP_NTH_ASM_T 7 (strip_asm_tac o rewrite_rule[length_1_thm]));
-a(DROP_NTH_ASM_T 7 (strip_asm_tac o rewrite_rule[length_1_thm]));
-a(DROP_NTH_ASM_T 7 ante_tac THEN DROP_NTH_ASM_T 6 ante_tac 
-	THEN asm_rewrite_tac[]);
-a(POP_ASM_T ante_tac THEN POP_ASM_T ante_tac THEN asm_rewrite_tac[]
-	THEN REPEAT strip_tac);
-a(DROP_NTH_ASM_T 7 ante_tac THEN asm_rewrite_tac(
-	MkDerTable_lemma::dominates_lub_lemma::MkDerTableRow_lemma::map get_spec
-	[¨HideDerTableÆ,¨HideDerTableDataÆ,¨HideDerTableRowÆ,¨$˘Æ,¨LetÆ,¨MapÆ]));
-a(cases_tac¨c dominates Fst x'''ÆTHEN asm_rewrite_tac[]THEN 
-	REPEAT strip_tac);
-=TEX
-=SML
-(* *** Goal "1.1" *** *)
-a(DROP_NTH_ASM_T 6 ante_tac THEN asm_rewrite_tac[]);
-(* *** Goal "1.2" *** *)
-a(DROP_NTH_ASM_T 7 ante_tac THEN asm_rewrite_tac[]);
+a(all_asm_fc_tac[]);
+a(POP_ASM_T ante_tac THEN asm_rewrite_tac[]);
 (* *** Goal "2" *** *)
-a(rewrite_tac[dominates_lub_lemma]THEN REPEAT strip_tac);
-a(cases_tac¨≥HideDerTable c (Snd (tc tlâ0)) = HideDerTable c (Snd (tc tlâ1))Æ
-	THEN1 all_asm_fc_tac[]);
-a(swap_nth_asm_concl_tac 4);
-a(rewrite_tac[length_1_thm]);
-a(DROP_NTH_ASM_T 6 (strip_asm_tac o rewrite_rule[length_1_thm]));
-a(DROP_NTH_ASM_T 3 ante_tac THEN asm_rewrite_tac(
-	MkDerTable_lemma::dominates_lub_lemma::
-	map get_spec[¨HideDerTableÆ, ¨HideDerTableDataÆ, ¨$˘Æ, ¨LetÆ, ¨MapÆ]));
-a(REPEAT strip_tac);
-a(all_fc_tac[map_1_lemma]);
-a(∂_tac¨yÆTHEN asm_rewrite_tac[]);
-=TEX
-=SML
-(* *** Goal "3" *** *)
-a(rewrite_tac[dominates_lub_lemma]THEN REPEAT strip_tac);
-a(cases_tac¨≥HideDerTable c (Snd (tc tlâ0)) = HideDerTable c (Snd (tc tlâ1))Æ
-	THEN1 all_asm_fc_tac[]);
-a(swap_nth_asm_concl_tac 4);
-a(rewrite_tac[length_1_thm]);
-a(DROP_NTH_ASM_T 6 (strip_asm_tac o rewrite_rule[length_1_thm]));
-a(DROP_NTH_ASM_T 6 (strip_asm_tac o rewrite_rule[length_1_thm]));
-a(DROP_NTH_ASM_T 4 ante_tac THEN asm_rewrite_tac(
-	MkDerTable_lemma::dominates_lub_lemma::
-	map get_spec[¨HideDerTableÆ, ¨HideDerTableDataÆ,¨$˘Æ, ¨LetÆ, ¨MapÆ]));
-a(REPEAT strip_tac);
-a(all_fc_tac[map_1_lemma]);
-a(DROP_NTH_ASM_T 4 ante_tac THEN DROP_NTH_ASM_T 2 ante_tac 
-	THEN asm_rewrite_tac[get_spec¨MapÆ]);
-a(REPEAT strip_tac);
-a(all_fc_tac[HideDerTableRow_Length_lemma]);
-a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[length_def]);
-a(¥_T (ante_tac o eq_sym_rule));
-a(rewrite_tac[length_1_thm]THEN strip_tac);
-=TEX
-=SML
-(* *** Goal "4" *** *)
-a(swap_nth_asm_concl_tac 4);
-a(cases_tac¨≥HideDerTable c (Snd (tc tlâ0)) = HideDerTable c (Snd (tc tlâ1))Æ
-	THEN1 all_asm_fc_tac[]);
-a(rewrite_tac[length_1_thm]);
-a(DROP_NTH_ASM_T 5 (strip_asm_tac o rewrite_rule[length_1_thm]));
-a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac(
-	MkDerTable_lemma::dominates_lub_lemma::
-	map get_spec[¨HideDerTableÆ, ¨HideDerTableDataÆ, ¨$˘Æ, ¨LetÆ, ¨MapÆ]));
-a(REPEAT strip_tac);
-a(POP_ASM_T (asm_tac o eq_sym_rule));
-a(all_fc_tac[map_1_lemma]);
-a(∂_tac¨yÆTHEN asm_rewrite_tac[]);
-=TEX
-=SML
-(* *** Goal "5" *** *)
-a(swap_nth_asm_concl_tac 4);
-a(cases_tac¨≥HideDerTable c (Snd (tc tlâ0)) = HideDerTable c (Snd (tc tlâ1))Æ
-	THEN1 all_asm_fc_tac[]);
-a(rewrite_tac[length_1_thm]);
-a(DROP_NTH_ASM_T 5 (strip_asm_tac o rewrite_rule[length_1_thm]));
-a(DROP_NTH_ASM_T 5 (strip_asm_tac o rewrite_rule[length_1_thm]));
-a(DROP_NTH_ASM_T 3 ante_tac THEN asm_rewrite_tac(
-	MkDerTable_lemma::dominates_lub_lemma::
-	map get_spec[¨HideDerTableÆ, ¨HideDerTableDataÆ,¨$˘Æ, ¨LetÆ, ¨MapÆ]));
-a(REPEAT strip_tac);
-a(POP_ASM_T (asm_tac o eq_sym_rule));
-a(all_fc_tac[map_1_lemma]);
-a(DROP_NTH_ASM_T 4 ante_tac THEN DROP_NTH_ASM_T 2 ante_tac 
-	THEN asm_rewrite_tac[get_spec¨MapÆ]);
-a(REPEAT strip_tac);
-a(all_fc_tac[HideDerTableRow_Length_lemma]);
-a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[length_def]);
-a(¥_T (ante_tac o eq_sym_rule));
-a(rewrite_tac[length_1_thm]THEN strip_tac);
+a(POP_ASM_T ante_tac THEN rewrite_tac(MkDerTable_lemma::
+	pc_rule1 "sets_ext1" prove_rule[]
+	¨{r|c dominates DTR_row r ± c dominates DTR_where r} =
+	{r|c dominates DTR_row r} ° {r|c dominates DTR_where r}Æ::
+	map get_spec[¨HideDerTableÆ, ¨HideDerTableDataÆ, ¨LetÆ]));
+a(rewrite_tac[˘_°_lemma] THEN strip_tac);
+a(all_fc_tac[map_hide_map_hide_˘_lemma]);
+a(LEMMA_T¨
+	#(Map (HideDerTableRow c)
+		((DT_rows (Snd (tc tlâ0)) ˘ {r|c dominates DTR_row r})
+			˘ {r|c dominates DTR_where r})) =
+	#(Map (HideDerTableRow c)
+		((DT_rows (Snd (tc tlâ1)) ˘ {r|c dominates DTR_row r})
+			˘ {r|c dominates DTR_where r}))Æ
+	(strip_asm_tac o rewrite_rule[length_map_thm])
+	THEN1 asm_rewrite_tac[]);
+a(cases_tac¨
+	#((DT_rows (Snd (tc tlâ1)) ˘ {r|c dominates DTR_row r})
+			˘ {r|c dominates DTR_where r}) = 1Æ
+	THEN asm_rewrite_tac[]);
+a(lemma_tac¨
+	#((DT_rows (Snd (tc tlâ0)) ˘ {r|c dominates DTR_row r})
+			˘ {r|c dominates DTR_where r}) = 1Æ
+	THEN1 asm_rewrite_tac[]);
+a(LIST_DROP_NTH_ASM_T[1,2]
+	(MAP_EVERY(strip_asm_tac o rewrite_rule[length_1_thm])));
+a(asm_rewrite_tac[]);
+a(lemma_tac¨HideDerTableRow c x = HideDerTableRow c x'Æ);
+(* *** Goal "2.1" *** *)
+a(DROP_NTH_ASM_T 5 ante_tac THEN asm_rewrite_tac[get_spec¨MapÆ]);
+(* *** Goal "2.2" *** *)
+a(POP_ASM_T ante_tac THEN
+	rewrite_tac[MkDerTableRow_lemma, let_def, get_spec¨HideDerTableRowÆ]);
+a(strip_tac);
+a(LEMMA_T¨
+	#(Map (Ã (c', i)∑ if c dominates c'
+		then (c', i)
+		else (c', ValuedItemItem (MkValuedItem sterling dummyVal)))
+               (DTR_cols x)) =
+	#(Map (Ã (c', i)∑ if c dominates c'
+		then (c', i)
+		else (c', ValuedItemItem (MkValuedItem sterling dummyVal)))
+               (DTR_cols x'))Æ
+	(strip_asm_tac o rewrite_rule[length_map_thm])
+	THEN1 asm_rewrite_tac[]);
+a(asm_rewrite_tac[]);
+a(cases_tac¨# (DTR_cols x') = 1Æ THEN asm_rewrite_tac[]);
+a(lemma_tac¨# (DTR_cols x) = 1Æ THEN1 asm_rewrite_tac[]);
+a(LIST_DROP_NTH_ASM_T[1,2]
+	(MAP_EVERY(strip_asm_tac o rewrite_rule[length_1_thm])));
+a(DROP_NTH_ASM_T 4 ante_tac THEN asm_rewrite_tac[get_spec¨MapÆ]);
+a(cases_tac¨c dominates Fst x''Æ THEN asm_rewrite_tac[]);
+a(cases_tac¨c dominates Fst x'''Æ THEN asm_rewrite_tac[]
+	THEN REPEAT strip_tac THEN asm_rewrite_tac[]);
+a(DROP_NTH_ASM_T 3 ante_tac THEN asm_rewrite_tac[]);
 val €SingleValue_OK_lemma› = save_pop_thm"SingleValue_OK_lemma";
 =TEX
 \subsection{$JoinedRowExistence$}
@@ -1573,6 +1317,608 @@ a(GET_NTH_ASM_T 2 ante_tac THEN
 a(PC_T1 "prop_eq" asm_prove_tac[]);
 val €JoinedRowExistence_OK_lemma› = save_pop_thm"JoinedRowExistence_OK_lemma";
 =TEX
+\section{OK2NESS PROOFS}
+\subsection{Constant Expression}
+=SML
+set_goal([], ¨µc ci∑ DenoteConstant ci ç OK_VC2 cÆ);
+a(rewrite_tac(map get_spec[¨OK_VC2Æ, ¨DenoteConstantÆ]) THEN REPEAT strip_tac);
+val €DenoteConstant_OK2_lemma› = save_pop_thm"DenoteConstant_OK2_lemma";
+=TEX
+\subsection{$Contents$}
+=SML
+set_goal([], ¨µc i∑ Contents i ç OK_VC2 cÆ);
+a(rewrite_tac(map get_spec[¨OK_VC2Æ, ¨ContentsÆ])
+	THEN REPEAT strip_tac);
+a(all_fc_tac[HideDerTableRow_Length_lemma]);
+a(cases_tac ¨1 º i ± i º # (DTR_cols râ1)Æ THEN asm_rewrite_tac[]);
+a(lemma_tac¨i º # (DTR_cols râ0)Æ THEN1 asm_rewrite_tac[]);
+a(ALL_FC_T (MAP_EVERY(ante_tac o µ_elim¨cÆ)) [Nth_HideDerTableRow_lemma]);
+a(asm_rewrite_tac[]);
+a(PC_T1 "prop_eq_pair" prove_tac[]);
+val €Contents_OK2_lemma› = save_pop_thm"Contents_OK2_lemma";
+=TEX
+\subsection{$Classification$}
+=SML
+set_goal([], ¨µc i∑ Classification i ç OK_VC2 cÆ);
+a(rewrite_tac(map get_spec[¨OK_VC2Æ, ¨ClassificationÆ]) 
+	THEN REPEAT strip_tac);
+a(all_fc_tac[HideDerTableRow_Length_lemma]);
+a(cases_tac ¨1 º i ± i º # (DTR_cols râ1)Æ THEN asm_rewrite_tac[]);
+a(DROP_NTH_ASM_T 4 ante_tac THEN
+	rewrite_tac(MkDerTableRow_lemma::map get_spec[¨LetÆ, ¨HideDerTableRowÆ])
+	THEN taut_tac);
+val €Classification_OK2_lemma› = save_pop_thm"Classification_OK2_lemma";
+=TEX
+\subsection{$Countall$}
+=SML
+set_goal([], ¨µc∑ CountAll ç OK_VC2 cÆ);
+a(rewrite_tac(map get_spec[¨OK_VC2Æ, ¨CountAllÆ,¨LetÆ]) THEN REPEAT strip_tac);
+a(LIST_DROP_NTH_ASM_T [1,3] discard_tac);
+a(POP_ASM_T ante_tac);
+a(intro_µ_tac(¨rlâ1Æ,¨rlâ1Æ));
+a(list_induction_tac¨rlâ0Æ);
+(* *** Goal "1" *** *)
+a(µ_tac);
+a(strip_asm_tac (µ_elim¨rlâ1Æ list_cases_thm)
+	THEN asm_rewrite_tac(map get_spec[¨MapÆ]));
+(* *** Goal "2" *** *)
+a(REPEAT µ_tac);
+a(strip_asm_tac (µ_elim¨rlâ1Æ list_cases_thm)
+	THEN asm_rewrite_tac(map get_spec[¨MapÆ]));
+a(rewrite_tac(lubl_lemma::MkDerTableRow_lemma::map get_spec[¨LetÆ, ¨HideDerTableRowÆ])
+	THEN REPEAT strip_tac);
+a(ALL_ASM_FC_T asm_rewrite_tac[]);
+val €CountAll_OK2_lemma› = save_pop_thm"CountAll_OK2_lemma";
+=TEX
+\subsection{Monadic}
+=SML
+set_goal([], ¨µc f vc∑ vc ç OK_VC2 c ¥ MonOp f vc ç OK_VC2 cÆ);
+a(rewrite_tac(map get_spec[¨OK_VC2Æ, ¨MonOpÆ, ¨LetÆ]) THEN REPEAT strip_tac);
+val €MonOp_OK2_lemma› = save_pop_thm"MonOp_OK2_lemma";
+=TEX
+\subsection{Binary}
+=SML
+set_goal([],
+	¨µc vcl∑ Elems vcl Ä OK_VC c ± Elems vcl Ä OK_VC2 c ¥ BinOpAnd c vcl ç OK_VC2 cÆ);
+a(rewrite_tac(
+	map get_spec[¨BinOpAndÆ, ¨OK_VCÆ, ¨OK_VC2Æ])
+	THEN REPEAT strip_tac);
+a(lemma_tac¨
+	Map (Ã (c', i)∑ (c', (if c dominates c' then i else Arbitrary)))
+	(Map (Ã e∑ e tlâ0 rlâ0 râ0) vcl) =
+	Map (Ã (c', i)∑ (c', (if c dominates c' then i else Arbitrary)))
+	(Map (Ã e∑ e tlâ1 rlâ1 râ1) vcl)Æ
+	THEN_LIST [id_tac, all_fc_tac[ComputeAnd_lemma]]);
+a(asm_ante_tac ¨Elems vcl Ä OK_VC2 cÆ THEN asm_ante_tac ¨Elems vcl Ä OK_VC cÆ
+	THEN list_induction_tac¨vclÆ);
+(* *** Goal "1" *** *)
+a(asm_rewrite_tac[get_spec¨MapÆ]);
+(* *** Goal "2" *** *)
+a(PC_T1"sets_ext1" asm_prove_tac[get_spec¨ElemsÆ]);
+(* *** Goal "3" *** *)
+a(PC_T1"sets_ext1" asm_prove_tac[get_spec¨ElemsÆ]);
+(* *** Goal "4" *** *)
+a(asm_rewrite_tac(map get_spec[¨ElemsÆ, ¨MapÆ]) THEN REPEAT_N 3 strip_tac);
+a(LEMMA_T¨x ç OK_VC c ± x ç OK_VC2 cÆ	
+	(strip_asm_tac o rewrite_rule(map get_spec[¨OK_VCÆ, ¨OK_VC2Æ])) THEN1
+	PC_T1"sets_ext1" asm_prove_tac[get_spec¨ElemsÆ]);
+a(all_asm_fc_tac[] THEN asm_rewrite_tac[]);
+a(cases_tac¨c dominates Fst (x tlâ1 rlâ1 râ1)Æ THEN asm_rewrite_tac[]);
+a(lemma_tac¨c dominates Fst (x tlâ0 rlâ0 râ0)Æ THEN1 asm_rewrite_tac[]);
+a(contr_tac THEN all_asm_fc_tac[]);
+val €BinOpAnd_OK2_lemma› = save_pop_thm"BinOpAnd_OK2_lemma";
+=TEX
+=SML
+set_goal([],
+	¨µc vcl∑ Elems vcl Ä OK_VC c ± Elems vcl Ä OK_VC2 c ¥ BinOpOr c vcl ç OK_VC2 cÆ);
+a(rewrite_tac(
+	map get_spec[¨BinOpOrÆ, ¨OK_VCÆ, ¨OK_VC2Æ])
+	THEN REPEAT strip_tac);
+a(lemma_tac¨
+	Map (Ã (c', i)∑ (c', (if c dominates c' then i else Arbitrary)))
+	(Map (Ã e∑ e tlâ0 rlâ0 râ0) vcl) =
+	Map (Ã (c', i)∑ (c', (if c dominates c' then i else Arbitrary)))
+	(Map (Ã e∑ e tlâ1 rlâ1 râ1) vcl)Æ
+	THEN_LIST [id_tac, all_fc_tac[ComputeOr_lemma]]);
+a(asm_ante_tac ¨Elems vcl Ä OK_VC2 cÆ THEN asm_ante_tac ¨Elems vcl Ä OK_VC cÆ
+	THEN list_induction_tac¨vclÆ);
+(* *** Goal "1" *** *)
+a(asm_rewrite_tac[get_spec¨MapÆ]);
+(* *** Goal "2" *** *)
+a(PC_T1"sets_ext1" asm_prove_tac[get_spec¨ElemsÆ]);
+(* *** Goal "3" *** *)
+a(PC_T1"sets_ext1" asm_prove_tac[get_spec¨ElemsÆ]);
+(* *** Goal "4" *** *)
+a(asm_rewrite_tac(map get_spec[¨ElemsÆ, ¨MapÆ]) THEN REPEAT_N 3 strip_tac);
+a(LEMMA_T¨x ç OK_VC c ± x ç OK_VC2 cÆ	
+	(strip_asm_tac o rewrite_rule(map get_spec[¨OK_VCÆ, ¨OK_VC2Æ])) THEN1
+	PC_T1"sets_ext1" asm_prove_tac[get_spec¨ElemsÆ]);
+a(all_asm_fc_tac[] THEN asm_rewrite_tac[]);
+a(cases_tac¨c dominates Fst (x tlâ1 rlâ1 râ1)Æ THEN asm_rewrite_tac[]);
+a(lemma_tac¨c dominates Fst (x tlâ0 rlâ0 râ0)Æ THEN1 asm_rewrite_tac[]);
+a(contr_tac THEN all_asm_fc_tac[]);
+val €BinOpOr_OK2_lemma› = save_pop_thm"BinOpOr_OK2_lemma";
+=TEX
+=SML
+set_goal([], ¨µc f vc1 vc2∑ vc1 ç OK_VC2 c ± vc2 ç OK_VC2 c 
+	¥ BinOp f vc1 vc2 ç OK_VC2 cÆ);
+a(rewrite_tac(map get_spec[¨OK_VC2Æ, ¨BinOpÆ, ¨LetÆ])
+	THEN REPEAT strip_tac);
+a(ALL_ASM_FC_T rewrite_tac[]);
+val €BinOp_OK2_lemma› = save_pop_thm"BinOp_OK2_lemma";
+=TEX
+\subsection{Triadic}
+=SML
+set_goal([], ¨µc f vc1 vc2 vc3∑
+	vc1 ç OK_VC2 c ± vc2 ç OK_VC2 c ± vc3 ç OK_VC2 c ¥
+	TriOp f vc1 vc2 vc3 ç OK_VC2 cÆ);
+a(rewrite_tac(map get_spec[¨OK_VC2Æ, ¨TriOpÆ, ¨LetÆ])
+	THEN REPEAT strip_tac);
+a(ALL_ASM_FC_T rewrite_tac[]);
+val €TriOp_OK2_lemma› = save_pop_thm"TriOp_OK2_lemma";
+=TEX
+\subsection{Conversions}
+Omitted. see \cite{DS/FMU/FEF/032}.
+\subsection{Sterling}
+Omitted. see \cite{DS/FMU/FEF/032}.
+\subsection{Dinary}
+Omitted. see \cite{DS/FMU/FEF/032}.
+\subsection{Declarations}
+Omitted. see \cite{DS/FMU/FEF/032}.
+\subsection{Case Expressions}
+=SML
+set_goal([], ¨µc te cel ee∑
+	te ç OK_VC c ±
+	te ç OK_VC2 c ±
+	Elems (Map Fst cel) Ä OK_VC c ±
+	Elems (Map Fst cel) Ä OK_VC2 c ±
+	Elems (Map Snd cel) Ä OK_VC2 c ±
+	ee ç OK_VC2 c ¥
+	CaseVal c te cel ee ç OK_VC2 c
+Æ);
+a(REPEAT µ_tac);
+a(list_induction_tac¨celÆ THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(LIST_DROP_NTH_ASM_T [1,5] (MAP_EVERY ante_tac)
+	THEN rewrite_tac(CaseVal_lemma:: map get_spec[¨OK_VC2Æ, ¨LetÆ])
+	THEN REPEAT strip_tac);
+a(rewrite_tac[µ_elim¨FstÆ fun_if_thm]);
+a(ALL_ASM_FC_T rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(PC_T1 "sets_ext1" asm_prove_tac(map get_spec[¨MapÆ, ¨ElemsÆ]));
+(* *** Goal "3" *** *)
+a(PC_T1 "sets_ext1" asm_prove_tac(map get_spec[¨MapÆ, ¨ElemsÆ]));
+(* *** Goal "4" *** *)
+a(PC_T1 "sets_ext1" asm_prove_tac(map get_spec[¨MapÆ, ¨ElemsÆ]));
+(* *** Goal "5" *** *)
+a(rewrite_tac(µ_elim¨SndÆ fun_if_thm::µ_elim¨FstÆ fun_if_thm::CaseVal_lemma::
+	map get_spec[¨OK_VC2Æ, ¨LetÆ])
+	THEN REPEAT strip_tac);
+a(lemma_tac¨
+	Fst (te tlâ0 rlâ0 râ0) = Fst (te tlâ1 rlâ1 râ1) ±
+	Fst (Fst x tlâ0 rlâ0 râ0) = Fst (Fst x tlâ1 rlâ1 râ1) ±
+	Fst (Snd x tlâ0 rlâ0 râ0) = Fst (Snd x tlâ1 rlâ1 râ1) ±
+	Fst (CaseVal c te cel ee tlâ0 rlâ0 râ0) =
+		 Fst (CaseVal c te cel ee tlâ1 rlâ1 râ1)Æ);
+(* *** Goal "5.1" *** *)
+a(lemma_tac ¨Fst x ç OK_VC2 c ± Snd x ç OK_VC2 cÆ
+	THEN1 PC_T1 "sets_ext1" asm_prove_tac(map get_spec[¨MapÆ, ¨ElemsÆ]));
+a(LIST_DROP_NTH_ASM_T [1,2,10,12]
+	(MAP_EVERY(strip_asm_tac o rewrite_rule[get_spec¨OK_VC2Æ])));
+a(ALL_ASM_FC_T rewrite_tac[]);
+(* *** Goal "5.2" *** *)
+a(asm_rewrite_tac[]);
+a(cases_tac¨c dominates Fst (te tlâ1 rlâ1 râ1)Æ
+	THEN cases_tac¨c dominates Fst (Fst x tlâ1 rlâ1 râ1)Æ
+	THEN asm_rewrite_tac[]);
+(* *** Goal "5.2.1" *** *)
+a(LEMMA_T¨Snd (te tlâ0 rlâ0 râ0) = Snd (te tlâ1 rlâ1 râ1)
+	± Snd (Fst x tlâ0 rlâ0 râ0) = Snd (Fst x tlâ1 rlâ1 râ1)Æ
+	rewrite_thm_tac);
+a(lemma_tac ¨Fst x ç OK_VC cÆ
+	THEN1 PC_T1 "sets_ext1" asm_prove_tac(map get_spec[¨MapÆ, ¨ElemsÆ]));
+a(LIST_DROP_NTH_ASM_T [1,16]
+	(MAP_EVERY(strip_asm_tac o rewrite_rule[get_spec¨OK_VCÆ])));
+a(lemma_tac¨c dominates Fst (te tlâ0 rlâ0 râ0)
+	±	c dominates Fst (Fst x tlâ0 rlâ0 râ0)Æ
+	THEN1 asm_rewrite_tac[]);
+a(contr_tac THEN all_asm_fc_tac[]);
+(* *** Goal "5.2.2" *** *)
+a(CASES_T ¨Snd (te tlâ0 rlâ0 râ0) = Snd (Fst x tlâ0 rlâ0 râ0)Æ
+	rewrite_thm_tac
+	THEN CASES_T¨Snd (te tlâ1 rlâ1 râ1) = Snd (Fst x tlâ1 rlâ1 râ1)Æ
+	rewrite_thm_tac);
+(* *** Goal "5.2.3" *** *)
+a(CASES_T ¨Snd (te tlâ0 rlâ0 râ0) = Snd (Fst x tlâ0 rlâ0 râ0)Æ
+	rewrite_thm_tac
+	THEN CASES_T¨Snd (te tlâ1 rlâ1 râ1) = Snd (Fst x tlâ1 rlâ1 râ1)Æ
+	rewrite_thm_tac);
+(* *** Goal "5.2.4" *** *)
+a(CASES_T ¨Snd (te tlâ0 rlâ0 râ0) = Snd (Fst x tlâ0 rlâ0 râ0)Æ
+	rewrite_thm_tac
+	THEN CASES_T¨Snd (te tlâ1 rlâ1 râ1) = Snd (Fst x tlâ1 rlâ1 râ1)Æ
+	rewrite_thm_tac);
+val €CaseVal_OK2_lemma› = save_pop_thm"CaseVal_OK2_lemma";
+=TEX
+=SML
+set_goal([], ¨µc cel ee∑
+	Elems (Map Fst cel) Ä OK_VC c ±
+	Elems (Map Fst cel) Ä OK_VC2 c ±
+	Elems (Map Snd cel) Ä OK_VC2 c ±
+	ee ç OK_VC2 c ¥
+	Case c cel ee ç OK_VC2 c
+Æ);
+a(rewrite_tac(map get_spec[¨LetÆ,¨CaseÆ]));
+a(REPEAT µ_tac);
+a(list_induction_tac¨celÆ THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(POP_ASM_T ante_tac THEN 
+	rewrite_tac(map get_spec[¨OK_VC2Æ, ¨LetÆ,¨MapÆ,¨CaseCÆ,¨CaseValueÆ])
+	THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(PC_T1 "sets_ext1" asm_prove_tac(map get_spec[¨MapÆ, ¨ElemsÆ]));
+(* *** Goal "3" *** *)
+a(PC_T1 "sets_ext1" asm_prove_tac(map get_spec[¨MapÆ, ¨ElemsÆ]));
+(* *** Goal "4" *** *)
+a(PC_T1 "sets_ext1" asm_prove_tac(map get_spec[¨MapÆ, ¨ElemsÆ]));
+=TEX
+=SML
+(* *** Goal "5" *** *)
+a(rewrite_tac(map get_spec[ ¨LetÆ,¨MapÆ,¨CaseCÆ,¨CaseValueÆ,¨OK_VC2Æ])
+	THEN REPEAT strip_tac);
+a(lemma_tac¨Fst x ç OK_VC2 cÆ THEN1
+	PC_T1 "sets_ext1" asm_prove_tac(map get_spec[¨MapÆ, ¨ElemsÆ]));
+a(POP_ASM_T (fn th => all_asm_fc_tac[rewrite_rule[get_spec¨OK_VC2Æ]th]));
+a(asm_rewrite_tac[]);
+a(cases_tac¨≥ c dominates Fst (Fst x tlâ1 rlâ1 râ1)Æ
+	THEN asm_rewrite_tac[]);
+a(lemma_tac¨Snd x ç OK_VC2 cÆ THEN1
+	PC_T1 "sets_ext1" asm_prove_tac(map get_spec[¨MapÆ, ¨ElemsÆ]));
+a(POP_ASM_T (fn th => all_asm_fc_tac[rewrite_rule[get_spec¨OK_VC2Æ]th]));
+a(asm_rewrite_tac[]);
+a(LEMMA_T¨Snd (Fst x tlâ0 rlâ0 râ0) = Snd (Fst x tlâ1 rlâ1 râ1)Æ
+	rewrite_thm_tac);
+(* *** Goal "5.1" *** *)
+a(lemma_tac¨Fst x ç OK_VC cÆ THEN1
+	PC_T1 "sets_ext1" asm_prove_tac(map get_spec[¨MapÆ, ¨ElemsÆ]));
+a(POP_ASM_T (strip_asm_tac o rewrite_rule[get_spec¨OK_VCÆ]));
+a(lemma_tac¨c dominates Fst (Fst x tlâ0 rlâ0 râ0)Æ
+	THEN1 asm_rewrite_tac[]);
+a(contr_tac THEN all_asm_fc_tac[]);
+(* *** Goal "5.2" *** *)
+a(cases_tac¨ItemBool (Snd (Fst x tlâ1 rlâ1 râ1))Æ
+	THEN asm_rewrite_tac[]);
+a(DROP_NTH_ASM_T 12 (fn th => all_asm_fc_tac[rewrite_rule[get_spec¨OK_VC2Æ]th]));
+val €Case_OK2_lemma› = save_pop_thm"Case_OK2_lemma";
+=TEX
+\subsection{Set Functions}
+=SML
+set_goal([], ¨µc f vc∑ vc ç OK_VC2 c ¥ SetFuncAll f vc ç OK_VC2 cÆ);
+a(rewrite_tac(map get_spec[¨SetFuncAllÆ, ¨OK_VC2Æ, ¨LetÆ])
+	THEN REPEAT strip_tac);
+a(lemma_tac ¨µtlâ0 tlâ1 rl1 rl2 rlâ1∑
+	Map (HideDerTable c) tlâ0 = Map (HideDerTable c) tlâ1 ±
+	Map (HideDerTableRow c) rl1 = Map (HideDerTableRow c) rl2 ±
+	Map (HideDerTableRow c) rlâ0 = Map (HideDerTableRow c) rlâ1
+             ¥ Fst (Split (Map (vc tlâ0 rl1) rlâ0))
+                 = Fst(Split (Map (vc tlâ1 rl2) rlâ1))Æ
+	THEN_LIST[id_tac, ALL_ASM_FC_T rewrite_tac[]]);
+a(LIST_DROP_NTH_ASM_T [1, 2, 3] discard_tac);
+a(list_induction_tac¨rlâ0Æ THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(strip_asm_tac (µ_elim¨rlâ1Æ list_cases_thm));
+(* *** Goal "1.1" *** *)
+a(asm_rewrite_tac(map get_spec[¨MapÆ]));
+(* *** Goal "1.2" *** *)
+a(var_elim_nth_asm_tac 1);
+a(all_asm_ante_tac THEN asm_rewrite_tac(map get_spec[¨MapÆ]));
+(* *** Goal "2" *** *)
+a(strip_asm_tac (µ_elim¨rlâ1Æ list_cases_thm));
+(* *** Goal "2.1" *** *)
+a(swap_asm_concl_tac
+	¨Map (HideDerTableRow c) (Cons x rlâ0) = Map (HideDerTableRow c) rlâ1Æ
+	THEN asm_rewrite_tac(map get_spec[¨MapÆ]));
+(* *** Goal "2.2" *** *)
+a(var_elim_nth_asm_tac 1);
+a(all_asm_ante_tac THEN rewrite_tac[fst_snd_split_thm, get_spec¨MapÆ]
+	THEN REPEAT strip_tac);
+(* *** Goal "2.2.1" *** *)
+a(all_asm_fc_tac[]);
+(* *** Goal "2.2.2" *** *)
+a(all_asm_fc_tac[]);
+val €SetFuncAll_OK2_lemma› = save_pop_thm"SetFuncAll_OK2_lemma";
+=TEX
+=SML
+set_goal([], ¨µc f vc∑ vc ç OK_VC2 c ¥ SetFuncDistinct f vc ç OK_VC2 cÆ);
+a(REPEAT strip_tac);
+a(lemma_tac¨SetFuncDistinct f vc = SetFuncAll (f o Elems) vcÆ
+	THEN_LIST [rewrite_tac(map get_spec[¨SetFuncDistinctÆ, ¨SetFuncAllÆ, ¨LetÆ]),
+		POP_ASM_T rewrite_thm_tac]);
+a(bc_tac[SetFuncAll_OK2_lemma]THEN asm_rewrite_tac[]);
+val €SetFuncDistinct_OK2_lemma› = save_pop_thm"SetFuncDistinct_OK2_lemma";
+=TEX
+=SML
+set_goal([], ¨µc vc∑ vc ç OK_VC c ± vc ç OK_VC2 c ¥ SetFuncAllAnd c vc ç OK_VC2 cÆ);
+a(rewrite_tac(map get_spec[¨SetFuncAllAndÆ, ¨OK_VCÆ, ¨OK_VC2Æ])
+	THEN REPEAT strip_tac);
+a(lemma_tac¨
+	Map (Ã (c', i)∑ (c', (if c dominates c' then i else Arbitrary)))
+	(Map (vc tlâ0 rlâ0) rlâ0) =
+	Map (Ã (c', i)∑ (c', (if c dominates c' then i else Arbitrary)))
+	(Map (vc tlâ1 rlâ1) rlâ1)Æ
+	THEN_LIST [id_tac, all_fc_tac[ComputeAnd_lemma]]);
+a(LEMMA_T¨
+	µrl0 rl1∑
+	Map (HideDerTableRow c) rl0 = Map (HideDerTableRow c) rl1
+	¥
+	Map (Ã (c', i)∑ (c', (if c dominates c' then i else Arbitrary)))
+	(Map (vc tlâ0 rlâ0) rl0) =
+	Map (Ã (c', i)∑ (c', (if c dominates c' then i else Arbitrary)))
+	(Map (vc tlâ1 rlâ1) rl1)Æ
+	(fn th => all_fc_tac[th]));
+a(strip_tac);
+a(list_induction_tac¨rl0Æ THEN asm_rewrite_tac[map_null_thm, get_spec¨MapÆ]);
+(* rewrite solves base case *)
+a(REPEAT strip_tac);
+a(strip_asm_tac(µ_elim¨rl1Æ list_cases_thm) THEN all_var_elim_asm_tac1);
+(* *** Goal "1" *** *)
+a(POP_ASM_T ante_tac THEN rewrite_tac[get_spec¨MapÆ]);
+(* *** Goal "2" *** *)
+a(POP_ASM_T ante_tac THEN rewrite_tac[get_spec¨MapÆ]);
+a(strip_tac THEN ALL_ASM_FC_T rewrite_tac[]);
+a(cases_tac¨c dominates Fst (vc tlâ1 rlâ1 x')Æ THEN asm_rewrite_tac[]);
+a(lemma_tac¨c dominates Fst (vc tlâ0 rlâ0 x)Æ
+	THEN1 ALL_ASM_FC_T asm_rewrite_tac[]);
+a(contr_tac THEN all_asm_fc_tac[]);
+val €SetFuncAllAnd_OK2_lemma› = save_pop_thm"SetFuncAllAnd_OK2_lemma";
+=TEX
+=SML
+set_goal([], ¨µc vc∑ vc ç OK_VC c ± vc ç OK_VC2 c ¥ SetFuncAllOr c vc ç OK_VC2 cÆ);
+a(rewrite_tac(map get_spec[¨SetFuncAllOrÆ, ¨OK_VCÆ, ¨OK_VC2Æ])
+	THEN REPEAT strip_tac);
+a(lemma_tac¨
+	Map (Ã (c', i)∑ (c', (if c dominates c' then i else Arbitrary)))
+	(Map (vc tlâ0 rlâ0) rlâ0) =
+	Map (Ã (c', i)∑ (c', (if c dominates c' then i else Arbitrary)))
+	(Map (vc tlâ1 rlâ1) rlâ1)Æ
+	THEN_LIST [id_tac, all_fc_tac[ComputeOr_lemma]]);
+a(LEMMA_T¨
+	µrl0 rl1∑
+	Map (HideDerTableRow c) rl0 = Map (HideDerTableRow c) rl1
+	¥
+	Map (Ã (c', i)∑ (c', (if c dominates c' then i else Arbitrary)))
+	(Map (vc tlâ0 rlâ0) rl0) =
+	Map (Ã (c', i)∑ (c', (if c dominates c' then i else Arbitrary)))
+	(Map (vc tlâ1 rlâ1) rl1)Æ
+	(fn th => all_fc_tac[th]));
+a(strip_tac);
+a(list_induction_tac¨rl0Æ THEN asm_rewrite_tac[map_null_thm, get_spec¨MapÆ]);
+(* rewrite solves base case *)
+a(REPEAT strip_tac);
+a(strip_asm_tac(µ_elim¨rl1Æ list_cases_thm) THEN all_var_elim_asm_tac1);
+(* *** Goal "1" *** *)
+a(POP_ASM_T ante_tac THEN rewrite_tac[get_spec¨MapÆ]);
+(* *** Goal "2" *** *)
+a(POP_ASM_T ante_tac THEN rewrite_tac[get_spec¨MapÆ]);
+a(strip_tac THEN ALL_ASM_FC_T rewrite_tac[]);
+a(cases_tac¨c dominates Fst (vc tlâ1 rlâ1 x')Æ THEN asm_rewrite_tac[]);
+a(lemma_tac¨c dominates Fst (vc tlâ0 rlâ0 x)Æ
+	THEN1 ALL_ASM_FC_T asm_rewrite_tac[]);
+a(contr_tac THEN all_asm_fc_tac[]);
+val €SetFuncAllOr_OK2_lemma› = save_pop_thm"SetFuncAllOr_OK2_lemma";
+=TEX
+\subsection{Count Functions}
+=SML
+set_goal([], ¨µc vc∑ vc ç OK_VC2 c ¥ CountNonNull vc ç OK_VC2 cÆ);
+a(rewrite_tac(map get_spec[¨CountNonNullÆ,  ¨LetÆ])
+	THEN REPEAT strip_tac);
+a(bc_tac[SetFuncAll_OK2_lemma]THEN asm_rewrite_tac[]);
+val €CountNonNull_OK2_lemma› = save_pop_thm"CountNonNull_OK2_lemma";
+=TEX
+=SML
+set_goal([], ¨µc vc∑ vc ç OK_VC2 c ¥ CountDistinct vc ç OK_VC2 cÆ);
+a(rewrite_tac(map get_spec[¨CountDistinctÆ,  ¨LetÆ])
+	THEN REPEAT strip_tac);
+a(bc_tac[SetFuncDistinct_OK2_lemma]THEN asm_rewrite_tac[]);
+val €CountDistinct_OK2_lemma› = save_pop_thm"CountDistinct_OK2_lemma";
+=TEX
+=SML
+set_goal([], ¨µc vc∑ vc ç OK_VC2 c ¥ CommonValue vc ç OK_VC2 cÆ);
+a(rewrite_tac(map get_spec[¨CommonValueÆ, ¨LetÆ])
+	THEN REPEAT strip_tac);
+a(ALL_FC_T rewrite_tac [SetFuncAll_OK2_lemma]);
+val €CommonValue_OK2_lemma› = save_pop_thm"CommonValue_OK2_lemma";
+=TEX
+\subsection{$ExistsTuples$}
+=SML
+set_goal([], ¨µc tc∑ tc ç OK_TC c ± tc ç OK_TC2 c ¥ ExistsTuples c tc ç OK_VC2 cÆ);
+a(rewrite_tac(
+	map get_spec[¨OK_TCÆ, ¨OK_TC2Æ, ¨OK_VC2Æ, ¨ExistsTuplesÆ, ¨LetÆ])
+	THEN REPEAT strip_tac);
+a(cases_tac¨≥ HideDerTable c (Snd (tc tlâ0)) = HideDerTable c (Snd (tc tlâ1))Æ);
+(* *** Goal "1" *** *)
+a(all_asm_fc_tac[]);
+a(DROP_ASM_T ¨≥ c dominates Fst (tc tlâ0)Æ ante_tac THEN asm_rewrite_tac[]);
+a(strip_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(all_asm_fc_tac[]);
+a(cases_tac¨c dominates Fst (tc tlâ1)Æ THEN asm_rewrite_tac[]);
+a(DROP_ASM_T ¨HideDerTable c (Snd (tc tlâ0)) = HideDerTable c (Snd (tc tlâ1))Æ
+	ante_tac);
+a(rewrite_tac(MkDerTable_lemma::
+	pc_rule1 "sets_ext1" prove_rule[]
+	¨{r|c dominates DTR_row r ± c dominates DTR_where r} =
+	{r|c dominates DTR_row r} ° {r|c dominates DTR_where r}Æ::
+	˘_°_lemma::
+	map get_spec[¨HideDerTableÆ, ¨HideDerTableDataÆ, ¨LetÆ])
+	THEN REPEAT strip_tac);
+a(all_fc_tac[map_hide_map_hide_˘_lemma]);
+a(lemma_tac¨
+	Map DTR_row(Map(HideDerTableRow c)
+		((DT_rows (Snd (tc tlâ0)) ˘ {r|c dominates DTR_row r})
+			˘ {r|c dominates DTR_where r})) =
+	Map DTR_row(Map(HideDerTableRow c)
+		((DT_rows (Snd (tc tlâ1)) ˘ {r|c dominates DTR_row r})
+			˘ {r|c dominates DTR_where r}))Æ
+	THEN1 asm_rewrite_tac[]);
+a(POP_ASM_T ante_tac THEN rewrite_tac[map_o_lemma, DTR_row_o_HideDerTableRow_lemma]);
+a(STRIP_T rewrite_thm_tac);
+val €ExistsTuples_OK2_lemma› = save_pop_thm"ExistsTuples_OK2_lemma";
+=TEX
+\subsection{$SingleValue$}
+=SML
+set_goal([], ¨µc tc∑ tc ç OK_TC c ± tc ç OK_TC2 c ¥ SingleValue c tc ç OK_VC2 cÆ);
+a(rewrite_tac(map get_spec[¨OK_TCÆ, ¨OK_TC2Æ, ¨OK_VC2Æ, ¨SingleValueÆ, ¨LetÆ])
+	THEN REPEAT strip_tac);
+a(all_asm_fc_tac[] THEN asm_rewrite_tac[µ_elim¨FstÆfun_if_thm]);
+a(cases_tac¨c dominates Fst (tc tlâ1)Æ THEN asm_rewrite_tac[]);
+a(lemma_tac¨c dominates Fst (tc tlâ0)Æ THEN1 asm_rewrite_tac[]);
+a(cases_tac¨≥HideDerTable c (Snd (tc tlâ0)) = HideDerTable c (Snd (tc tlâ1))Æ
+	THEN1 all_asm_fc_tac[]);
+a(POP_ASM_T ante_tac THEN rewrite_tac(MkDerTable_lemma::
+	pc_rule1 "sets_ext1" prove_rule[]
+	¨{r|c dominates DTR_row r ± c dominates DTR_where r} =
+	{r|c dominates DTR_row r} ° {r|c dominates DTR_where r}Æ::
+	map get_spec[¨HideDerTableÆ, ¨HideDerTableDataÆ, ¨LetÆ]));
+a(rewrite_tac[˘_°_lemma] THEN strip_tac);
+a(all_fc_tac[map_hide_map_hide_˘_lemma]);
+a(LEMMA_T¨
+	#(Map (HideDerTableRow c)
+		((DT_rows (Snd (tc tlâ0)) ˘ {r|c dominates DTR_row r})
+			˘ {r|c dominates DTR_where r})) =
+	#(Map (HideDerTableRow c)
+		((DT_rows (Snd (tc tlâ1)) ˘ {r|c dominates DTR_row r})
+			˘ {r|c dominates DTR_where r}))Æ
+	(strip_asm_tac o rewrite_rule[length_map_thm])
+	THEN1 asm_rewrite_tac[]);
+a(cases_tac¨
+	#((DT_rows (Snd (tc tlâ1)) ˘ {r|c dominates DTR_row r})
+			˘ {r|c dominates DTR_where r}) = 1Æ
+	THEN asm_rewrite_tac[]);
+a(lemma_tac¨
+	#((DT_rows (Snd (tc tlâ0)) ˘ {r|c dominates DTR_row r})
+			˘ {r|c dominates DTR_where r}) = 1Æ
+	THEN1 asm_rewrite_tac[]);
+a(LIST_DROP_NTH_ASM_T[1,2]
+	(MAP_EVERY(strip_asm_tac o rewrite_rule[length_1_thm])));
+a(asm_rewrite_tac[]);
+a(lemma_tac¨HideDerTableRow c x = HideDerTableRow c x'Æ);
+(* *** Goal "1" *** *)
+a(DROP_NTH_ASM_T 5 ante_tac THEN asm_rewrite_tac[get_spec¨MapÆ]);
+(* *** Goal "2" *** *)
+a(POP_ASM_T ante_tac THEN
+	rewrite_tac[MkDerTableRow_lemma, let_def, get_spec¨HideDerTableRowÆ]);
+a(strip_tac);
+a(LEMMA_T¨
+	#(Map (Ã (c', i)∑ if c dominates c'
+		then (c', i)
+		else (c', ValuedItemItem (MkValuedItem sterling dummyVal)))
+               (DTR_cols x)) =
+	#(Map (Ã (c', i)∑ if c dominates c'
+		then (c', i)
+		else (c', ValuedItemItem (MkValuedItem sterling dummyVal)))
+               (DTR_cols x'))Æ
+	(strip_asm_tac o rewrite_rule[length_map_thm])
+	THEN1 asm_rewrite_tac[]);
+a(asm_rewrite_tac[]);
+a(cases_tac¨# (DTR_cols x') = 1Æ THEN asm_rewrite_tac[]);
+a(lemma_tac¨# (DTR_cols x) = 1Æ THEN1 asm_rewrite_tac[]);
+a(LIST_DROP_NTH_ASM_T[1,2]
+	(MAP_EVERY(strip_asm_tac o rewrite_rule[length_1_thm])));
+a(DROP_NTH_ASM_T 4 ante_tac THEN asm_rewrite_tac[get_spec¨MapÆ]);
+a(cases_tac¨c dominates Fst x''Æ THEN asm_rewrite_tac[]);
+(* *** Goal "2.1" *** *)
+a(cases_tac¨c dominates Fst x'''Æ THEN asm_rewrite_tac[]
+	THEN REPEAT strip_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2.2" *** *)
+a(cases_tac¨c dominates Fst x'''Æ THEN asm_rewrite_tac[]);
+a(PC_T1 "prop_eq_pair" prove_tac[]);
+val €SingleValue_OK2_lemma› = save_pop_thm"SingleValue_OK2_lemma";
+=TEX
+\subsection{$JoinedRowExistence$}
+=SML
+set_goal([], ¨µc i∑ JoinedRowExistence i ç OK_VC2 cÆ);
+a(rewrite_tac(map get_spec[¨OK_VC2Æ, ¨JoinedRowExistenceÆ])
+	THEN REPEAT strip_tac);
+val €JoinedRowExistence_OK2_lemma› = save_pop_thm"JoinedRowExistence_OK2_lemma";
+=TEX
+\section{INTERFACE}
+=TEX
+\subsection{Induction Principle}
+The following theorem takes a minute or so to compute so we give
+a name to it here (to make the proof of the induction theorem easier
+to modify, e.g. if the definitions change).
+=SML
+(* Commented out ***
+val table_computation_rw_thm =
+	rewrite_rule[get_spec¨•â2Æ] (get_spec¨TableComputationsÆ);
+set_pc"hol2";
+set_goal([], ¨µq : TABLE_COMP ≠ BOOL; p : VALUE_COMP ≠ BOOL∑ µcc : Class ∑
+		(µci∑ p(DenoteConstant ci))
+	±	(µi∑ p(Contents i))
+	±	(µi∑ p(Classification i))
+	±	p CountAll
+
+	±	(µf e∑ p e ¥ p(MonOp f e))
+	±	(µf e1 e2∑ p e1 ± p e2 ¥ p(BinOp f e1 e2))
+	±	(µf e1 e2 e3∑ p e1 ± p e2 ± p e3 ¥ p(TriOp f e1 e2 e3))
+	±	(µel∑ (µe∑e ç Elems el ¥ p e) ¥ p(BinOpAnd el))
+	±	(µel∑ (µe∑e ç Elems el ¥ p e) ¥ p(BinOpOr el))
+
+	±	(µcc te cel ee∑ p te ± (µe∑e ç Elems(Map Fst cel) ¥ p e) ±
+				(µe∑ e ç Elems(Map Snd cel) ¥ p e) ± p ee ¥
+					p(CaseVal cc te cel ee))
+	±	(µcc cel ee∑ (µe∑e ç Elems(Map Fst cel) ¥ p e) ±
+				(µe∑ e ç Elems(Map Snd cel) ¥ p e) ± p ee  ¥
+					p(Case cc cel ee))
+
+	±	(µe∑ p e ¥ p(SetFuncAllAnd e))
+	±	(µe∑ p e ¥ p(SetFuncAllOr e))
+	±	(µe∑ p e ¥ p(CountNonNull e))
+	±	(µe∑ p e ¥ p(CountDistinct e))
+	±	(µe∑ p e ¥ p(CommonValue e))
+
+	±	(µf e∑ p e ¥ p(SetFuncAll f e))
+	±	(µf e∑ p e ¥ p(SetFuncDistinct f e))
+
+	±	(µcc te∑ q te ¥ p(ExistsTuples cc te))
+	±	(µcc te∑ q te ¥ p(SingleValue cc te))
+
+	±	(µcc∑ p(JoinedRowExistence cc))
+=TEX
+=SML
+	±	(µi∑ q(TableContents i))
+
+	±	(µesl tel e1 ml nl e2∑ (µe∑e ç Elems(Map Fst esl) ¥ p e)
+			± (µte∑te ç Elems tel ¥ q te) ± p e1 ± p e2
+				¥ q(AllTuples cc esl tel e1 ml nl e2))
+(*	±	(µesl tel e1 ml nl e2∑ (µe∑e ç Elems(Map Fst esl) ¥ p e)
+			± (µte∑te ç Elems tel ¥ q te) ± p e1 ± p e2
+				¥ q(DistinctTuples cc esl tel e1 ml nl e2))
+	±	(µesl tel e1 ml nl e2∑ (µe∑e ç Elems(Map Fst esl) ¥ p e)
+			± (µte∑te ç Elems tel ¥ q te) ± p e1 ± p e2
+				¥ q(Evaluate cc esl tel e1 ml nl e2))	*)
+	¥	(µte∑ te ç TableComputations cc ¥ q te)
+	±	(µe∑ e ç ValueComputations cc ¥ p e)
+Æ);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(swap_asm_concl_tac ¨te ç TableComputations ccÆ
+	THEN rewrite_tac[table_computation_rw_thm]
+	THEN strip_tac
+	THEN ∂_tac¨{te | q te}Æ
+	THEN POP_ASM_T rewrite_thm_tac
+	THEN ∂_tac¨{e | p e}Æ THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(swap_asm_concl_tac ¨e ç ValueComputations ccÆ
+	THEN rewrite_tac[table_computation_rw_thm]
+	THEN strip_tac
+	THEN ∂_tac¨{e | p e}Æ
+	THEN POP_ASM_T rewrite_thm_tac
+	THEN ∂_tac¨{te | q te}Æ THEN asm_rewrite_tac[]);
+val table_computation_induction_thm =
+	save_pop_thm"table_computation_induction_thm";
+**** end of commented out section **** *)
 
 =TEX
 \section{CLOSING DOWN}
@@ -1590,3 +1936,4 @@ val €JoinedRowExistence_OK_lemma› = save_pop_thm"JoinedRowExistence_OK_lemma";
 \end{document}
   
 
+a(TOP_ASM_T (asm_tac o conv_rule (RAND_C eq_sym_conv)));
