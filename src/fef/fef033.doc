@@ -1,0 +1,199 @@
+=TEX
+% TQtemplate.tex
+\documentstyle[hol1,11pt,TQ]{article}
+\def\Hide#1{}
+\def\Bool{``$\it{:}bool\,$''}
+\makeindex
+\TPPproject{DRA FRONT END FILTER PROJECT}  %% Mandatory field
+%\TPPvolume{}
+%\TPPpart{}
+\TPPtitle{Table Computation Security Proofs}  %% Mandatory field
+\TPPref{DS/FMU/FEF/033}  %% Mandatory field
+\def\SCCSversion{$Revision$
+}
+\TPPissue{\SCCSversion}  %% Mandatory field
+\TPPdate{\FormatDate{$Date$
+}}  %% Mandatory field (with sensible default)
+\TPPstatus{Approved}			%% Mandatory field
+\TPPtype{Specification}
+\TPPkeywords{}
+\TPPauthor{R.B.~Jones & WIN01}  %% Mandatory field
+%\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
+\TPPauthorisation{R.B.~Jones & HAT Manager}
+\TPPabstract{This document contains the formal proofs relating to 
+DS/FMU/FEF/026; it forms part of the Phase II proofs for the
+DRA front end filter project RSRE 1C/6130.}
+%\TPPabstractB{}
+%\TPPabstractC{}
+%\TPPabstractD{}
+%\TPPabstractE{}
+%\TPPabstractF{}
+\TPPdistribution{\parbox[t]{4.0in}{%
+	HAT FEF File \\
+	Simon Wiseman
+}}
+%\TPPclass{CLASSIFICATION}
+\newfont{\icllogo}{icllogo50}
+\def\TPPheadlhs{$\vcenter{\halign{##\cr\icllogo ICL\cr}}$}
+%\def\TPPheadlhs{}
+%\def\TPPheadcentre{}
+%def\TPPheadrhs{}
+%\def\TPPfootlhs{}
+%\def\TPPfootcentre{}
+%\def\TPPfootrhs{}
+
+\begin{document}
+\TPPsetsizes
+\makeTPPfrontpage
+
+\vfill
+\begin{centering}
+
+%\bf Copyright \copyright\ : International Computers Ltd \number\year
+
+\end{centering}
+
+\newpage
+\section {DOCUMENT CONTROL}
+\subsection{Contents List}
+\tableofcontents
+\subsection{Document Cross References}
+\bibliographystyle{fmu}
+\bibliography{fmu,fef}
+
+\subsection{Changes History}
+\begin{description}
+\item[Issue \SCCSversion(\FormatDate{$Date$
+})] Latest approved version.
+\end{description}
+
+\subsection{Changes Forecast}
+None.
+\pagebreak
+\section{GENERAL}
+\subsection{Scope}
+This document provides a formal proof relating
+to the specifications in ``An Execution Model for SWORD'' \cite{DS/FMU/FEF/026}.
+It constitutes part of deliverable D13 of work package 3, as given
+in section 3 of the Proposal for Phase 2, \cite{DS/FMU/FEF/018}.
+
+
+(The current version is a rough draft of proofs of some of the propositions
+produced as pilot work during the third stage of phase 2.)
+
+\subsection{Introduction}
+\section{PRELIMINARIES}
+The following \Product{} instructions set up a new theory $fef033$
+to hold the theorems to be proved and set up a proof context in which
+to carry out the proofs. Some theorems are required from the theory
+$fef010$ defined in \cite{DS/FMU/FEF/010} and so this is made a parent of
+the theory $fef033$.
+
+=SML 
+open_theory "fef026";
+new_theory€"fef033"›;
+new_parent"fef010";
+set_pc"hol";
+=TEX
+\section{MISCELLANY}
+=SML
+=SML
+push_consistency_goal¨TableComputationsÆ;
+a(prove_∂_tac);
+a(strip_tac THEN rewrite_tac[tac_proof(([], ¨µx∑∂z y∑ (y, z) = xÆ),
+		strip_tac THEN ∂_tac¨Snd xÆ THEN ∂_tac¨Fst xÆ THEN rewrite_tac[])]);
+save_consistency_thm¨TableComputationsÆ (pop_thm());
+=TEX
+The following theorem takes a minute or so to compute so we give
+a name to it here (to make the proof of the induction theorem easier
+to modify, e.g. if the definitions change).
+=SML
+set_pc"hol";
+val table_computation_rw_thm =
+	rewrite_rule[get_spec¨•â2Æ] (get_spec¨TableComputationsÆ);
+set_pc"hol2";
+set_goal([], ¨µq : TABLE_COMP ≠ BOOL; p : VALUE_COMP ≠ BOOL∑ µcc : Class ∑
+		(µci∑ p(DenoteConstant ci))
+	±	(µi∑ p(Contents i))
+	±	(µi∑ p(Classification i))
+	±	p CountAll
+
+	±	(µf e∑ p e ¥ p(MonOp f e))
+	±	(µf e1 e2∑ p e1 ± p e2 ¥ p(BinOp f e1 e2))
+	±	(µf e1 e2 e3∑ p e1 ± p e2 ± p e3 ¥ p(TriOp f e1 e2 e3))
+	±	(µel∑ (µe∑e ç Elems el ¥ p e) ¥ p(BinOpAnd el))
+	±	(µel∑ (µe∑e ç Elems el ¥ p e) ¥ p(BinOpOr el))
+
+	±	(µcc te cel ee∑ p te ± (µe∑e ç Elems(Map Fst cel) ¥ p e) ±
+				(µe∑ e ç Elems(Map Snd cel) ¥ p e) ± p ee ¥
+					p(CaseVal cc te cel ee))
+	±	(µcc cel ee∑ (µe∑e ç Elems(Map Fst cel) ¥ p e) ±
+				(µe∑ e ç Elems(Map Snd cel) ¥ p e) ± p ee  ¥
+					p(Case cc cel ee))
+
+	±	(µe∑ p e ¥ p(SetFuncAllAnd e))
+	±	(µe∑ p e ¥ p(SetFuncAllOr e))
+	±	(µe∑ p e ¥ p(CountNonNull e))
+	±	(µe∑ p e ¥ p(CountDistinct e))
+	±	(µe∑ p e ¥ p(CommonValue e))
+
+	±	(µf e∑ p e ¥ p(SetFuncAll f e))
+	±	(µf e∑ p e ¥ p(SetFuncDistinct f e))
+
+	±	(µte∑ q te ¥ p(ExistsTuples te))
+	±	(µte∑ q te ¥ p(SingleValue te))
+
+	±	(µi∑ q(TableContents i))
+
+	±	(µesl tel e1 ml nl e2∑ (µe∑e ç Elems(Map Fst esl) ¥ p e)
+			± (µte∑te ç Elems tel ¥ q te) ± p e1 ± p e2
+				¥ q(AllTuples cc esl tel e1 ml nl e2))
+	±	(µesl tel e1 ml nl e2∑ (µe∑e ç Elems(Map Fst esl) ¥ p e)
+			± (µte∑te ç Elems tel ¥ q te) ± p e1 ± p e2
+				¥ q(DistinctTuples cc esl tel e1 ml nl e2))
+	±	(µesl tel e1 ml nl e2∑ (µe∑e ç Elems(Map Fst esl) ¥ p e)
+			± (µte∑te ç Elems tel ¥ q te) ± p e1 ± p e2
+				¥ q(Evaluate cc esl tel e1 ml nl e2))
+	¥	(µte∑ te ç TableComputations cc ¥ q te)
+	±	(µe∑ e ç ValueComputations cc ¥ p e)
+Æ);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(swap_asm_concl_tac ¨te ç TableComputations ccÆ
+	THEN rewrite_tac[table_computation_rw_thm]
+	THEN strip_tac
+	THEN ∂_tac¨{te | q te}Æ
+	THEN POP_ASM_T rewrite_thm_tac
+	THEN ∂_tac¨{e | p e}Æ THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(swap_asm_concl_tac ¨e ç ValueComputations ccÆ
+	THEN rewrite_tac[table_computation_rw_thm]
+	THEN strip_tac
+	THEN ∂_tac¨{e | p e}Æ
+	THEN POP_ASM_T rewrite_thm_tac
+	THEN ∂_tac¨{te | q te}Æ THEN asm_rewrite_tac[]);
+val table_computation_induction_thm =
+	save_pop_thm"table_computation_induction_thm";
+
+
+=TEX
+=IGN
+set_goal([], ¨
+	µe∑ µ
+=TEX
+\section{CLOSING DOWN}
+The following \Product{} instruction restores the previous proof context.
+=SML
+pop_pc();
+=TEX
+
+\newpage
+\HOLindexOff
+\input{fef033th.tex}
+\HOLindexOn
+\newpage
+\twocolumn[\section{INDEX} \label{INDEX}]
+\small
+\printindex
+
+\end{document}
