@@ -97,7 +97,7 @@ The following \Product{} instructions set the context for the proof
 tools and set up the new theory $fef026$, with parent the theory
 $fef025$ in which the representation of an SSQL State as a TSQL State is formalised.
 =SML 
-open_theory "fef025";
+open_theory "fef029";
 new_theoryÛ"fef026"İ;
 push_pc "hol";
 =TEX
@@ -446,19 +446,6 @@ $act$ either updates the state or delivers an answer according to the
 type of $query$ and the derived table computed by the compiled query.
 \end{enumerate}
 
-\section{SYSTEM CONSTRUCTION}
-It is necessary to relate the three-stage model of TSQL execution
-to the generic system construction of \cite{DS/FMU/FEF/022}. To do
-this we first instantiate that construction to the particular
-representation function, TSQL transition function and filter
-of \cite{DS/FMU/FEF/025,DS/FMU/FEF/021,DS/FMU/FEF/024}.
-The following function does this:
-¹HOLCONST
-Ü	ÛFE_SWORD‰1İ : (Query, FILTER_PARS) STP_TYPE
-Ü		­ (Query, ANSWER) BEHAVIOURS
-÷üüüüüüüüüüüüüüüüüüüüüüü
-Ü	µstp· FE_SWORD‰1 stp = FE_SWORD repr TSQLtf stp filter
-°
 
 \section{REPRESENTING SSQL AND TSQL STATES AS DERIVED TABLES}
 
@@ -591,10 +578,10 @@ and the representation function of \cite{DS/FMU/FEF/025}.
 ¹HOLCONST
 Ü	ÛView‰tİ : State‰t ­  DerTable LIST
 ÷üüüüüüüüüüüüüü
-Ü	µ s‰t · µs‰s· s‰t = repr s‰s ´ View‰t s‰t = View‰s s‰s
+Ü	µ s‰t · µs‰s· s‰t = reprState s‰s ´ View‰t s‰t = View‰s s‰s
 °
 Note that the consistency of the above implicit definition requires
-that any two SSQL states which are identified by $repr$ must be the
+that any two SSQL states which are identified by $reprState$ must be the
 same when viewed as lists of derived tables.
 
 \section{ACTION FUNCTION}
@@ -682,24 +669,24 @@ $f$ reveals information which should not be visible at class $c$:
 Ü		²	³Snd (f ts‰0) = Snd (f ts))}
 °
 
-(The above is modelled on condition $E$ in section 4 of
-\cite{DS/FMU/FEF/022}. It may not be quite strong enough, cf. condition
-$D$ there.)
 
-We can now assert the critical requirements on the queries resulting from the
-transformations using the following auxiliary: 
+
+We can now assert the critical requirements on the $SELECT$ query processing
+(corresponding to $subsys_secureE$ of \cite{DS/FMU/FEF/022}).
+using the following auxiliary: 
 
 ¹HOLCONST
-Ü	ÛConditionEİ	:	(DerTable ¸ State‰t ­ State‰t ¸ Errors)
-Ü			­	(Query ­ (DerTable LIST ­ DerTable ¸ Errors))
+Ü	ÛConditionEİ	:	(Query ­ (DerTable LIST ­ DerTable ¸ Errors))
 Ü			­	Class
-Ü			­	(Query ¸ (Query + ONE) ¸ 'PARS) ğ
+Ü			­	((Query ¸ (Query + ONE) ¸ 'PARS) + Errors) ğ
 ÷üüüüüüüüüüüüüü
-Ü	µupd compile cc·
-Ü	ConditionE upd compile cc
+Ü	µcompile cc·
+Ü	ConditionE compile cc
 Ü	=	
-Ü	{	(dq, ocq, pars)
-Ü	|	let	dcomp = compile dq
+Ü	{	stp_res
+Ü	|	isError stp_res ²
+Ü		let	(dq, ocq, pars) = destVal stp_res
+Ü		in let	dcomp = compile dq
 Ü		in	µri·	ri  RiskInputs cc dcomp
 Ü			´	IsL ocq
 Ü			±	let	ccomp = compile (OutL ocq)
@@ -707,15 +694,14 @@ transformations using the following auxiliary:
 Ü				²	³Snd (ccomp ri) = []}
 °
 ¹HOLCONST
-Ü	ÛSTP_secure_Eİ	:	(DerTable ¸ State‰t ­ State‰t ¸ Errors)
-Ü			­	(Query ­ (DerTable LIST ­ DerTable ¸ Errors))
+Ü	ÛSTP_secure_Eİ	:	(Query ­ (DerTable LIST ­ DerTable ¸ Errors))
 Ü				­	(Query, 'PARS) STP_TYPE ğ
 ÷üüüüüüüüüüüüüü
-Ü	µupd compile·
-Ü	STP_secure_E upd compile
+Ü	µcompile·
+Ü	STP_secure_E compile
 Ü	=	
 Ü	{	stp
-Ü	|	µ q c· stp(q, c)  ConditionE upd compile c}
+Ü	|	µ q c· stp(q, c)  ConditionE compile c}
 °
 (and similarly, presumably for the other 4 conditions from
 \cite{DS/FMU/FEF/022}, although something would need to be said about the
@@ -737,7 +723,7 @@ model to the particular view and action functions of the previous sections.
 °
 
 A compiler and associated database update operation are correct with
-respect to the TSQL semantics if the above construction agrees
+respect to the TSQL semantics if the above construction
 implements the TSQL semantics as specified by $TSQLtf$ in
 \cite{DS/FMU/FEF/021}.
 
@@ -748,13 +734,24 @@ implements the TSQL semantics as specified by $TSQLtf$ in
 Ü	Correct_Compile  = {(compile, upd) | EM‰1 compile upd = TSQLtf}
 °
 
-We might now conjecture that if a compiler and associated database
+To relate the three-stage model of TSQL execution
+to the actual system constructed from the TSQL transition function, filter
+of SSQL transformation processor
+of \cite{DS/FMU/FEF/021,DS/FMU/FEF/024,DS/FMU/FEF/029}, we can now conjecture that if a compiler and associated database update
 operation satisfy the above correctness criterion, and if the SSQL Query
-Transformation processor lies in the set determined by $STP\_secure\_E$
-determined by them, then the constructed system satisfies property
-E of \cite{DS/FMU/FEF/022}.
-(Not formalised yet).
+Transformation Processor lies in the set $STP\_secure\_E$
+determines from them, then the system components satisfy property
+E of \cite{DS/FMU/FEF/022} with respect to the representation.
 
+¹HOLCONST
+Ü	ÛConditionE_Lemmaİ : BOOL
+÷üüüüüüüüüüüüüü
+Ü	ConditionE_Lemma
+Ü¤	µcompile upd·
+Ü		(compile, upd)  Correct_Compile
+Ü	±	STP  STP_secure_E compile
+Ü	´	(TSQLtf, STP, outputFilter)  subsys_secureE reprState
+°
 =TEX
 \section{TABLE COMPUTATIONS}
 The idea now is to define a set of operations on tables in terms
@@ -764,16 +761,16 @@ This is intended to give some insight into the intuitions about operations
 on tables which motivate the transformations.
 
 The set of computations on tables which are allowed to be produced
-when queries generatd by the SQL Transformation Processor are
-compiled will (probably) be defined (more or less)
+when queries generates by the SQL Transformation Processor are
+compiled will essentially be defined
 by taking the closure under composition
 of a finite set of particular
 operations adequate to represent the primitive constructs of TSQL.
 The closure is formed using the following function:
 
 ¹HOLCONST
-Ü	ÛCompClosureİ	:	(DerTableSpec LIST ­ DerTableSpec) SET
-Ü			­	(DerTableSpec LIST ­ DerTableSpec) SET
+Ü	ÛCompClosureİ	:	('a LIST ­ 'a) SET
+Ü			­	('a LIST ­ 'a) SET
 ÷üüüüüüüüüüüüüüüüüü
 Ü	µfs·	CompClosure fs
 Ü	=	¥
