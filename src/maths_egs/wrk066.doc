@@ -3314,8 +3314,14 @@ fun simple_deriv_rule (thms : THM list) : TERM -> THM = (
 	end
 );
 =TEX
-An interface to the core algorithm, which invokes it, and then turns the resulting
-theorem into a universally closed implication with no $\beta$-redexes.
+We now define interface to the core algorithm, which invokes it, and then turns the resulting
+theorem into a universally closed implication with no $\beta$-redexes or $\eta$-redexes
+and with hypotheses that are unique by dint of the uniqueness theorem for derivatives
+identified. $\eta$-reduction is only done for functions from reals to reals to avoid
+rendering terms involving binders unreadable. Before defining the interface we give
+rules to do the various simplifications:
+
+The following rule conjoins all the assumptions of a theorem into one.
 =SML
 fun asm_±_intro_rule (thm : THM) : THM = (
 	case asms thm of
@@ -3329,14 +3335,69 @@ fun asm_±_intro_rule (thm : THM) : THM = (
 		end
 	) | 	_ => thm
 );
+=TEX
+The following rule does the elimination of $\beta$- and $\eta$-redexes:
+=SML
+val ¯_È_axiom = inst_type_rule[(”¯®, ”'a®), (”¯®, ”'b®)] È_axiom;
+val Â_¯_È_elim_conv = ONCE_MAP_C (Â_conv AND_OR_C eq_match_conv ¯_È_axiom);
+fun asm_Â_È_elim_rule (thm : THM) : THM = (
+	let		fun aux1 acc [] = acc
+		|   aux1 acc (asm::more) = (
+			aux1 (Â_¯_È_elim_conv asm::acc) more
+			handle Fail _ => aux1 acc more
+		);
+		fun aux2 acc_thm [] = acc_thm
+		|   aux2 acc_thm (thm1::more) = (
+			let	val thm2 = snd(¤_elim thm1);
+				val thm3 = undisch_rule thm2;
+			in	aux2 (prove_asm_rule thm3 acc_thm) more
+			end
+		);
+	in	aux2 thm (aux1 [] (asms thm))
+	end
+);
+=TEX
+The following rule looks for assumptions which must  be the same by dint of the
+uniqueness of derivatives and identifies them. (Note this does not need the uniqueness
+theorem, in predicate logic it would be a weakening of the theorem).
+=SML
+fun deriv_dup_elim_rule (thm : THM) : THM = (
+	let	fun aux1 asm1 asm2 thm1 = (
+			let	val (f1, x1, y1) = dest_deriv asm1;
+				val (f2, x2, y2) = dest_deriv asm2;
+			in	if	f1 ~=$ f2
+				andalso	y1 ~=$ y2
+				then	asm_inst_term_rule [(x1, x2)] thm1
+					handle Fail _ =>
+					asm_inst_term_rule [(x2, x1)] thm1
+				else	hd []
+			end
+		);
+		fun aux2 asm1 [] thm1 = hd []
+		|   aux2 asm1 (asm2::more) thm1 = (
+			aux1 asm1 asm2 thm1 handle Fail _ => aux2 asm1 more thm1
+		);
+		fun aux3 [] thm1 = thm1
+		|   aux3 (asm::more) thm1 = (
+			aux2 asm more thm1 handle Fail _ => aux3 more thm1
+		);
+
+	in	aux3 (asms thm) thm
+	end
+);
+=TEX
+Now the promised interface to the simple derivative rule (which just composes the
+rules above in the right order):
+=SML
 fun deriv_rule (thms : THM list) : TERM -> THM = (
 	let	val rule = simple_deriv_rule thms;
 	in	fn tm =>
 		let	val thm1 = rule tm;
-			val thm2 = all_´_intro (asm_±_intro_rule thm1);
-			val thm3 = conv_rule(TRY_C (MAP_C Â_conv)) thm2;
-			val res_thm = all_µ_intro thm3;
-		in	res_thm
+			val thm2 = conv_rule(TRY_C (Â_¯_È_elim_conv)) thm1;
+			val thm3 = deriv_dup_elim_rule(asm_Â_È_elim_rule thm2);
+			val thm4 = all_´_intro (asm_±_intro_rule thm3);
+			val thm5 = all_µ_intro thm4;
+		in	thm5
 		end
 	end
 );
@@ -3399,6 +3460,8 @@ val tms = [
 ];
 
 map (conv_rule (TRY_C(ONCE_MAP_C ¯_anf_conv))) (map rat_deriv_rule tms);
+rat_deriv_rule ¬ Ìx:¯· f x + f x : ¯®;
+simple_deriv_rule rat_deriv_thms ¬ Ìx:¯· f x + f x : ¯®;
 
 =TEX
 %%%%
