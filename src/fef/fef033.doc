@@ -145,6 +145,8 @@ set_goal([], ¨µq : TABLE_COMP ≠ BOOL; p : VALUE_COMP ≠ BOOL∑ µcc : Class ∑
 	±	(µcc te∑ q te ¥ p(ExistsTuples cc te))
 	±	(µcc te∑ q te ¥ p(SingleValue cc te))
 
+	±	(µcc∑ p(JoinedRowExistence cc))
+
 	±	(µi∑ q(TableContents i))
 
 	±	(µesl tel e1 ml nl e2∑ (µe∑e ç Elems(Map Fst esl) ¥ p e)
@@ -326,6 +328,17 @@ a(lemma_tac
 val €glb_lattice_top_thm› = save_pop_thm"glb_lattice_top_thm";
 =TEX
 =SML
+push_goal([], ¨µc∑ c lub lattice_bottom = cÆ);
+a(REPEAT strip_tac THEN lemma_tac
+	¨c dominates c lub lattice_bottom ±
+		c lub lattice_bottom dominates cÆ
+	THEN_LIST [rewrite_tac[get_spec¨$lubÆ], all_fc_tac[get_spec¨$lubÆ]]);
+a(lemma_tac
+	¨c dominates c ± c dominates lattice_bottomÆ
+	THEN_LIST [rewrite_tac[get_spec¨$lubÆ], all_fc_tac[get_spec¨$lubÆ]]);
+val €lub_lattice_bottom_thm› = save_pop_thm"lub_lattice_bottom_thm";
+=TEX
+=SML
 push_goal([], ¨µc1 c2∑ c1 glb c2 = c2 glb c1Æ);
 a(REPEAT strip_tac THEN lemma_tac
 	¨c1 glb c2 dominates c2 glb c1 ±
@@ -354,13 +367,13 @@ val €lub_comm_thm› = save_pop_thm"lub_comm_thm";
 =SML
 push_goal([], ¨µcil∑
 	ListAnd (Map (ItemBool o Snd) cil) ¥
-	glbl(Map (Ã (c, u)∑ if ItemBool u then lattice_top else c) cil) =
-	lattice_topÆ);
+	lubl(Map (Ã (c, u)∑ if ItemBool u then lattice_bottom else c) cil) =
+	lattice_bottomÆ);
 a(strip_tac);
 a(list_induction_tac ¨cilÆ
-	THEN asm_rewrite_tac(glbl_lemma :: map get_spec[¨ListAndÆ, ¨MapÆ, ¨FoldÆ]));
+	THEN asm_rewrite_tac(lubl_lemma :: map get_spec[¨ListAndÆ, ¨MapÆ, ¨FoldÆ]));
 a(REPEAT strip_tac THEN asm_rewrite_tac[]);
-a(rewrite_tac[glb_lattice_top_thm]);
+a(rewrite_tac[lub_lattice_bottom_thm]);
 val €ListAnd_true_lemma› = save_pop_thm "ListAnd_true_lemma";
 =TEX
 =SML
@@ -388,10 +401,10 @@ set_goal([], ¨µvc vcl∑
 		then	(cr, BoolItem false)
 		else if	≥b ± br
 		then	(c, BoolItem false)
-		else	(c glb cr, BoolItem false))
+		else	(c lub cr, BoolItem false))
 Æ);
 a(PC_T1 "predicates1" rewrite_tac[]);
-a(rewrite_tac(glbl_lemma :: lubl_lemma ::ItemBool_BoolItem_lemma ::
+a(rewrite_tac(lubl_lemma ::ItemBool_BoolItem_lemma ::
 	 map get_spec [¨BinOpAndÆ, ¨ListAndÆ, ¨MapÆ, ¨LetÆ]));
 a(REPEAT strip_tac);
 a(cases_tac¨ItemBool (Snd (vc x x' x''))Æ THEN
@@ -401,11 +414,11 @@ a(cases_tac¨ItemBool (Snd (vc x x' x''))Æ THEN
 a(conv_tac (LEFT_C (once_rewrite_conv[lub_comm_thm])));
 a(REPEAT strip_tac);
 (* *** Goal "2" *** *)
-a(conv_tac (LEFT_C (once_rewrite_conv[glb_comm_thm])));
-a(rewrite_tac[glb_lattice_top_thm]);
+a(conv_tac (LEFT_C (once_rewrite_conv[lub_comm_thm])));
+a(rewrite_tac[lub_lattice_bottom_thm]);
 (* *** Goal "3" *** *)
 a(ALL_FC_T rewrite_tac [ListAnd_true_lemma]);
-a(rewrite_tac[glb_lattice_top_thm]);
+a(rewrite_tac[lub_lattice_bottom_thm]);
 val €BinOpAnd_lemma› = save_pop_thm "BinOpAnd_lemma";
 =TEX
 The following primitive recursive reformulation of $CaseVal$ could
@@ -497,7 +510,7 @@ val €MonOp_OK_lemma› = save_pop_thm"MonOp_OK_lemma";
 =TEX
 \subsection{Binary}
 =SML
-set_goal([dominates_linear_conj],
+set_goal([],
 	¨µc vcl∑ Elems vcl Ä OK_VC c ¥ BinOpAnd vcl ç OK_VC cÆ);
 a(REPEAT µ_tac);
 a(list_induction_tac¨vclÆ);
@@ -549,14 +562,6 @@ a(lemma_tac¨≥Snd (x tlâ0 rlâ0 râ0) = Snd (x tlâ1 rlâ1 râ1)Æ
 a(LEMMA_T ¨x ç OK_VC cÆ
 	(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th])
 	THEN1 PC_T1 "sets_ext" asm_prove_tac[get_spec¨ElemsÆ]);
-a(lemma_tac¨≥Snd(BinOpAnd vcl tlâ0 rlâ0 râ0) = Snd(BinOpAnd vcl tlâ1 rlâ1 râ1)Æ
-	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
-a(DROP_ASM_T¨BinOpAnd vcl ç OK_VC cÆ
-	(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th]));
-a(strip_asm_tac(list_µ_elim
-	[¨Fst (x tlâ0 rlâ0 râ0)Æ, ¨Fst (BinOpAnd vcl tlâ0 rlâ0 râ0)Æ]
-	dominates_linear_glb_lemma)
-	THEN asm_rewrite_tac[]);
 val €BinOpAnd_OK_lemma› = save_pop_thm"BinOpAnd_OK_lemma";
 =TEX
 =SML
