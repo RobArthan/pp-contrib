@@ -75,12 +75,21 @@ This document gives a formal specification in HOL (\cite{milner90}, \cite{paulso
  deliverable D11 of work package 3, as given
 in the Proposal for Phase~2, \cite{DS/FMU/FEF/018}.
 
+The current version of this document is a partial draft intended to indicate
+the flavour of what can be done in this area. In particular, the main
+mutually recursive functions which perform the transformations are currently
+in vestigial form, since their structure is heavily dependent on the
+SSQL syntax and so it is felt best to defer their formalisation in HOL until
+the SSQL syntax definitions \cite{SD/FMU/FEF/014} have been brought into
+line with the most recent specification of SSQL.
+ 
 \subsection{Introduction}
 We provide HOL specifications of the 
 SSQL query transformations of \cite{trans}. Preliminary 
 material needed
  to support these query 
 transformation specifications may be found in \cite{DS/FMU/FEF/028}.
+
 \subsection{ProofPower Preamble}
 The following commands initialise the ProofPower system to accept
 the specifications:
@@ -146,6 +155,20 @@ were unique within the current symbol-table scope, not within the entire
 transformation process.
 \end{enumerate}
 
+We need a function to set up an initial state based on the client clearance:
+
+¹HOLCONST 
+Ü	init_trans_state: Class ­ TRANS_STATE
+÷üüüüüüüüüüüüü
+Üµc·	init_trans_state c =
+Ü	MkTRANS_STATE
+Ü	(MkST_STACK [] [])
+Ü	c
+Ü	c
+Ü	c
+°
+
+
 \subsection{Symbol Table Model}
 ¹HOLCONST
 Ü	Ûfind‰c‰o‰l‰u‰m‰nÝ : ColumnSpecification ¸ TableDetail LIST ­ 
@@ -194,7 +217,7 @@ cannot be recursive).
 ÷üüüüüüüüüüüüüüüüüüüüüüü
 Üµcs ti outer·
 Ü	lookup_column_info_look (cs, []) = Exception [noSuchColumn]
-Ü±	lookup_column_info_look (cs, outer @ [ti]) =
+Ü±	lookup_column_info_look (cs, outer ë [ti]) =
 Ü	let	t = s_tables ti
 Ü	in let	tdsctcl = find‰c‰o‰l‰u‰m‰n(cs, t)
 Ü	in	if	tdsctcl = []
@@ -226,10 +249,10 @@ cannot be recursive).
 ÷üüüüüüüüüüüü
 Üµouter inner·
 Ü	innermost [] = []
-Ü±	innermost (outer @ [inner]) =
+Ü±	innermost (outer ë [inner]) =
 Ü	let tds = s_tables inner
 Ü	in	if	tds = []
-Ü		then	innermost outer @ [inner]
+Ü		then	innermost outer ë [inner]
 Ü		else	[inner]
 °
 As with $lookup\sb{column\_info}$, we replace the recursive
@@ -243,7 +266,7 @@ The comments before the $then$s below show the corresponding ML pattern match
 ÷üüüüüüüüüüüüüüüü
 Üµ cs outer ti·
 Ü	lookup_col_spec_class_look(cs,[]) = Exception [noSuchColumn]
-Ü±	lookup_col_spec_class_look(cs, outer @ [ti]) = 	
+Ü±	lookup_col_spec_class_look(cs, outer ë [ti]) = 	
 Ü	let	(t, i) = (s_tables ti, s_identifiers ti)
 Ü	in let	cds = find‰c‰o‰l‰u‰m‰n(cs,t)
 Ü	and	ids = find‰i‰d‰e‰n‰t(cs,i)
@@ -293,7 +316,7 @@ $lookup\_col\_spec\_sterling\_look$ below.
 ÷üüüüüüüüüüüüüüüü
 Üµ cs outer ti·
 Ü	lookup_col_spec_dinary_look(cs,[]) = Exception [noSuchColumn]
-Ü±	lookup_col_spec_dinary_look(cs, outer @ [ti]) = 	
+Ü±	lookup_col_spec_dinary_look(cs, outer ë [ti]) = 	
 Ü	let	(t, i) = (s_tables ti, s_identifiers ti)
 Ü	in let	cds = find‰c‰o‰l‰u‰m‰n(cs,t)
 Ü	and	ids = find‰i‰d‰e‰n‰t(cs,i)
@@ -336,7 +359,7 @@ $lookup\_col\_spec\_sterling\_look$ below.
 ÷üüüüüüüüüüüüüüüü
 Üµ cs outer ti·
 Ü	lookup_col_spec_sterling_look(cs,[]) = Exception [noSuchColumn]
-Ü±	lookup_col_spec_sterling_look(cs, outer @ [ti]) = 	
+Ü±	lookup_col_spec_sterling_look(cs, outer ë [ti]) = 	
 Ü	let	(t, i) = (s_tables ti, s_identifiers ti)
 Ü	in let	cds = find‰c‰o‰l‰u‰m‰n(cs,t)
 Ü	and	ids = find‰i‰d‰e‰n‰t(cs,i)
@@ -380,9 +403,9 @@ $lookup\_col\_spec\_sterling\_look$ below.
 ÷üüüüüüüüüüüüüüüüüüü
 Üµ st· lookup‰l‰o‰c‰a‰l‰c‰o‰l‰i‰m‰p‰l‰e‰m‰e‰n‰t‰a‰t‰i‰o‰n st =
 Ü	let	extract_implementation sc =
-Ü		Fold ($@) (Map td_implementation (s_tables sc)) []
+Ü		Fold ($ë) (Map td_implementation (s_tables sc)) []
 Ü	in let	trs =
-Ü		Fold ($@)
+Ü		Fold ($ë)
 Ü		(Map extract_implementation (innermost(symbolTable(st_stack st))))[]
 Ü	in	if	trs = []
 Ü		then	Exception[noScope]
@@ -395,9 +418,9 @@ $lookup\_col\_spec\_sterling\_look$ below.
 ÷üüüüüüüüüüüüüüüüüüü
 Üµ st· lookup‰l‰o‰c‰a‰l‰c‰o‰l‰i‰n‰f‰o st =
 Ü	let	extract_columns sc =
-Ü		Fold ($@) (Map td_columns (s_tables sc)) []
+Ü		Fold ($ë) (Map td_columns (s_tables sc)) []
 Ü	in let	trs =
-Ü		Fold ($@)
+Ü		Fold ($ë)
 Ü		(Map extract_columns (innermost(symbolTable(st_stack st))))[]
 Ü	in	if	trs = []
 Ü		then	Exception[noScope]
@@ -419,9 +442,9 @@ $lookup\_col\_spec\_sterling\_look$ below.
 Ü	in let	look1 td = at3 (Map look2)
 Ü			(seq (Length (td_columns td)) (td_genCorr td),
 Ü				td_columns td, td_implementation td)
-Ü	in let	look sc = Fold ($@) (Map look1 (s_tables sc)) []
+Ü	in let	look sc = Fold ($ë) (Map look1 (s_tables sc)) []
 Ü	in let	trs = 
-Ü		Fold ($@) (Map look (innermost(symbolTable(st_stack st))))[]
+Ü		Fold ($ë) (Map look (innermost(symbolTable(st_stack st))))[]
 Ü	in	if	trs = []
 Ü		then	Exception[noScope]
 Ü		else	ListOk trs
@@ -441,9 +464,9 @@ $lookup\_col\_spec\_sterling\_look$ below.
 Ü	in let	look1 td = at2 (Map look2)
 Ü			(seq (Length (td_columns td)) (td_genCorr td),
 Ü				td_implementation td)
-Ü	in let	look sc = Fold ($@) (Map look1 (s_tables sc)) []
+Ü	in let	look sc = Fold ($ë) (Map look1 (s_tables sc)) []
 Ü	in let	trs = 
-Ü		Fold ($@) (Map look (innermost(symbolTable(st_stack st))))[]
+Ü		Fold ($ë) (Map look (innermost(symbolTable(st_stack st))))[]
 Ü	in	if	trs = []
 Ü		then	Exception[noScope]
 Ü		else	ListOk trs
@@ -462,7 +485,7 @@ $lookup\_col\_spec\_sterling\_look$ below.
 Ü		]
 Ü	in let	look sc = Map look1 (s_tables sc)
 Ü	in let	trs = 
-Ü		Fold ($@) (Map look (innermost(symbolTable(st_stack st))))[]
+Ü		Fold ($ë) (Map look (innermost(symbolTable(st_stack st))))[]
 Ü	in	if	trs = []
 Ü		then	Exception[noScope]
 Ü		else	ListOk trs
@@ -477,7 +500,7 @@ to the following.
 ÷üüüüüüüüüüüüüüüü
 Üµ st cs outer ti·
 Ü	lookup_column_row_class_look st (cs,[]) = Exception [noSuchColumn]
-Ü±	lookup_column_row_class_look st (cs, outer @ [ti]) = 	
+Ü±	lookup_column_row_class_look st (cs, outer ë [ti]) = 	
 Ü	let	(t, i) = (s_tables ti, s_identifiers ti)
 Ü	in let	cds = find‰c‰o‰l‰u‰m‰n(cs,t)
 Ü	and	ids = find‰i‰d‰e‰n‰t(cs,i)
@@ -521,7 +544,7 @@ to the following.
 ÷üüüüüüüüüüüüüüüüüüüüüü
 Üµts outer ti·
 Ü	lookup_table_row_class_look (ts, []) = Exception [noSuchTable]
-Ü±	lookup_table_row_class_look (ts, outer @ [ti]) =
+Ü±	lookup_table_row_class_look (ts, outer ë [ti]) =
 Ü	let	look1 (ts, td) =
 Ü			CASE (td_tableName td) [
 Ü			WHEN_anon‰t‰n [];
@@ -537,7 +560,7 @@ to the following.
 Ü				else	[]
 Ü			]
 Ü	in let	(tds, ids) = (s_tables ti, s_identifiers ti)
-Ü	in let	trs = Fold ($@) (at2 (Map look1) (seq (Length tds) (ts), tds)) []
+Ü	in let	trs = Fold ($ë) (at2 (Map look1) (seq (Length tds) (ts), tds)) []
 Ü	in	if	trs = [] then lookup_table_row_class_look (ts, outer)
 Ü		else if	Tl trs = []
 Ü		then	Hd trs
@@ -560,7 +583,7 @@ to the following.
 ÷üüüüüüüüüüüüüüüüüüüüüü
 Üµts outer ti·
 Ü	lookup_table_detail_look (ts, []) = Exception [noSuchTable]
-Ü±	lookup_table_detail_look (ts, outer @ [ti]) =
+Ü±	lookup_table_detail_look (ts, outer ë [ti]) =
 Ü	let	look1 (ts, td) =
 Ü			CASE (td_tableName td) [
 Ü			WHEN_anon‰t‰n [];
@@ -570,7 +593,7 @@ to the following.
 Ü				else	[]
 Ü			]
 Ü	in let	(tds, ids) = (s_tables ti, s_identifiers ti)
-Ü	in let	tis = Fold ($@) (at2 (Map look1) (seq (Length tds) (ts), tds)) []
+Ü	in let	tis = Fold ($ë) (at2 (Map look1) (seq (Length tds) (ts), tds)) []
 Ü	in	if	tis = [] then lookup_table_detail_look (ts, outer)
 Ü		else if	Tl tis = []
 Ü		then	Ok(Hd tis)
@@ -597,7 +620,7 @@ with a given value.
 Ü	let	stk = st_stack st
 Ü	in let	symt = symbolTable stk
 Ü	in let	outer = Rev(Tl(Rev symt))
-Ü	in let	symt' = outer @ [sc]
+Ü	in let	symt' = outer ë [sc]
 Ü	in	MkTRANS_STATE
 Ü		(MkST_STACK symt' (parameterTable stk))
 Ü		(query_class st) (query_constants_class st) (client_clearance st)
@@ -630,7 +653,7 @@ in \cite{DS/FMU/FEF/014}.
 Ü							(seq(Length ids)name,ids)
 Ü							= []
 Ü						then	Exception[ambiguousName]
-Ü						else	let	sc' = MkScope [] (ids @ [id])
+Ü						else	let	sc' = MkScope [] (ids ë [id])
 Ü							in	Ok (update_top_scope st sc', unv,unc)
 Ü				else 	Exception[wrongScope]
 °
@@ -658,7 +681,7 @@ in \cite{DS/FMU/FEF/014}.
 Ü							(seq(Length ids)name,ids)
 Ü							= []
 Ü						then	Exception[ambiguousName]
-Ü						else	let	sc' = MkScope [] (ids @ [id])
+Ü						else	let	sc' = MkScope [] (ids ë [id])
 Ü							in	Ok (update_top_scope st sc', unv)
 Ü				else 	Exception[wrongScope]
 °
@@ -682,7 +705,7 @@ in \cite{DS/FMU/FEF/014}.
 Ü		then	Exception[noScope]
 Ü		else if	extract‰p‰a‰r‰a‰m‰e‰t‰e‰r(name, pt) = []
 Ü		then	Ok(MkTRANS_STATE
-Ü			(MkST_STACK sl (pt @ [MkParamInfo name v clasf]))
+Ü			(MkST_STACK sl (pt ë [MkParamInfo name v clasf]))
 Ü			(query_class st) (query_constants_class st)
 Ü			(client_clearance st))
 Ü		else	Exception[ambiguousName]
@@ -707,7 +730,7 @@ in \cite{DS/FMU/FEF/014}.
 Ü						MkTableDetail 
 Ü						ts (mk_name‰s cn) gc ti scs rcn
 Ü						tcs (MkConstraintInfo[][][][][])
-Ü					in let	sc' = MkScope (tds @ [td]) []
+Ü					in let	sc' = MkScope (tds ë [td]) []
 Ü					in	Ok (update_top_scope st sc', gc)
 Ü				else 	Exception[wrongScope]
 °
@@ -731,7 +754,7 @@ in \cite{DS/FMU/FEF/014}.
 Ü						MkTableDetail 
 Ü						ts (c_anon‰s) gc ti scs rcn
 Ü						tcs (MkConstraintInfo[][][][][])
-Ü					in let	sc' = MkScope (tds @ [td]) []
+Ü					in let	sc' = MkScope (tds ë [td]) []
 Ü					in	Ok (update_top_scope st sc', gc)
 Ü				else 	Exception[wrongScope]
 °
@@ -744,7 +767,7 @@ in \cite{DS/FMU/FEF/014}.
 Ü	let	stk = st_stack st
 Ü	in let	symt = symbolTable stk
 Ü	in let	outer = Rev(Tl(Rev symt))
-Ü	in let	symt' = outer @ []
+Ü	in let	symt' = outer ë []
 Ü	in	MkTRANS_STATE
 Ü		(MkST_STACK symt' (parameterTable stk))
 Ü		(query_class st) (query_constants_class st) (client_clearance st)
@@ -770,7 +793,7 @@ is not used so we omit it.
 ÷üüüüüüüüüüüüüüüü
 Üµst·	lookup‰l‰o‰c‰a‰l‰t‰a‰b‰l‰e‰i‰n‰f‰o st =
 Ü	let 	look sc = Map td_info (s_tables sc)
-Ü	in let	trs = Fold($@)(Map look (innermost(symbolTable(st_stack st)))) []
+Ü	in let	trs = Fold($ë)(Map look (innermost(symbolTable(st_stack st)))) []
 Ü	in	if trs = []
 Ü		then	Exception[noScope]
 Ü		else	Ok trs
@@ -1003,13 +1026,13 @@ name followed by a column name.
 Üµts·	convert‰t‰a‰b‰l‰e‰S‰p‰e‰c‰i‰f‰c‰a‰t‰i‰o‰n ts =
 Ü	CASE ts [
 Ü	WHEN_absolute(directory,table)·
-Ü		Ok(denote_table_spec(directory @ [table]));
+Ü		Ok(denote_table_spec(directory ë [table]));
 Ü	WHEN_default(up,directory,table)·
 Ü		let	dir = convert_tableSpecification_backup
 Ü				(default_directory, up)
 Ü		in	if	isError dir
 Ü			then	giveError(destError dir)
-Ü			else	Ok(denote_table_spec(destVal dir @ directory @ [table]))
+Ü			else	Ok(denote_table_spec(destVal dir ë directory ë [table]))
 Ü	]
 °
 
@@ -1020,16 +1043,16 @@ name followed by a column name.
 Ü	: TableSpecification ­ STRING
 ÷üüüüüüüüüüüüüü
 Üµts·	table_name ts =
-Ü	let	dot s = s @ "."
+Ü	let	dot s = s ë "."
 Ü	in	CASE ts [
 Ü		WHEN_absolute(dir,tab)·
 Ü			if	dir = []
 Ü			then	tab
-Ü			else	Fold ($@) (Map dot dir) [] @ tab;
+Ü			else	Fold ($ë) (Map dot dir) [] ë tab;
 Ü		WHEN_default(up,dir,tab)·
 Ü			if	dir = []
-Ü			then	Flat(seq up "-") @ tab
-Ü			else	Flat(seq up "-") @ Fold ($@) (Map dot dir) [] @ tab
+Ü			then	Flat(seq up "-") ë tab
+Ü			else	Flat(seq up "-") ë Fold ($ë) (Map dot dir) [] ë tab
 Ü	]
 °
 =TEX
@@ -1215,1746 +1238,409 @@ name followed by a column name.
 The new $Select\_value$ category corresponds (at least in its $anonynomous$
 option with the old $Value$, which appears as the operand to
 $select\_value$).
-=SML
-local	fun	(data_col : TsqlName ¸ TsqlName ­ Select_valueètsqlê list)
-				(none‰t,none‰t) = []
-	|	data_col	(name‰t s,anon‰t) = 
-						[anonymous_value‰t(contents‰t(denote_col_spec‰t s))]
-	|	data_col	(name‰t fs,name‰t ts) = 
-						[anonymous_value‰t(contents‰t(denote_col_spec‰t fs))]
-	|	data_col	(none‰t,anon‰t) = [anonymous_value‰t(denote_null‰t)]
-	|	data_col	(anon‰t,none‰t) = [anonymous_value‰t(denote_null‰t)]
-	|	data_col	(n1,n2) = raise internalError
-	fun	(class_col : TsqlClassName ¸ TsqlClassName ­ Select_valueètsqlê list)
-				(constantètcê fc,constantètcê tc) =	if fc = tc then []
-								else raise internalError
-	|	class_col	(nameètcê f,nameètcê tn) =
-						[anonymous_value‰t(contents‰t(denote_col_spec‰t f))]
-	|	class_col	(constantètcê fc,nameètcê tn) =
-						[anonymous_value‰t(denote_class‰t fc)]
-	|	class_col	(nameètcê f,anonètcê) =
-						[anonymous_value‰t(contents‰t(denote_col_spec‰t f))]
-	|	class_col	(constantètcê fc,anonètcê) =
-						[anonymous_value‰t(denote_class‰t fc)]
-	|	class_col	(c1,c2) = raise internalError
-in
-fun 	(Ûmake‰s‰vÝ : TsqlCol ¸ TsqlCol ­ Select_valueètsqlê list)(f,t) =
-		data_col(#sterling_name f,#sterling_name t) @
-		data_col(#dinary_name f,#dinary_name t) @
-		class_col(#class_name f,#class_name t)
-end;
+¹HOLCONST
+Ü	Ûmake‰s‰vÝ : TsqlCol ¸ TsqlCol ­ Value LIST RESULT
+÷üüüüüüüüüüü
+Üµ f t·
+Ü	make‰s‰v (f, t) =
+Ü	let	data_col (ftn, ttn) =
+Ü			CASE ftn [
+Ü			WHEN_none‰t
+Ü				(CASE ttn [
+Ü				WHEN_none‰t (Ok []);
+Ü				WHEN_anon‰t (Ok[denote_null]);
+Ü				WHEN_name‰t ts· Exception[internalError]]);
+Ü			WHEN_anon‰t
+Ü				(CASE ttn [
+Ü				WHEN_none‰t (Ok[denote_null]);
+Ü				OTHERS (Exception[internalError])]);
+Ü			WHEN_name‰t fs·
+Ü				(CASE ttn [
+Ü				WHEN_anon‰t (Ok[contents(denote_col_spec [fs])]);
+Ü				WHEN_name‰t ts· Ok[contents(denote_col_spec [fs])];
+Ü				WHEN_none‰t (Exception[internalError])])]
+Ü	in let class_col (fcn, tcn) = 
+Ü			CASE fcn [
+Ü			WHEN_constant‰t‰c fc·
+Ü				CASE tcn [
+Ü				WHEN_constant‰t‰c tc·
+Ü					if fc = tc
+Ü					then Ok []
+Ü					else Exception[internalError];
+Ü				WHEN_name‰t‰c tn· Ok[denote_class fc];
+Ü				WHEN_anon‰t‰c (Exception[internalError])];
+Ü			WHEN_name‰t‰c f·
+Ü				CASE tcn [
+Ü				WHEN_constant‰t‰c tc·Exception[internalError];
+Ü				WHEN_name‰t‰c tn· Ok[contents(denote_col_spec [f])];
+Ü				WHEN_anon‰t‰c (Ok[contents(denote_col_spec [f])])];
+Ü			WHEN_anon‰t‰c (Exception[internalError])]
+Ü	in let	ssv = data_col(tc_sterling_name f, tc_sterling_name t)
+Ü	in let	dsv = data_col(tc_dinary_name f, tc_dinary_name t)
+Ü	in let	csv = class_col(tc_class_name f, tc_class_name t)
+Ü	in	if	isError ssv ² isError dsv ² isError csv
+Ü		then	Exception[internalError]
+Ü		else	Ok(destVal ssv ë destVal dsv ë destVal csv)
+°
 =TEX
-=SML
-fun 	(Ûremove_constantsÝ : (Col_specètsqlê,Class)Sum list ­ Col_specètsqlê list) [] = []
-|	remove_constants ((inL c) :: s) = c :: (remove_constants s)
-|	remove_constants ((inR c) :: s) = remove_constants s;
+¹HOLCONST
+Ü	Ûremove_constantsÝ : (Col_spec + Class) LIST ­ Col_spec LIST
+÷üüüüüüüüüüüüüüüüüüü
+Üµx s·
+Ü	remove_constants [] = []
+Ü±	remove_constants (Cons x s) =
+Ü	if IsL x
+Ü	then Cons (OutL x) (remove_constants s)
+Ü	else remove_constants s
+°
 =TEX
-=SML
-fun 	(Ûremove_nullsÝ : TsqlRepr list ­ TsqlRepr list) [] = []
-|	remove_nulls (constant_null :: trs) = remove_nulls trs
-|	remove_nulls (x :: trs) = x :: (remove_nulls trs);
+¹HOLCONST
+Ü	Ûremove_nullsÝ : TsqlRepr LIST ­ TsqlRepr LIST
+÷üüüüüüüüüüüüüüüüüüü
+Üµx trs·
+Ü	remove_nulls [] = []
+Ü±	remove_nulls (Cons x trs) =
+Ü	CASE x [
+Ü	WHEN_constant_null (remove_nulls trs);
+Ü	OTHERS (Cons x (remove_nulls trs))]
+°
 =TEX
-=SML
-fun 	(ÛupperÝ : ExpClass ­ Class)
-		(variable(c,u)) = u
-|	upper	(constantèecê u) = u;
+¹HOLCONST
+Ü	ÛupperÝ : ExpClass ­ Class
+÷üüüüüüüüüüüüüüüüüüü
+Üµec·	upper ec =
+Ü	CASE ec [
+Ü	WHEN_variable (c, u)· u;
+Ü	WHEN_constant‰e‰c u· u]
+°
 =TEX
-=SML
-local	fun	(make_case : Valueètsqlê ¸ ExpClass ­ Valueètsqlê)
-			(data,variable(c,u)) = case‰t(	[data], 
-							[denote_class‰t(lattice_top())],
-							c)
-	|	make_case(data,constantèecê c) = case‰t(	[data], 
-								[denote_class‰t(lattice_top())],
-								denote_class‰t c)
-in		
-fun 	(ÛsimplifyèandsêÝ : Valueètsqlê list ¸ ExpClass list ­ Valueètsqlê ¸ ExpClass)
-	(vs,cs) =	
-		let	val v = fold(curry binop‰t and_op)vs
-			val c = case‰t(	[v],
-					[fold(curry binop‰t lub_op)(map denote‰c‰l‰a‰s‰s‰e‰x‰p cs)],
-					fold(curry binop‰t glb_op)(at2 (map make_case) (vs,cs)))
-			val u = fold (op lub)(map upper cs)
-		in 	(v,variable(c,u))
-		end
-end;
+¹HOLCONST
+Ü	Ûmake_caseÝ : Value ¸ ExpClass ­ Value
+÷üüüüüüüüüüüüüüüüüüü
+Üµdata ec·
+Ü	make_case (data, ec) =
+Ü	CASE ec [
+Ü	WHEN_variable (c, u)· case [data] [denote_class(lattice_top)] c;
+Ü	WHEN_constant‰e‰c c· case [data] [denote_class(lattice_top)] (denote_class c)]
+°
 =TEX
-=SML
-local	fun	(make_case : Valueètsqlê ¸ ExpClass ­ Valueètsqlê)
-			(data,variable(c,u)) = case‰t(	[data], 
-							[denote_class‰t(lattice_top())],
-							c)
-	|	make_case(data,constantèecê c) = case‰t(	[data], 
-								[denote_class‰t(lattice_top())],
-								denote_class‰t c)
-in		
-fun 	(ÛsimplifyèorsêÝ : Valueètsqlê list ¸ ExpClass list ­ Valueètsqlê ¸ ExpClass)
-	(vs,cs) =	
-		let	val v = fold(curry binop‰t and_op)vs
-			val c = case‰t(	[v],
-					[fold(curry binop‰t glb_op)(at2 (map make_case) (vs,cs))],
-					fold(curry binop‰t lub_op)(map denote‰c‰l‰a‰s‰s‰e‰x‰p cs))
-			val u = fold (op lub)(map upper cs)
-		in 	(v,variable(c,u))
-		end
-end;
+¹HOLCONST
+Ü	Ûsimplify‰a‰n‰d‰sÝ : Value LIST ¸ ExpClass LIST ­ Value ¸ ExpClass
+÷üüüüüüüüüüüüüüüüüüü
+Üµvs cs·
+Ü	simplify‰a‰n‰d‰s (vs, cs) =
+Ü	let	v = fold (binop And) vs
+Ü	in let	c = case [v]
+Ü			[fold(binop "lub")(Map denote‰c‰l‰a‰s‰s‰e‰x‰p cs)]
+Ü			(fold(binop "glb")(at2 (Map make_case) (vs,cs)))
+Ü	in let	u = fold (Uncurry $lub) (Map upper cs)
+Ü	in	(v, mk_variable(c, u))
+°
 =TEX
-=SML
-fun 	(Ûconstant_valueèdataêÝ : Constant_valueèssqlê ­ Valueètsqlê)
-				denote_null‰s = denote_null‰t
-|	constant_valueèdataê 	denote_void‰s = denote_void‰t
-|	constant_valueèdataê 	denote_true‰s = denote_true‰t
-|	constant_valueèdataê 	denote_false‰s = denote_false‰t
-|	constant_valueèdataê 	(denote_string‰s (s,t)) = 
-								denote_string‰t (s,convert‰t‰y‰p‰e t)
-|	constant_valueèdataê	(denote_fixed‰s (f,t)) = 
-								denote_fixed‰t (f,convert‰t‰y‰p‰e t)
-|	constant_valueèdataê	(denote_floating‰s (f,t)) = 
-								denote_floating‰t (f,convert‰t‰y‰p‰e t)
-|	constant_valueèdataê	(denote_enum‰s (e,t)) = 
-								denote_enum‰t (e,convert‰t‰y‰p‰e t)
-|	constant_valueèdataê	(denote_time‰s (tm,t)) = 
-								denote_time‰t (tm,convert‰t‰y‰p‰e t)
-|	constant_valueèdataê	(denote_interval‰s (i,t)) = 
-								denote_interval‰t (i,convert‰t‰y‰p‰e t)
-|	constant_valueèdataê	(denote_class‰s c) = denote_class‰t c
-|	constant_valueèdataê	(denote_code‰s c) = denote_code‰t c;
+¹HOLCONST
+Ü	Ûsimplify‰o‰r‰sÝ : Value LIST ¸ ExpClass LIST ­ Value ¸ ExpClass
+÷üüüüüüüüüüüüüüüüüüü
+Üµvs cs·
+Ü	simplify‰o‰r‰s (vs, cs) =
+Ü	let	v = fold (binop Or) vs
+Ü	in let	c = case [v]
+Ü			[fold(binop "glb")(Map denote‰c‰l‰a‰s‰s‰e‰x‰p cs)]
+Ü			(fold(binop "lub")(at2 (Map make_case) (vs,cs)))
+Ü	in let	u = fold (Uncurry $lub) (Map upper cs)
+Ü	in	(v, mk_variable(c, u))
+°
 =TEX
-=SML
-local	fun 	(look : Col_specèssqlê ­ TsqlRepr)
-			cs = lookup‰c‰o‰l‰s‰p‰e‰c‰d‰i‰n‰a‰r‰y(false,convert‰c‰o‰l‰s‰p‰e‰c cs)
-in
-fun 	(Ûdinary_columnsÝ : Col_specèssqlê list ­ Col_specètsqlê list)
-		css = map repr_col (remove_nulls(map look css))
-end;
+¹HOLCONST
+Ü	Ûconstant_value‰d‰a‰t‰aÝ : Value ­ Value
+÷üüüüüüüüüüüüüüüüüüü
+Ü	true
+°
 =TEX
-=SML
-local	fun 	(look : Col_specèssqlê ­ TsqlRepr)
-			cs = lookup‰c‰o‰l‰s‰p‰e‰c‰s‰t‰e‰r‰l‰i‰n‰g(false,convert‰c‰o‰l‰s‰p‰e‰c cs)
-in
-fun 	(Ûsterling_columnsÝ : Col_specèssqlê list ­ Col_specètsqlê list)
-		css = map repr_col (remove_nulls(map look css))
-end;
+¹HOLCONST
+Ü	Ûdinary_columnsÝ : TRANS_STATE ­ Col_spec LIST ­ Col_spec LIST RESULT
+÷üüüüüüüüüüüüüüüüüüü
+Üµst css·
+Ü	dinary_columns st css =
+Ü	let	look cs = lookup‰c‰o‰l‰s‰p‰e‰c‰d‰i‰n‰a‰r‰y st (false,convert‰c‰o‰l‰s‰p‰e‰c cs)
+Ü	in	Try
+Ü		(ListOk o Map repr_col o remove_nulls)
+Ü		(ListOk (Map look css))
+°
 =TEX
-=SML
-fun 	(Ûtuple_listèmax_row_classêÝ : Tuple_listèssqlê ­ ExpClass) 
-			t = constantèecê(client_clearance());
+¹HOLCONST
+Ü	Ûsterling_columnsÝ : TRANS_STATE ­ Col_spec LIST ­ Col_spec LIST RESULT
+÷üüüüüüüüüüüüüüüüüüü
+Üµst css·
+Ü	sterling_columns st css =
+Ü	let	look cs = lookup‰c‰o‰l‰s‰p‰e‰c‰s‰t‰e‰r‰l‰i‰n‰g st (false,convert‰c‰o‰l‰s‰p‰e‰c cs)
+Ü	in	Try
+Ü		(ListOk o Map repr_col o remove_nulls)
+Ü		(ListOk (Map look css))
+°
 =TEX
-=SML			
-fun 	(Ûupb_row_classÝ : TableInfo ­ Class)
-			{table_exist_class=tec,table_class=tc,row_class=upb rc} = rc
-|	upb_row_class	{table_exist_class=tec,table_class=tc,row_class=constant rc} = rc;
+¹HOLCONST
+Ü	Ûtuple_list‰m‰a‰x‰r‰o‰w‰c‰l‰a‰s‰sÝ : TRANS_STATE ­ Tuple_list ­ ExpClass
+÷üüüüüüüüüüüüüüüüüüü
+Üµst t·	tuple_list‰m‰a‰x‰r‰o‰w‰c‰l‰a‰s‰s st t =
+Ü	mk_constant‰e‰c(client_clearance st)
+°
 =TEX
-In the following, the specifications of $internal\_valueèclassê$  and 
+¹HOLCONST
+Ü	Ûupb_row_classÝ : TableInfo ­ Class
+÷üüüüüüüüüüüüüüüüüüü
+Üµtec tc rowc·
+Ü	upb_row_class (MkTableInfo tec tc rowc) =
+Ü	CASE rowc [
+Ü	WHEN_upb rc· rc;
+Ü	WHEN_constant rc· rc]
+°
+=TEX
+In the following, the specifications of $internal\_value‰c‰l‰a‰s‰s$  and 
 $value\_type$  are incomplete. ($all\_binop$, 
 $some\_binop$, $all\_binop\_list$ and $some\_binop\_list$ 
-are missing from $internal\_valueèclassê$ and $caseVal$ is 
+are missing from $internal\_value‰c‰l‰a‰s‰s$ and $caseVal$ is 
 missing from $value\_type$.)
 
-=SML
-fun 	(ÛvalueèdataêÝ : Valueèssqlê ­ Valueètsqlê)
-			(denote_constant‰s  c) = constant_valueèdataê c
+¹HOLCONST
+Ü	Ûvalue‰d‰a‰t‰aÝ : TRANS_STATE ­ Value ­ Value
+÷üüüüüüüüüüüüüüüüüü
+Ü	true
+°
 =TEX
-=SML
-|	valueèdataê	(monop‰s (opr,v)) = monop‰t (opr,valueèdataê v)
-|	valueèdataê	(binop‰s (opr,(v1,v2))) = binop‰t (opr,(valueèdataê v1,valueèdataê v2))
-|	valueèdataê	(triop‰s (opr,(v1,v2,v3))) = triop‰t (opr,(valueèdataê v1,
-								valueèdataê v2,valueèdataê v3))
+¹HOLCONST
+Ü	Ûvalue‰t‰y‰p‰eÝ : TRANS_STATE ­ Value ­ ExpType
+÷üüüüüüüüüüüüüüüüüü
+Ü	true
+°
 =TEX
-=SML
-|	valueèdataê	(convert‰s (v,t)) = convert‰t (valueèdataê v,convert‰t‰y‰p‰e t)
-|	valueèdataê	(convert_domain‰s (v,domain,t)) =
-			let 	val ts = convertètable_specê domain
-				val tn = table_name ts
-			in convert_domain‰t (tn,(valueèdataê v,convert‰t‰y‰p‰e t))
-			end
+We now have to start breaking up the mutually recursive functions
+of \cite{DS/FMU/FEF/020}. We do this by passing the functions to
+be recalled recursively as parameters. For example:
+¹HOLCONST
+Ü	Ûvalue‰c‰l‰a‰s‰sÝ
+Ü	: (TRANS_STATE ­ Value ­ InternalExpClass RESULT)
+Ü		­ TRANS_STATE ­ Value ­ ExpClass RESULT
+÷üüüüüüüüüüüüü
+Üµst ivc v·
+Ü	value‰c‰l‰a‰s‰s ivc st v =
+Ü	let	x = ivc st v
+Ü	in	if isError x
+Ü		then giveError (destError x)
+Ü		else	Ok(CASE (destVal x) [
+Ü			WHEN_ands(datas, classes)·
+Ü				let	(v, c) = simplify‰a‰n‰d‰s(datas,classes)
+Ü				in	c;
+Ü			WHEN_ors(datas,classes)·
+Ü				let	(v, c) = simplify‰o‰r‰s(datas,classes)
+Ü				in c;
+Ü			WHEN_simple ec·
+Ü				CASE ec [
+Ü				WHEN_variable(exp,up)· mk_variable(exp,up);
+Ü				WHEN_constant‰e‰c c· mk_constant‰e‰c c]
+Ü			])
+°
 =TEX
-=SML
-|	valueèdataê	(make_sterling‰s v) = valueèdataê v
-| 	valueèdataê	(make_dinary‰s v) = valueèdataê v
+¹HOLCONST
+Ü	Ûtuple_list‰d‰a‰t‰aÝ :TRANS_STATE ­ Tuple_list ­ Tuple_list RESULT
+÷üüüüüüüüüüü
+Ü	true
+°
 =TEX
-=SML
-|	valueèdataê	(declare‰s (id,(v1,v2))) =
-			in_new_scope(fn () =>
-			let 	val t1 = value‰t‰y‰p‰e v1
-				val data1 = valueèdataê v1
-				val class1 = valueèclassê v1
-				val data2 = valueèdataê v2
-			in	case class1 of
-					variable (c,u) => 
-					let	val (cn,dn) = enter‰i‰d‰e‰n‰t‰i‰f‰i‰e‰r(id,t1,u)
-					in	declare‰t (cn,(c,declare‰t(dn,(data1,data2)))) 
-					end
-				| 	constantèecê c =>
-					let	val dn =  enter‰i‰d‰e‰n‰t‰i‰f‰e‰r‰c‰o‰n‰s‰t‰a‰n‰t‰c‰l‰a‰s‰s(id,t1,c)
-					in declare‰t(dn,(data1,data2)) 
-					end
-			end)
+¹HOLCONST
+Ü	Ûtuple_list‰t‰y‰p‰eÝ : TRANS_STATE ­ Tuple_list ­ Tuple_list RESULT
+÷üüüüüüüüüüü
+Ü	true
+°
 =TEX
-=SML
-| 	valueèdataê	(caseVal‰s (test,caseList,valList,elseVal)) = caseVal‰t(valueèdataê test,
-									map valueèdataê caseList,
-									map valueèdataê valList,
-									valueèdataê elseVal)
-| 	valueèdataê	(case‰s (caseList,valList,elseVal)) = case‰t(map valueèdataê caseList,
-									map valueèdataê valList,
-									valueèdataê elseVal)
+¹HOLCONST
+Ü	Ûfrom_spec‰e‰n‰t‰e‰rÝ : TRANS_STATE ­ From_spec ­ From_spec RESULT
+÷üüüüüüüüüüü
+Ü	true
+°
 =TEX
-=SML
-|	valueèdataê	(set_func_all‰s (opr,v)) = set_func_all‰t (opr,valueèdataê v)
-|	valueèdataê	(set_func_distinct‰s (opr,v)) = set_func_distinct‰t (opr,valueèdataê v)
-|	valueèdataê	(count_non_null‰s (v,t)) = count_non_null‰t (valueèdataê v,convert‰t‰y‰p‰e t)
-|	valueèdataê	(count_distinct‰s (v,t)) = count_distinct‰t (valueèdataê v,convert‰t‰y‰p‰e t)
-|	valueèdataê	(count_all‰s t) = count_all‰t (convert‰t‰y‰p‰e t)
+¹HOLCONST
+Ü	Ûselect_list‰t‰y‰p‰eÝ : TRANS_STATE ­ Select_list ­ ExpType RESULT
+÷üüüüüüüüüüü
+Ü	true
+°
 =TEX
-=SML
-|	valueèdataê	(all_binop‰s (opr,(v,vs))) = all_binop‰t (opr,(valueèdataê v,tuple_listèdataê vs))
-|	valueèdataê	(some_binop‰s (opr,(v,vs))) = 
-					some_binop‰t (opr,(valueèdataê v,tuple_listèdataê vs))
-|	valueèdataê	(all_binop_list‰s (opr,(v,vs))) = 
-					all_binop_list‰t (opr,(valueèdataê v,map valueèdataê vs))
-|	valueèdataê	(some_binop_list‰s (opr,(v,vs))) = 
-					some_binop_list‰t (opr,(valueèdataê v,map valueèdataê  vs))
-|	valueèdataê	(exists_tuples‰s tuples) = exists_tuples‰t (tuple_listèdataê tuples)
-|	valueèdataê	(single_value‰s v) = single_value‰t (tuple_listèdataê v)
+¹HOLCONST
+Ü	Ûselect_value‰t‰y‰p‰eÝ : TRANS_STATE ­ Value ­ ExpType RESULT
+÷üüüüüüüüüüü
+Ü	true
+°
 =TEX
-=SML
-|	valueèdataê	(contents‰s cs) = 
-				(case lookup‰c‰o‰l‰s‰p‰e‰c‰s‰t‰e‰r‰l‰i‰n‰g(false,convert‰c‰o‰l‰s‰p‰e‰c cs) of
-					constant_null => denote_null‰t
-				|	tr => contents‰t(repr_col tr))
-|	valueèdataê	(sterling_contents‰s cs) = 
-				(case lookup‰c‰o‰l‰s‰p‰e‰c‰s‰t‰e‰r‰l‰i‰n‰g(false,convert‰c‰o‰l‰s‰p‰e‰c cs) of
-					constant_null => denote_null‰t
-				|	tr => contents‰t(repr_col tr))
-|	valueèdataê	(dinary_contents‰s cs) = 
-				(case lookup‰c‰o‰l‰s‰p‰e‰c‰d‰i‰n‰a‰r‰y(false,convert‰c‰o‰l‰s‰p‰e‰c cs) of
-					constant_null => denote_null‰t
-				|	tr => contents‰t(repr_col tr))
 =TEX
-=SML
-|	valueèdataê	(classification‰s col) = 	let val 	cs = class_column col
-							in 	if isL cs then (contents‰t(getL cs))
-								else denote_class‰t (getR cs)
-							end
+¹HOLCONST
+Ü	Ûtuple_list‰i‰n‰f‰oÝ : TRANS_STATE ­ Tuple_list
+Ü		­ (TableName  ¸ TableInfo ¸ SsqlCol LIST) RESULT
+÷üüüüüüüüüüü
+Ü	true
+°
+=TEX
+=TEX
+¹HOLCONST
+Ü	Ûtuple_list‰m‰a‰k‰eÝ
+Ü	: TRANS_STATE ­ Tuple_list ¸ TsqlClassName ¸ TsqlCol LIST
+Ü		­ Tuple_list RESULT
+÷üüüüüüüüüüü
+Ü	true
+°
+=TEX
+¹HOLCONST
+Ü	Ûfrom_spec‰i‰n‰f‰oÝ
+Ü	: TRANS_STATE ­ From_spec
+Ü		­ (TableInfo ¸ SsqlCol LIST ¸ TsqlClassName ¸ TsqlCol LIST) RESULT
+÷üüüüüüüüüüü
+Ü	true
+°
+=TEX
+¹HOLCONST
+Ü	Ûselect_list‰i‰n‰f‰oÝ
+Ü	: TRANS_STATE ­ Select_list ­ SsqlCol LIST RESULT
+÷üüüüüüüüüüü
+Ü	true
+°
+=TEX
+¹HOLCONST
+Ü	Ûselect_value‰i‰n‰f‰oÝ
+Ü	: TRANS_STATE ­ Value ­ SsqlCol RESULT
+÷üüüüüüüüüüü
+Ü	true
+°
+¹HOLCONST
+Ü	Ûvalue‰i‰n‰f‰oÝ
+Ü	: TRANS_STATE ­ Value ­ SsqlCol RESULT
+÷üüüüüüüüüüü
+Ü	true
+°
+=TEX
+¹HOLCONST
+Ü	 Ûinternal_value‰c‰l‰a‰s‰sÝ : TRANS_STATE ­ Value ­ InternalExpClass RESULT
+÷üüüüüüüüüüüüüüü
+Ü	true
+°
+=TEX
+¹HOLCONST
+Ü	 Ûtuple_list‰c‰l‰a‰s‰sÝ : TRANS_STATE ­ Tuple_list ­ Tuple_list
+÷üüüüüüüüüüüüüüü
+Ü	true
+°
+=TEX
+¹HOLCONST
+Ü	 Ûselect_list‰c‰l‰a‰s‰sÝ : TRANS_STATE ­ Select_list ­ Select_list RESULT
+÷üüüüüüüüüüüüüüü
+Ü	true
+°
+¹HOLCONST
+Ü	 Ûselect_value‰c‰l‰a‰s‰sÝ : TRANS_STATE ­ Value ­ Value RESULT
+÷üüüüüüüüüüüüüüü
+Ü	true
+°
+=TEX
+¹HOLCONST
+Ü	Ûselect_list‰m‰a‰k‰eÝ
+Ü	: TRANS_STATE ­ (Select_list ¸ TsqlClassName ¸ TsqlCol LIST)
+Ü		­ Value LIST RESULT
+÷üüüüüüüüüüüüüüü
+Ü	true
+°
+=TEX
+¹HOLCONST
+Ü	Ûselect_value‰m‰a‰k‰eÝ : TRANS_STATE ­ (Value ¸ TsqlCol LIST) ­ Value LIST RESULT
+÷üüüüüüüüüüüüüüü
+Ü	true
+°
+¹HOLCONST
+Ü	Ûmake_colÝ : TRANS_STATE ­ (Value ¸ TsqlCol) ­ Value LIST RESULT
+÷üüüüüüüüüüüüüüü
+Ü	true
+°
+=TEX
+¹HOLCONST
+Ü	Ûmake‰d‰i‰n‰a‰r‰yÝ : TRANS_STATE ­ (Value ¸ ExpType) ­ Value RESULT
+÷üüüüüüüüüüüüüüü
+Ü	true
+°
+=TEX
+¹HOLCONST
+Ü	Ûmake‰s‰t‰e‰r‰l‰i‰n‰gÝ : TRANS_STATE ­ (Value ¸ ExpType) ­ Value RESULT
+÷üüüüüüüüüüüüüüü
+Ü	true
+°
+=TEX
+¹HOLCONST
+Ü	Ûselect_list‰d‰a‰t‰aÝ : TRANS_STATE ­ Select_list ­ Select_list RESULT
+÷üüüüüüüüüüüüüüü
+Ü	true
+°
+¹HOLCONST
+Ü	Ûselect_value‰d‰a‰t‰aÝ : TRANS_STATE ­ Value ­ Value RESULT
+÷üüüüüüüüüüüüüüü
+Ü	true
+°
+¹HOLCONST
+Ü	Ûtuple_list‰m‰a‰k‰e‰o‰u‰t‰e‰rÝ
+Ü	: TRANS_STATE ­ (Tuple_list ¸ BOOL ¸ TsqlClassName ¸ TsqlCol LIST)
+Ü				 ­ (Tuple_list ¸ Query LIST) RESULT
+÷üüüüüüüüüüüüüüü
+Ü	true
+°
+=TEX
+That is the last of the mutually recursive functions.
+¹HOLCONST
+Ü	Ûtuple_list‰o‰u‰t‰e‰r‰i‰n‰f‰oÝ
+Ü	: TRANS_STATE ­ Tuple_list ­ BOOL RESULT
+÷üüüüüüüüüüüüüüü
+Ü	true
+°
+¹HOLCONST
+Ü	Ûtransform‰s‰e‰l‰e‰c‰t‰q‰u‰e‰r‰yÝ
+Ü	: TRANS_STATE ­ Query ­ 
+Ü	(SsqlCol LIST ¸ Query ¸ BOOL ¸ TsqlClassName ¸ TsqlCol LIST ¸ Query LIST) RESULT
+÷üüüüüüüüüüüüüüü
+Ü	true
+°
+¹HOLCONST
+Ü	Ûquery‰s‰e‰l‰e‰c‰t‰q‰u‰e‰r‰yÝ
+Ü	: TRANS_STATE ­ Query ­ Query RESULT
+÷üüüüüüüüüüüüüüü
+Ü	true
+°
+\section{INTERFACE}
+We now wish to define the SSQL Transformation Processor as required
+by \cite{DS/FMU/FEF/022}. It is parameterised by the as yet undefined
+processing of the various updating queries.
 
+The local function $dynamic$ below computes the list of boolean flags needed by the output filter of \cite{DS/FMU/FEF/022} from the list of $TsqlCol$s
+produced by
+=INLINEFT
+transform‰s‰e‰l‰e‰c‰t‰q‰u‰e‰r‰y
 =TEX
-=SML
-|	valueèdataê	(row_existence‰s t) = 	
-				let 	val	ts = convertètable_specê t
- 					val	rc = lookup‰t‰a‰b‰l‰e‰r‰o‰w‰c‰l‰a‰s‰s(false,ts)
-				in  denote_name rc
-				end
-=TEX
-=SML
-|	valueèdataê	joined_row_existence‰s = 	
-				let val 	ns = lookup‰l‰o‰c‰a‰l‰r‰o‰w‰c‰l‰a‰s‰s‰e‰s()
-				in (fold(curry binop‰t lub_op)(map denote_name ns))
-				end
-=TEX
-=SML
-|	valueèdataê	(classify‰s(v,c)) = valueèdataê v
-|	valueèdataê	(classify_default‰s v) = valueèdataê v
-=TEX
-=SML
-|	valueèdataê	(observed‰s(n,c)) = raise notTrigger
-|	valueèdataê	(modified‰s n) = raise notTrigger
-=TEX
-=SML
-|	valueèdataê	(context‰s s) = 	let val  (cv,class) = contextual_data s
-						in	constant_valueèdataê cv 
-						end
-|	valueèdataê	(parameter‰s name) = 	let val  (cv,class) = lookup‰p‰a‰r‰a‰m‰d‰a‰t‰a name
-							in	constant_valueèdataê cv 
-							end
-=TEX
-=SML
-and 	(Ûvalue‰t‰y‰p‰eÝ : Valueèssqlê ­ ExpType)
-			(denote_constant‰s c) = (constant_value‰t‰y‰p‰e c,worthless)
-=TEX
-=SML
-|	value‰t‰y‰p‰e	(monop‰s (opr,v)) = 	let val (t,w) = value‰t‰y‰p‰e v
-						in (monop_type(opr,t),w)
-						end
-=TEX
-=SML
-|	value‰t‰y‰p‰e	(binop‰s (opr,(v1,v2))) = 	let 	val (t1,w1) = value‰t‰y‰p‰e v1
-								val (t2,w2) = value‰t‰y‰p‰e v2
-							in (binop_type (opr,t1,t2),lub‰w‰o‰r‰t‰h(w1,w2))
-							end
-=TEX
-=SML
-|	value‰t‰y‰p‰e	(triop‰s (opr,(v1,v2,v3))) = 
-				let 	val (t1,w1) = value‰t‰y‰p‰e v1
-					val (t2,w2) = value‰t‰y‰p‰e v2
-					val (t3,w3) = value‰t‰y‰p‰e v3
-				in (triop_type (opr,t1,t2,t3),lub‰w‰o‰r‰t‰h(w1,lub‰w‰o‰r‰t‰h(w2,w3)))
-				end
-=TEX
-=SML
-|	value‰t‰y‰p‰e	(convert‰s (v,t)) = 	let 	val st = convert‰s‰s‰q‰l‰t‰y‰p‰e t
-							val (ty,w) = value‰t‰y‰p‰e v
-							val ok = check_type_conversionèdomainê(ty,st)
-						in (st,w)
-						end
-=TEX
-=SML
-|	value‰t‰y‰p‰e	(convert_domain‰s (v,domain,t)) =
-						let 	val st = convert‰s‰s‰q‰l‰t‰y‰p‰e t
-							val (ty,w) = value‰t‰y‰p‰e v
-							val ok = check_type_conversionèdomainê(ty,st)
-						in (st,w)
-						end
-=TEX
-=SML
-|	value‰t‰y‰p‰e	(make_sterling‰s v) = 	let val (t,w) = value‰t‰y‰p‰e v
-						in (t,sterling)
-						end
-=TEX
-=SML
-|	value‰t‰y‰p‰e	(make_dinary‰s v) = 	let val (t,w) = value‰t‰y‰p‰e v
-						in (t,dinary)
-						end
-=TEX
-=SML
-|	value‰t‰y‰p‰e	(declare‰s (id,(v1,v2))) = 	
-					let	val et = value‰t‰y‰p‰e v1
-						val cl = lattice_top()
-					in
-					in_new_scope(fn () => 
-						let val i = enter‰i‰d‰e‰n‰t‰i‰f‰e‰r‰c‰o‰n‰s‰t‰a‰n‰t‰c‰l‰a‰s‰s(id,et,cl)
-						in value‰t‰y‰p‰e v2 
-						end)
-					end
-=TEX
-=SML		
-|	value‰t‰y‰p‰e	(case‰s (caseList,valList,elseVal)) = 
-				let	val  ok =  map check_boolean(map value‰t‰y‰p‰e caseList)
-				in 	fold lub‰e‰x‰p(map value‰t‰y‰p‰e (valList @ [elseVal]))
-				end
-=TEX
-=SML
-|	value‰t‰y‰p‰e	(set_func_all‰s(opr,v)) = 	let val (t,w) = value‰t‰y‰p‰e v
-							in 
-							(set_func_type(opr,t),w)
-							end
-|	value‰t‰y‰p‰e	(set_func_distinct‰s(opr,v)) = 	let val (t,w) = value‰t‰y‰p‰e v
-								in 
-								(set_func_type(opr,t),w)
-								end
-=TEX
-=SML
-|	value‰t‰y‰p‰e	(count_non_null‰s(v,t))	=	
-					let 	val st = convert‰s‰s‰q‰l‰t‰y‰p‰e t
-						val (t,w) = value‰t‰y‰p‰e v
-					in 	case st of
-							fixedType(p,s) => (st,worthless)
-						| 	other => raise wrongType
-					end
-|	value‰t‰y‰p‰e	(count_distinct‰s(v,t))	=	
-					let 	val st = convert‰s‰s‰q‰l‰t‰y‰p‰e t
-						val (t,w) = value‰t‰y‰p‰e v
-					in 	case st of
-							fixedType(p,s) => (st,worthless)
-						| 	other => raise wrongType
-					end
-=TEX
-=SML
-|	value‰t‰y‰p‰e	(count_all‰s t)	=	let 	val st = convert‰s‰s‰q‰l‰t‰y‰p‰e t
-						in 	case st of
-								fixedType(p,s) => (st,worthless)
-							| 	other => raise wrongType
-						end
-=TEX
-=SML						
-|	value‰t‰y‰p‰e	(all_binop‰s (opr,(v,vs))) =	
-			let 	val tt = tuple_list‰t‰y‰p‰e vs
-			in 	if length tt <> 1 then raise tooWide
-				else	let	val (t1,w1) = value‰t‰y‰p‰e v
-						val (t2,w2) = hd tt
-					in (binop_type(opr,t1,t2),lub‰w‰o‰r‰t‰h(w1,w2))
-					end
-			end
-					
-|	value‰t‰y‰p‰e	(some_binop‰s (opr,(v,vs))) =	
-			let 	val tt = tuple_list‰t‰y‰p‰e vs
-			in 	if length tt <> 1 then raise tooWide
-				else	let	val (t1,w1) = value‰t‰y‰p‰e v
-						val (t2,w2) = hd tt
-					in (binop_type(opr,t1,t2),lub‰w‰o‰r‰t‰h(w1,w2))
-					end
-			end
-=TEX
-=SML	
-|	value‰t‰y‰p‰e	(all_binop_list‰s (opr,(v,vs))) =
-			let	fun (binop_exp : Op ¸ ExpType ¸ ExpType ­ ExpType)
-					(opr,(t1,w1),(t2,w2)) = 
-						(binop_type(opr,t1,t2),lub‰w‰o‰r‰t‰h(w1,w2))
-				val ets2 = map value‰t‰y‰p‰e vs
-				val ets1 = seq(length ets2,value‰t‰y‰p‰e v)
-			in fold lub‰e‰x‰p (at3(map binop_exp) (seq(length ets2,opr),ets1,ets2))
-			end
-|	value‰t‰y‰p‰e	(some_binop_list‰s (opr,(v,vs))) =
-			let	fun (binop_exp : Op ¸ ExpType ¸ ExpType ­ ExpType)
-					(opr,(t1,w1),(t2,w2)) = 
-						(binop_type(opr,t1,t2),lub‰w‰o‰r‰t‰h(w1,w2))
-				val ets2 = map value‰t‰y‰p‰e vs
-				val ets1 = seq(length ets2,value‰t‰y‰p‰e v)
-			in fold lub‰e‰x‰p (at3(map binop_exp) (seq(length ets2,opr),ets1,ets2))
-			end
-=TEX
-=SML	
-|	value‰t‰y‰p‰e	(exists_tuples‰s tuples) =
-			let	val tt = tuple_list‰t‰y‰p‰e tuples
-			in 	(booleanType,worthless)
-			end
-=TEX
-=SML	
-|	value‰t‰y‰p‰e	(single_value‰s tuples) =
-			let	val tt = tuple_list‰t‰y‰p‰e tuples
-			in 	if length tt <> 1 then raise tooWide
-				else	hd tt
-			end
-=TEX
-=SML	
-|	value‰t‰y‰p‰e	(contents‰s cs) =
-			let	val (ti,sc) = lookup‰c‰o‰l‰u‰m‰n‰i‰n‰f‰o (convert‰c‰o‰l‰s‰p‰e‰c cs)
-			in 	(case (#type_field sc) of
-					(nullType,nullType) => (nullType,sterling)
-				|	(st,nullType) => (st,sterling)
-				|	(nullType,dt) => (dt,dinary)
-				|	(st,dt) => (st,sterling))
-			end
-=TEX
-=SML	
-|	value‰t‰y‰p‰e	(sterling_contents‰s cs) =
-			let	val (ti,sc) = lookup‰c‰o‰l‰u‰m‰n‰i‰n‰f‰o (convert‰c‰o‰l‰s‰p‰e‰c cs)
-			in 	(case (#type_field sc) of
-					(nullType,nullType) => (nullType,sterling)
-				|	(st,nullType) => (st,sterling)
-				|	(nullType,dt) => raise wrongWorth
-				|	(st,dt) => (st,sterling))
-			end
-=TEX
-=SML	
-|	value‰t‰y‰p‰e	(dinary_contents‰s cs) =
-			let	val (ti,sc) = lookup‰c‰o‰l‰u‰m‰n‰i‰n‰f‰o (convert‰c‰o‰l‰s‰p‰e‰c cs)
-			in 	(case (#type_field sc) of
-					(nullType,nullType) => (nullType,dinary)
-				|	(st,nullType) => raise wrongWorth
-				|	(nullType,dt) => (dt,dinary)
-				|	(st,dt) => (dt,dinary))
-			end
-=TEX
-=SML
-|	value‰t‰y‰p‰e	(classification‰s col) = (classType,worthless)
-|	value‰t‰y‰p‰e	(row_existence‰s t) = (classType,worthless)
-|	value‰t‰y‰p‰e	joined_row_existence‰s = (classType,worthless)	
-|	value‰t‰y‰p‰e	(classify‰s(v,c)) = 	(case value‰t‰y‰p‰e c of
-							(classType,w) => value‰t‰y‰p‰e v
-						|	(other,w) => raise wrongType)
-|	value‰t‰y‰p‰e	(classify_default‰s v) = value‰t‰y‰p‰e v
-|	value‰t‰y‰p‰e	(observed‰s(n,c)) = raise onlyInTriggers
-|	value‰t‰y‰p‰e	(modified‰s n) = raise onlyInTriggers
-|	value‰t‰y‰p‰e	(context‰s s) = 	let val  (cv,class) = contextual_data s
-						in	(constant_value‰t‰y‰p‰e cv,worthless) 
-						end
-|	value‰t‰y‰p‰e	(parameter‰s name) = 	let val  (cv,class) = lookup‰p‰a‰r‰a‰m‰d‰a‰t‰a name
-							in	(constant_value‰t‰y‰p‰e cv,worthless) 
-							end
-=TEX
-=SML
-and 	(ÛvalueèclassêÝ : Valueèssqlê ­ ExpClass)
-		v = case internal_valueèclassê v of
-			ands(datas,classes) => 	let val (v,c) = simplifyèandsê(datas,classes)
-						in c
-						end
-			| ors(datas,classes) => let val (v,c) = simplifyèorsê(datas,classes)
-						in c
-						end
-			| simple(variable(exp,up)) => variable(exp,up)
-			| simple(constantèecê c) => constantèecê c
-=TEX
-=SML
-and 	(Ûtuple_listèdataêÝ : Tuple_listèssqlê ­ Tuple_listètsqlê)
-			(table_contents‰s t) = in_new_scope(fn () =>
-			let	val ts = convertètable_specê t
-				val tn = convert‰t‰a‰b‰l‰e‰S‰p‰e‰c‰i‰f‰c‰a‰t‰i‰o‰n ts
-				val (ti,ci,scs,rc,tcs) = get‰t‰a‰b‰l‰e‰i‰n‰f‰o ts
-				fun (sel: TsqlCol ­ Select_valueètsqlê)
-					{sterling_name = name‰t n,
-					dinary_name=dn,
-					class_name=cn}
-					= anonymous_value‰t(contents‰t(denote_col_spec‰t n))
-				| sel	x = raise internalError
-			in	all_tuples‰t(select_values‰t(map sel tcs),
-					[from‰t(table_contents‰t tn)],denote_true‰t,[],denote_true‰t)
-			end)
-=TEX
-=SML
-|	tuple_listèdataê 	(all_tuples‰s(sel,fr,where,gb_sterling,gb_dinary,gb_class,having))
-			= in_new_scope(fn () =>
-			let	val fss = map from_specèenterê fr
-				val gs = sterling_columns gb_sterling
-				val gd = dinary_columns gb_dinary
-				val gc = map class_column gb_class
-			in all_tuples‰t(select_listèdataê sel,
-					fss,valueèdataê where,gs @ gd @ remove_constants gc,
-					valueèdataê having)
-			end)
-=TEX
-=SML
-|	tuple_listèdataê 	(distinct_tuples‰s(sel,fr,where,gb_sterling,gb_dinary,gb_class,having))
-			= in_new_scope(fn () =>
-			let	val fss = map from_specèenterê fr
-				val gs = sterling_columns gb_sterling
-				val gd = dinary_columns gb_dinary
-				val gc = map class_column gb_class
-			in distinct_tuples‰t(select_listèdataê sel,
-					fss,valueèdataê where,gs @ gd @ remove_constants gc,
-					valueèdataê having)
-			end)
-=TEX
-=SML
-|	tuple_listèdataê 	(evaluate‰s(sel,fr,where,gb_sterling,gb_dinary,gb_class,having))
-			= in_new_scope(fn () =>
-			let	val fss = map from_specèenterê fr
-				val gs = sterling_columns gb_sterling
-				val gd = dinary_columns gb_dinary
-				val gc = map class_column gb_class
-			in evaluate‰t(select_listèdataê sel,
-					fss,valueèdataê where,gs @ gd @ remove_constants gc,
-					valueèdataê having)
-			end)
-=TEX
-=SML
-|	tuple_listèdataê 	(tuple‰s vals) = 
-				tuple‰t(map valueèdataê vals)
-=TEX
-=SML
-|	tuple_listèdataê 	(union‰s tls) = 
-				union‰t(map tuple_listèdataê tls)
-=TEX
-=SML
-|	tuple_listèdataê 	(name_columns‰s(names,tul)) 
-						= tuple_listèdataê tul
-=TEX
-=SML
-and 	(Ûtuple_list‰t‰y‰p‰eÝ : Tuple_listèssqlê ­ ExpType list) 
-				(table_contents‰s ts) =
-					let	fun (col_info : TableInfo ¸ ConstraintInfo ¸ 
-							SsqlCol list ¸ TsqlClassName ¸ TsqlCol list 
-									­ SsqlCol list)
-							(ti,ci,scs,rc,tcs) = scs
-						fun (t:SsqlCol ­ ColType)
-							c = #type_field c
-						fun (f:ColType ­ ExpType)
-							    (nullType,nullType) = raise internalError
-							| f (st,nullType) = (st,sterling)
-							| f (nullType,dt) = raise internalError
-							| f (st,dt) = (st,sterling)
-					in map f(map t(col_info(get‰t‰a‰b‰l‰e‰i‰n‰f‰o(convertètable_specê ts))))
-					end
-=TEX
-=SML
-|	tuple_list‰t‰y‰p‰e	(all_tuples‰s(sel,fr,where,gb_sterling,gb_dinary,gb_class,having))
-				= 	in_new_scope(fn () =>
-					let	val fs = map from_specèenterê fr
-						val where_ok = check_boolean(value‰t‰y‰p‰e where)
-						val having_ok  = check_boolean(value‰t‰y‰p‰e having)
-					in select_list‰t‰y‰p‰e sel
-					end)
-=TEX
-=SML
-|	tuple_list‰t‰y‰p‰e	(distinct_tuples‰s(sel,fr,where,gb_sterling,gb_dinary,gb_class,having))
-				= 	in_new_scope(fn () =>
-					let	val fs = map from_specèenterê fr
-						val where_ok = check_boolean(value‰t‰y‰p‰e where)
-						val having_ok  = check_boolean(value‰t‰y‰p‰e having)
-					in select_list‰t‰y‰p‰e sel
-					end)
-=TEX
-=SML
-|	tuple_list‰t‰y‰p‰e	(evaluate‰s(sel,fr,where,gb_sterling,gb_dinary,gb_class,having))
-				= 	in_new_scope(fn () =>
-					let	val fs = map from_specèenterê fr
-						val where_ok = check_boolean(value‰t‰y‰p‰e where)
-						val having_ok  = check_boolean(value‰t‰y‰p‰e having)
-					in select_list‰t‰y‰p‰e sel
-					end)
-=TEX
-=SML
-|	tuple_list‰t‰y‰p‰e	(tuple‰s vals) = map value‰t‰y‰p‰e vals
-=TEX
-=SML
-|	tuple_list‰t‰y‰p‰e	(union‰s tls) =	let val tiss = map tuple_list‰t‰y‰p‰e tls
-						in 	if length tiss = 0
-							then raise emptyUnionList
-							else map (fold lub‰e‰x‰p)(invert tiss)
-						end
-=TEX
-=SML
-|	tuple_list‰t‰y‰p‰e	(name_columns‰s (names,tul)) =	tuple_list‰t‰y‰p‰e tul
-=TEX
-=SML
-and 	(Ûfrom_specèenterêÝ : From_specèssqlê ­ From_specètsqlê) fs =
-	let 	fun	(c_names : TsqlClassName ­ string list)
-				(constantètcê c) = []
-		|	c_names	(nameètcê s) = [s]
-		|	c_names anonètcê = raise internalError
-		fun	(names : TsqlName ­ string list)
-				none‰t = []
-		|	names	(name‰t s) = [s]
-		|	names	anon‰t = raise internalError
-		fun	(col_names : TsqlCol ­ string list) tc
-				 = names(#sterling_name tc)
-				@ names(#dinary_name tc)
-				@ c_names(#class_name tc)
-	in
-=TEX
-=SML	
-	(case fs of
-		(from‰s t) => 
-			let	val (tn,ti,scs,rc,tcs) = tuple_listèinfoê t
-				val tul = tuple_listèmakeê (t,rc,tcs)
-				val cor = enterètableê(tn,ti,scs,rc,tcs)
-				val cns = (case rc of
-						anonètcê => raise internalError
-					|	nameètcê s => [s]
-					|	constantètcê c => [])
-					@ fold (op @) (map col_names tcs)
-			in	correlate_from‰t(cor,name_columns‰t(cns,tul))
-			end
-=TEX
-=SML
-	|	(correlate_from‰s(name,t)) =>
-			let	val (tn,ti,scs,rc,tcs) = tuple_listèinfoê t
-				val tul = tuple_listèmakeê (t,rc,tcs)
-				val cor = enter‰c‰o‰r‰r‰t‰a‰b‰l‰e(name,tn,ti,scs,rc,tcs)
-				val cns = (case rc of
-						anonètcê => raise internalError
-					|	nameètcê s => [s]
-					|	constantètcê c => [])
-					@ fold (op @) (map col_names tcs)
-			in	correlate_from‰t(cor,name_columns‰t(cns,tul))
-			end)
-	end
-=TEX
-=SML
-and 	(Ûselect_list‰t‰y‰p‰eÝ : Select_listèssqlê ­ ExpType list)
-			all_columns‰s =
-				let 	fun (t : SsqlCol ­ ColType) c = #type_field c
-					fun (f : ColType ­ ExpType)
-						  (nullType,nullType) = raise internalError
-					| 	f (st,nullType) = (st,sterling)
-					| 	f (nullType,dt) = (dt,dinary)
-					|	f (st,dt) = (st,sterling)
-				in map f(map t(lookup‰l‰o‰c‰a‰l‰c‰o‰l‰i‰n‰f‰o()))
-				end
-|	select_list‰t‰y‰p‰e (select_values‰s vals) = map select_value‰t‰y‰p‰e vals
-=TEX
-=SML
-and 	(Ûselect_value‰t‰y‰p‰eÝ : Select_valueèssqlê ­ ExpType)
-				(anonymous_value‰s v) = value‰t‰y‰p‰e v
-|	select_value‰t‰y‰p‰e	(named_value‰s(name,v)) = value‰t‰y‰p‰e v
-|	select_value‰t‰y‰p‰e	(anonymous_pair‰s(sval,dval)) = value‰t‰y‰p‰e sval
-|	select_value‰t‰y‰p‰e	(named_pair‰s(name,(sval,dval))) = value‰t‰y‰p‰e sval
-=TEX
-=SML
-and 	(Ûtuple_listèinfoêÝ : Tuple_listèssqlê ­ 	TableName  ¸ TableInfo ¸ SsqlCol list 
-								¸ TsqlClassName ¸ TsqlCol list) 
-			(table_contents‰s t) = 
-				let 	val ts = convertètable_specê t
-					val (ti,ci,scs,rc,tcs) = get‰t‰a‰b‰l‰e‰i‰n‰f‰o ts
-				in 	(nameètnê ts,ti,scs,rc,tcs)
-				end
-=TEX
-=SML
-|	tuple_listèinfoê	(all_tuples‰s(sel,fr,where,gb_sterling,gb_dinary,gb_class,having)) =
-				let	val (tis,scss,rcs,tcss) = split4 (map from_specèinfoê fr)
-				in 	in_new_scope(fn () =>
-					let 	val fs = map from_specèenterê fr
-						val sli = select_listèinfoê sel
-					in	(anonètnê,fold lub‰t‰a‰b‰l‰e‰i‰n‰f‰o tis,sli,
-							fold lub‰t‰s‰q‰l‰c‰l‰a‰s‰s‰n‰a‰m‰e rcs,map col_target sli)
-					end)
-				end
-=TEX
-=SML
-|	tuple_listèinfoê	(distinct_tuples‰s(sel,fr,where,gb_sterling,gb_dinary,gb_class,having)) =
-				let	val (tis,scss,rcs,tcss) = split4 (map from_specèinfoê fr)
-				in 	in_new_scope(fn () =>
-					let 	val fs = map from_specèenterê fr
-						val sli = select_listèinfoê sel
-					in	(anonètnê,fold lub‰t‰a‰b‰l‰e‰i‰n‰f‰o tis,sli,
-							fold lub‰t‰s‰q‰l‰c‰l‰a‰s‰s‰n‰a‰m‰e rcs,map col_target sli)
-					end)
-				end
-=TEX
-=SML
-|	tuple_listèinfoê	(evaluate‰s(sel,fr,where,gb_sterling,gb_dinary,gb_class,having)) =
-				let	val (tis,scss,rcs,tcss) = split4 (map from_specèinfoê fr)
-				in 	in_new_scope(fn () =>
-					let 	val fs = map from_specèenterê fr
-						val sli = select_listèinfoê sel
-					in	(anonètnê,fold lub‰t‰a‰b‰l‰e‰i‰n‰f‰o tis,sli,
-							fold lub‰t‰s‰q‰l‰c‰l‰a‰s‰s‰n‰a‰m‰e rcs,map col_target sli)
-					end)
-				end
-=TEX
-=SML
-|	tuple_listèinfoê	(tuple‰s vals) =
-			let	val	ti = 	{table_exist_class = query_constants_class(),
-						table_class = query_constants_class(),
-						row_class = constant(query_constants_class())}
-				val scs = map valueèinfoê vals
-				val tcs = map col_target scs
-			in	(anonètnê,ti,scs,constantètcê(query_constants_class()),tcs)
-			end
-=TEX
-=SML
-|	tuple_listèinfoê	(union‰s tls) =
-			if length tls = 1
-			then tuple_listèinfoê(hd tls)
-			else 	let	val (tts,tis,scss,rcs,tcss) = split5 (map tuple_listèinfoê tls)
-					val ti = fold lub‰t‰a‰b‰l‰e‰i‰n‰f‰o tis
-					val scs = map(fold lub‰s‰s‰q‰l‰c‰o‰l)(invert scss)
-					val rc = fold lub‰t‰s‰q‰l‰c‰l‰a‰s‰s‰n‰a‰m‰e rcs
-					val tcs = map(fold lub‰t‰s‰q‰l‰c‰o‰l) (invert tcss)
-				in	(anonètnê,ti,scs,rc,tcs)
-				end
-=TEX					
-=SML
-|	tuple_listèinfoê	(name_columns‰s (names,tul)) =
-		let	fun	(merge : string ¸ SsqlCol ­ SsqlCol)
-				(n,{name=cn,type_field=ty,col_exist=ce,col_class=cc})
-				= {name=name‰s n,type_field=ty,col_exist=ce,col_class=cc}
-			val 	(tn,ti,scs,rc,tcs) = tuple_listèinfoê tul
-		in	(tn,ti,at2(map merge)(names,scs),rc,tcs)
-		end
-=TEX
-=SML
-and 	(Ûtuple_listèmakeêÝ : Tuple_listèssqlê ¸ TsqlClassName ¸ TsqlCol list ­ Tuple_listètsqlê ) 
-			(table_contents‰s t,to_rc,to_tcs) = 
-			let 	val (ti,ci,scs,rc,tcs) = get‰t‰a‰b‰l‰e‰i‰n‰f‰o (convertètable_specê t)
-				val tc = table_contents‰t(convert‰t‰a‰b‰l‰e‰S‰p‰e‰c‰i‰f‰c‰a‰t‰i‰o‰n(convertètable_specê t))
-				fun (mk : TsqlName ¸ TsqlName ­ Valueètsqlê list)
-					(name‰t f,name‰t tn) = [contents‰t(denote_col_spec‰t f)]
-				| 	mk	(name‰t f,anon‰t) = [contents‰t(denote_col_spec‰t f)]
-				| 	mk	(name‰t f,none‰t) = raise internalError
-				| 	mk	(anon‰t,name‰t tn) = raise internalError
-				|	mk	(anon‰t,anon‰t) = raise internalError
-				|	mk	(anon‰t,none‰t) = raise internalError
-				|	mk	(none‰t,name‰t tn) = [denote_null‰t]
-				|	mk	(none‰t,anon‰t) = [denote_null‰t]
-				|	mk	(none‰t,none‰t) = []
-				fun (mkc : TsqlClassName ¸ TsqlClassName ­ Valueètsqlê list)
-					(nameètcê f,nameètcê t) = [contents‰t(denote_col_spec‰t f)]
-				| 	mkc	(nameètcê f,constantètcê c) = raise internalError
-				| 	mkc	(constantètcê c,nameètcê tn) = [denote_class‰t c]
-				| 	mkc	(constantètcê c1,constantètcê c2) = 	
-									if c1 = c2 then []
-									else raise internalError
-				| 	mkc	(anonètcê,x) = raise internalError
-				| 	mkc	(nameètcê f,anonètcê) = [contents‰t(denote_col_spec‰t f)]
-				| 	mkc	(constantètcê c,anonètcê) = [denote_class‰t c]
-				fun (col : TsqlCol ¸ TsqlCol ­ Valueètsqlê list)
-					({sterling_name= from_sn,dinary_name = from_dn,
-						class_name = from_cn},
-					{sterling_name= to_sn,dinary_name = to_dn,
-						class_name = to_cn}) = 
-					mk(from_sn,to_sn) @ mk(from_dn,to_dn) 
-						@ mkc(from_cn,to_cn)
-			in	if to_rc = rc andalso to_tcs = tcs
-				then tc
-				else 	let val vals = mkc(rc,to_rc) @ 
-							(fold (op @)(at2(map col)(tcs,to_tcs)))
-					in all_tuples‰t(select_values‰t(map anonymous_value‰t vals),
-					[from‰t tc],denote_true‰t,[],denote_true‰t)
-					end
-			end
-=TEX
-=SML
-|	tuple_listèmakeê 	(all_tuples‰s(sel,fr,where,gb_sterling,gb_dinary,gb_class,having)
-						,to_rc,to_tcs)
-			= in_new_scope(fn () =>
-			let	val fs = map from_specèenterê fr
-				val gbs = sterling_columns gb_sterling
-				val gbd = dinary_columns gb_dinary
-				val gbc = remove_constants(map class_column gb_class)
-			in all_tuples‰t(select_values‰t(select_listèmakeê(sel,to_rc,to_tcs)),
-					fs,valueèdataê where,gbs @ gbd @ gbc,
-					valueèdataê having)
-			end)
-=TEX
-=SML
-|	tuple_listèmakeê 	(distinct_tuples‰s(sel,fr,where,gb_sterling,gb_dinary,gb_class,having)
-						,to_rc,to_tcs)
-			= in_new_scope(fn () =>
-			let	val fs = map from_specèenterê fr
-				val gbs = sterling_columns gb_sterling
-				val gbd = dinary_columns gb_dinary
-				val gbc = remove_constants(map class_column gb_class)
-			in distinct_tuples‰t(select_values‰t(select_listèmakeê(sel,to_rc,to_tcs)),
-					fs,valueèdataê where,gbs @ gbd @ gbc,
-					valueèdataê having)
-			end)
-=TEX
-=SML
-|	tuple_listèmakeê 	(evaluate‰s(sel,fr,where,gb_sterling,gb_dinary,gb_class,having)
-						,to_rc,to_tcs)
-			= in_new_scope(fn () =>
-			let	val fs = map from_specèenterê fr
-				val gbs = sterling_columns gb_sterling
-				val gbd = dinary_columns gb_dinary
-				val gbc = remove_constants(map class_column gb_class)
-			in evaluate‰t(select_values‰t(select_listèmakeê(sel,to_rc,to_tcs)),
-					fs,valueèdataê where,gbs @ gbd @ gbc,
-					valueèdataê having)
-			end)
-=TEX
-=SML
-|	tuple_listèmakeê 	(tuple‰s vals,to_rc,to_tcs) = 
-			let	val tvals = (case to_rc of
-					constantètcê c => []
-				|	other => [(denote_class‰t (query_constants_class()))])
-				@ (fold(op @)(at2(map make_col)(vals,to_tcs)))
-			in tuple‰t tvals
-			end	
-=TEX
-=SML
-|	tuple_listèmakeê 	(union‰s tls,to_rc,to_tcs) = 
-				if length tls <> 1
-				then tuple_listèmakeê(hd tls,to_rc,to_tcs)
-				else union‰t(at3(map tuple_listèmakeê)
-						(tls,seq(length tls,to_rc),seq(length tls,to_tcs)))
-=TEX
-=SML
-|	tuple_listèmakeê 	(name_columns‰s(names,tul),to_rc,to_tcs) 
-						= tuple_listèmakeê(tul,to_rc,to_tcs)
-=TEX
-=SML
-and 	(Ûfrom_specèinfoêÝ : From_specèssqlê ­ 
-					TableInfo ¸ SsqlCol list ¸ TsqlClassName ¸ TsqlCol list)
-			(from‰s t) =	let	val (tn,ti,scs,rc,tcs) = tuple_listèinfoê t
-					in 	(ti,scs,rc,tcs)
-					end
-|	from_specèinfoê	(correlate_from‰s(cn,t)) = 	let	val (tn,ti,scs,rc,tcs) = tuple_listèinfoê t
-							in 	(ti,scs,rc,tcs)
-							end
-=TEX		
-=SML
-and 	(Ûselect_listèinfoêÝ : Select_listèssqlê ­ SsqlCol list)
-			all_columns‰s = lookup‰l‰o‰c‰a‰l‰c‰o‰l‰i‰n‰f‰o()
-|	select_listèinfoê (select_values‰s vals) = map select_valueèinfoê vals
-=TEX
-=SML
-and 	(Ûselect_valueèinfoêÝ : Select_valueèssqlê ­ SsqlCol)
-			(anonymous_value‰s v) = valueèinfoê v
+.
 
+Since the processing of updating queries is as yet unspecified, we treat
+it as an error if the select query processing fails (e.g, because the
+query is not a select query).
+=SML
+¹HOLCONST
+Ü	ÛSTPÝ : (Query, FILTER_PARS) STP_TYPE
+÷üüüüüüüüüüü
+Üµq c·	STP (q, c) =
+Ü	let	st = init_trans_state c
+Ü	in let	res = transform‰s‰e‰l‰e‰c‰t‰q‰u‰e‰r‰y st q
+Ü	in	if	isError res
+Ü		then	giveError(destError res)
+Ü		else	Ok
+Ü			let	(scs, tq, scw, rc, tcs, chks) = destVal res
+Ü			in let	dynamic tc =
+Ü				CASE tc [WHEN_constant‰t‰c c· false; OTHERS true]
+Ü			in let	cc = Map (dynamic o tc_class_name) tcs
+Ü			in let	cr = if dynamic rc then InL c else InR One
+Ü			in let	cq = if chks = [] then InR One else InL(Hd chks)
+Ü			in	(tq, cq, (scw, cr, cc))
+°
 =TEX
-=SML
-|	select_valueèinfoê	(named_value‰s(n,v)) = 
-			let 	val {name = nm,type_field = ty,col_exist = ce,col_class =cc} 
-				= valueèinfoê v
-			in 	{name = name‰s n,type_field = ty,col_exist = ce,col_class = cc}
-			end
-=TEX
-=SML
-|	select_valueèinfoê	(anonymous_pair‰s(sval,dval)) = 
-			let 	val (stype,sw) = value‰t‰y‰p‰e sval
-				val (dtype,dw) = value‰t‰y‰p‰e dval
-				val u = upper(valueèclassê sval) 
-						lub upper(valueèclassê dval)
-			in	{name = anon‰s,
-				type_field = (stype,dtype),
-				col_exist = query_constants_class(),
-				col_class = upb u}
-			end
-=TEX
-=SML
-|	select_valueèinfoê	(named_pair‰s(n,(sval,dval))) = 
-			let 	val (stype,sw) = value‰t‰y‰p‰e sval
-				val (dtype,dw) = value‰t‰y‰p‰e dval
-				val u = upper(valueèclassê sval) 
-						lub upper(valueèclassê dval)
-			in	{name = name‰s n,
-				type_field = (stype,dtype),
-				col_exist = query_constants_class(),
-				col_class = upb u}
-			end
-=TEX
-=SML
-and 	(ÛvalueèinfoêÝ : Valueèssqlê ­ SsqlCol)
-		v = 	case valueèclassê v of
-				variable(exp,c) => 	{name= anon‰s,
-							 type_field= col_exp(value‰t‰y‰p‰e v),
-							 col_exist=query_constants_class(),
-							 col_class=upb c} 
-			| 	constantèecê c => 	{name= anon‰s,
-							 type_field= col_exp(value‰t‰y‰p‰e v),
-							 col_exist=query_constants_class(),
-							 col_class=constant c}
-=TEX
-=SML
-and 	(Ûinternal_valueèclassêÝ : Valueèssqlê ­ InternalExpClass)
-				(denote_constant‰s c) = 
-						simple(constantèecê(query_constants_class()))
-|	internal_valueèclassê	(monop‰s(opr,v)) = simple(valueèclassê v)
-=TEX
-=SML
-|	internal_valueèclassê	(binop‰s(or_op,(val1,val2))) =
-				let 	
-				val (v1,c1) =
-					(case (internal_valueèclassê val1) of
-					ands(datas,classes) => 
-							split[simplifyèandsê(datas,classes)]
-					| ors(datas,classes) => (datas,classes)
-					| simple e => ([valueèdataê val1],[e]))
-				val (v2,c2) =
-					(case (internal_valueèclassê val2) of
-					ands(datas,classes) => 
-							split[simplifyèandsê(datas,classes)]
-					| ors(datas,classes) => (datas,classes)
-					| simple e => ([valueèdataê val2],[e]))
-				in ors(v1 @ v2,c1 @ c2)
-				end
-=TEX
-=SML
-|	internal_valueèclassê	(binop‰s(and_op,(val1,val2))) =
-				let 	
-				val (v1,c1) =
-					(case (internal_valueèclassê val1) of
-					ands(datas,classes) => (datas,classes)
-					| ors(datas,classes) => 
-							split[simplifyèorsê(datas,classes)]
-					 
-					| simple e => ([valueèdataê val1],[e]))
-				val (v2,c2) =
-					(case (internal_valueèclassê val2) of
-					ands(datas,classes) => (datas,classes)
-					| ors(datas,classes) => 
-							split[simplifyèorsê(datas,classes)]
-					
-					| simple e => ([valueèdataê val2],[e]))
-				in ors(v1 @ v2,c1 @ c2)
-				end
-=TEX
-=SML
-|	internal_valueèclassê	(binop‰s(opr,(val1,val2))) =
-				let 	val vc1 = valueèclassê val1
-					val vc2 = valueèclassê val2
-				in 	simple(lub‰e‰x‰p‰c‰l‰a‰s‰s(vc1,vc2))
-				end
-=TEX
-=SML
-|	internal_valueèclassê	(triop‰s(opr,(val1,val2,val3))) =
-				let 	val vc1 = valueèclassê val1
-					val vc2 = valueèclassê val2
-					val vc3 = valueèclassê val3
-				in 	simple(lub‰e‰x‰p‰c‰l‰a‰s‰s(vc1,lub‰e‰x‰p‰c‰l‰a‰s‰s(vc2,vc3)))
-				end
-=TEX
-=SML
-|	internal_valueèclassê	(convert‰s(v,t)) = simple(valueèclassê v)
-|	internal_valueèclassê	(convert_domain‰s(v,domain,t)) = simple(valueèclassê v)
-|	internal_valueèclassê	(make_sterling‰s v) = simple(valueèclassê v)
-|	internal_valueèclassê	(make_dinary‰s v) = simple(valueèclassê v)
-=TEX
-=SML
-|	internal_valueèclassê	(declare‰s (id,(val1,val2))) =
-			let 	val t1 = value‰t‰y‰p‰e val1
-				val data1 = valueèdataê val1
-				val class1 = valueèclassê val1
-				val class2 = valueèclassê val2
-				val class2exp = denote‰c‰l‰a‰s‰s‰e‰x‰p class2
-			in					
-				in_new_scope(fn () =>
-				let val c =	
-					case class1 of
-						variable (c,u) => 
-						let val (cn,dn) = enter‰i‰d‰e‰n‰t‰i‰f‰i‰e‰r(id,t1,u)
-						in	declare‰t (cn,(c,
-								declare‰t(dn,(data1,class2exp)))) 
-						end
-					| 	constantèecê c =>
-						let val dn =  enter‰i‰d‰e‰n‰t‰i‰f‰e‰r‰c‰o‰n‰s‰t‰a‰n‰t‰c‰l‰a‰s‰s(id,t1,c)
-						in declare‰t(dn,(data1,class2exp)) 
-						end
-				in		simple(variable(c,upper class2))
-				end)
-			end 
-=TEX
-=SML
-| 	internal_valueèclassê	(caseVal‰s (test,caseList,valList,elseVal)) = 
-				let 	val tcn = unique_name()
-					val tc = contents‰t(denote_col_spec‰t tcn)
-					val tvn = unique_name()
-					val tv = contents‰t(denote_col_spec‰t tvn)
-					fun (limb1  : Valueèssqlê ¸ Valueèssqlê 
-							­ Valueètsqlê list ¸ Valueètsqlê list)
-						(e,v) = 
-						let 	val v1 = denote‰c‰l‰a‰s‰s‰e‰x‰p(valueèclassê e)
-							val t1 = monop‰t(not_op,binop‰t(dom_op,
-								(denote_class‰t(query_class()),v1)))
-							val t2 = binop‰t(equal_op,(tv,valueèdataê e))
-							val v2 = denote‰c‰l‰a‰s‰s‰e‰x‰p(valueèclassê v)
-						in	([t1,t2],[v1,v2])
-						end
-					fun (limb : Valueèssqlê list ¸ Valueèssqlê list 
-							­ Valueètsqlê list ¸ Valueètsqlê list)
-						(es,vs) = 
-						let val (ess,vss) = split(at2(map limb1)(es,vs))
-						in (fold(op @)ess,fold(op @)vss)
-						end
-					fun (uppers : ExpClass list ­ Class)
-						es = fold (op lub) (map upper es)	
-					val (c1,v1) = limb(caseList,valList)
-					val check_list = case‰t(c1,v1,
-							denote‰c‰l‰a‰s‰s‰e‰x‰p(valueèclassê elseVal))
-					val check_test = case‰t([binop‰t(dom_op,(denote_class‰t
-									(query_class()),tc))],
-								[check_list],
-								tc)
-					val c = declare‰t(tcn,(denote‰c‰l‰a‰s‰s‰e‰x‰p(valueèclassê test),
-							declare‰t(tvn,(valueèdataê test,check_test))))
-					val u = uppers(map valueèclassê
-							(caseList @ valList @ [test,elseVal]))
-				in simple(variable(c,u))
-				end
-=TEX
-=SML								
-| 	internal_valueèclassê	(case‰s (caseList,valList,elseVal)) = 
-				let 	fun (limb1  : Valueèssqlê ¸ Valueèssqlê 
-							­ Valueètsqlê list ¸ Valueètsqlê list)
-						(e,v) = 
-						let 	val v1 = denote‰c‰l‰a‰s‰s‰e‰x‰p(valueèclassê e)
-							val t1 = monop‰t(not_op,binop‰t(dom_op,
-								(denote_class‰t(query_class()),v1)))
-							val v2 = denote‰c‰l‰a‰s‰s‰e‰x‰p(valueèclassê v)
-						in	([t1,valueèdataê e],[v1,v2])
-						end
-					fun (limb : Valueèssqlê list ¸ Valueèssqlê list 
-							­ Valueètsqlê list ¸ Valueètsqlê list)
-						(es,vs) = 
-						let val (ess,vss) = split(at2(map limb1)(es,vs))
-						in (fold(op @)ess,fold(op @)vss)
-						end
-					fun (uppers : ExpClass list ­ Class)
-						es = fold (op lub) (map upper es)	
-					val (c1,v1) = limb(caseList,valList)
-					val c = case‰t(c1,v1,denote‰c‰l‰a‰s‰s‰e‰x‰p(valueèclassê elseVal))
-					val u = uppers(map valueèclassê
-							(caseList @ valList @ [elseVal]))
-				in simple(variable(c,u))
-				end
-=TEX
-=SML
-|	internal_valueèclassê	(set_func_all‰s (and_op,v)) = 
-				(case valueèclassê v of
-					variable(c,u) =>
-					let	val cf = case‰t([valueèdataê v],
-								[denote_class‰t(lattice_top())],
-								c)
-						val ce = case‰t([set_func_all‰t(and_op,valueèdataê v)],
-								[set_func_all‰t(lub_op,c)],
-								set_func_all‰t(glb_op,cf))
-					in	simple(variable(ce,u))
-					end
-				|	constantèecê c => simple(constantèecê c))
-=TEX
-=SML
-|	internal_valueèclassê	(set_func_all‰s (or_op,v)) = 
-				(case valueèclassê v of
-					variable(c,u) =>
-					let	val ct = case‰t([valueèdataê v],
-								[c],
-								denote_class‰t(lattice_top()))
-						val ce = case‰t([set_func_all‰t(or_op,valueèdataê v)],
-								[set_func_all‰t(glb_op,ct)],
-								set_func_all‰t(lub_op,c))
-					in	simple(variable(ce,u))
-					end
-				|	constantèecê c => simple(constantèecê c))
-=TEX
-=SML
-|	internal_valueèclassê	(set_func_all‰s (opr,v)) = 
-				(case valueèclassê v of
-					variable(c,u) =>
-					simple(variable(set_func_all‰t(lub_op,c),u))
-				|	constantèecê c => simple(constantèecê c))
-=TEX
-=SML
-|	internal_valueèclassê	(set_func_distinct‰s (and_op,v)) = 
-				(case valueèclassê v of
-					variable(c,u) =>
-					let	val cf = case‰t([valueèdataê v],
-								[denote_class‰t(lattice_top())],
-								c)
-						val ce = case‰t([set_func_all‰t(and_op,valueèdataê v)],
-								[set_func_all‰t(lub_op,c)],
-								set_func_all‰t(glb_op,cf))
-					in	simple(variable(ce,u))
-					end
-				|	constantèecê c => simple(constantèecê c))
-=TEX
-=SML
-|	internal_valueèclassê	(set_func_distinct‰s (or_op,v)) = 
-				(case valueèclassê v of
-					variable(c,u) =>
-					let	val ct = case‰t([valueèdataê v],
-								[c],
-								denote_class‰t(lattice_top()))
-						val ce = case‰t([set_func_all‰t(or_op,valueèdataê v)],
-								[set_func_all‰t(glb_op,ct)],
-								set_func_all‰t(lub_op,c))
-					in	simple(variable(ce,u))
-					end
-				|	constantèecê c => simple(constantèecê c))
-=TEX
-=SML
-|	internal_valueèclassê	(set_func_distinct‰s (opr,v)) = 
-				(case valueèclassê v of
-					variable(c,u) =>
-					simple(variable(set_func_all‰t(lub_op,c),u))
-				|	constantèecê c => simple(constantèecê c))
-=TEX
-=SML
-|	internal_valueèclassê	(count_non_null‰s (v,t)) = 
-				(case valueèclassê v of
-					variable(c,u) =>
-					simple(variable(set_func_all‰t(lub_op,c),u))
-				|	constantèecê c => simple(constantèecê c))
-=TEX
-=SML
-|	internal_valueèclassê	(count_distinct‰s (v,t)) = 
-				(case valueèclassê v of
-					variable(c,u) =>
-					simple(variable(set_func_all‰t(lub_op,c),u))
-				|	constantèecê c => simple(constantèecê c))
-=TEX
-=SML
-|	internal_valueèclassê	(count_all‰s t) = 
-				let val ti = fold lub‰t‰a‰b‰l‰e‰i‰n‰f‰o(lookup‰l‰o‰c‰a‰l‰t‰a‰b‰l‰e‰i‰n‰f‰o())
-				in	case #row_class ti of
-						upb u =>
-						let	val c = fold(curry binop‰t lub_op)(map 
-								denote_name(lookup‰l‰o‰c‰a‰l‰r‰o‰w‰c‰l‰a‰s‰s‰e‰s()))
-						in simple(variable(c,u))
-						end
-					| 	constant u => simple(constantèecê u)
-				end
-=TEX
-=SML
-|	internal_valueèclassê	(exists_tuples‰s tuples) = 
-				let val (tn,ti,scs,rc,tcs) = tuple_listèinfoê tuples
-				in	case #row_class ti of
-						upb u =>
-						let val c = denote‰c‰l‰a‰s‰s‰e‰x‰p
-								(tuple_listèmax_row_classê tuples)
-						in simple(variable(c,u))
-						end
-					| 	constant u => simple(constantèecê u)
-				end
-=TEX
-=SML
-|	internal_valueèclassê	(single_value‰s v) =  
-				let val (tn,ti,scs,rc,tcs) = tuple_listèinfoê v
-				in	case #col_class (hd scs) of
-						upb u =>
-						let val c = single_value‰t (tuple_listèclassê v)
-						in simple(variable(c,u))
-						end
-					| 	constant u => simple(constantèecê u)
-				end
-=TEX
-=SML
-|	internal_valueèclassê	(contents‰s col) = 
-				let val (tr,u) = lookup‰c‰o‰l‰s‰p‰e‰c‰c‰l‰a‰s‰s(false,convert‰c‰o‰l‰s‰p‰e‰c col)
-				in	case tr of
-						constant_class c => simple(constantèecê c)
-					| 	other => simple(variable(denote_name tr,u))
-				end
-=TEX
-=SML
-|	internal_valueèclassê	(sterling_contents‰s col) = 
-				let val (tr,u) = lookup‰c‰o‰l‰s‰p‰e‰c‰c‰l‰a‰s‰s(false,convert‰c‰o‰l‰s‰p‰e‰c col)
-				in	case tr of
-						constant_class c => simple(constantèecê c)
-					| 	other => simple(variable(denote_name tr,u))
-				end
-=TEX
-=SML
-|	internal_valueèclassê	(dinary_contents‰s col) = 
-				let val (tr,u) = lookup‰c‰o‰l‰s‰p‰e‰c‰c‰l‰a‰s‰s(false,convert‰c‰o‰l‰s‰p‰e‰c col)
-				in	case tr of
-						constant_class c => simple(constantèecê c)
-					| 	other => simple(variable(denote_name tr,u))
-				end
-=TEX
-=SML
-|	internal_valueèclassê	(classification‰s col) = 
-				let val (ti,ci) = lookup‰c‰o‰l‰u‰m‰n‰i‰n‰f‰o(convert‰c‰o‰l‰s‰p‰e‰c col)
-				in	case #row_class ti of
-						upb u =>
-						let 	val rc = lookup‰c‰o‰l‰u‰m‰n‰r‰o‰w‰c‰l‰a‰s‰s
-									(false,convert‰c‰o‰l‰s‰p‰e‰c col)
-							val c = denote_name rc
-						in 	simple(variable(c,u))
-						end
-					| 	constant c => simple(constantèecê c)
-				end
-
-=TEX
-=SML
-|	internal_valueèclassê	(row_existence‰s t) = 	
-				let val td = lookup‰t‰a‰b‰l‰e‰d‰e‰t‰a‰i‰l(convertètable_specê t)
-				in  simple(constantèecê (#table_class(#info td)))
-				end
-=TEX
-=SML
-|	internal_valueèclassê	joined_row_existence‰s = 	
-				let val ti = fold lub‰t‰a‰b‰l‰e‰i‰n‰f‰o(lookup‰l‰o‰c‰a‰l‰t‰a‰b‰l‰e‰i‰n‰f‰o())
-				in  simple(constantèecê (#table_class ti))
-				end
-=TEX
-=SML
-|	internal_valueèclassê	(classify‰s(v,c)) = simple(valueèclassê c)
-|	internal_valueèclassê	(classify_default‰s v) = simple(constantèecê(query_class()))
-=TEX
-=SML
-|	internal_valueèclassê	(observed‰s(n,c)) = raise notTrigger
-|	internal_valueèclassê	(modified‰s n) = raise notTrigger
-|	internal_valueèclassê	(context‰s t) =
-				let val  (cv,class) = contextual_data t
-				in simple(constantèecê class) 
-				end
-|	internal_valueèclassê	(parameter‰s name) = 	
-				let val (cv,class) = lookup‰p‰a‰r‰a‰m‰d‰a‰t‰a name
-				in simple(constantèecê class) 
-				end
-=TEX
-=SML
-and 	(Ûtuple_listèclassêÝ : Tuple_listèssqlê  ­ Tuple_listètsqlê ) 
-			(table_contents‰s t) = in_new_scope(fn () =>
-			let	val ts = convertètable_specê t
-				val tn = convert‰t‰a‰b‰l‰e‰S‰p‰e‰c‰i‰f‰c‰a‰t‰i‰o‰n ts
-				val (ti,ci,scs,rc,tcs) = get‰t‰a‰b‰l‰e‰i‰n‰f‰o ts
-				fun (sel: TsqlCol ­ Select_valueètsqlê)
-					{sterling_name = sn,
-					dinary_name=dn,
-					class_name=nameètcê n}
-					= anonymous_value‰t(contents‰t(denote_col_spec‰t n))
-				| sel 	{sterling_name = sn,
-					dinary_name=dn,
-					class_name=constantètcê c}
-					= anonymous_value‰t(denote_class‰t c)
-				| sel	x = raise internalError
-			in	all_tuples‰t(select_values‰t(map sel tcs),
-					[from‰t(table_contents‰t tn)],denote_true‰t,[],denote_true‰t)
-			end)
-=TEX
-=SML
-|	tuple_listèclassê 	(all_tuples‰s(sel,fr,where,gb_sterling,gb_dinary,gb_class,having))
-			= in_new_scope(fn () =>
-			let	val fss = map from_specèenterê fr
-				val gs = sterling_columns gb_sterling
-				val gd = dinary_columns gb_dinary
-				val gc = map class_column gb_class
-			in all_tuples‰t(select_listèclassê sel,
-					fss,valueèdataê where,gs @ gd @ remove_constants gc,
-					valueèdataê having)
-			end)
-=TEX
-=SML
-|	tuple_listèclassê 	(distinct_tuples‰s(sel,fr,where,gb_sterling,gb_dinary,gb_class,having))
-			= in_new_scope(fn () =>
-			let	val fss = map from_specèenterê fr
-				val gs = sterling_columns gb_sterling
-				val gd = dinary_columns gb_dinary
-				val gc = map class_column gb_class
-			in distinct_tuples‰t(select_listèclassê sel,
-					fss,valueèdataê where,gs @ gd @ remove_constants gc,
-					valueèdataê having)
-			end)
-=TEX
-=SML
-|	tuple_listèclassê 	(evaluate‰s(sel,fr,where,gb_sterling,gb_dinary,gb_class,having))
-			= in_new_scope(fn () =>
-			let	val fss = map from_specèenterê fr
-				val gs = sterling_columns gb_sterling
-				val gd = dinary_columns gb_dinary
-				val gc = map class_column gb_class
-			in evaluate‰t(select_listèclassê sel,
-					fss,valueèdataê where,gs @ gd @ remove_constants gc,
-					valueèdataê having)
-			end)
-=TEX
-=SML
-|	tuple_listèclassê 	(tuple‰s vals) = 
-				tuple‰t(map denote‰c‰l‰a‰s‰s‰e‰x‰p(map valueèclassê vals))
-=TEX
-=SML
-|	tuple_listèclassê 	(union‰s tls) = 
-				union‰t(map tuple_listèclassê tls)
-=TEX
-=SML
-|	tuple_listèclassê 	(name_columns‰s(names,tul)) 
-						= tuple_listèclassê tul
-and 	(Ûselect_listèclassêÝ : Select_listèssqlê ­ Select_listètsqlê)
-			all_columns‰s = 
-				let val (trs,classes) = split(lookup‰l‰o‰c‰a‰l‰c‰o‰l‰s‰p‰e‰c‰c‰l‰a‰s‰s‰e‰s())
-				in select_values‰t(map anonymous_value‰t (map denote_name trs))
-				end
-|	select_listèclassê (select_values‰s vals) = select_values‰t(map select_valueèclassê vals)
-=TEX
-=SML
-and 	(Ûselect_valueèclassêÝ : Select_valueèssqlê ­ Select_valueètsqlê)
-				(anonymous_value‰s v) = 
-					anonymous_value‰t(denote‰c‰l‰a‰s‰s‰e‰x‰p(valueèclassê v))
-|	select_valueèclassê	(named_value‰s(name,v)) = 
-					anonymous_value‰t(denote‰c‰l‰a‰s‰s‰e‰x‰p(valueèclassê v))
-|	select_valueèclassê	(anonymous_pair‰s(sval,dval)) = 
-					anonymous_value‰t(denote‰c‰l‰a‰s‰s‰e‰x‰p(valueèclassê sval))
-|	select_valueèclassê	(named_pair‰s(name,(sval,dval))) = 
-					anonymous_value‰t(denote‰c‰l‰a‰s‰s‰e‰x‰p(valueèclassê sval))
-=TEX					
-=SML
-=TEX
-=SML
-and 	(Ûselect_listèmakeêÝ : Select_listèssqlê ¸ TsqlClassName ¸ TsqlCol list ­ Select_valueètsqlê list)
-			(all_columns‰s,to_rc,to_tcs) = 
-				let	val rcs = lookup‰l‰o‰c‰a‰l‰r‰o‰w‰c‰l‰a‰s‰s‰e‰s()
-					val rc = (fold(curry binop‰t lub_op)(map denote_name rcs))
-				in
-				(case to_rc of
-					anonètcê => [anonymous_value‰t rc]
-				| 	nameètcê s => [anonymous_value‰t rc]
-				|	constantètcê c => [])
-				
-				end
-				@
-				(fold (op @)(at2(map make‰s‰v)
-					(lookup‰l‰o‰c‰a‰l‰c‰o‰l‰i‰m‰p‰l‰e‰m‰e‰n‰t‰a‰t‰i‰o‰n(),to_tcs)))
-=TEX
-=SML
-|	select_listèmakeê (select_values‰s vals,to_rc,to_tcs) = 
-			let	fun	 (make : TsqlRepr ­ Valueètsqlê )
-						(local_identifier s) = raise internalError
-				|	make	(column(t,c)) = contents‰t(absolute_col_spec‰t([],t,c))
-				|	make	(constant_class c) = denote_class‰t c
-				|	make	constant_null = denote_null‰t
-			in	(case to_rc of
-						anonètcê => 
-						let val rcvs = map make(lookup‰l‰o‰c‰a‰l‰r‰o‰w‰c‰l‰a‰s‰s‰e‰s())
-						in [anonymous_value‰t
-							(fold(curry binop‰t lub_op)rcvs)]
-						end
-					|	nameètcê s => 
-						let val rcvs = map make(lookup‰l‰o‰c‰a‰l‰r‰o‰w‰c‰l‰a‰s‰s‰e‰s())
-						in [anonymous_value‰t
-							(fold(curry binop‰t lub_op)rcvs)]
-						end
-					|	constantètcê c => [])
-				@
-				(fold (op @)(at2(map select_valueèmakeê)(vals,to_tcs)))
-			end
-=TEX
-=SML
-and 	(Ûselect_valueèmakeêÝ : Select_valueèssqlê ¸ TsqlCol­ Select_valueètsqlê list)
-				(anonymous_value‰s v,tcol) = 
-						map anonymous_value‰t(make_col(v,tcol))
-|	select_valueèmakeê	(named_value‰s(name,v),tcol) = 
-						map anonymous_value‰t(make_col(v,tcol))
-|	select_valueèmakeê	(anonymous_pair‰s(sval,dval),tcol) = 
-						let	val sv = anonymous_value‰t(valueèdataê sval)
-							val sd = anonymous_value‰t(valueèdataê dval)
-						in 	[sv,sd]
-						end	
-|	select_valueèmakeê	(named_pair‰s(name,(sval,dval)),tcol) = 
-						let	val sv = anonymous_value‰t(valueèdataê sval)
-							val sd = anonymous_value‰t(valueèdataê dval)
-						in 	[sv,sd]
-						end
-=TEX
-=SML
-and 	(Ûmake_colÝ : Valueèssqlê ¸ TsqlCol ­ Valueètsqlê list)
-		(v,tcol) =	let val et =  value‰t‰y‰p‰e v
-				in
-				(case (#sterling_name tcol) of
-					none‰t => []
-				|	anon‰t => [makeèsterlingê(v,et)]
-				|	name‰t s => [makeèsterlingê(v,et)])
-				@
-				(case (#dinary_name tcol) of
-					none‰t => []
-				|	anon‰t => [makeèdinaryê(v,et)]
-				|	name‰t s => [makeèdinaryê(v,et)])
-				@
-				(case (#class_name tcol) of
-					anonètcê => [denote‰c‰l‰a‰s‰s‰e‰x‰p(valueèclassê v)]
-				|	nameètcê s => [denote‰c‰l‰a‰s‰s‰e‰x‰p(valueèclassê v)]
-				|	constantètcê c => [])
-				end
-=TEX
-=SML
-and 	(ÛmakeèdinaryêÝ : Valueèssqlê ¸ ExpType ­ Valueètsqlê)
-			(v,(t,priceless)) = raise wrongType
-|	makeèdinaryê	(v,(t,sterling)) =  denote_null‰t
-|	makeèdinaryê	(v,(t,dinary)) =  valueèdataê v 
-|	makeèdinaryê	(v,(t,worthless)) =  denote_null‰t
-=TEX
-=SML
-and 	(ÛmakeèsterlingêÝ : Valueèssqlê ¸ ExpType ­ Valueètsqlê)
-			(v,(t,priceless)) = raise wrongType
-|	makeèsterlingê	(v,(t,sterling)) =  valueèdataê v
-|	makeèsterlingê	(v,(t,dinary)) =  denote_null‰t 
-|	makeèsterlingê	(v,(t,worthless)) =  valueèdataê v
-=TEX
-=SML
-and 	(Ûselect_listèdataêÝ : Select_listèssqlê ­ Select_listètsqlê)
-			all_columns‰s = select_values‰t(map anonymous_value‰t (map contents‰t
-						(all_data_columns‰l‰o‰c‰a‰l())))
-|	select_listèdataê (select_values‰s vals) = select_values‰t(map select_valueèdataê vals)
-=TEX
-=SML
-and 	(Ûselect_valueèdataêÝ : Select_valueèssqlê ­ Select_valueètsqlê)
-				(anonymous_value‰s v) = anonymous_value‰t(valueèdataê v)
-|	select_valueèdataê	(named_value‰s(name,v)) = anonymous_value‰t(valueèdataê v)
-|	select_valueèdataê	(anonymous_pair‰s(sval,dval)) = anonymous_value‰t(valueèdataê sval)
-|	select_valueèdataê	(named_pair‰s(name,(sval,dval))) = 
-							anonymous_value‰t(valueèdataê sval)
-=TEX		
-=SML
-fun 	(Ûtuple_listèmake_outerêÝ : Tuple_listèssqlê ¸ bool ¸ TsqlClassName ¸ TsqlCol list 
-						­ Tuple_listètsqlê ¸ Queryètsqlê list ) 
-			(table_contents‰s t,scw,to_rc,to_tcs) = 
-			let 	val ts = convertètable_specê t
-				val (ti,ci,scs,rc,tcs) = get‰t‰a‰b‰l‰e‰i‰n‰f‰o ts
-				val where_class = denote_class‰t(query_constants_class())
-				val sl = (case scw of
-						true => [anonymous_value‰t where_class]
-					|	false => [])
-					@
-					(case to_rc of
-						constantètcê c => []
-					|	other => 
-						(case rc of 
-							anonètcê => raise internalError
-						|	nameètcê col => 
-							[anonymous_value‰t(contents‰t
-									(denote_col_spec‰t col))]
-						|	constantètcê cl => 
-							[anonymous_value‰t(denote_class‰t cl)]))
-					@ (fold (op @) (at2(map make‰s‰v)(tcs,to_tcs)))
-				val fs = from‰t(table_contents‰t(convert‰t‰a‰b‰l‰e‰S‰p‰e‰c‰i‰f‰c‰a‰t‰i‰o‰n ts))
-				val sel_q = all_tuples‰t(select_values‰t sl,[fs],denote_true‰t,
-								[],denote_true‰t)
-			in	(sel_q,[])
-			end
-=TEX
-=SML
-|	tuple_listèmake_outerê 	(all_tuples‰s(sel,fr,where,gb_sterling,gb_dinary,gb_class,having)
-						,scw,to_rc,to_tcs)
-			= in_new_scope(fn () =>
-			let	val fs = map from_specèenterê fr
-				val sel_vals = select_listèmakeê(sel,to_rc,to_tcs)
-				val where_v = valueèdataê where
-				val where_c = valueèclassê where
-				val where_class = case where_c of
-							variable(exp,c) => exp
-						  |	constantèecê c => denote_class‰t c
-				val sel_list = 	case scw of
-						 true => [anonymous_value‰t where_class]@ sel_vals
-						| false => sel_vals	
-				val sl = select_values‰t sel_list
-				val cc = denote_class‰t(client_clearance())
-				val wchk = case where_c of
-					   	variable(exp,c) => 
-							if client_clearance() dom c	
-							then where_v
-							else 	let val ok = binop‰t(dom_op,(cc,exp))
-								in binop‰t(or_op,(where_v,
-									monop‰t(not_op,ok)))
-								end
-					    |	constantèecê c =>
-							if client_clearance() dom c	
-							then where_v
-							else 	denote_true‰t
-				val max_rc = fold (op lub)(map upb_row_class
-								(lookup‰l‰o‰c‰a‰l‰t‰a‰b‰l‰e‰i‰n‰f‰o()))	
-				val rcs = map denote_name(lookup‰l‰o‰c‰a‰l‰r‰o‰w‰c‰l‰a‰s‰s‰e‰s())
-				val rvis = binop‰t(dom_op,(cc,fold(curry binop‰t lub_op)rcs))
-				val w = 	if client_clearance() dom max_rc
-						then wchk
-						else binop‰t(and_op,(wchk,rvis))
-				val gbs = sterling_columns gb_sterling
-				val gbd = dinary_columns gb_dinary
-				val gbc = remove_constants(map class_column gb_class)
-=TEX
-=SML
-				val groupby_test = fold(op @)(map column_data_test
-								(gb_sterling @ gb_dinary))
-				val having_test =	case valueèclassê having of
-								constantèecê c =>
-									if client_clearance() dom c	
-									then []
-									else 	[denote_false‰t]
-							|	variable(exp,c) => 
-									if client_clearance() dom c	
-									then []
-									else [binop‰t(dom_op,(cc,exp))]
-				val tests = groupby_test @ having_test
-				val checks = 	
-					if length tests = 0
-					then []
-					else 	
-					let 	val t = monop‰t(not_op,
-							(fold(curry binop‰t and_op)tests))
-						val bad = 	if client_clearance() dom max_rc
-								then [where_v,t]
-								else [rvis,where_v,t]
-						val junk = anonymous_value‰t(denote_true‰t)
-						val junk_sl = select_values‰t[junk]
-					in [select‰t(all_tuples‰t(junk_sl,fs,
-						fold(curry binop‰t and_op)bad,[],denote_true‰t))]
-					end
-				val sel_q = all_tuples‰t(sl,fs,w,gbs @ gbd @ gbc,valueèdataê having)
-			in (sel_q,checks)
-			end)		
-=TEX
-=SML
-|	tuple_listèmake_outerê 	(distinct_tuples‰s(sel,fr,where,gb_sterling,gb_dinary,gb_class,having)
-						,scw,to_rc,to_tcs)
-			= in_new_scope(fn () =>
-			let	val fs = map from_specèenterê fr
-				val sel_vals = select_listèmakeê(sel,to_rc,to_tcs)
-				val where_v = valueèdataê where
-				val where_c = valueèclassê where
-				val where_class = case where_c of
-							variable(exp,c) => exp
-						  |	constantèecê c => denote_class‰t c
-				val sel_list = 	case scw of
-						 true => [anonymous_value‰t where_class]@ sel_vals
-						| false => sel_vals	
-				val sl = select_values‰t sel_list
-				val cc = denote_class‰t(client_clearance())
-				val wchk = case where_c of
-					   	variable(exp,c) => 
-							if client_clearance() dom c	
-							then where_v
-							else 	let val ok = binop‰t(dom_op,(cc,exp))
-								in binop‰t(or_op,(where_v,
-									monop‰t(not_op,ok)))
-								end
-					    |	constantèecê c =>
-							if client_clearance() dom c	
-							then where_v
-							else 	denote_true‰t
-				val max_rc = fold (op lub)(map upb_row_class
-								(lookup‰l‰o‰c‰a‰l‰t‰a‰b‰l‰e‰i‰n‰f‰o()))	
-				val rcs = map denote_name(lookup‰l‰o‰c‰a‰l‰r‰o‰w‰c‰l‰a‰s‰s‰e‰s())
-				val rvis = binop‰t(dom_op,(cc,fold(curry binop‰t lub_op)rcs))
-				val w = 	if client_clearance() dom max_rc
-						then wchk
-						else binop‰t(and_op,(wchk,rvis))
-				val gbs = sterling_columns gb_sterling
-				val gbd = dinary_columns gb_dinary
-				val gbc = remove_constants(map class_column gb_class)
-=TEX
-=SML
-				val groupby_test = fold(op @)(map column_data_test
-								(gb_sterling @ gb_dinary))
-				val having_test =	case valueèclassê having of
-								constantèecê c =>
-									if client_clearance() dom c	
-									then []
-									else 	[denote_false‰t]
-							|	variable(exp,c) => 
-									if client_clearance() dom c	
-									then []
-									else [binop‰t(dom_op,(cc,exp))]
-				val tests = groupby_test @ having_test
-				val checks = 	
-					if length tests = 0
-					then []
-					else 	
-					let 	val t = monop‰t(not_op,
-							(fold(curry binop‰t and_op)tests))
-						val bad = 	if client_clearance() dom max_rc
-								then [where_v,t]
-								else [rvis,where_v,t]
-						val junk = anonymous_value‰t(denote_true‰t)
-						val junk_sl = select_values‰t[junk]
-					in [select‰t(all_tuples‰t(junk_sl,fs,
-						fold(curry binop‰t and_op)bad,[],denote_true‰t))]
-					end
-				val sel_q = distinct_tuples‰t
-						(sl,fs,w,gbs @ gbd @ gbc,valueèdataê having)
-			in (sel_q,checks)
-			end)		
-=TEX
-=SML
-|	tuple_listèmake_outerê 	(evaluate‰s(sel,fr,where,gb_sterling,gb_dinary,gb_class,having)
-						,scw,to_rc,to_tcs)
-			= in_new_scope(fn () =>
-			let	val fs = map from_specèenterê fr
-				val sel_vals = select_listèmakeê(sel,to_rc,to_tcs)
-				val where_v = valueèdataê where
-				val where_c = valueèclassê where
-				val where_class = case where_c of
-							variable(exp,c) => exp
-						  |	constantèecê c => denote_class‰t c
-				val sel_list = 	case scw of
-						 true => [anonymous_value‰t where_class]@ sel_vals
-						| false => sel_vals	
-				val sl = select_values‰t sel_list
-				val cc = denote_class‰t(client_clearance())
-				val wchk = case where_c of
-					   	variable(exp,c) => 
-							if client_clearance() dom c	
-							then where_v
-							else 	let val ok = binop‰t(dom_op,(cc,exp))
-								in binop‰t(or_op,(where_v,
-									monop‰t(not_op,ok)))
-								end
-					    |	constantèecê c =>
-							if client_clearance() dom c	
-							then where_v
-							else 	denote_true‰t
-				val max_rc = fold (op lub)(map upb_row_class
-								(lookup‰l‰o‰c‰a‰l‰t‰a‰b‰l‰e‰i‰n‰f‰o()))	
-				val rcs = map denote_name(lookup‰l‰o‰c‰a‰l‰r‰o‰w‰c‰l‰a‰s‰s‰e‰s())
-				val rvis = binop‰t(dom_op,(cc,fold(curry binop‰t lub_op)rcs))
-				val w = 	if client_clearance() dom max_rc
-						then wchk
-						else binop‰t(and_op,(wchk,rvis))
-				val gbs = sterling_columns gb_sterling
-				val gbd = dinary_columns gb_dinary
-				val gbc = remove_constants(map class_column gb_class)
-=TEX
-=SML
-				val groupby_test = fold(op @)(map column_data_test
-								(gb_sterling @ gb_dinary))
-				val having_test =	case valueèclassê having of
-								constantèecê c =>
-									if client_clearance() dom c	
-									then []
-									else 	[denote_false‰t]
-							|	variable(exp,c) => 
-									if client_clearance() dom c	
-									then []
-									else [binop‰t(dom_op,(cc,exp))]
-				val tests = groupby_test @ having_test
-				val checks = 	
-					if length tests = 0
-					then []
-					else 	
-					let 	val t = monop‰t(not_op,
-							(fold(curry binop‰t and_op)tests))
-						val bad = 	if client_clearance() dom max_rc
-								then [where_v,t]
-								else [rvis,where_v,t]
-						val junk = anonymous_value‰t(denote_true‰t)
-						val junk_sl = select_values‰t[junk]
-					in [select‰t(all_tuples‰t(junk_sl,fs,
-						fold(curry binop‰t and_op)bad,[],denote_true‰t))]
-					end
-				val sel_q = evaluate‰t(sl,fs,w,gbs @ gbd @ gbc,valueèdataê having)
-			in (sel_q,checks)
-			end)		
-=TEX
-=SML
-|	tuple_listèmake_outerê 	(tuple‰s vals,scw,to_rc,to_tcs) = 
-			let 	val q = denote_class‰t (query_constants_class())
-				val tvals = 	(case scw of 
-						true => [q]
-			  			| 	false => [])
-						@ (case to_rc of
-						constantètcê c => []
-			  			|	other => [q])
-						@ (fold(op @)(at2(map make_col)(vals,to_tcs)))
-			in (tuple‰t tvals,[])
-			end	
-=TEX
-=SML
-|	tuple_listèmake_outerê 	(union‰s tls,scw,to_rc,to_tcs) = 
-				if length tls = 1
-				then tuple_listèmake_outerê(hd tls,scw,to_rc,to_tcs)
-				else 	let	val (ts,qs) = split(at4(map tuple_listèmake_outerê)
-								(tls,
-									seq(length tls,scw),
-									seq(length tls,to_rc),
-									seq(length tls,to_tcs)))
-					in (union‰t ts, fold (op @) qs)
-					end
-=TEX
-=SML
-|	tuple_listèmake_outerê 	(name_columns‰s(names,tul),scw,to_rc,to_tcs) 
-						= tuple_listèmake_outerê(tul,scw,to_rc,to_tcs);	
-=TEX	
-=SML
-fun 	(Ûtuple_listèouter_infoêÝ : Tuple_listèssqlê ­ bool) 
-			(table_contents‰s t) =  false
-=TEX
-=SML
-|	tuple_listèouter_infoê(all_tuples‰s(sel,fr,where,gb_sterling,gb_dinary,gb_class,having))
-			= in_new_scope(fn () =>
-			let	val fs = map from_specèenterê fr
-				val where_c = valueèclassê where
-			in 	case where_c of
-					variable(exp,c) => not(client_clearance() dom c)
-				  |	constantèecê c => not(client_clearance() dom c)
-			end)
-=TEX
-=SML
-|	tuple_listèouter_infoê(distinct_tuples‰s(sel,fr,where,gb_sterling,gb_dinary,gb_class,having))
-			= in_new_scope(fn () =>
-			let	val fs = map from_specèenterê fr
-				val where_c = valueèclassê where
-			in 	case where_c of
-					variable(exp,c) => not(client_clearance() dom c)
-				  |	constantèecê c => not(client_clearance() dom c)
-			end)
-=TEX
-=SML
-|	tuple_listèouter_infoê(evaluate‰s(sel,fr,where,gb_sterling,gb_dinary,gb_class,having))
-			= in_new_scope(fn () =>
-			let	val fs = map from_specèenterê fr
-				val where_c = valueèclassê where
-			in 	case where_c of
-					variable(exp,c) => not(client_clearance() dom c)
-				  |	constantèecê c => not(client_clearance() dom c)
-			end)
-=TEX
-=SML
-|	tuple_listèouter_infoê(tuple‰s vals) = false
-=TEX
-=SML
-|	tuple_listèouter_infoê(union‰s tls) = fold or(map tuple_listèouter_infoê tls)
-=TEX
-=SML
-|	tuple_listèouter_infoê(name_columns‰s(names,tul)) = tuple_listèouter_infoê tul;
-=TEX
-=SML
-fun 	(Ûtransformèselect_queryêÝ : Queryèssqlê ­ SsqlCol list ¸ Queryètsqlê ¸ bool ¸ TsqlClassName 
-							¸ TsqlCol list  ¸ Queryètsqlê list)
-				(select‰s vals) = 	
-					let 	val scw = tuple_listèouter_infoê vals
-						val (tn,ti,scs,rc,tcs) = tuple_listèinfoê vals
-						val (tul,chks) = tuple_listèmake_outerê(vals,scw,rc,tcs)
-					in	(scs,select‰t tul,scw,rc,tcs,chks)
-					end
-|	transformèselect_queryê	q = raise internalError;	
-=TEX							
-=SML
-fun 	(Ûqueryèselect_queryêÝ : Queryèssqlê ­ Queryètsqlê)
-			(select‰s vals) = 	let val (tn,ti,scs,rc,tcs) = tuple_listèinfoê vals
-						in select‰t(tuple_listèmakeê(vals,rc,tcs))
-						end
-|	queryèselect_queryê q = raise internalError;
-	
-=TEX	
 \newpage
 \twocolumn[\section{INDEX} \label{INDEX}]
 \small
