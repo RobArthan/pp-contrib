@@ -1,0 +1,781 @@
+=TEX
+% $Date$ $Id$ $Revision$
+\documentstyle[hol1,11pt,TQ]{article}
+\long\def\Hide#1{}
+\def\Bool{``$\it{:}bool\,$''}
+\def\Note#1{{\small\bf[Note: #1]}}
+\makeindex
+\underscoreoff
+\TPPproject{DRA FRONT END FILTER PROJECT}  %% Mandatory field
+%\TPPvolume{}
+%\TPPpart{}
+\TPPtitle{Proofs About Labelling}  %% Mandatory field
+\TPPref{DS/FMU/FEF/043}  %% Mandatory field
+\def\SCCSversion{$Revision$
+}
+\TPPissue{\SCCSversion}  %% Mandatory field
+\TPPdate{\FormatDate{$Date$
+}}  %% Mandatory field (with sensible default)
+\TPPstatus{Approved}			%% Mandatory field
+\TPPtype{Specification}
+\TPPkeywords{}
+\TPPauthor{R.~D.~Arthan & WIN01}  %% Mandatory field
+%\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
+\TPPauthorisation{R.B.~Jones & HAT Manager}
+\TPPabstract{Formal proofs establishing various results about the multi-level policy and the labelling property for SWORD (for DRA Front End Filter project RSRE 1C/6130).}
+%\TPPabstractB{}
+%\TPPabstractC{}
+%\TPPabstractD{}
+%\TPPabstractE{}
+%\TPPabstractF{}
+\TPPdistribution{\parbox[t]{4.0in}{%
+	HAT FEF File \\
+	Simon Wiseman
+}}
+%\TPPclass{CLASSIFICATION}
+\newfont{\icllogo}{icllogo50}
+\def\TPPheadlhs{$\vcenter{\halign{##\cr\icllogo ICL\cr}}$}
+%\def\TPPheadlhs{}
+%\def\TPPheadcentre{}
+%def\TPPheadrhs{}
+%\def\TPPfootlhs{}
+%\def\TPPfootcentre{}
+%\def\TPPfootrhs{}
+
+\begin{document}
+\TPPsetsizes
+\makeTPPfrontpage
+
+\vfill
+\begin{centering}
+
+%\bf Copyright \copyright\ : International Computers Ltd \number\year
+
+\end{centering}
+
+\newpage
+\section {DOCUMENT CONTROL}
+\subsection{Contents List}
+\tableofcontents
+\subsection{Document Cross References}
+\bibliographystyle{fmu}
+\bibliography{fmu,fef}
+
+\subsection{Changes History}
+\begin{description}
+\item[Issue \SCCSversion ({\FormatDate{$Date$
+}}) ] First draft. 
+
+\end{description}
+
+\subsection{Changes Forecast}
+None.
+
+\pagebreak
+\section{GENERAL}
+
+\subsection{Scope}
+
+This document contains proofs relating to the specifications in documnets \cite{DS/FMU/FEF/040,DS/FMU/FEF/042,DS/FMU/FEF/044}.
+
+\subsection{Introduction}
+
+The proofs are presented in sections which correspond to the earliest theory in which they can be conducted, which is the theory in which the proven theorems are stored, with one subsection for each result proven.
+
+\section{PROOFS FOR FEF040}
+
+The following \Product{} instructions open the theory $fef040$.
+
+=SML
+open_theory "fef040";
+push_pc "hol";
+=TEX
+=SML
+set_pc"hol";
+set_goal([], ¨µl a b∑ (l ˘ a) ˘ b = l ˘ (a ° b)Æ);
+a(REPEAT strip_tac);
+a(list_induction_tac ¨lÆ THEN asm_rewrite_tac[get_spec¨$˘Æ]);
+a(REPEAT strip_tac);
+a(cases_tac¨x ç aÆ THEN asm_rewrite_tac[get_spec¨$˘Æ]);
+(* *** Goal "1" *** *)
+a(cases_tac¨x ç bÆ THEN asm_rewrite_tac[get_spec¨$˘Æ]);
+(* *** Goal "1.1" *** *)
+a(LEMMA_T ¨x ç a ° bÆ rewrite_thm_tac THEN REPEAT strip_tac);
+(* *** Goal "1.2" *** *)
+a(LEMMA_T ¨≥x ç a ° bÆ rewrite_thm_tac THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(LEMMA_T ¨≥x ç a ° bÆ rewrite_thm_tac THEN REPEAT strip_tac);
+val €˘_˘_thm› = save_pop_thm"˘_˘_thm";
+=TEX
+=SML
+set_goal([], ¨µc∑ ≥c = lattice_top ¥ ≥lattice_top = lattice_bottomÆ);
+a(contr_tac);
+a(lemma_tac¨lattice_top dominates cÆ
+	THEN1 rewrite_tac[get_spec¨lattice_topÆ]);
+a(lemma_tac¨c dominates lattice_topÆ
+	THEN1 asm_rewrite_tac[get_spec¨lattice_topÆ]);
+a(all_fc_tac[get_spec¨lattice_topÆ]);
+val €not_lattice_top_thm› = save_pop_thm"not_lattice_top_thm";
+=TEX
+=SML
+set_goal([], ¨
+	lattice_bottom %uparrow% = Universe
+±	lattice_top %downarrow% = Universe
+Æ);
+a(PC_T1 "sets_ext" prove_tac(map get_spec
+	[¨$%uparrow%Æ, ¨$%downarrow%Æ, ¨lattice_bottomÆ]));
+val €up_down_thm1› = save_pop_thm"up_down_thm1";
+=TEX
+=SML
+set_goal([], ¨
+µc∑	c ç c %downarrow%
+± 	c ç c %uparrow%
+± 	lattice_bottom ç c %downarrow%
+± 	lattice_top ç c %uparrow%
+Æ);
+a(PC_T1 "sets_ext" prove_tac(map get_spec
+	[¨$%uparrow%Æ, ¨$%downarrow%Æ, ¨lattice_bottomÆ]));
+val €up_down_thm2› = save_pop_thm"up_down_thm2";
+=TEX
+=SML
+val €up_down_clauses› = save_thm("up_down_clauses",
+	(all_µ_intro o list_±_intro o map all_µ_elim)[up_down_thm1, up_down_thm2]);
+=TEX
+=SML
+set_goal([], ¨
+µc d∑	≥ d dominates c ¥ d %downarrow% Ä ~(c %uparrow%)
+Æ);
+a(PC_T1 "sets_ext" prove_tac(map get_spec
+	[¨~Æ, ¨$%uparrow%Æ, ¨$%downarrow%Æ, ¨lattice_bottomÆ]));
+a(contr_tac THEN all_fc_tac[get_spec¨lattice_bottomÆ]);
+val €up_down_thm3› = save_pop_thm"up_down_thm3";
+=SML
+set_merge_pcs["'bin_rel", "hol2"];
+set_goal([], ¨
+µR∑	(µc∑ R c ç Equivalence) ¥
+	(LiftRel R) ç IndexedEquiv
+Æ);
+a(rewrite_tac(map get_spec[¨LiftRelÆ, ¨IndexedEquivÆ, ¨EquivalenceÆ]) THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(asm_rewrite_tac[]);
+a(spec_nth_asm_tac 3 ¨sÆ THEN all_asm_fc_tac[] THEN all_asm_fc_tac[]);
+(* *** Goal "3" *** *)
+a(asm_rewrite_tac[]);
+a(spec_nth_asm_tac 4 ¨sÆ THEN1 all_asm_fc_tac[]);
+a(spec_nth_asm_tac 4 ¨sÆ THEN all_asm_fc_tac[] THEN all_asm_fc_tac[]);
+(* *** Goal "4" *** *)
+a(spec_nth_asm_tac 3 ¨sÆ THEN1 all_asm_fc_tac[]);
+val €lift_rel_indexed_equiv_thm› = save_pop_thm"lift_rel_indexed_equiv_thm";
+=TEX
+=SML
+set_goal([], ¨
+	µc∑ same_ins c ç Equivalence
+Æ);
+a(rewrite_tac(map get_spec[¨same_insÆ, ¨EquivalenceÆ, ¨LetÆ]) THEN
+	REPEAT strip_tac THEN asm_rewrite_tac[]);
+val €same_ins_equiv_thm› = save_pop_thm"same_ins_equiv_thm";
+=TEX
+=SML
+set_goal([], ¨
+	µc∑ same_outs c ç Equivalence
+Æ);
+a(rewrite_tac(map get_spec[¨same_outsÆ, ¨EquivalenceÆ, ¨LetÆ]) THEN
+	REPEAT strip_tac THEN asm_rewrite_tac[]);
+val €same_outs_equiv_thm› = save_pop_thm"same_outs_equiv_thm";
+=TEX
+=SML
+set_goal([], ¨
+	LiftRel same_ins ç IndexedEquiv
+±	LiftRel same_outs ç IndexedEquiv
+Æ);
+a(REPEAT strip_tac THEN
+	bc_tac[lift_rel_indexed_equiv_thm] THEN
+	rewrite_tac[same_ins_equiv_thm, same_outs_equiv_thm]);
+val €same_ins_same_outs_indexed_equiv_thm› =
+	save_pop_thm"same_ins_same_outs_indexed_equiv_thm";
+=TEX
+=SML
+set_pc"hol";
+set_goal([], ¨
+µR∑	(µc∑ R c ç Equivalence) ±
+	(µc d∑c dominates d ¥ R c Ä R d) ¥
+	µc∑ (LiftRel R)(c %downarrow%) = R c
+Æ);
+a(rewrite_tac[get_spec¨LiftRelÆ] THEN REPEAT strip_tac);
+a(PC_T1 "sets_ext" REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(spec_nth_asm_tac 1 ¨R cÆ);
+a(spec_nth_asm_tac 1 ¨cÆ);
+a(all_fc_tac[up_down_clauses]);
+(* *** Goal "2" *** *)
+a(asm_ante_tac ¨c' ç c %downarrow%Æ THEN asm_rewrite_tac[get_spec¨$%downarrow%Æ]);
+a(strip_tac THEN all_asm_fc_tac[] THEN PC_T1 "sets_ext" all_asm_fc_tac[]);
+val €equiv_anti_mono_lift_rel_thm› = save_pop_thm"equiv_anti_mono_lift_rel_thm";
+=TEX
+=SML
+set_pc"hol2";
+set_goal([], ¨
+	µc d∑c dominates d ¥ same_ins c Ä same_ins d
+Æ);
+a(rewrite_tac(map get_spec[¨same_insÆ, ¨LetÆ]) THEN
+	REPEAT strip_tac THEN rename_tac[]);
+a(LEMMA_T¨µx∑
+	x ˘ {(q, c')|d dominates c'} =
+	(x ˘ {(q, c')|c dominates c'}) ˘ {(q, c')|d dominates c'}Æ
+	(fn th => once_rewrite_tac [th] THEN asm_rewrite_tac[]));
+a(rewrite_tac[˘_˘_thm]);
+a(LEMMA_T¨{(q, c')|c dominates c'} ° {(q, c')|d dominates c'} =
+	{(q, c')|d dominates c'}Æ rewrite_thm_tac);
+(* *** Goal "1" *** *)
+a(REPEAT strip_tac);
+a(all_fc_tac[get_spec¨$dominatesÆ]);
+val €same_ins_anti_mono_thm› = save_pop_thm"same_ins_anti_mono_thm";
+=TEX
+=SML
+set_pc"hol2";
+set_goal([], ¨
+	µc d∑c dominates d ¥ same_outs c Ä same_outs d
+Æ);
+a(rewrite_tac(map get_spec[¨same_outsÆ, ¨LetÆ]) THEN
+	REPEAT strip_tac THEN rename_tac[]);
+a(LEMMA_T¨µx∑
+	x ˘ {(c', d')|d dominates c'} =
+	(x ˘ {(c', d')|c dominates c'}) ˘ {(c', d')|d dominates c'}Æ
+	(fn th => once_rewrite_tac [th] THEN asm_rewrite_tac[]));
+a(rewrite_tac[˘_˘_thm]);
+a(LEMMA_T¨{(c', d')|c dominates c'} ° {(c', d')|d dominates c'} =
+	{(c', d')|d dominates c'}Æ rewrite_thm_tac);
+(* *** Goal "1" *** *)
+a(REPEAT strip_tac);
+a(all_fc_tac[get_spec¨$dominatesÆ]);
+val €same_outs_anti_mono_thm› = save_pop_thm"same_outs_anti_mono_thm";
+=TEX
+=SML
+set_pc"hol";
+set_goal([], ¨
+µc∑	(LiftRel same_ins)(c %downarrow%) = same_ins c
+±	(LiftRel same_outs)(c %downarrow%) = same_outs c
+Æ);
+a(REPEAT strip_tac THEN intro_µ_tac(¨c:ClassÆ, ¨c:ClassÆ) THEN
+	bc_tac[equiv_anti_mono_lift_rel_thm] THEN
+	rewrite_tac
+	[same_ins_equiv_thm, same_outs_equiv_thm,
+	same_ins_anti_mono_thm, same_outs_anti_mono_thm]);
+val €lift_rel_same_ins_same_outs_down_set_thm› =
+	save_pop_thm"lift_rel_same_ins_same_outs_down_set_thm";
+=TEX 
+=SML
+set_pc"hol";
+set_goal([], conj_040_1);
+a(rewrite_tac(map get_spec[¨secureÆ, ¨ml_secureÆ, ¨x_ml_secureÆ]) THEN
+	REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(rewrite_tac[same_ins_same_outs_indexed_equiv_thm]);
+(* *** Goal "2" *** *)
+a(rewrite_tac[same_ins_same_outs_indexed_equiv_thm]);
+(* *** Goal "3" *** *)
+a(POP_ASM_T ante_tac THEN
+	asm_rewrite_tac[lift_rel_same_ins_same_outs_down_set_thm]);
+(* *** Goal "4" *** *)
+a(swap_nth_asm_concl_tac 2 THEN
+	asm_rewrite_tac[lift_rel_same_ins_same_outs_down_set_thm]);
+a(contr_tac THEN all_asm_fc_tac[]);
+val €thm_040_1› = save_pop_thm"thm_040_1";
+=TEX 
+=SML
+val €ﬁ_Ä_thm› = pc_rule1 "sets_ext" prove_rule[]¨µa b∑ a Ä b ¥ ﬁa Ä ﬁbÆ;
+=SML
+=TEX 
+=SML
+set_merge_pcs["'bin_rel", "hol2"];
+set_goal([], ¨µc∑ SameLabVal c ç EquivalenceÆ);
+a(rewrite_tac(map get_spec[¨SameLabValÆ, ¨EquivalenceÆ])
+	THEN REPEAT strip_tac THEN PC_T1 "prop_eq" asm_prove_tac[]);
+val €same_lab_val_equiv_thm› = save_pop_thm"same_lab_val_equiv_thm";
+=TEX 
+=SML
+set_pc"hol";
+set_goal([], ¨LiftRel SameLabVal ç IndexedEquivÆ);
+a(bc_tac[lift_rel_indexed_equiv_thm] THEN rewrite_tac[same_lab_val_equiv_thm]);
+val €lift_rel_same_lab_val_equiv_thm› =
+	save_pop_thm"lift_rel_same_lab_val_equiv_thm";
+=TEX
+=SML
+set_pc"hol2";
+set_goal([], ¨
+	µc d∑c dominates d ¥ SameLabVal c Ä SameLabVal d
+Æ);
+a(rewrite_tac(map get_spec[¨SameLabValÆ]) THEN REPEAT strip_tac);
+a(all_fc_tac[get_spec¨$dominatesÆ]);
+val €same_lab_val_anti_mono_thm› = save_pop_thm"same_lab_val_anti_mono_thm";
+=TEX
+=SML
+set_pc"hol";
+set_goal([], ¨
+µc∑	(LiftRel SameLabVal)(c %downarrow%) = SameLabVal c
+Æ);
+a(bc_tac[equiv_anti_mono_lift_rel_thm] THEN
+	rewrite_tac[same_lab_val_equiv_thm, same_lab_val_anti_mono_thm]);
+val €lift_rel_same_lab_val_down_set_thm› =
+	save_pop_thm"lift_rel_same_lab_val_down_set_thm";
+=TEX 
+=SML
+set_pc"hol";
+set_goal([], conj_040_2);
+a(rewrite_tac(lift_rel_same_lab_val_down_set_thm:: map get_spec
+	[¨BoundedObsÆ, ¨ObservedValueÆ, ¨SameLabValÆ,
+	¨x_ml_secureÆ, ¨InfluencedÆ]) THEN
+	PC_T1 "hol2" REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(rename_tac[(¨x'Æ, "d")] THEN rewrite_tac[get_spec¨$%downarrow%Æ]);
+a(cases_tac¨µe∑e dominates dÆ THEN1 asm_rewrite_tac[]);
+a(list_spec_nth_asm_tac 4 [¨eÆ, ¨xÆ, ¨yÆ]);
+a(all_fc_tac[up_down_thm3]);
+a(LIST_GET_NTH_ASM_T [8]
+	(ALL_FC_T (PC_T1 "sets_ext" all_fc_tac) o
+		map (rewrite_rule[get_spec¨IndexedEquivÆ])));
+(* *** Goal "2" *** *)
+a(rename_tac[(¨x'Æ, "d")] THEN rewrite_tac[get_spec¨$%downarrow%Æ]);
+a(contr_tac);
+a(all_fc_tac[up_down_thm3]);
+a(LIST_GET_NTH_ASM_T [7]
+	(ALL_FC_T (PC_T1 "sets_ext" all_fc_tac) o
+		map (rewrite_rule[get_spec¨IndexedEquivÆ])));
+a(list_spec_nth_asm_tac 6 [¨C xÆ, ¨xÆ, ¨yÆ]);
+a(swap_nth_asm_concl_tac 1 THEN rewrite_tac[get_spec¨lattice_bottomÆ]);
+val €thm_040_2› = save_pop_thm"thm_040_2";
+=TEX 
+=SML
+set_pc"hol";
+set_goal([], ¨µc∑c %downarrow% = •{A | ∂d∑≥c dominates d ± A = ~(d %uparrow%)}Æ);
+a(rewrite_tac(map get_spec[¨$%downarrow%Æ, ¨$%uparrow%Æ]) THEN
+	PC_T1 "sets_ext" REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(asm_rewrite_tac[get_spec¨~Æ]);
+a(contr_tac THEN all_fc_tac[get_spec¨$dominatesÆ]);
+(* *** Goal "2" *** *)
+a(cases_tac¨c dominates xÆ);
+a(spec_nth_asm_tac 2 ¨~{y | y dominates x}Æ);
+(* *** Goal "2.1" *** *)
+a(spec_nth_asm_tac 1 ¨xÆ);
+(* *** Goal "2.2" *** *)
+a(POP_ASM_T ante_tac THEN rewrite_tac(map get_spec[¨~Æ, ¨$dominatesÆ]));
+val €down_•_comp_up_thm› = save_pop_thm"down_•_comp_up_thm";
+=TEX 
+=IGN SML
+set_pc"hol2";
+set_goal([], conj_040_3);
+a(rewrite_tac(lift_rel_same_lab_val_down_set_thm:: map get_spec
+	[¨BoundedObsÆ, ¨ObservedValueÆ, ¨SameLabValÆ,
+	¨x_ml_secureÆ, ¨InfluencedÆ]) THEN
+	PC_T1 "hol2" REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(rewrite_tac[lift_rel_same_lab_val_equiv_thm]);
+(* *** Goal "2" *** *)
+a(POP_ASM_T (strip_asm_tac o rewrite_rule[down_•_comp_up_thm]));
+
+
+a(rename_tac[(¨c'Æ, "d")] THEN 
+	GET_NTH_ASM_T 2
+	(strip_asm_tac o µ_elim¨iâ1Æ o pc_rule1"hol2" rewrite_rule[]));
+a(rename_tac[(¨x':ClassÆ, "e")]);
+a(cases_tac¨c dominates dÆ);
+(* *** Goal "2.1" *** *)
+=IGN SML
+set_pc"hol2";
+set_goal([], conj_040_3);
+
+
+set_goal([],
+	¨ObservedValue (c, C, V) ç ml_secure s (LiftRel SameLabVal) § UNKNOWNÆ);
+a(rewrite_tac(map get_spec
+	[¨ObservedValueÆ, ¨SameLabValÆ,
+	¨ml_secureÆ]) THEN
+	PC_T1 "hol2" REPEAT strip_tac);
+
+
+val €thm_040_3› = save_pop_thm"thm_040_3";
+
+\section{PROOFS FOR FEF042}
+
+The following \Product{} instructions open the theory $fef042$.
+
+=SML
+open_theory "fef042";
+push_pc "hol";
+=TEX
+=SML
+(delete_pc"'tree" handle Fail _ => ());
+new_pc"'tree";
+set_∂_cd_thms[tree_prim_rec_thm] "'tree";
+set_merge_pcs ["'tree", "hol"];
+=SML
+push_goal([], ¨µx y∑ MkTree x = MkTree y ¥ x = yÆ);
+a(REPEAT strip_tac);
+a(lemma_tac¨∂f∑ µz∑ f(MkTree z) = zÆ THEN1 prove_∂_tac);
+a(lemma_tac¨y = f(MkTree x)Æ THEN1
+	(GET_NTH_ASM_T 2 rewrite_thm_tac THEN POP_ASM_T rewrite_thm_tac));
+a(POP_ASM_T rewrite_thm_tac THEN POP_ASM_T rewrite_thm_tac);
+val €mk_tree_one_one_thm› = save_pop_thm"mk_tree_one_one_thm";
+=TEX
+=SML
+push_goal([], ¨µt∑ ∂x∑ t = MkTree xÆ);
+a(REPEAT strip_tac);
+a(gen_induction_tac tree_induction_thm ¨tÆ);
+a(∂_tac¨xÆ THEN REPEAT strip_tac);
+val €mk_tree_onto_thm› = save_pop_thm"mk_tree_onto_thm";
+=TEX
+=SML
+push_consistency_goal¨MkObjÆ;
+a(lemma_tac¨∂mk_obj∑µ c: Class; t : Text; os : Obj LIST∑
+	mk_obj (c, t, os) = MkTree ((c, t), os)Æ
+	THEN1 prove_∂_tac);
+a(lemma_tac¨∂object_class object_text object_refers∑
+	µctos: (Class ∏ Text) ∏ Obj LIST∑
+	object_class (MkTree (ctos)) = Fst (Fst ctos)
+±	object_text (MkTree (ctos)) = Snd(Fst ctos)
+±	object_refers (MkTree (ctos)) = Snd ctosÆ
+	THEN1 prove_∂_tac);
+a(∂_tac ¨(mk_obj, object_class, object_text, object_refers)Æ);
+a(asm_rewrite_tac[]);
+save_consistency_thm¨MkObjÆ(pop_thm());
+=TEX
+=SML
+push_goal([], ¨µ d∑ ∂â1 h∑ µ c t os∑
+	h (MkObj (c, t, os)) = d c t (Map h os)Æ);
+a(REPEAT strip_tac);
+a(strip_asm_tac (µ_elim ¨(Ãx:(Class ∏ Text) ∏ Obj LIST; y∑
+	d (Fst(Fst x)) (Snd(Fst x)) y)Æ tree_prim_rec_thm));
+a(∂â1_tac¨hÆ THEN asm_rewrite_tac[get_spec¨MkObjÆ]);
+a(REPEAT strip_tac);
+a(lemma_tac¨µ ctos∑ h' (MkTree ctos) =
+		d (Fst (Fst ctos)) (Snd (Fst ctos)) (Map h' (Snd ctos))Æ
+	THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(LEMMA_T¨ctos = ((Fst (Fst ctos), Snd (Fst ctos)), Snd ctos)Æ
+	once_rewrite_thm_tac THEN1 rewrite_tac[]);
+a(TOP_ASM_T pure_rewrite_thm_tac);
+a(rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(lemma_tac¨µ x
+           ∑ h' (MkTree x)
+               = (Ã x y∑ d (Fst (Fst x)) (Snd (Fst x)) y) x (Map h' (Snd x))Æ
+	THEN1 asm_rewrite_tac[]);
+a(all_asm_fc_tac[]);
+val €obj_prim_rec_thm› = save_pop_thm"obj_prim_rec_thm";
+=TEX
+=SML
+push_goal([], ¨
+(µ x∑ MkObj x = MkTree ((Fst x, Fst(Snd x)), Snd(Snd x))) ±
+µ ctos∑	objectClass(MkTree ctos) = Fst (Fst ctos)
+±	 objectContains(MkTree ctos) = Snd (Fst ctos)
+±	 objectRefers(MkTree ctos) = Snd ctos
+Æ);
+a(lemma_tac ¨µ x∑ MkObj x = MkTree ((Fst x, Fst(Snd x)), Snd(Snd x))Æ);
+(* *** Goal "1" *** *)
+a(strip_tac);
+a(LEMMA_T ¨x = (Fst x, (Fst(Snd x)), Snd(Snd x))Æ once_rewrite_thm_tac
+	THEN1 rewrite_tac[]);
+a(pure_rewrite_tac[get_spec¨MkObjÆ]);
+a(rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(ante_tac (get_spec¨MkObjÆ) THEN asm_rewrite_tac[]);
+a(strip_tac THEN strip_tac);
+a(LEMMA_T ¨ctos = ((Fst (Fst ctos), Snd (Fst ctos)), Snd ctos)Æ once_rewrite_thm_tac
+	THEN1 rewrite_tac[]);
+a(pure_asm_rewrite_tac[]);
+a(rewrite_tac[]);
+val €object_clauses› = save_pop_thm"object_clauses";
+=TEX
+=SML
+=TEX
+=SML
+push_consistency_goal¨output_seqÆ;
+a(lemma_tac ¨∂os : Req LIST ≠ 'State Machine ≠ 'State ≠ Obj LIST∑
+	µr rs mch s∑
+	os [] mch s = []
+±	os (Cons r rs) mch s =
+	Cons
+	(Output mch (s, r))
+	(os rs mch (Next mch (s, r)))Æ
+	THEN1 prove_∂_tac);
+a(∂_tac¨Ãmch (s, rs)∑ os rs mch sÆ);
+a(asm_rewrite_tac[]);
+save_consistency_thm¨output_seqÆ(pop_thm());
+=TEX
+Following is lengthy but not really difficult.
+The basic idea is to define a propositional function by primitive recursion over trees which represents the set function required for the witness.
+The proof is then just a check that the formula defining the propositional function is essentially the same as the one the witness is required to satisfy.
+This involves (inter alia) two inductive proofs of two little lemmas about the formulae which are used to ``combine the recursive applications''.
+=SML
+push_consistency_goal¨identicalObjÆ;
+a(lemma_tac ¨∂io : Obj ≠ Class ≠ Obj ≠ BOOL∑ µctos c oâ2∑
+	io (MkTree ctos) c oâ2 §
+	∂ câ1 tâ1 osâ1 câ2 tâ2 osâ2∑
+		(MkTree ctos) = MkObj (câ1, tâ1, osâ1)
+	±	oâ2 = MkObj (câ2, tâ2, osâ2)
+	±	câ1 = câ2
+	±	(	c dominates câ1
+		¥	tâ1 = tâ2
+		±	Length osâ1 = Length osâ2
+		±	µp o2∑ (p, o2) ç
+			Elems (Combine (Map io (Snd ctos)) osâ2)
+			¥	p c o2)Æ
+	THEN1 prove_∂_tac);
+a(∂_tac¨Ãc∑ {(o1, o2) | io o1 c o2}Æ THEN
+	PC_T1 "sets_ext1" asm_rewrite_tac[object_clauses]);
+a(PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(strip_asm_tac(µ_elim¨x1Æ mk_tree_onto_thm) THEN var_elim_nth_asm_tac 1);
+a(strip_asm_tac(µ_elim¨x2Æ mk_tree_onto_thm) THEN var_elim_nth_asm_tac 1);
+a(MAP_EVERY ∂_tac[
+	¨Fst(Fst x)Æ, ¨Snd(Fst x)Æ, ¨Snd xÆ,
+	¨Fst(Fst x')Æ, ¨Snd(Fst x')Æ, ¨Snd x'Æ]
+	THEN rewrite_tac[]);
+a(POP_ASM_T ante_tac THEN asm_rewrite_tac[object_clauses]);
+a(strip_tac);
+(* *** Goal "1.1" *** *)
+a(all_fc_tac[mk_tree_one_one_thm]);
+a(MAP_EVERY var_elim_nth_asm_tac [1,1,2]);
+a(asm_rewrite_tac[]);
+(* *** Goal "1.2" *** *)
+a(all_fc_tac[mk_tree_one_one_thm]);
+a(MAP_EVERY var_elim_nth_asm_tac [1,1,3,3]);
+a(POP_ASM_T ante_tac THEN asm_rewrite_tac[]);
+a(POP_ASM_T ante_tac);
+a(intro_µ_tac(¨osâ1Æ, ¨osâ1Æ));
+a(list_induction_tac¨osâ2Æ);
+(* *** Goal "1.2.1" *** *)
+a(rewrite_tac[get_spec¨LengthÆ, length_0_thm]);
+a(REPEAT_N 2 strip_tac THEN asm_rewrite_tac(map get_spec
+	[¨CombineÆ, ¨MapÆ, ¨ElemsÆ]));
+(* *** Goal "1.2.2" *** *)
+a(rewrite_tac[get_spec¨LengthÆ, length_0_thm]);
+a(REPEAT µ_tac);
+a(strip_asm_tac(µ_elim¨osâ1Æ list_cases_thm) THEN var_elim_nth_asm_tac 1
+	THEN rewrite_tac[get_spec¨LengthÆ]);
+a(PC_T1 "sets_ext1" rewrite_tac(map get_spec [¨CombineÆ, ¨MapÆ, ¨ElemsÆ]));
+a(REPEAT strip_tac);
+(* *** Goal "1.2.2.1" *** *)
+a(MAP_EVERY var_elim_nth_asm_tac [1,1]);
+a(list_spec_nth_asm_tac 2 [¨io x'Æ, ¨xÆ]);
+(* *** Goal "1.2.2.2" *** *)
+a(lemma_tac¨µ p o2∑ (p, o2) ç Elems (Combine (Map io list2) osâ2) ¥ p c o2Æ
+	THEN1 (REPEAT strip_tac THEN all_asm_fc_tac[]));
+a(all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(asm_rewrite_tac[]);
+a(rename_tac[] THEN rewrite_tac[object_clauses]);
+a(MAP_EVERY ∂_tac[
+	¨câ1Æ, ¨tâ1Æ, ¨osâ1Æ,
+	¨câ2Æ, ¨tâ2Æ, ¨osâ2Æ]
+	THEN asm_rewrite_tac[]);
+(* *** Goal "3" *** *)
+a(asm_rewrite_tac[]);
+a(MAP_EVERY ∂_tac[
+	¨câ2Æ, ¨tâ2Æ, ¨osâ1Æ,
+	¨câ2Æ, ¨tâ2Æ, ¨osâ2Æ]
+	THEN asm_rewrite_tac[]);
+a(rewrite_tac[object_clauses]);
+a(REPEAT strip_tac);
+a(LIST_DROP_NTH_ASM_T [1,3,4] (MAP_EVERY ante_tac));
+a(LIST_DROP_NTH_ASM_T [1,2,3,4,5,6] discard_tac);
+a(intro_µ_tac(¨osâ1Æ, ¨osâ1Æ));
+a(list_induction_tac¨osâ2Æ);
+(* *** Goal "3.1" *** *)
+a(rewrite_tac[get_spec¨LengthÆ, length_0_thm]);
+a(REPEAT µ_tac);
+a(strip_asm_tac(µ_elim¨osâ1Æ list_cases_thm) THEN var_elim_nth_asm_tac 1
+	THEN rewrite_tac[get_spec¨LengthÆ]);
+a(PC_T1 "sets_ext1" rewrite_tac(map get_spec [¨CombineÆ, ¨MapÆ, ¨ElemsÆ]));
+(* *** Goal "3.2" *** *)
+a(rewrite_tac[get_spec¨LengthÆ, length_0_thm]);
+a(REPEAT µ_tac);
+a(strip_asm_tac(µ_elim¨osâ1Æ list_cases_thm) THEN var_elim_nth_asm_tac 1
+	THEN rewrite_tac[get_spec¨LengthÆ]);
+a(PC_T1 "sets_ext1" rewrite_tac(map get_spec [¨CombineÆ, ¨MapÆ, ¨ElemsÆ]));
+a(REPEAT strip_tac);
+(* *** Goal "3.2.1" *** *)
+a(MAP_EVERY var_elim_nth_asm_tac [1,1]);
+a(list_spec_nth_asm_tac 1 [¨x'Æ, ¨xÆ]);
+(* *** Goal "3.2.2" *** *)
+a(lemma_tac¨µ x1 x2∑ (x1, x2) ç Elems (Combine list2 osâ2) ¥ io x1 c x2Æ
+	THEN1 (REPEAT strip_tac THEN all_asm_fc_tac[]));
+a(all_asm_fc_tac[]);
+save_consistency_thm¨identicalObjÆ(pop_thm());
+=TEX
+=SML
+push_consistency_goal¨FilterObjÆ;
+a(rewrite_tac[object_clauses]);
+a(lemma_tac ¨∂f : Class ≠ Obj ≠ Obj∑ µ c dtos∑
+	f c (MkTree dtos) =
+	let (d, t) = Fst dtos
+	in	if c dominates d
+                   then MkTree ((d, t), Map (f c) (Snd dtos))
+                   else MkTree ((d, Arbitrary), Arbitrary)Æ
+	THEN1 prove_∂_tac);
+a(∂_tac¨fÆ THEN asm_rewrite_tac[let_def]);
+save_consistency_thm¨FilterObjÆ(pop_thm());
+=TEX
+Some results about {\it sameRequests}
+set_goal ([], ¨LiftRel sameRequests ç IndexedEquivÆ);
+a (rewrite_tac (map get_spec [¨LiftRelÆ,¨IndexedEquivÆ]));
+a (rewrite_tac (map get_spec [¨LiftRelÆ,¨sameRequestsÆ,¨IndexedEquivÆ]));
+=SML
+\section{PROOFS ABOUT FEF043}
+
+The following \Product{} instructions open the theory $fef043$.
+
+=SML
+open_theory "fef043";
+=TEX
+
+\subsection{Consistency of {\it list_machine}}
+
+=SML
+push_consistency_goal¨lift_machineÆ;
+a (prove_∂_tac THEN strip_tac);
+a (lemma_tac ¨∂ lm ∑ 
+	(lm [] = Ãs∑([], s))
+ ± (µ r rl ∑
+	lm (Cons r rl) =
+	Ã s ∑ (let out = Output mch' (s, r) and s' = Next mch' (s, r)
+             in let (outl, final_state) = lm rl s'
+                in (Cons out outl, final_state)))Æ
+	THEN1 prove_∂_tac);
+a (∂_tac ¨Ãs rl∑ lm rl sÆ);
+a (asm_rewrite_tac[]);
+save_consistency_thm¨lift_machineÆ(pop_thm());
+=TEX
+
+\subsection{Consistency Proof}
+
+The simplest consistency proof is obtained by using a constant function as follows.
+
+πHOLCONST
+‹	€simplest_witness› : 'State FactoredMachine
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹    simplest_witness =
+‹	let next = Ã sr ∑ Arbitrary
+‹	and output = Ã sr ∑  Arbitrary
+‹	and init = Arbitrary
+‹	and f0 = Ã c ob s ∑ Arbitrary
+‹	in	let (f1,f2,f3) = (f0,f0,f0)
+‹	in	let	mach = MkMachine next output init
+‹		and	facs = MkFactorisation f0 f1 f2 f3
+‹		in	MkFactoredMachine mach facs
+∞
+
+=SML
+set_goal([],¨
+	machine simplest_witness =
+		MkMachine (Ã sr ∑  Arbitrary) (Ã sr ∑  Arbitrary) Arbitrary
+ ±	factors simplest_witness =
+		MkFactorisation (Ã c ob s ∑ Arbitrary) (Ã c ob s ∑ Arbitrary)
+		(Ã c ob s ∑ Arbitrary) (Ã c ob s ∑ Arbitrary)
+ Æ);
+a (rewrite_tac (let_def::(map get_spec [¨simplest_witnessÆ,¨machineÆ])));
+val lemma_043_1 = save_pop_thm "lemma_043_1";
+=TEX
+set_labelled_goal "2";
+
+=SML
+set_goal([],¨µc x∑ (x, x) ç identicalObj cÆ);
+=TEX
+=SML
+set_pc "hol2";
+set_goal([],¨LiftRel sameRequests ç IndexedEquivÆ);
+a (lemma_tac ¨µ c∑ sameRequests c ç EquivalenceÆ);
+(* *** Goal "1" *** *)
+a (rewrite_tac (map get_spec [¨sameRequestsÆ, ¨EquivalenceÆ]));
+a (REPEAT strip_tac);
+(* *** Goal "1.1" *** *)
+a (rewrite_tac [
+	get_spec ¨ReflexiveÆ,
+	get_spec ¨sameRequestÆ,
+	get_spec ¨ElemsÆ,
+	let_def,
+	sets_ext_clauses]);
+a (REPEAT strip_tac);
+a (lemma_tac ¨µy:Req LIST∑ (x1, x2) ç Elems (Combine y y) ¥ x1 = x2Æ);
+(* *** Goal "1.1.1" *** *)
+a strip_tac;
+a (list_induction_tac ¨yÆ THEN asm_rewrite_tac (map get_spec [
+	¨CombineÆ,¨$˘Æ,
+	¨ElemsÆ]));
+a (REPEAT strip_tac THEN asm_rewrite_tac[]);
+(* *** Goal "1.1.2" *** *)
+a (ALL_ASM_FC_T rewrite_tac []);
+=GFT
+(* *** Goal "1.1.2" *** *)
+
+(*  2 *)  ¨(x1, x2) ç Elems (Combine (x ˘ VisibleReq c) (x ˘ VisibleReq c))Æ
+(*  1 *)  ¨µ y∑ (x1, x2) ç Elems (Combine y y) ¥ x1 = x2Æ
+
+(* ?Ù *)  ¨(reqSsql x2, reqSsql x2) ç identicalObj cÆ
+
+=SML
+(* *** Goal "2" *** *)
+a (fc_tac [lift_rel_indexed_equiv_thm]);
+=TEX
+=SML
+set_goal([],¨LiftRel (same_at_c_below_level 1) ç IndexedEquivÆ);
+=TEX
+=SML
+set_goal([],¨LiftRel (same_at_c_below_level 2) ç IndexedEquivÆ);
+=TEX
+=SML
+set_goal([],¨LiftRel (same_at_c_below_level 3) ç IndexedEquivÆ);
+=SML
+set_goal([],¨simplest_witness ç label_secureÆ);
+a (rewrite_tac ((map get_spec [
+	¨label_secureÆ , ¨label_secure_toÆ, ¨factor0Æ
+	])@[let_def, lemma_043_1]));
+a (rewrite_tac ([let_def]@(map get_spec [
+	¨ml_secureÆ,¨x_ml_secureÆ,¨special_machineÆ,¨machineÆ,¨NextÆ,¨$ªâfÆ])));
+=GFT
+(* *** Goal "" *** *)
+
+(* ?Ù *)  ¨(LiftRel sameRequests ç IndexedEquiv
+               ± LiftRel (same_at_c_below_level 1) ç IndexedEquiv
+               ± (µ c iâ1 iâ2
+               ∑ (iâ1, iâ2) ç LiftRel sameRequests (c %downarrow%)
+                   ¥ (Arbitrary, Arbitrary)
+                     ç LiftRel (same_at_c_below_level 1) (c %downarrow%)))
+             ± (LiftRel sameRequests ç IndexedEquiv
+               ± LiftRel (same_at_c_below_level 2) ç IndexedEquiv
+               ± (µ c iâ1 iâ2
+               ∑ (iâ1, iâ2) ç LiftRel sameRequests (c %downarrow%)
+                   ¥ (Arbitrary, Arbitrary)
+                     ç LiftRel (same_at_c_below_level 2) (c %downarrow%)))
+             ± LiftRel sameRequests ç IndexedEquiv
+             ± LiftRel (same_at_c_below_level 3) ç IndexedEquiv
+             ± (µ c iâ1 iâ2
+             ∑ (iâ1, iâ2) ç LiftRel sameRequests (c %downarrow%)
+                 ¥ (Arbitrary, Arbitrary)
+                   ç LiftRel (same_at_c_below_level 3) (c %downarrow%))Æ
+=SML
+(* *** Goal "1" *** *)
+(* a (REPEAT strip_tac);
+a (rewrite_tac [let_def]);
+a (rewrite_tac (map get_spec [¨LiftRelÆ]));
+a (rewrite_tac (map get_spec [¨lift_machineÆ]));
+*)
+=TEX
+
+
+\section{CLOSING DOWN}
+
+The following \Product{} instruction restores the previous proof context.
+
+=SML
+pop_pc();
+=TEX
+\newpage
+\twocolumn[\section{INDEX} \label{INDEX}]
+\small
+\printindex
+
+\end{document}
