@@ -4,16 +4,31 @@
 \usepackage{A4}
 \usepackage{latexsym}
 \def\Hide#1{\relax}
-\title{On Refinement}
+\title{On Refinement and Partial Correctness}
 \author{R.D. Arthan}
 \makeindex
 \begin{document}
 \maketitle
+\section{Introduction}
+This note is a working paper on refinement and partial correctness.
+It aims to provide a simple formal model in which to reason about
+refinement notations along the lines of the Compliance Notation.
+It is particularly intended to assist with work on handling more
+complex control flow than is currently handled in the Compliance Notation.
+
 \section{A Compliance Notation Example}
+Since this note may need to be understood at some future date by an audience
+who are not familiar with the Compliance Notation, this section contains
+a simple example. However, as the current audience are expected to
+know about the Compliance Notation, this is just a place-holder and
+the accompanying narrative has not yet been written.
+
 \subsection{Package Specification}
+\Hide{
 =SML
 new_script{name = "SUM", state=initial_cn_state};
-
+=TEX
+}
 πCN
 package €sum› is
   type €data› is range -1000 .. 1000;
@@ -27,8 +42,11 @@ end sum;
 ∞
 =TEX
 \subsection{Package Body}
+\Hide{
 =SML
 new_script{name = "SUM_BODY", state=get_cn_state()};
+=TEX
+}
 πCN
 package body €sum› is
   procedure €sum_pos› (x : in data)
@@ -90,12 +108,16 @@ sed -e '/^$/d' -e '/^[a-zA-Z(]/{
 print_z_document "SUM";
 print_z_document "SUM_BODY";
 =TEX
-{\ftlinepenalty=9999
-\underscoreoff\subsection{Z Documents}
-\input{refine1.zed.tex}
-\input{refine2.zed.tex}}
-\section{A Z Model}
+%{\ftlinepenalty=9999
+%\underscoreoff\subsection{Z Documents}
+%\input{refine1.zed.tex}
+%\input{refine2.zed.tex}}
+\section{A Z Model For Refinement Notations}
+We wish to give a formal model for understanding refinement notations
+along the lines of the Compliance Notation.
+This section builds up this material.
 \subsection{Preamble}
+The following ML sets up a context for giving the {\ProductZ} specifications.
 =SML
 open_theory"z_library";
 set_pc"z_library1";
@@ -122,21 +144,38 @@ which is a state $s'$ such that $(s, s') \in t$.
 
 \subsection{A First Notion of Program}
 Our first notion of programs has five syntactic categories:
-\begin{description}
-\item[Atom:] this comprises some set of primitive operations on the state. In a typical
-imperative language, the atoms might be the denotations of assignment statements.
-\item[Seq:] sequential composition
-\item[If:] if-then-else
-\item[While:] while-loop
-\item[Spec:] programs with specifications; the specification is a state transformer
+
+\begin{center}
+\begin{tabular}{|l|p{4in}|}\hline
+Atom &
+This comprises some set of primitive operations on the state. In a typical
+imperative language, the atoms might be the denotations of assignment statements
+and procedure calls. In the Compliance Notation, the denotation of a procedure
+call is represented by an instance of the formal specification appearing
+in the procedure header.
+\\\hline
+Seq &
+Sequential composition
+\\\hline
+If &
+If-then-else
+\\\hline
+While &
+While-loop
+\\\hline
+Spec &
+Programs with specifications; the specification is a state transformer
 that we would like the program to refine. In a notation like the Compliance Notation
 the specifications would be the denotations of pre- and post-condition pairs.
-\end{description}
+However, it is necessary for to record the pre-condition separately.
+\\\hline
+\end{tabular}
+
+\end{center}
 
 Here in a notation like the Compliance Notation, the states will be
 assignments of values to program variables.
-A pre-conditions is predicate whose free variables are program variables.
-A post-condition is a predicate whose free variables are
+Syntactically, a pre-condition is a predicate whose free variables are program variables and a post-condition is a predicate whose free variables are
 program variables with optional decoration to distinguish values in the before-state
 from values in the after-state.
 A pre-condition denotes the set of assignments, $\alpha$, in which the program
@@ -144,21 +183,43 @@ variables satisfy the pre-condition and a post-condition denotes
 the relation, $\rho$, which holds between two states $s$ and $s'$ when $s \times s'$
 satisfies the post-condition after makihng the appropriate binding of before- and after-values
 to the variables in the post-condition.
-Taken together, we think of the pre- and post-condition as denoting the state transformer
+
+Taken together, we can often think of the pre- and post-condition as denoting the state transformer
 =INLINEFT
 ¡ Ú “
 =TEX
 .
+However, we lose some expressiveness in doing this, since, for example,
+if the post-condition is unsatisfiable, the pre-condition effectively
+defines a set of states in which the program must not terminate.
+Consequently, we must keep a separate record of the pre-condition. 
+
+Quite often, we will work with post-conditions having the form
+{\it STATE} $\times$ $\beta$, where $\beta$ is some set of
+states. These correspond to syntactic post-conditions that do
+not mention initial values (i.e., values in the before-state).
+The state transformer,
+=INLINEFT
+¡ Ú “
+=TEX
+\ of the previous paragraph reduces to
+=INLINEFT
+¡ ∏ ¬
+=TEX
+\ in this special case and we will sometimes just talk of
+the set $\beta$ representing the post-condition.
+
 
 A predicate on states is just a set of states, i.e., the denotation of the
 usual syntactic notion of a predicate:
 πZ
-‹ €PREDICATE› ¶ STATE
+‹ €PRED› ¶ STATE
 ∞
 
-As discussed above, specifications are just state transformers:
+As discussed above, specifications comprises a ;predicate
+giving the pre-condition and a state transforme giving the post-condition.
 πZ
-‹ €SPECIFICATION› ¶ STATE_TRANSFORMER
+‹ €SPEC› ¶ PRED ∏ STATE_TRANSFORMER
 ∞
 
 We can now represent programs abstractly using the following free type, in which we freely
@@ -166,22 +227,22 @@ mingle semantic and syntactic domains to simplify later work. We also use a tree
 structure rather than a linear list for sequential composition, since that is semantically
 harmless, and, again, helps to keep things simple later on.
 πZ
-‹ €PROGRAM› ::=
+‹ €PROG› ::=
 ‹	€Atom› (STATE_TRANSFORMER)
-‹ |	€Seq› (PROGRAM ∏ PROGRAM)
-‹ |	€If› (PREDICATE ∏ PROGRAM ∏ PROGRAM)
-‹ |	€While› (PREDICATE ∏ PROGRAM)
-‹ |	€Spec› (SPECIFICATION ∏ PROGRAM)
+‹ |	€Seq› (PROG ∏ PROG)
+‹ |	€If› (PRED ∏ PROG ∏ PROG)
+‹ |	€While› (PRED ∏ PROG)
+‹ |	€Spec› (SPEC ∏ PROG)
 ∞
-The following function gives the semantics of this first notion of a program.
+The following function gives the semantics of this notion of a program.
 The semantic value of a program is a state transformer.
 In the semantics, the specifications in the syntactic category Spec are just
 ignored --- it is the actual code that determines the semantics, not our aspirations
 for it.
 πZAX
-‹ €semantics› : PROGRAM ≠ STATE_TRANSFORMER
+‹ €semantics› : PROG ≠ STATE_TRANSFORMER
 ˜¸¸¸¸¸¸
-‹ µt : STATE_TRANSFORMER; pâ1, pâ2 : PROGRAM; c : PREDICATE; s : SPECIFICATION∑
+‹ µt : STATE_TRANSFORMER; pâ1, pâ2 : PROG; c : PRED; s : SPEC∑
 ‹	semantics (Atom t) = t
 ‹ ±	semantics (Seq (pâ1, pâ2)) = semantics pâ1 ª semantics pâ2
 ‹ ±	semantics (If(c, pâ1, pâ2)) = semantics pâ2 ´ (c Ú semantics pâ1)
@@ -254,25 +315,36 @@ construction.
 Intuitively, a program is correct if every part of it that has a specification
 satisfies that specification. We relativise this notion to a notion
 of correctness with respect to a given set of starting states, identified
-by some predicate, $c$. A program, $p$, is then correct with respect to $c$
-if every part of it that has a specification will satisfy the specification
+by some predicate, $c$. As always we are only concerned
+with partial correctness here: a program, $p$,
+is then correct with respect to $c$
+if every part of it that has a specification will either
+fail to terminate or will satisfy the specification
 when $p$ is started in a state in $c$. We write
 =INLINEFT
 c %models% p
 =TEX
 \ when this holds.
+
 πZ
 ‹ relation _ %models% _
 ∞
+We can now formally define the relation $(\_ \models \_)$.
+In the clause for the syntactic category Spec, note that we insist
+that the program does not terminate in states that satisfy the
+precondition but make the post-condition unsatisfiable.
 πZAX
-‹ €_ %models% _› : PREDICATE ™ PROGRAM
+‹ €_ %models% _› : PRED ™ PROG
 ˜¸¸¸¸¸¸
-‹ µt : STATE_TRANSFORMER; pâ1, pâ2 : PROGRAM; câ1, câ2 : PREDICATE; s : SPECIFICATION∑
+‹ µt, postc : STATE_TRANSFORMER; pâ1, pâ2 : PROG; câ1, câ2, prec : PRED∑
 ‹	(câ1 %models% (Atom t))
 ‹ ±	(câ1 %models% (Seq (pâ1, pâ2)) § câ1 %models% pâ1 ± semantics pâ1 ®câ1© %models% pâ2)
 ‹ ±	(câ1 %models% (If(câ2, pâ1, pâ2)) § câ1 ° câ2 %models% pâ1 ± câ1 \ câ2 %models% pâ2)
 ‹ ±	(câ1 %models% (While(câ2, pâ1)) § (câ1 ° dom (semantics(While(câ2, pâ1)))) %models% pâ1)
-‹ ±	(câ1 %models% (Spec(s, pâ1)) § câ1 ° dom s %models% pâ1 ± câ1 Ú s √ semantics pâ1)
+‹ ±	(câ1 %models% (Spec((prec, postc), pâ1)) 
+‹	§ 	 câ1 ° prec %models% pâ1
+‹	±	(câ1 ° dom (semantics pâ1)) Ú postc √ semantics pâ1
+‹	±	câ1 ° (prec \ dom postc) ° dom (semantics pâ1) = ö)
 ∞
 \subsection{Precondition Calculation}
 A pre-condition calculator is a function that takes a program and a post-condition as
@@ -282,21 +354,40 @@ be partial, because, for example, there may be atomic statement forms that are
 intractable. However, these can always be handled by returning an empty
 pre-condition, so we take pre-condition calculators to be total functions.
 πZ
-‹ €PREC_CALC› ¶ PROGRAM ∏ PREDICATE ≠ PREDICATE
+‹ €PREC_CALC› ¶ PROG ∏ PRED ≠ PRED
 ∞
 A pre-condition calculator is sound if the pre-condition it returns
 for any program and post-condition is such that execution of the
-program in any state satisfying the pre-condition will indeed result
+program in any state satisfying the pre-condition will indeed
+either fail to terminate or result
 in a state satisfying the post-condition.
 πZAX
 ‹ €sound_prec_calc› : PREC_CALC
 ˜¸¸¸¸¸¸
 ‹ µpc : PREC_CALC∑
 ‹	pc ç sound_prec_calc
-‹ §	(µprog : PROGRAM; postc, prec : PREDICATE
+‹ §	(µprog : PROG; postc, prec : PRED
 ‹	|	prec = pc (prog, postc)
 ‹	∑	semantics prog ®prec© Ä postc)
 ∞
+The above notion has been defined without using the notion of
+refinement. However, it could have been reformulated in terms
+of refinement as captured in the following conjecture.
+The alternative formulation is not preferred because the case
+of an empty (i.e., unsatisfiable) post-condition has to
+be treated specially.
+πZ
+‹ sound_prec_calc_refine_cnj ?Ù
+‹ µpc : PREC_CALC∑
+‹	pc ç sound_prec_calc
+‹ §	(µprog : PROG; postc, prec : PRED
+‹	|	prec = pc (prog, postc) ± postc Ω ö
+‹	∑	(dom (semantics prog) ° prec) ∏ postc √ semantics prog)
+‹ ±	(µprog : PROG; prec : PRED
+‹	|	prec = pc (prog, ö)
+‹	∑	dom (semantics prog) ° prec = ö)
+∞
+
 The notion of soundness is a purely semantic one: it does not require
 those parts of the program that have specifications actually to satisfy
 those specifications. The stronger notion of correctness imposes
@@ -306,14 +397,18 @@ pre-condition, {\it prec}, say, we take the relation
 {\it postc} $\times$ {\it prec} as the specification of the program and
 require that the resulting program be correct with respect to this specification
 in any state.
+In fact, it turns out to be convenient to generalise this to require
+this to hold for the returned pre-condition and any weakening of
+the given post-condition.
+
 πZAX
 ‹ €correct_prec_calc› : PREC_CALC
 ˜¸¸¸¸¸¸
 ‹ µpc : PREC_CALC∑
-‹	pc ç sound_prec_calc
-‹ §	(µprog : PROGRAM; postc, prec : PREDICATE
+‹	pc ç correct_prec_calc
+‹ §	(µprog : PROG; postc, prec : PRED
 ‹	|	prec = pc (prog, postc)
-‹	∑	STATE %models% Spec(prec ∏ postc, prog))
+‹	∑	STATE %models% Spec((prec, STATE ∏ postc), prog))
 ∞
 We can now formulate the conjecture that correctness for pre-condition calculators is indeed a stronger
 notion than soundness.
@@ -330,10 +425,56 @@ val €state_transformer_u_thm› = save_pop_thm "state_transformer_u_thm";
 =SML
 val €state_u_thm› = save_thm("state_u_thm",
 	(z_get_spec ÒSTATEÆ));
+val €prog_u_thm› = save_thm("prog_u_thm",
+	(z_get_spec ÒPROGÆ));
+val €pred_u_thm› = save_thm("pred_u_thm",
+	rewrite_rule[state_u_thm] (z_get_spec ÒPREDÆ));
 val €refines_thm› = save_thm("refines_thm",
 	rewrite_rule[state_transformer_u_thm] (z_get_spec Ò(_√_)Æ));
 val €cutdown_thm› = save_thm("cutdown_thm",
-	rewrite_rule[state_transformer_u_thm, state_u_thm] (z_get_spec Ò(_%downarrow%_)Æ));
+	rewrite_rule[state_transformer_u_thm, state_u_thm]
+		(z_get_spec Ò(_%downarrow%_)Æ));
+set_goal([], Ò
+	sound_prec_calc =
+	{	pc : PREC_CALC
+	|	µ prog : U; postc, prec : U
+		| prec = pc (prog, postc)
+		∑ semantics prog ® prec © Ä postc}Æ);
+a(strip_asm_tac (rewrite_rule[prog_u_thm, pred_u_thm](z_get_specÒsound_prec_calcÆ)));
+a(PC_T "z_library_ext" strip_tac THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(PC_T1 "z_library_ext" all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(lemma_tac Òx1 ç PREC_CALCÆ THEN1 PC_T1 "z_library_ext" all_asm_fc_tac[]);
+a(all_asm_fc_tac[]);
+(* *** Goal "3" *** *)
+a(ASM_FC_T1 fc_§_canon rewrite_tac[]);
+a(POP_ASM_T accept_tac);
+val €sound_prec_calc_thm› = save_pop_thm "sound_prec_calc_thm";
+=TEX
+=SML
+set_goal([], Ò
+	correct_prec_calc =
+	{	pc : PREC_CALC
+	|	µ prog : U; postc, prec : U
+		| prec = pc (prog, postc)
+		∑ STATE %models% Spec ((prec, STATE ∏ postc), prog)}Æ);
+a(strip_asm_tac (rewrite_rule[prog_u_thm, pred_u_thm](z_get_specÒcorrect_prec_calcÆ)));
+a(PC_T "z_library_ext" strip_tac THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(PC_T1 "z_library_ext" all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(lemma_tac Òx1 ç PREC_CALCÆ THEN1 PC_T1 "z_library_ext" all_asm_fc_tac[]);
+a(all_asm_fc_tac[]);
+(* *** Goal "3" *** *)
+a(ASM_FC_T1 fc_§_canon rewrite_tac[]);
+a(POP_ASM_T accept_tac);
+val €correct_prec_calc_thm› = save_pop_thm "correct_prec_calc_thm";
+=TEX
+=SML
+val €correct_thm› = save_thm("correct_thm",
+	rewrite_rule[state_transformer_u_thm, state_u_thm, prog_u_thm, pred_u_thm]
+		(z_get_spec Ò(_%models%_)Æ));
 =TEX
 =SML
 set_goal([], get_conjecture "-" "cutdown_clauses_cnj");
@@ -350,7 +491,7 @@ a(PC_T1 "z_library_ext" asm_prove_tac[]);
 (* *** Goal "3" *** *)
 a(PC_T1 "z_library_ext" REPEAT strip_tac);
 a(z_∂_tacÒ{x1}Æ THEN PC_T1 "z_library_ext" asm_prove_tac[]);
-val cutdown_clauses  = save_pop_thm"cutdown_clauses";
+val €cutdown_clauses›  = save_pop_thm"cutdown_clauses";
 =TEX
 =SML
 set_goal([], get_conjecture "-" "cutdown_pointwise_cnj");
@@ -365,7 +506,49 @@ a(PC_T1 "z_library_ext" asm_prove_tac[]);
 a(z_∂_tacÒ{x1}Æ THEN PC_T1 "z_library_ext" asm_prove_tac[]);
 (* *** Goal "4" *** *)
 a(z_∂_tacÒ{x1}Æ THEN REPEAT strip_tac);
-val cutdown_pointwise_thm  = save_pop_thm"cutdown_pointwise_thm";
+val €cutdown_pointwise_thm›  = save_pop_thm"cutdown_pointwise_thm";
+=TEX
+=SML
+set_goal([], get_conjecture "-" "sound_prec_calc_refine_cnj");
+a(REPEAT_UNTIL is_§ strip_tac THEN
+	ALL_FC_T1 fc_§_canon rewrite_tac[z_get_specÒsound_prec_calcÆ]);
+a(rewrite_tac[pred_u_thm] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(ALL_ASM_FC_T (MAP_EVERY ante_tac) []);
+a(rewrite_tac[refines_thm] THEN PC_T1 "z_library_ext" prove_tac[]);
+(* *** Goal "2" *** *)
+a(ALL_ASM_FC_T (MAP_EVERY ante_tac) []);
+a(PC_T1 "z_library_ext" prove_tac[]);
+(* *** Goal "3" *** *)
+a(cases_tacÒpostc = {}Æ);
+(* *** Goal "3.1" *** *)
+a(var_elim_nth_asm_tac 1 THEN ALL_ASM_FC_T (MAP_EVERY ante_tac) []);
+a(PC_T1 "z_library_ext" prove_tac[]);
+(* *** Goal "3.2" *** *)
+a(ALL_ASM_FC_T (MAP_EVERY ante_tac) []);
+a(POP_ASM_T ante_tac THEN rewrite_tac[refines_thm] THEN
+	PC_T1 "z_library_ext" prove_tac[]);
+val €sound_prec_calc_refine_thm›  = save_pop_thm"sound_prec_calc_refine_thm";
+=TEX
+=SML
+set_goal([], get_conjecture "-" "correct_prec_calc_sound_cnj");
+a(rewrite_tac[correct_prec_calc_thm, sound_prec_calc_thm]);
+a(PC_T "z_library_ext" strip_tac THEN REPEAT strip_tac);
+a(all_asm_fc_tac[]);
+a(POP_ASM_T ante_tac THEN DROP_ASMS_T discard_tac);
+a(rewrite_tac[state_u_thm, correct_thm]);
+a(rewrite_tac[refines_thm] THEN PC_T1 "z_library_ext" REPEAT strip_tac);
+a(lemma_tacÒpostc Ω öÆ);
+(* *** Goal "1" *** *)
+a(swap_nth_asm_concl_tac 3 THEN REPEAT strip_tac);
+a(asm_rewrite_tac[] THEN z_∂_tac ÒxÆ THEN PC_T1 "z_library_ext" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(lemma_tac Ò(µA:U∑ (A ∫ STATE) Ú (U ∏ postc) = A ∏ postc)
+	±(µR:U∑ (dom (dom (R ∫ STATE_TRANSFORMER) ∏ postc) Ú R) = R)Æ THEN1
+	(POP_ASM_T ante_tac THEN  PC_T1 "z_library_ext" prove_tac[]));
+a(swap_nth_asm_concl_tac 7 THEN asm_rewrite_tac[] THEN REPEAT strip_tac);
+a(z_∂_tacÒ(x1¶x, x2¶x1)Æ THEN REPEAT strip_tac);
+val €correct_prec_calc_sound_thm›  = save_pop_thm"correct_prec_calc_sound_thm";
 =TEX
 
 \subsection{Epilogue}
