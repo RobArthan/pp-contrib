@@ -263,42 +263,88 @@ requirements simply has to have an empty (false) pre-condition, we choose to use
 ABORT as the post-condition to give a reduced specification. 
 πZAX
 ‹ €TRUE›, €FALSE› : PRE_COND;
-‹ €SKIP›, €ABORT›, €CHAOS› : POST_COND;
-‹ €Skip›, €Abort›, €Chaos› : SPEC
+‹ €ABORT› : POST_COND;
+‹ €SKIP›, €CHAOS› : PRE_COND ≠ POST_COND;
+‹ €Skip›, €Abort›, €Chaos› : PRE_COND ≠ SPEC
 ˜¸¸¸¸¸¸
 ‹ 	TRUE = STATE;
 ‹	FALSE = ö;
-‹	SKIP = id STATE;
 ‹	ABORT = ö;
-‹	CHAOS = STATE ∏ STATE;
-‹	Skip = (TRUE, SKIP);
-‹	Abort = (TRUE, ABORT);
-‹	Chaos = (FALSE, ABORT)
+‹µ prec : PRE_COND∑
+‹	SKIP prec = id prec
+‹±	CHAOS prec = prec ∏ STATE
+‹±	Skip prec = (prec, SKIP prec)
+‹±	Abort prec = (prec, ABORT)
+‹±	Chaos prec = (prec, CHAOS prec)
 ∞
-The next two constants give what we shall prove to be the meets (greatest lower bounds)
-and joins (least upper bounds). Note that in the definition of join we are enlarging the
-pre-conditions and so we need to be careful to reduce the specifications before we combine
-the post-conditions.
+Meets (greatest lower bounds) turn out to be straightforward to define:
 πZAX
-‹ €meet›, €join› : SPEC ≠ SPEC
+‹ €Meet› : SPEC ≠ SPEC
 ˜¸¸¸¸
 ‹µA :  SPEC∑
-‹	meet A =  (•{s : A∑ s.1}, ﬁ{s:A∑ s.2})
-‹ ±	join A =  (ﬁ{s : A∑ s.1}, •{s:A∑(s Á$Í) .2})
+‹	Meet A =  (•{s : A∑ s.1}, ﬁ{s:A∑ s.2})
 ∞
-meet_def;
+Now we can state the conjecture that meets are indeed greatest lower bounds.
 
-Now we can state the conjecture that meets and joins are indeed greatest lower bounds and
-least upper bounds respectively:
 πZ
 ‹ refinement_meet_cnj ?Ù 
-‹	µ A : SPEC ∑ µt : A∑ meet A √ t;
-‹	µ A : SPEC; s : SPEC ∑ (µt : A∑ s √ t) ¥ s √ meet A
+‹	µ A : SPEC ∑ µt : A∑ Meet A √ t;
+‹	µ A : SPEC; s : SPEC ∑ (µt : A∑ s √ t) ¥ s √ Meet A
 ∞
+
+Joins turn out to be trickier. We first define a function that maps
+a specification, $s$ say to the post-condition that allows precisely those
+state transitions that $s$ forbids forbids:
+
+πZAX
+‹ €Forbidden› : SPEC ≠ POST_COND
+˜¸¸¸¸
+‹µs : SPEC∑
+‹	Forbidden s =  CHAOS (s.1) \ s.2
+∞
+A more explicit equation for fobidden sets is useful:
+πZ
+‹ forbidden_def_cnj ?Ù 
+‹	µ s : SPEC ∑ 
+‹		Forbidden s = { x, y : STATE | x ç s.1 ± ≥(x, y) ç s.2}
+∞
+The following conjecture is useful to check the definition of the forbiden function and in proving
+later results.
+πZ
+‹ forbidden_cnj ?Ù 
+‹	µ sâ1, sâ2 : SPEC ∑ 
+‹		sâ1 √ sâ2 § sâ1.1 Ä sâ2.1 ± sâ2.2 ° (Forbidden sâ1) = ö
+∞
+
+Now we can define joins. The pre-condition of the join of a set of
+specifications is just the union of the individual pre-conditions.
+The post-condition is the union of the post-conditions with all transitions
+that are forbidden by some specification in the set removed.
+πZAX
+‹ €Join› : SPEC ≠ SPEC
+˜¸¸¸¸
+‹µA :  SPEC∑
+‹	Join A =  (ﬁ{s : A∑ s.1}, (ﬁ{s:A∑(sÁ$Í).2}) \ (ﬁ{s:A∑Forbidden s}))
+∞
+In elementary working with join it is often more convenient to
+have more explicit set comprehensions:
+πZ
+‹ join_def_cnj ?Ù 
+‹	µ A : SPEC ∑ Join A = 
+‹		({s : A; x : STATE |  x ç s.1 ∑ x},
+‹		{s : A; x, y : STATE | x ç s.1 ± (x, y) ç s.2 ± (µt : A∑ x ç t.1 ¥ (x, y) ç t.2) ∑ (x, y)})
+∞
+It is useful to be able to calculate the forbidden set of a join
+πZ
+‹ forbidden_join_cnj ?Ù 
+‹	µ A : SPEC ∑ 
+‹		Forbidden(Join A) = ﬁ{s : A∑ Forbidden s}
+∞
+Now we can state the conjecture that joins are indeed greatest lower bounds.
 πZ
 ‹ refinement_join_cnj ?Ù 
-‹	µ A : SPEC ∑ µt : A∑ t √ join A;
-‹	µ A : SPEC; s : SPEC ∑ (µt : A∑ t √ s) ¥ join A √ s
+‹	µ A : SPEC ∑ µt : A∑ t √ Join A;
+‹	µ A : SPEC; s : SPEC ∑ (µt : A∑ t √ s) ¥ Join A √ s
 ∞
 
 \newpage
@@ -371,8 +417,9 @@ val €reduce_def› = save_pop_thm "reduce_def";
 =SML
 val €equiv_def› = save_thm( "equiv_def" , ±_right_elim (z_get_specÒ(_È_)Æ));
 val €skip_def› = save_thm( "true_def" , ±_right_elim (z_get_specÒSKIPÆ));
-val €meet_def› = save_thm( "meet_def" , ±_right_elim (z_get_specÒmeetÆ));
-val €join_def› = save_thm( "join_def" , ±_right_elim (z_get_specÒjoinÆ));
+val €forbidden_def› = save_thm( "forbidden_def" , ±_right_elim (z_get_specÒForbiddenÆ));
+val €meet_def› = save_thm( "meet_def" , ±_right_elim (z_get_specÒMeetÆ));
+val €join_def› = save_thm( "join_def" , ±_right_elim (z_get_specÒJoinÆ));
 =TEX
 =SML
 set_goal([], get_conjecture"-" "equiv_cnj");
@@ -418,39 +465,114 @@ a(z_spec_nth_asm_tac 5 Ò(x1 ¶ x1, x2 ¶ x2)Æ);
 val €refinement_meet_thm› = save_pop_thm "refinement_meet_thm";
 =TEX
 =SML
-set_goal([], get_conjecture"-" "refinement_join_cnj");
-a(rewrite_tac[join_def, reduce_def] THEN REPEAT strip_tac);
+set_goal([], get_conjecture"-" "forbidden_def_cnj");
+a(rewrite_tac[refines_def, forbidden_def, skip_def] THEN REPEAT strip_tac);
+a(PC_T1 "z_library_ext" asm_prove_tac[] THEN REPEAT strip_tac);
+val €forbidden_def1› = save_pop_thm "forbidden_def1";
+=TEX
+=SML
+set_goal([], get_conjecture"-" "forbidden_cnj");
+a(rewrite_tac[refines_def, forbidden_def1] THEN REPEAT strip_tac THEN
+	PC_T1 "z_library_ext" asm_prove_tac[]);
+a(contr_tac THEN all_asm_fc_tac[]);
+val €forbidden_thm› = save_pop_thm "forbidden_thm";
+=TEX
+=SML
+set_goal([], get_conjecture"-" "join_def_cnj");
+a(rewrite_tac[join_def, forbidden_def1, refcalc_u_thm, reduce_def] THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
-a(rewrite_tac[refines_def] THEN REPEAT strip_tac);
+a(PC_T1 "z_sets_ext" once_rewrite_tac[] THEN REPEAT strip_tac THEN all_var_elim_asm_tac1);
 (* *** Goal "1.1" *** *)
+a(asm_prove_tac[]);
+(* *** Goal "1.2" *** *)
+a(z_∂_tacÒs.1Æ THEN REPEAT strip_tac THEN asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(LEMMA_T Òﬁ {s : A | true ∑ s.1 Ú s.2} = {s : A; x, y : U | x ç s.1 ± (x, y) ç s.2 ∑ (x, y)}Ærewrite_thm_tac);
+(* *** Goal "2.1" *** *)
+a(PC_T1 "z_library_ext" REPEAT strip_tac);
+(* *** Goal "2.1.1" *** *)
+a(z_∂_tacÒ(s¶s, x¶x1, y¶x2)Æ THEN asm_rewrite_tac[]);
 a(PC_T1 "z_library_ext" asm_prove_tac[]);
+(* *** Goal "2.1.2" *** *)
+a(all_var_elim_asm_tac);
+a(z_∂_tacÒs.1 Ú s.2Æ THEN PC_T1 "z_library_ext" asm_prove_tac[]);
+a(z_∂_tacÒsÆ THEN PC_T1 "z_library_ext" asm_prove_tac[]);
+(* *** Goal "2.2" *** *)
+a(LEMMA_TÒ ﬁ {s : A | true ∑ {x, y : U | x ç s.1 ± ≥ (x, y) ç s.2}} =
+	{s : A; x, y : U | x ç s.1 ± ≥(x, y) ç s.2 ∑ (x, y)}Ærewrite_thm_tac);
+(* *** Goal "2.2.1" *** *)
+a(PC_T1 "z_library_ext" REPEAT strip_tac);
+(* *** Goal "2.2.1.1" *** *)
+a(z_∂_tacÒ(s¶s, x¶x1, y¶x2)Æ THEN asm_rewrite_tac[]);
+a(z_spec_nth_asm_tac 2 Ò(x1¶x1, x2¶x2)Æ THEN REPEAT strip_tac);
+(* *** Goal "2.2.1.2" *** *)
+a(all_var_elim_asm_tac);
+a(z_∂_tacÒ{x, y:U|x ç s.1 ± ≥ (x, y) ç s.2}Æ THEN asm_rewrite_tac[]);
+a(z_∂_tacÒsÆ THEN REPEAT strip_tac);
+(* *** Goal "2.2.2" *** *)
+a(PC_T1 "z_sets_ext" REPEAT strip_tac);
+(* *** Goal "2.2.2.1" *** *)
+a(all_var_elim_asm_tac);
+a(z_∂_tacÒ(s¶s, x¶x1, y¶x2)Æ THEN asm_rewrite_tac[]);
+a(swap_nth_asm_concl_tac 1  THEN REPEAT strip_tac);
+a(z_∂_tacÒ(s¶t, x¶x1, y¶x2)Æ THEN asm_rewrite_tac[]);
+(* *** Goal "2.2.2.2" *** *)
+a(all_var_elim_asm_tac);
+a(z_∂_tacÒ(s¶s, x¶x1, y¶x2)Æ THEN asm_rewrite_tac[]);
+(* *** Goal "2.2.2.3" *** *)
+a(contr_tac THEN all_var_elim_asm_tac);
+a(all_asm_fc_tac[]);
+val €join_def_thm› = save_pop_thm "join_def_thm";
+=TEX
+=SML
+set_goal([], get_conjecture"-" "forbidden_join_cnj");
+a(rewrite_tac[join_def_thm, forbidden_def1, refcalc_u_thm] THEN REPEAT strip_tac);
+a(LEMMA_TÒ ﬁ {s : A | true ∑ {x, y : U | x ç s.1 ± ≥ (x, y) ç s.2}} =
+	{s : A; x, y : U | x ç s.1 ± ≥(x, y) ç s.2 ∑ (x, y)}Ærewrite_thm_tac);
+(* *** Goal "1" *** *)
+a(PC_T1 "z_library_ext" REPEAT strip_tac);
+(* *** Goal "1.1" *** *)
+a(z_∂_tacÒ(s¶s, x¶x1, y¶x2)Æ THEN asm_rewrite_tac[]);
+a(z_spec_nth_asm_tac 2 Ò(x1¶x1, x2¶x2)Æ THEN REPEAT strip_tac);
+(* *** Goal "1.2" *** *)
+a(all_var_elim_asm_tac);
+a(z_∂_tacÒ{x, y:U|x ç s.1 ± ≥ (x, y) ç s.2}Æ THEN asm_rewrite_tac[]);
+a(z_∂_tacÒsÆ THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(PC_T1 "z_library_ext" REPEAT strip_tac THEN all_var_elim_asm_tac1);
+(* *** Goal "2.1" *** *)
+a(swap_nth_asm_concl_tac 1 THEN REPEAT strip_tac);
+a(z_∂_tacÒ(s¶s, x'¶x1, y'¶x2)Æ THEN asm_rewrite_tac[] THEN REPEAT strip_tac);
+(* *** Goal "2.1.1" *** *)
+a(swap_nth_asm_concl_tac 1 THEN REPEAT strip_tac);
+a(z_∂_tacÒ(s¶s, x¶x1, y¶x2)Æ THEN asm_rewrite_tac[]);
+(* *** Goal "2.1.2" *** *)
+a(swap_nth_asm_concl_tac 3 THEN REPEAT strip_tac);
+a(z_∂_tacÒ(s¶t, x¶x1, y¶x2)Æ THEN asm_rewrite_tac[]);
+(* *** Goal "2.2" *** *)
+a(asm_prove_tac[]);
+(* *** Goal "2.3" *** *)
+a(contr_tac THEN all_var_elim_asm_tac THEN asm_prove_tac[]);
+val €forbidden_join_thm› = save_pop_thm "forbidden_join_thm";
+=TEX
+=SML
+set_goal([], get_conjecture"-" "refinement_join_cnj");
+a(rewrite_tac[forbidden_thm, forbidden_join_thm] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(rewrite_tac[join_def]  THEN PC_T1 "z_library_ext" asm_prove_tac[]);
 a(z_∂_tac Òt.1Æ THEN REPEAT strip_tac);
 a(z_∂_tac ÒtÆ THEN REPEAT strip_tac);
-(* *** Goal "1.2" *** *)
-a(rewrite_tac[z_Ä_thm] THEN REPEAT strip_tac);
-a(PC_T1 "z_predicates" (LEMMA_TÒµB:U; R:U∑ xç B Ú R ¥ x ç RÆ) (fn th => all_fc_tac[th])
-	THEN1 PC_T1 "z_library_ext" prove_tac[]);
-a(POP_ASM_T ante_tac THEN PC_T1 "z_sets_ext" REPEAT strip_tac);
-a(z_spec_nth_asm_tac 1 Òt.1 Ú t.2Æ THEN1 asm_prove_tac[]);
-a(POP_ASM_T ante_tac THEN PC_T1 "z_library_ext" asm_prove_tac[]);
 (* *** Goal "2" *** *)
-a(rewrite_tac[refines_def] THEN REPEAT strip_tac);
-(* *** Goal "2.1" *** *)
-a(POP_ASM_T ante_tac THEN rewrite_tac[refines_def] THEN REPEAT strip_tac);
-a(rewrite_tac[z_Ä_thm] THEN REPEAT strip_tac);
-a(all_var_elim_asm_tac1 THEN all_asm_fc_tac[]);
-a(PC_T1 "z_sets_ext" asm_prove_tac[]);
+a(rewrite_tac[join_def]  THEN PC_T1 "z_sets_ext" asm_prove_tac[]);
+(* *** Goal "3" *** *)
+a(rewrite_tac[join_def]  THEN PC_T1 "z_sets_ext" REPEAT strip_tac);
+a(z_spec_nth_asm_tac 2 Òx1Æ);
+a(PC_T1 "z_sets_ext" all_asm_fc_tac[]);
 (* *** Goal "4" *** *)
-a(rewrite_tac[z_Ä_thm] THEN REPEAT strip_tac);
-a(all_var_elim_asm_tac1);
-a(all_asm_fc_tac[]);
-a(POP_ASM_T ante_tac THEN rewrite_tac[refines_def] THEN REPEAT strip_tac);
-a(lemma_tacÒx ç s.2Æ THEN1
-	(GET_NTH_ASM_T 4 ante_tac THEN PC_T1 "z_library_ext" prove_tac[]));
-a(LIST_GET_NTH_ASM_T [1,2,3] (MAP_EVERY ante_tac)  THEN PC_T1 "z_library_ext" prove_tac[]);
-(*
+a(PC_T1 "z_sets_ext" prove_tac[]);
+a(z_spec_nth_asm_tac 3 Ò(x1¶x1, x2¶x2)Æ);
+a(PC_T1 "z_sets_ext"  asm_prove_tac[]);
 val €refinement_join_thm› = save_pop_thm "refinement_join_thm";
-*)
 =TEX
 \section{Epilogue}
 =SML
