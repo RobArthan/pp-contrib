@@ -11,112 +11,12 @@
 \maketitle
 \section{Introduction}
 This note is a working paper on refinement and partial correctness.
-It aims to provide a simple formal model in which to reason about
+It aims to provide a simple formal model in {\ProductZ}
+in which to reason about
 refinement notations along the lines of the Compliance Notation.
 It is particularly intended to assist with work on handling more
 complex control flow than is currently handled in the Compliance Notation.
 
-\section{A Compliance Notation Example}
-Since this note may need to be understood at some future date by an audience
-who are not familiar with the Compliance Notation, this section contains
-a simple example. However, as the current audience are expected to
-know about the Compliance Notation, this is just a place-holder and
-the accompanying narrative has not yet been written.
-
-\subsection{Package Specification}
-\Hide{
-=SML
-new_script{name = "SUM", state=initial_cn_state};
-=TEX
-}
-πCN
-package €sum› is
-  type €data› is range -1000 .. 1000;
-  €acc_neg›, €acc_pos› : data;
-  procedure €sum_pos› (x : in data)
-  Ñ ACC_NEG, ACC_POS [ ~10 º X º 10,
-          X < 0 ± ACC_NEG = ACC_NEGâ0 + X ± ACC_POS = ACC_POSâ0 ≤
-          X = 0 ± ACC_NEG = ACC_POS = 0 ≤
-          X > 0 ± ACC_POS = ACC_POSâ0 + X ± ACC_NEG = ACC_NEGâ0 ];
-end sum;
-∞
-=TEX
-\subsection{Package Body}
-\Hide{
-=SML
-new_script{name = "SUM_BODY", state=get_cn_state()};
-=TEX
-}
-πCN
-package body €sum› is
-  procedure €sum_pos› (x : in data)
-  Ñ ACC_NEG, ACC_POS [
-          X < 0 ± ACC_NEG = ACC_NEGâ0 + X ± ACC_POS = ACC_POSâ0 ≤
-          X = 0 ± ACC_NEG = ACC_POS = 0 ≤
-          X > 0 ± ACC_POS = ACC_POSâ0 + X ± ACC_NEG = ACC_NEGâ0]
-  is
-  begin
-    if     x = 0
-    then   acc_neg := 0; acc_pos := 0;
-    else   Ñ ACC_NEG, ACC_POS [ X Ω 0,
-           X Ω 0 ±
-          (X < 0 ± ACC_NEG = ACC_NEGâ0 + X ± ACC_POS = ACC_POSâ0 ≤
-           X > 0 ± ACC_POS = ACC_POSâ0 + X ± ACC_NEG = ACC_NEGâ0) 	] (else_part)
-    end if;
-  end sum_pos;
-end sum;
-∞
-πCN
- (else_part) √
-        if x <= 0
-        then acc_neg := acc_neg + x;
-        else acc_pos := acc_pos + x;
-        end if;
-∞
-\Hide{
-=SML
-set_pc"cn1";
-val vcs = rev(map (hd ** snd) (get_conjectures "-"));
-fun try_tactic acc tac ((vc as (name, term))::more) = (
-	(delete_thm name handle Fail _ => t_thm);
-	(save_thm(name, tac_proof(([], term), tac)); try_tactic acc tac more)
-	handle Fail _ => try_tactic (vc::acc) tac more
-) | try_tactic acc _ [] = rev acc;
-val vcs1 = try_tactic []
-	(cn_vc_simp_tac[] THEN REPEAT strip_tac) vcs;
-val vcs2 = try_tactic []
-	(cn_vc_simp_tac[] THEN PC_T1 "z_lin_arith" asm_prove_tac[]) vcs1;
-=TEX
-}
-=SML
-output_z_document{script = "SUM", out_file="refine1.zed"};
-output_z_document{script = "SUM_BODY", out_file="refine2.zed"};
-=TEX
-\Hide{
-=SH
-sed -e '/^$/d' -e '/^[a-zA-Z(]/{
-	i\
-	=SML
-}' < refine1.zed | sed -e '/^	/s/	//' | sieve tex > refine1.zed.tex
-sed -e '/^$/d' -e '/^[a-zA-Z(]/{
-	i\
-	=SML
-}' < refine2.zed | sed -e '/^	/s/	//' | sieve tex > refine2.zed.tex
-=TEX
-}
-=IGN
-print_z_document "SUM";
-print_z_document "SUM_BODY";
-=TEX
-%{\ftlinepenalty=9999
-%\underscoreoff\subsection{Z Documents}
-%\input{refine1.zed.tex}
-%\input{refine2.zed.tex}}
-\section{A Z Model For Refinement Notations}
-We wish to give a formal model for understanding refinement notations
-along the lines of the Compliance Notation.
-This section builds up this material.
-\subsection{Preamble}
 The following ML sets up a context for giving the {\ProductZ} specifications.
 =SML
 open_theory"z_library";
@@ -127,7 +27,7 @@ ReaderWriterSupport.PrettyNames.add_new_symbols[
 	(["refinedby"], Value "√", ReaderWriterSupport.PrettyNames.Simple)
 ] handle Fail _ => ();
 =TEX
-\subsection{States and State Transformers}
+\section{States and State Transformers}
 The internal structure of states is not relevant to our purposes.
 We just introduce a given set to represent the states:
 πZ
@@ -142,7 +42,7 @@ We think of a state transformer $t$ as {\em responding} to a state, the {\em bef
 $s$ in its domain by non-deterministically selecting some {\em response} or {\em after-state},
 which is a state $s'$ such that $(s, s') \in t$.
 
-\subsection{A First Notion of Program}
+\section{A First Notion of Program}
 Our first notion of programs has five syntactic categories:
 
 \begin{center}
@@ -259,7 +159,7 @@ which simply strips out all the specifications is semantics-preserving:
 ‹	∑ µp : PROG∑ semantics(strip_specs p) = semantics p
 ∞
 
-\subsection{Refinement}
+\section{Refinement}
 Refinement is a notion that is fundamental to the notion of program
 correctness that we will define; however, it is a semantic notion
 that is independent of the syntax of programs.
@@ -362,7 +262,7 @@ construction.
 ‹	µtâ1, tâ2 : STATE_TRANSFORMER∑
 ‹	tâ1 %downarrow% tâ2 = {s : STATE | ({s}, tâ1) √ ({s}, tâ2)}
 ∞
-\subsection{Program Correctness}
+\section{Program Correctness}
 Intuitively, a program is correct if every part of it that has a specification
 satisfies that specification. We relativise this notion to a notion
 of correctness with respect to a given set of starting states, identified
@@ -392,7 +292,7 @@ Any program should be correct with respect to the empty set of starting states:
 ‹ empty_correct_cnj ?Ù µprog : PROG∑ ö %models% prog
 ∞
 
-\subsection{Precondition Calculation}
+\section{Precondition Calculation}
 A pre-condition calculator is a function that takes a program and a post-condition as
 its argument and returns a predicate that, we hope, gives the pre-condition for
 achieving the post-condition. In practice, such a function might conceptually
@@ -482,7 +382,7 @@ We conjecture that the above is a correct pre-condition calculator:
 ‹ correct_prec_calc_cnj ?Ù prec_calc ç correct_prec_calc
 ∞
 
-\subsection{Proofs}
+\section{Proofs}
 =SML
 set_goal([], ÒSTATE_TRANSFORMER = UÆ);
 a(rewrite_tac(map z_get_spec[ÒSTATEÆ, ÒSTATE_TRANSFORMERÆ, Ò(_™_)Æ]));
@@ -696,12 +596,12 @@ a(rewrite_tac[prec_calc_thm, correct_thm, semantics_thm]);
 
 val €correct_prec_calc_thm›  = save_pop_thm"correct_prec_calc_thm";
 
-\subsection{Epilogue}
+\section{Epilogue}
 =SML
 z_output_theory{out_file="refine.th.doc", theory="-"};
 =TEX
 {\HOLindexOff
-\let\Section\subsection
+\let\Section\section
 \def\section#1{\Section{#1}\label{THEORYLISTING}}
 \include{refine.th}}
 
