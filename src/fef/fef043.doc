@@ -1,0 +1,417 @@
+=TEX
+% TQtemplate.tex
+\documentstyle[hol1,11pt,TQ]{article}
+\def\Hide#1{}
+\def\Bool{``$\it{:}bool\,$''}
+\def\Note#1{{\small\bf[Note: #1]}}
+\makeindex
+\TPPproject{DRA FRONT END FILTER PROJECT}  %% Mandatory field
+%\TPPvolume{}
+%\TPPpart{}
+\TPPtitle{The Labelling Property for SWORD}  %% Mandatory field
+\TPPref{DS/FMU/FEF/043}  %% Mandatory field
+\def\SCCSversion{$Revision$
+}
+\TPPissue{\SCCSversion}  %% Mandatory field
+\TPPdate{\FormatDate{$Date$
+}}  %% Mandatory field (with sensible default)
+\TPPstatus{Draft}			%% Mandatory field
+\TPPtype{Specification}
+\TPPkeywords{}
+\TPPauthor{R.~D.~Arthan & WIN01}  %% Mandatory field
+%\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
+\TPPauthorisation{R.B.~Jones & HAT Manager}
+\TPPabstract{A discussion and formalisation of an abstract `labelling property' for SWORD.
+(for DRA Front End Filter project RSRE 1C/6130.)}
+%\TPPabstractB{}
+%\TPPabstractC{}
+%\TPPabstractD{}
+%\TPPabstractE{}
+%\TPPabstractF{}
+\TPPdistribution{\parbox[t]{4.0in}{%
+	HAT FEF File \\
+	Simon Wiseman
+}}
+%\TPPclass{CLASSIFICATION}
+\newfont{\icllogo}{icllogo50}
+\def\TPPheadlhs{$\vcenter{\halign{##\cr\icllogo ICL\cr}}$}
+%\def\TPPheadlhs{}
+%\def\TPPheadcentre{}
+%def\TPPheadrhs{}
+%\def\TPPfootlhs{}
+%\def\TPPfootcentre{}
+%\def\TPPfootrhs{}
+
+\begin{document}
+\TPPsetsizes
+\makeTPPfrontpage
+
+\vfill
+\begin{centering}
+
+%\bf Copyright \copyright\ : International Computers Ltd \number\year
+
+\end{centering}
+
+\newpage
+\section {DOCUMENT CONTROL}
+\subsection{Contents List}
+\tableofcontents
+\subsection{Document Cross References}
+\bibliographystyle{fmu}
+\bibliography{fmu,fef}
+
+\subsection{Changes History}
+\begin{description}
+\item[Issue \SCCSversion ({\FormatDate{$Date$
+}}) ] First draft. 
+
+\end{description}
+
+\subsection{Changes Forecast}
+None.
+
+\pagebreak
+\section{GENERAL}
+
+\subsection{Scope}
+
+Phases 1 and 2 of the FEF project dealt exclusively with the `No Flows Down' security policy as furmulated in \cite{DS/FMU/FEF/003}.
+In that formulation SSQL queries and their results are treated as containing information at a single security clearance.
+The security policy in \cite{DS/FMU/FEF/003} is extended in \cite{DS/FMU/FEF/040} and \cite{DS/FMU/FEF/042} to take account of the multilevel structure of SWORD queries.
+The result returned to the client from SWORD also consists of a structured multi-level object.
+However, the way in which the classification fields are to be used in the result from a query, as described in \cite[section 2.3]{securityprops}, is not consistent with a flow policy which treats these as classification marks in a manner close to their use in the structured multi-level queries.
+For this reason the multi-level policy, as formulated in \cite{DS/FMU/FEF/040} treats queries and results differently in expressing the `No Flows Down' policy.
+In effect, that policy formulation treats labels other than the outermost label on the result as being insignificant from the point of view of information flow.
+
+In this document we consider extending the policy with a result labelling property which expressed the intended significance of the labels in the result from a SWORD query.
+The intended significance of these labels in the output is described in \cite[section 2.3]{securityprops} and formalisation is attempted in section 4 of the same document.
+We discuss the problems associated with the formalisation of these additional labelling properties and propose an abstract framework which will permit this kind of property to be expressed.
+
+This document constitutes part of deliverable D17 of work package 7c, as described
+in section 7 of the Proposal for Phase 3, \cite{DS/FMU/FEF/039}.
+
+\subsection{Introduction}
+
+The main source of difficulty in arriving at a satisfactory formalisation of the result labelling property is that the description of the required property in \cite[section 2.3]{securityprops} explicitly (and we believe essentially) refers to features specific to the query language under consideration.
+All the formulations of policy matters so far have avoided commitment to the details of the query language, and the complexity of this language would cause a very great impact on the clarity of the policy statment if the policy were to be expressed, as it appears to be informally, in terms of the syntax of queries.
+
+We therefore propose to define the required property relative to some factorisation of the the semantics of the query language which corresponds to the informal description in an appropriate way, without spelling out the details of this factorisation.
+
+It is also essential that this property be formulated in relation to the pre-filtered outputs of the system, since otherwise the filtering may obscure the information flows and prevent a correct assessment of labels.
+
+\subsection{The Specification}
+
+An index of the names used in the formal specification may be found in Section \ref{INDEX}. 
+A listing of the theory $fef043$ created by processing this document using \Product{}
+may be found at the end of this document.
+
+The HOL specification here represents an attempt to capture the key ideas from \cite[section 2.3]{securityprops}.
+
+\subsection{Setting Up}
+The following \Product{} instructions set up the new theory $fef040$ and set the context 
+for the proof tools.
+The parent theory is the theory $fef040$ which contains some general material about multi-level security policies of the sort we are interested in.
+=SML
+open_theory"fef042";
+(force_delete_theory "fef043" handle _ => ());
+new_theory Û"fef043"İ;
+(* new_parent "fef036"; *)
+push_pc "hol";
+=TEX
+
+\section{OUTPUT FACTORISATION}\label{OutputFactorisation}
+
+We now define a `factorised' output function, which permits the phases in the evaluation of the result of a query to be undertaken separately.
+This enables an analysis of the flow properties of these separate phases to be used in the formulation of the labelling property.
+
+The stages of a factorisation are intended to correspond to those described in \cite[section 2.3]{securityprops}.
+Conformance of the generalised labelling property given here to the detail of the intended property will depend on the factorisation conforming to the detail of the descriptions in \cite[section 2.3]{securityprops}.
+
+Each stage of the factorisation computes one level in a four level structured output and provides data for another factor which may be used to compute the next level.
+After evaluating the first factor we obtain an {\it Obj} of which the first level is as intended for the final result, and the second level (and below if present) is some representation of the residual query processing to be done by subsequent factors.
+
+After evaluating the second factor on the results of the first factor two layers of data in the resulting {\it Obj} are as required for the final result.
+And so on until the fourth factor computes values at the fourth level which should contain no further constituent {\it Obj}s.
+
+In the following type the first {\it Obj} may be thought of a partially evaluated query and the second a query evaluated one level further.
+
+=SML
+declare_type_abbrev(Û"Factor"İ, ["'State"], ” Class ­ Obj ­ 'State ­ Obj®);
+=TEX
+
+=SML
+declare_infix (250, "»‰f");
+=TEX
+
+¹HOLCONST
+Ü	Û$»‰fİ : 'State Factor ­ 'State Factor ­ 'State Factor
+÷üüüüüüüüüüüüüüüüüüü
+Ü	µf1 f2 :'State Factor; c :Class; s :'State; obj :Obj·
+Ü
+Ü	(f1 »‰f f2) c obj s = f2 c (f1 c obj s) s
+°
+
+¹HOLCONST
+Ü	Ûsame_below_levelİ : î ­ (Obj ¸ Obj)ğ
+÷üüüüüüüüüüüüüüüüüüü
+Ü	µn :î; obj1 obj2 :Obj·
+Ü
+Ü	same_below_level 0 =
+Ü		{	(obj1, obj2)
+Ü		|	objectContains obj1 = objectContains obj2
+Ü		±	objectRefers obj1 = objectRefers obj2
+Ü		}
+Ü±	same_below_level (n+1) = 
+Ü		{	(obj1, obj2)
+Ü		|	# (objectRefers obj1) = # (objectRefers obj2)
+Ü		±	Elems (Combine (objectRefers obj1) (objectRefers obj2))
+Ü			€ (same_below_level n)
+Ü		}
+°
+
+¹HOLCONST
+Ü	Ûsame_to_levelİ : î ­ (Obj ¸ Obj)ğ
+÷üüüüüüüüüüüüüüüüüüü
+Ü	µn :î; obj1 obj2 :Obj·
+Ü
+Ü	same_to_level 0
+Ü	=	{(obj1, obj2) | objectClass obj1 = objectClass obj2 }
+Ü
+Ü±	same_to_level (n+1)
+Ü	=	{	(obj1, obj2)
+Ü		|	objectContains obj1 = objectContains obj2
+Ü		±	objectClass obj1 = objectClass obj2
+Ü		±	# (objectRefers obj1) = # (objectRefers obj2)
+Ü		±	Elems (Combine (objectRefers obj1) (objectRefers obj2))
+Ü			€ (same_to_level n)
+Ü		}
+°
+
+A factor has level n if it changes only information below level n.
+
+¹HOLCONST
+Ü	Ûfactor_levelİ : î ­ ('State Factor)ğ
+÷üüüüüüüüüüüüüüüüüüü
+Ü	µn :î· factor_level n  =
+Ü	{ factor | µ c state obj·
+Ü		(obj, factor c obj state)  same_to_level n }
+°
+
+A fcatorisation is a collection of four factors:
+
+¹HOLLABPROD ÛFactorisationİüüüüüüüüüüüüüüüüüüüüüü
+Ü	Ûfactor1İ Ûfactor2İ Ûfactor3İ Ûfactor4İ	: 'State Factor
+°üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+
+The factors in a factorisation can be composed as follows:
+
+¹HOLCONST
+Ü	Ûcompositeİ : ('State Factorisation) ­ 'State Factor
+÷üüüüüüüüüüüüüüüüüüü
+Ü	µf :'State Factorisation ·
+Ü	composite f = (factor1 f) »‰f (factor2 f) »‰f (factor3 f) »‰f (factor4 f)
+°
+
+A factor can be converted into the output component of a machine as follows:
+
+¹HOLCONST
+Ü	Ûfactor_outİ : ('State Factorisation) ­ 'State ¸ Req ­ Obj
+÷üüüüüüüüüüüüüüüüüüü
+Ü	µf :'State Factorisation; s :'State; r :Req ·
+Ü	factor_out f (s,r) = (composite f) (reqClearance r) (reqSsql r) s 
+°
+
+A factorisation is {\it levelled} if the factors each have appropriate levels:
+
+¹HOLCONST
+Ü	Ûlevelled_factorisationİ : ('State Factorisation)ğ
+÷üüüüüüüüüüüüüüüüüüü
+Ü	µfactors :'State Factorisation ·
+Ü	factors  levelled_factorisation ¤
+Ü		factor1 factors  factor_level 0
+Ü	±	factor2 factors  factor_level 1
+Ü	±	factor3 factors  factor_level 2
+Ü	±	factor4 factors  factor_level 3
+°
+
+For a factorisation to be correct it must also fail to pre-evaluate levels in the query, however, this detail can only be specified using more specific reference to the form of a query than is considered appropriate here.
+
+A factorisation factors a particular machine if, when the factors are put together, the behaviour corresponds to that of the machine:
+
+A {\it FactoredMachine} is a {\it Machine} together with a factorisation of that machine.
+
+¹HOLLABPROD ÛFactoredMachineİüüüüüüüüüüüüüüüüüüüüü
+Ü	Ûmachineİ	: 'State Machine;
+Ü	Ûfactorsİ 	: 'State Factorisation
+°üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+
+A factored machine is well-factored if the factors form a well-factorisation and the output function determined by the factors is the same as that in the machine.
+
+¹HOLCONST
+Ü	Ûwell_factoredİ : ('State FactoredMachine)ğ
+÷üüüüüüüüüüüüüüüüüüü
+Ü	µm :'State FactoredMachine ·
+Ü	m  well_factored ¤
+Ü		(factors m)  levelled_factorisation
+Ü	±	Output (machine m) = factor_out (factors m)
+°
+
+\section{THE LABELLING PROPERTY}
+
+The labelling property is formalised as follows.
+For any input history and single input we consider the behaviour of the machine.
+A separate property is required for labels correctness at each level.
+The property for level n is obtained by constructing a machine which maps input histories to outputs and assering the security of that machine.
+These machines will be constructed so that they first operate in the normal way on the input history to determine the state in which the query under consideration will be evaluated.
+The {\it partially} evaluated query will then be evaluated in this state to completion.
+
+This definition is here pro-tem but should be in fef042 really.
+
+¹HOLCONST
+Ü	Ûlift_machineİ : 'State Machine ­ 'State ¸ Req LIST ­ Obj LIST ¸ 'State
+÷üüüüüüüüüüüüüüüüüüüüüü
+Üµmch s r rs·
+Ü	lift_machine mch (s, []) = ([], s)
+Ü±	lift_machine mch (s, Cons r rs) =
+Ü	let out	= Output mch (s, r)
+Ü	and s'	= Next mch (s, r)
+Ü	in	let (outl, final_state)	= lift_machine mch (s', rs)
+Ü		in	(Cons out outl, final_state)
+°
+
+¹HOLCONST
+Ü	Ûsame_at_c_below_levelİ : î ­ Class ­ (Obj ª Obj)
+÷üüüüüüüüüüüüüüüüüüü
+Ü	µn :î; c : Class; obj1 obj2 :Obj·
+Ü
+Ü	same_at_c_below_level 0 c = identicalObj c
+Ü±	same_at_c_below_level (n+1) c = 
+Ü		{	(obj1, obj2)
+Ü		|	# (objectRefers obj1) = # (objectRefers obj2)
+Ü		±	Elems (Combine (objectRefers obj1) (objectRefers obj2))
+Ü			€ (same_at_c_below_level n c)
+Ü		}
+°
+
+¹HOLCONST
+Ü	Ûspecial_machineİ : ('State Machine ¸ 'State Factor ¸ 'State Factor)
+Ü		 ­ Req LIST ­ Req ­ (Req LIST ­ Obj)
+÷üüüüüüüüüüüüüüüüüüü
+Ü	µ(m, f1, f2); rl1 rl2 : Req LIST; r : Req ·
+Ü	special_machine (m, f1, f2) rl1 r rl2 =
+Ü		let s1 = Snd (lift_machine m (Init m, rl1))
+Ü		and s2 = Snd (lift_machine m (Init m, rl2))
+Ü		in	let pe_req = f1 (reqClearance r) (reqSsql r) s1
+Ü			in f2 (reqClearance r) pe_req s2
+°
+
+¹HOLCONST
+Ü	Ûlabel_secure_nİ : î ­ ('State Machine ¸ 'State Factor ¸ 'State Factor) ğ
+÷üüüüüüüüüüüüüüüüüüü
+Ü µ n :î ·	label_secure_n n =
+Ü	{	mff
+Ü	|	µ rl : Req LIST; r : Req ·
+Ü		let sm = special_machine mff rl r
+Ü		in sm  ml_secure sameRequests (same_at_c_below_level n)
+Ü	}
+°
+
+¹HOLCONST
+Ü	Ûlabel_secureİ : ('State FactoredMachine) ğ
+÷üüüüüüüüüüüüüüüüüüü
+Ü    label_secure =
+Ü	{	fm : 'State FactoredMachine
+Ü	|	let m = machine fm and fs = factors fm
+Ü		in 
+Ü		let lf1 = (factor1 fs)
+Ü		and lf2 = (factor1 fs) »‰f (factor2 fs)
+Ü		and lf3 = (factor1 fs) »‰f (factor2 fs) »‰f (factor3 fs)
+Ü		and rf1 = (factor4 fs)
+Ü		and rf2 = (factor3 fs) »‰f (factor4 fs)
+Ü		and rf3 = (factor2 fs) »‰f (factor3 fs) »‰f (factor4 fs)
+Ü		in	(m, lf1, rf1)  label_secure_n 1
+Ü		   ±	(m, lf2, rf2)  label_secure_n 2 
+Ü		   ±	(m, lf3, rf3)  label_secure_n 3 
+Ü	}
+°
+
+=IGN
+\section{INPUT SIMILARITY}
+
+For the purposes of the labelling property we wish to impose more stringent conditions of similarity on the sequence of requests submitted to the machine.
+The motivation for this is to avoid comparing the effects of different sequences of inputs which cause the structure of the output to the query under consideration to be different, and thereby prevent a coherent notion of `same substructure' of the output to apply.
+
+ ¹HOLCONST
+Ü	ÛsameStructureObjİ : (Obj ¸ Obj)ğ
+÷üüüüüüüüüüüüüüüüüüü
+Ü µobj1 obj2 :Obj ·
+Ü	sameStructureObj
+Ü	=	{	(obj1, obj2)
+Ü		|	let 	obj1_refs = (objectRefers obj1)
+Ü			and	obj2_refs = (objectRefers obj2)
+Ü			in	Length obj1_refs = Length obj2_refs
+Ü			   ±	Elems (Combine obj1_refs obj2_refs) € sameStructureObj
+Ü		}
+°
+
+ ¹HOLCONST
+Ü	ÛsameStructureObjlİ : (Obj LIST ¸ Obj LIST)ğ
+÷üüüüüüüüüüüüüüüüüüü
+Ü µobjl1 objl2 :Obj LIST·
+Ü	sameStructureObjl
+Ü	=	{	(objl1, objl2)
+Ü		|	Length objl1 = Length objl2
+Ü		  ±	Elems (Combine objl1 objl2) € sameStructureObj
+Ü		}
+°
+
+ ¹HOLCONST
+Ü	ÛsameStructureReqlİ : (Req LIST ª Req LIST)
+÷üüüüüüüüüüüüüüüüüüü
+Ü µreql1 reql2 :Req LIST ·
+Ü	sameStructureReql
+Ü	=	{	(reql1, reql2)
+Ü		|	Length reql1 = Length reql2
+Ü		   ±	(Map reqSsql reql1, Map reqSsql reql2)  sameStructureObjl
+Ü		}
+°
+
+ ¹HOLCONST
+Ü	ÛsameStrucReqsİ : Class ­ (Req LIST ª Req LIST)
+÷üüüüüüüüüüüüüüüüüüü
+Ü µc : Class ·
+Ü	sameStrucReqs c = (sameRequests c) ¡ sameStructureReql
+°
+
+\section{OUTPUT SIMILARITY}
+
+We want to talk about the information flows arising in each factor of the query processing.
+%To achieve this we need to be able to ignore the classifications in the object produced as a result of the query above a certain level.
+%Otherwise, a high classification on the outer levels will appear to legitimise information flows to inner levels even though those levels are marked with lower class marks.
+
+
+To express the additional constraints on the labels relative to some factorisation of the query semantics we must separately asses the security of the information flow arising in each stage in the evaluation of the query results.
+
+
+
+
+\section{CLOSING DOWN}
+
+The following \Product{} instruction restores the previous proof context.
+=SML
+pop_pc();
+=TEX
+=IGN
+output_theory{theory = "fef043", out_file = "fef043th.doc"};
+=TEX
+\newpage
+\HOLindexOff
+\input{fef043th.tex}
+\HOLindexOn
+\newpage
+\twocolumn[\section{INDEX} \label{INDEX}]
+\small
+\printindex
+
+\end{document}
