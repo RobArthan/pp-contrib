@@ -46,6 +46,10 @@ doctex wrk068 wrk068.th; texdvi -b wrk068; texdvi wrk068; texdvi wrk068
 
 \def\Abs#1{|#1|}
 
+\tabstop=0.4in
+\def\ThmsI#1{%
+{\vertbarfalse#1}}
+
 \def\ThmsII#1#2{%
 {\vertbarfalse
 \begin{minipage}[t]{0.48\hsize}
@@ -74,7 +78,7 @@ doctex wrk068 wrk068.th; texdvi -b wrk068; texdvi wrk068; texdvi wrk068
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2004/04/30 12:07:02 $%
+\date{\FormatDate{$Date: 2004/04/30 14:12:32 $%
 }}
 
 \begin{document}
@@ -85,17 +89,15 @@ This {\ProductHOL} script contains definitions and proofs concerning
 the elements of group theory.
 What is currently covered is what is covered in the first chapter of any good text on the subject:
 in preparation for the introduction of quotient groups, we begin with a purely set-theoretical study of equivalance relations and the quotient of a set with respect to an equivalence relation.
-This is followed by the definitions of the concepts of group, homomorphism between groups, subgroups, normal subgroups, kernels of homomorphisms, congruence modulo a subgroup, cosets, and quotient groups.
-We then demonstrate a few examples of groups and go on to show that the various abstract notions lead to the expected theorems: e.g., that the quotient group construction is consistent and does indeed give rise to a group.
+This is followed by the definitions of the concepts of group, homomorphism between groups, subgroup, normal subgroup, kernel of a homomorphism, congruence modulo a subgroup, coset of a subgroup, and quotient group.
+We exhibit a few examples of groups and show that the various abstract notions lead to the expected theorems: e.g., that the quotient group construction is consistent and does indeed give rise to a group.
 
-The treatment in {\ProductHOL} raises some interesting methodological problems and we give our preferred solutions to these problems.
-These issues are mostly not specific to {\ProductHOL} but are likely to apply to any development of the material in a typed logic with Millner-style polymorphism.
 \end{abstract}
 \vfill
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK068; issue $Revision: 1.9 $%
+Reference: LEMMA1/HOL/WRK068; issue $Revision: 1.10 $%
 
 
 \end{centering}
@@ -112,14 +114,20 @@ Reference: LEMMA1/HOL/WRK068; issue $Revision: 1.9 $%
 \begin{itemize}
 
 \item
-Write the document!
+Implement the proposed extension to the {\ProductHOL} concrete syntax to allow infix operators with a parameter and see how it works out.
+\item
+Prove a lot more results! THe next in line might be the three isomorphism theorems,
+the Cayley representation theorems etc., etc., etc.
+
+\item
+Extend the examples.
 
 \end{itemize}
 
-
-\bibliographystyle{plain}
+{\raggedright
+\bibliographystyle{fmu}
 \bibliography{fmu}
-
+} %\raggedright
 %%%%
 %%%%
 %%%%
@@ -131,15 +139,52 @@ Write the document!
 %%%%
 %%%%
 This document gives specifications and proofs relating to group theory.
-%%%%
-%%%%
-%%%%
-%%%%
-\section{AN OVERVIEW OF THE THEORY}
+It includes a theory of equivalence relations to support the construction of quotient groups.
+This is part of a series of case studies in formalising some basic pure  mathematics in {\ProductHOL}.
+Other parts of the case study deal with real analysis \cite{LEMMA1/HOL/WRK066} and with topology \cite{LEMMA1/HOL/WRK067}.
 
-\subsection{Equivalence Relations}
+A cursory examination of any text on elementary group theory shows that dealing smoothly with subgroups and quotient groups is very important.
+The traditional explication of these concepts in set theory can readily be carried over into HOL, but leads to significant notational and semantic problems, as, indeed, it would if we were working in untyped set theory fully formally.
+The problem is this: an expression like $x.y$ denoting the product of two elements of a group $G$ actually contains three variables: the group elements `$x$', `$y$', and the multiplication operator `$.$'.
+Syntactic tricks allow one to preserve something like the traditional infix notation for such expressions.
+But as soon as a subgroup $H$ of $G$ comes along, there is a semantic problem: according to the traditional account, the `$.$', in $x.y$ will denote a different set-theoretic function in $H$ from what it does in $G$ and coercing from subgroup to containing group or from one subgroup to another becomes an excessive burden.
 
-\subsubsection{Technical Prelude}
+Our approach to this problem is to formulate all  definitions relative to some carrier set of interest in such a way that the behaviour of operators or properties outside the carrier set is irrelevant.
+We advocate this approach in general for dealing with algebraic structures.
+The apparent extra complication actually achieves an economy, because when you are working with substructures, the operators and properties can all be those of the containing structure: you have no need to restrict them to the substructures or to worry about coercing the operations of one substructure into the operations of another.
+{\it Pace} Quine \cite[article on ``Mathematosis'']{Quine87}, it is actually counter-productive to define groups so that the carrier set can be recovered from the set that represents the multiplication.
+
+As an example of our approach, we formulate the notion of an equivalence relation on a set $X$ as a property that places no requirements on the behaviour of the relation off the set $X$.
+This means that an equivalence relation on a set $X$ is, as it stands, an equivalence relation on any subset of $X$.
+This works well in the formal treatment and works well informally too.
+For example, the relation that holds between two numbers $x$ and $y$ when $x - y$ is an integer, is an equivalence relation on any subset of the real numbers.
+There seems to be no conceptual or practical gain in treating such a relation as having  a different set-theoretic representation for different subsets.
+
+As a further example, we define the operations on a group $G$ to be total functions  on the universe of the type of its elements and require the operations on a subgroup $H$ of $G$ to  be the same total functions.
+This involves no loss of generality and removes a great deal of complexity in both specifications and proofs.
+
+This document is a {\Product} literate script. It contains all the metalanguage (ML) commands required to create three theories, populate them with the formal definitions and prove and record all the theorems.
+The three theories,  ``equiv\_rel'', ``groups'' and ``group\_egs'' are described in sections~\ref{equivrel}, ~\ref{groups} and ~\ref{groupegs} respectively.
+The descriptions include all the formal definitions in using the Z-like concrete syntax for specificaiton in {\ProductHOL}.
+and a discussion of the theorems that have been proved about the objects specified.
+To keep our use of the {\Product} document preparation system simple, we simply identify the theorems by name and refer the reader to the theory listings in section~\ref{theorylistings} on page~\pageref{theorylistings} for the formal statements of the theorems.
+There is an index to the formal definitions and the theory listings in section~\ref{index} on page~\pageref{index}.
+
+%%%%
+%%%%
+%%%%
+%%%%
+\section{EQUIVALENCE RELATIONS}\label{equivrel}
+The construction of quotient groups is very important in group theory and so introductory texts on the subject often begin with a review of the set-theoretic notions that support this contruction, {\it viz.} the notion of the quotient of a set by an equivalence relation.
+John Harrision \cite{Harrison96} and Peter Homeier \cite{Homeier01} have both produced powerful metalanguage tools for automating such constructions when a new HOL type is introduced as a quotient set.
+However, these tools do not fit the case in question: we will only wish to construct new types for specific quotient constructions: when we are doing general theory everything in view is a variable including the set of sets representing a quotient group.
+
+Larry Paulson \cite{Paulson04} has pointed out that there are advantages in providing a lemma library to support quotient constructions rather than metalanguage tools.
+In particular, Paulson notes that if we use a lemma library, ``we are not restricted to top-level  properties, but can reason about equivalence classes in a larger proof''.
+This is precisely what happens in our development of elementary group theory and this section presents the definitions and results that make up the lemma library.
+The mathematics is entirely trivial: the point in formulating the theorems is not for their intrinsiic interest, but to provide templates for carrying out quotient constructions in larger proofs.
+
+\subsection{Technical Prelude}
 
 First of all, we must give the the ML commands to  introduce the new theory ``equiv\_rel'' as a child of the theory ``orders'' of ordered sets (whence comes our definition of transitivity,
 see \cite{LEMMA1/HOL/DTD115}).
@@ -160,9 +205,9 @@ new_theory"equiv_rel";
 %%%%
 %%%%
 %%%%
-\subsubsection{The Definitions}
+\subsection{The Definitions}
 We need to define the notion of an equivalence relation, i.e., a binary relation that is transitive, reflexive and symmetric.
-Transitivity is defined elsewhere, but we now need the notions of refliexivity and symmetry to support the definition of an equivalence relation.
+Transitivity is defined elsewhere, but we now need the notions of refliexivity and symmetry.
 We follow the theory of orders in making these notions properties of set-relation pairs.
 We will often use the infix symbol
 =INLINEFT
@@ -182,19 +227,24 @@ declare_infix(210, "¦");
 Ü µ X $¦· Sym(X, $¦) ¤ µx y·x  X ± y  X ± x ¦  y ´ y ¦ x
 °
 An equivalence relation on a set $X$ is then one which is relexive, symmetric and transitive on $X$.
-In the traditional explication of mathematics as set theory, one requires an equivalence relation on a set $X$ to be restricted to $X$.
-We prefer to formulate the notion so that it places no requirements on the behaviour of the relation off the set $X$.
-This means that an equivalence relation on a set $X$ is, as it stands, an equivalence relation on any subset of $X$.
-This works well in the formal treatment and works well informally too.
-For example, the relation that holds between two numbers $x$ and $y$ when $x - y$ is an integer, is an equivalence relation on any subset of the real numbers.
-There seems to be little advantage and many disadvantages in treating such a relation as having  a different set-theoretic representation for different subsets.
+In the traditional explication of mathematics as set theory, one requires an equivalence relation on a set $X$ to be restricted to $X$. Instead, we prefer to ignore the behaviour of the relation outside $X$.
 
 ¹HOLCONST
 Ü ÛEquivİ : ('a SET ¸ ('a ­ 'a ­ BOOL)) ­ BOOL
 ÷üüüüüü
 Ü µ X $¦· Equiv(X, $¦) ¤ Refl(X, $¦) ± Sym(X, $¦) ± Trans(X, $¦)
 °
-
+Now we can define the notions of equivalence class and the quotient set (which is the set of all equivalence classes).
+There is no need to stipulate that relations be equivalence relations in these definitions, that is done in the  statements of the theorems about them.
+We arrange things so that if
+=INLINEFT
+¦
+=TEX
+\ is an equivalence relation on $X$, the function
+=INLINEFT
+EquivClass(X, $¦)
+=TEX
+\ is the projection of $X$ onto the quotient set.
 
 ¹HOLCONST
 Ü ÛEquivClassİ : ('a SET ¸ ('a ­ 'a ­ BOOL)) ­ 'a ­ 'a SET
@@ -207,34 +257,142 @@ There seems to be little advantage and many disadvantages in treating such a rel
 ÷üüüüüü
 Ü µ X $¦· QuotientSet X ($¦) = {A | ¶x· x  X ± A = EquivClass(X, $¦) x}
 °
+
+We adopt Paulson's notation, writing
+=INLINEFT
+X//¦
+=TEX
+\ for the quotient set.
+Since we want to use the same notation for other things, we introduce it as an alias, so that it can be overloaded later.
+
 =SML
 declare_infix(300, "//");
 declare_alias("//", ¬QuotientSet®);
+=TEX
+We say a function $f$ respects an equivalence relation
+=INLINEFT
+¦
+=TEX
+\ on $X$, iff. the function does not distinguish between related values:
+
 =SML
 declare_infix(200, "Respects");
-
+=TEX
 ¹HOLCONST
 Ü Û$Respectsİ : ('a ­ 'b) ­ ('a ­ 'a ­ BOOL) ­ 'a SET ­ BOOL
 ÷üüüüüü
 Ü µ f $¦ X· (f Respects $¦) X ¤ µx y·x  X ± y  X ± x ¦ y ´ f x = f y
 °
+Following Paulson, we define a function
+=INLINEFT
+Contents
+=TEX
+\ whose value on a singleton set $\{x\}$ is $x$ (and whose value on any other kind of set is unspecified).
+The consistency of this definition is not proved automatically, and the development of the theorems begins with the easy proof that it is consistent.
 ¹HOLCONST
-Ü Û$Contentsİ : 'a SET ­ 'a
+Ü ÛContentsİ : 'a SET ­ 'a
 ÷üüüüüü
 Ü µ x· Contents {x} = x
 °
-
+Given any function $f : X \rightarrow Y$, the relation, $R_f$, say, defined so that $x\,R_f\,y$ holds iff. $f(x) = f(y)$ is an equivalence relation.
+$f$ respects an equivalence relation $R$ iff. $R$ is no coarser than $R_f$ (i.e., iff. every $R$-equivalence class is contained in an $R_f$-equivalence class).
+Given such an $R$, $f$ induces a function, $\overline{f}$, from the quotient of $X//R$ to $Y$.
+The following function is the function comprising the union over all $R$ of the corresponding $\overline{f}$ extended to a total function in an unspecified way.
+We write it using the postfix notation
+=INLINEFT
+f ›-
+=TEX
+.
 =SML
-declare_postfix(330, "ç-ê");
-
+declare_postfix(330, "›-");
+=TEX
 ¹HOLCONST
-Ü Û$ç-êİ : ('a ­ 'b) ­ 'a  SET ­ 'b
+Ü Û$›-İ : ('a ­ 'b) ­ 'a  SET ­ 'b
 ÷üüüüüü
-Ü µ f A· (f ç-ê) A = Contents{y | ¶x·  x  A ± y = f x}
+Ü µ f A· (f ›-) A = Contents{y | ¶x·  x  A ± y = f x}
 °
-\subsection{Groups}
+Our lemma library begins with the consistency of the contents function and then a handful of simple facts about equivalence relations, equivalence classes and the contents function.
+This comprises the following theorems.
 
-\subsubsection{Technical Prelude}
+\ThmsII{%
+=GFT
+Contents_consistent
+contents_def
+equiv_class_eq_thm
+equiv_class__thm
+constant_image_thm
+=TEX
+}{%
+=GFT
+respects_image_thm
+respects_image_contents_thm
+quotient_map_onto_thm
+quotient__thm
+quotient_rep_¶_thm
+=TEX
+}
+
+The next block of theorems begins with two theorems which show, in effect, that given any function, $f:X \rightarrow Y$, and any relation
+=INLINEFT
+¦
+=TEX
+\ that $f$ respects on $X$,
+$f$ factors through the projection of $X$ onto
+=INLINEFT
+X // ¦
+=TEX
+, the induced function from
+=INLINEFT
+X // ¦
+=TEX
+\ to $Y$ being given by
+=INLINEFT
+f ›-
+=TEX
+.
+The first version states this in terms of equivalence classes and the second in terms of members of a quotient set.
+The third theorem in this block is our alternative to the treatment of dyadic functions suggested by Paulson.
+It shows that the operation
+=INLINEFT
+Ìf· f ›-
+=TEX
+\ can be iterated to produced a curried version of the induced function theorem for functions of two arguments.
+
+\ThmsIII{%
+=GFT
+induced_fun_equiv_class_thm
+=TEX
+}{%
+=GFT
+induced_fun_thm
+=TEX
+}{%
+=GFT
+induced_fun_induced_fun_thm
+=TEX
+}
+
+Finally we list the theorems that act as the main ``external interface'' to the lemma library. These give the characterising properties of the quotient set construction as pure existence theorems for the one-argument and two-argument cases.
+The characterising properties are that the induced functions exist under the appopriate hypotheses and are unique.
+The uniqueness is trivial and is only stated formally for completeness.
+In applications of the lemma library, one will typically just prove instances of the hypotheses for a particular function and a particular equivalence relation (or relations) and forward chain with the existence theorems to give the induced function.
+In this sense, these theorems act as templates for constructing induced functions.
+
+
+\ThmsII{%
+=GFT
+induced_fun_¶_thm
+induced_fun_¶_unique_thm
+=TEX
+}{%
+=GFT
+dyadic_induced_fun_¶_thm
+dyadic_induced_fun_¶_unique_thm
+=TEX
+}
+\section{GROUPS}\label{groups}
+
+\subsection{Technical Prelude}
 
 First of all, we must give the the ML commands to  introduce the new theory ``groups'' as a child of the theory ``equiv\_rel'' of equivalence relations.
 
@@ -253,25 +411,53 @@ set_merge_pcs["basic_hol1", "'sets_alg"];
 %%%%
 %%%%
 %%%%
-\subsubsection{The Definitions}
+\subsection{The Signature of a Group}
+We will represent a group  as a quadruple comprising a carrier set, a two-argument multiplication function, a unit element and a one-argument inverse function.
+This signature is captured in the following type abbreviation, paremeterised by the type variable $'a$ giving the type of the elements of the group.
+=SML
+declare_type_abbrev("GROUP", ["'a"], ”'a SET ¸ ('a ­ 'a ­ 'a) ¸ 'a ¸ ('a ­ 'a)®);
+=TEX
+If $G$ is a structure with the above signature (i.e., a member of an instance of the above type), we write
+=INLINEFT
+Car G
+=TEX
+\ for the carrier set,
+=INLINEFT
+(x.y)G
+=TEX
+\ for the product of two elements, $x$ and $y$,
+=INLINEFT
+One G
+=TEX
+\ for the unit element and
+=INLINEFT
+(x ›~)G
+=TEX
+\ for the inverse of an element, $x$.
+This is achieved by the following fixity declarations and definition of access functions for the signature.
+
 =SML
 declare_infix(310, ".");
 declare_postfix(330, "›~");
-declare_type_abbrev("GROUP", ["'a"], ”'a SET ¸ ('a ­ 'a ­ 'a) ¸ 'a ¸ ('a ­ 'a)®);
-
-
 ¹HOLCONST
 Ü ÛCarİ :  'a GROUP ­ 'a SET;
 Ü Û$.İ :  'a ­ 'a ­ 'a GROUP ­ 'a;
 Ü Û$›~İ :  'a ­ 'a GROUP ­ 'a;
 Ü ÛOneİ :  'a GROUP ­ 'a
 ÷üüüüüü
-Ü µ set times one inverse·
+Ü µ (set, times, one, inverse)·
 Ü	Car (set, times, one, inverse) = set
 Ü ±	(µx y· (x . y) (set, times, one, inverse) = times x y)
 Ü ±	One (set, times, one, inverse) = one
 Ü ±	(µx· (x ›~) (set, times, one, inverse) = inverse x)
 °
+
+\subsection{The Group Laws and Equational Reasoning in a Group}
+We can now specify the group laws.
+The polymorphic set {\it Group} comprises all structures with the signature of a group that satisfy the group laws.
+The statement is entirely standard following our convention of relativising everything to the carrier set of the group.
+The first two conditions on $G$ say that the carrier set is closed under multiplication and that multiplication is associative, the next two conditions say that the unit is a member of $G$ and is indeed a two-sided unit for multiplication. The remaining conditions say that $G$ is closed under inverse and that the inverse does indeed give a two-sided inverse for the multiplication.
+
 ¹HOLCONST
 Ü ÛGroupİ : 'a GROUP SET
 ÷üüüüüü
@@ -284,6 +470,63 @@ declare_type_abbrev("GROUP", ["'a"], ”'a SET ¸ ('a ­ 'a ­ 'a) ¸ 'a ¸ ('a ­ 'a)®)
 Ü ±	(µx· x  Car G ´ (x ›~) G  Car G)
 Ü ±	(µx· x  Car G ´ (x . (x ›~)G)G = One G ± ((x ›~)G . x)G = One G)
 °
+The above definition shows that our approach to the syntax of the group operations is not unworkable.
+The syntax is certainly readable if one pretends not to notice all the ``$G$''s.
+When working with a specific group, the definitions can easily be expanded to give the familiar notations for the group (see examples in section~\ref{groupegs}).
+However, the syntax is not particular convenient to write for complex expresssions, mainly because it forces the writer to write all the brackets in an expression explicitly.
+An extension to the concrete syntax of {\ProductHOL} is being considered which would remedy this.
+The extension would allow a form of ternary infix (and postfix) operator.
+What we are currently writing asd $(x.y)G$ would become $x\,{.G}\,y$.
+One would be allowed to write $x\,{.G}\,y{.G}\,z$ with no brackets.
+Brackets would only be required when they are significant.
+
+On the basis of this definition, we can prove the usual elementary consequences of these laws.
+These are presented as a set of four portmanteau theorems ({\em group\_clauses1} \ldots {\em group\_clauses4})
+together with some particular results such as a cancellation law that are needed to bootstrap the theory and prove the portmanteau theorems.
+
+\ThmsII{%
+=GFT
+group_clauses1
+group_clauses2
+group_eq_thm
+group_eq_thm1
+left_cancel_thm
+inverse_inverse_thm
+=TEX
+}{%
+=GFT
+group_clauses3
+times_inverse_thm
+inverse_unique_thm
+group_clauses4
+one_unique_thm
+=TEX
+}
+
+Taken together, the portmanteau theorems provide the closure statements one needs to show that arbitrary combinations of the group operations applied to members of the group give members of the group and give the ``free group normal form'' for expressions over the signature of the group.
+This normal form is obtained by repeatedly rewriting with the following rules:
+
+\begin{enumerate}
+\item $(x.y)^{-1} = y^{-1}.x^{-1}$
+\item $(x^{-1})^{-1} = x$
+\item $x.x^{-1} = 1$
+\item $x^{-1}.x = 1$
+\item $x.(x^{-1}.z) = z$
+\item $x^{-1}.(x.z) = z$
+\item $(x.y).z = x.(y.z)$
+\item $x.1 = 1.x = x$
+\end{enumerate}
+
+Now for us, these are conditional rewrite rules: they only hold if the operands of the expressions on the left are members of the carrier set of the group.
+At this point in the proof script, we use the portmanteau theorems to implement automated proof procedures for equality in a group and for membership of the carrier set of a group.
+The proof procedures for equality apply the above rewrite rules setting the necessary membership conditions as lemmas.
+The proof procedures for membership apply the closure conditions for the operations to simplify membership conditions on complex expressions into conditions on atomic subexpressions.
+These procedures deal automatically with all of the equational reasoning that will be needed later except for providing existential witnesses and identifying points at which the argument for a membership condition is non-trivial (i.e., does not follow just from membership conditions on atomic subexpressions).
+
+\subsection{Homomorphisms}
+The definition of homomorphism between two groups, $G$ and $H$, is completely standard
+For us, a homomorphism is given by a total function  whose behaviour outside the carrier set of $G$ is irrelevant.
+
 
 ¹HOLCONST
 Ü ÛHomomorphismİ : 'a GROUP ¸ 'b GROUP ­ ('a ­ 'b) SET
@@ -293,6 +536,30 @@ declare_type_abbrev("GROUP", ["'a"], ”'a SET ¸ ('a ­ 'a ­ 'a) ¸ 'a ¸ ('a ­ 'a)®)
 Ü ¤	(µx · x  Car G ´ f x  Car H)
 Ü ±	(µx y· x  Car G ± y  Car G´ f((x . y) G) = (f x . f y)H)
 °
+
+One only needs to specify that a homomorphism preserves the multiplication, since a homomorphism in that sense will automatically preserve the unit element and inverses as shown by the first two theorems in the following block.
+The third is just an extract from the definition of a homomorphism and is provided for uniformity.
+
+\ThmsIII{%
+=GFT
+homomorphism_one_thm
+=TEX
+}{%
+=GFT
+homomorphism_inverse_thm
+=TEX
+}{%
+=GFT
+homomorphism_times_thm
+=TEX
+}
+
+\subsection{Subgroups}
+Our definition of a subgroup is standard except that we require the multiplication and the inverse function of the subgroup to be identical with those in the containing group.
+This is invaluable in simplifying later definitions and in stating and proving theorems.
+It guarantees that one can just use the operations of the containing group wherever appropriate.
+The reader who does not like this is cordially invited to replace the last two equations in the following by equations conditional on membership of the carrier set of $H$ and then to prove the theorems that follow.
+
 ¹HOLCONST
 Ü ÛSubgroupİ : 'a GROUP  ­ 'a GROUP SET
 ÷üüüüüü
@@ -303,6 +570,19 @@ declare_type_abbrev("GROUP", ["'a"], ”'a SET ¸ ('a ­ 'a ­ 'a) ¸ 'a ¸ ('a ­ 'a)®)
 Ü ±	(µx y·  (x.y)H = (x.y)G)
 Ü ±	(µx·  (x ›~)H = (x ›~)G)
 °
+
+The following theorem extends the equations in the above definition to add the statement that the unit element of a subgroup is the same as that of the containing group.
+
+\ThmsI{%
+=GFT
+subgroup_clauses
+=TEX
+}
+
+\subsection{Normal Subgroups and Kernels of Homomorphisms}
+
+A normal subgroup is one that is closed under conjugation. (The conjugate of $x$ by $y$ is $y^{-1}.x.y$).
+
 ¹HOLCONST
 Ü ÛNormalSubgroupİ : 'a GROUP  ­ 'a GROUP SET
 ÷üüüüüü
@@ -311,6 +591,9 @@ declare_type_abbrev("GROUP", ["'a"], ”'a SET ¸ ('a ­ 'a ­ 'a) ¸ 'a ¸ ('a ­ 'a)®)
 Ü ¤	H  Subgroup G
 Ü ±	(µx y· x  Car H ± y  Car G ´ ((y ›~)G.(x.y)G)G  Car H)
 °
+
+The kernel of a homomorphism from $G$ to $H$  has as its carrier set the pre-image of the unit element of $H$ and inherits the group operations from $G$:
+
 ¹HOLCONST
 Ü ÛKernelİ : ('a ­ 'b) ­ 'a GROUP ¸ 'b GROUP­ 'a GROUP
 ÷üüüüüü
@@ -319,21 +602,58 @@ declare_type_abbrev("GROUP", ["'a"], ”'a SET ¸ ('a ­ 'a ­ 'a) ¸ 'a ¸ ('a ­ 'a)®)
 Ü =	({x | x  Car G ± f x = One H}, (Ìx y· (x . y)G), One G, (Ìx·(x ›~) G))
 °
 
+Kernels of homomorphisms are normal subgroups as stated in the following theorem:
+
+\ThmsI{%
+=GFT
+kernel_normal_subgroup_thm
+=TEX
+}
+\subsection{Congruence modulo a Subgroup}
+Elements $x$ and $y$ are (right) congruent modulo a subgroup $H$ iff. $x^{-1}y$ is a member of $H$.
+Right congruence is equivalence modulo right translation by elements of $H$.
+
 ¹HOLCONST
 Ü ÛRightCongruentİ :'a GROUP ­ 'a GROUP ­ 'a ­ 'a ­ BOOL
 ÷üüüüüü
-Ü µ H G x y· RightCongruent H G x y ¤ ((x ›~) G . y) G  Car H
+Ü µ G H x y· RightCongruent H G x y ¤ ((x ›~) G . y) G  Car H
 °
+
+The following theorems states that right congruence is an equivalence relation:
+
+\ThmsI{%
+=GFT
+right_congruent_equiv_thm
+=TEX
+}
+\subsection{Right Cosets}
+A right coset of $H$ is a set comprising all elements $x.z$ for given $x$ and $z$ in $H$.
+I.e., perhaps confusingly, a right coset is a left translate of $H$. Some texts call these left cosets (and then, perhaps confusingly, left congruence is equivalence modulo right translation by elements of $H$).
+Our terminology follows \cite{Cohn74}.
 
 ¹HOLCONST
 Ü ÛRightCosetİ :'a GROUP ­ 'a GROUP­ 'a ­ 'a SET
 ÷üüüüüü
-Ü µ H G x· RightCoset H G x = {y | ¶z·z  Car H ± y = (x.z) G}
+Ü µ G H x· RightCoset H G x = {y | ¶z·z  Car H ± y = (x.z) G}
 °
+
+The following theorem states that the right cosets of a subgroup are the equivalence classes of its right congruence relation:
+
+
+\ThmsI{%
+=GFT
+right_coset_equiv_class_thm
+=TEX
+}
+
+\subsection{The Quotient Group Construction}
+If $G$ is a group and $H$ is a normal subgroup, then the multiplication and inverse operations on $G$ induce a multiplication  and inverse operation on the set of right cosets of $H$ which make it into a group in such a way that the projection onto the set of right cosets is a homomorphism.
+Most of this is captured in the consistency proof for the following definition of this quotient group construction.
+
 ¹HOLCONST
 Ü ÛQuotientGroupİ :'a GROUP ­ 'a GROUP­ 'a SET GROUP
 ÷üüüüüü
-Ü µ H G· G  Group ± H  NormalSubgroup G
+Ü µ G H· G  Group ± H  NormalSubgroup G
 Ü ´	Car (QuotientGroup G H) = {A | ¶x·x  Car G ± A = RightCoset H G x}
 Ü ±	(µx y· x  Car G ± y  Car G ´
 Ü		(RightCoset H G x.RightCoset H G y) (QuotientGroup G H)
@@ -343,13 +663,48 @@ declare_type_abbrev("GROUP", ["'a"], ”'a SET ¸ ('a ­ 'a ­ 'a) ¸ 'a ¸ ('a ­ 'a)®)
 Ü		(RightCoset H G x ›~) (QuotientGroup G H)
 Ü	=	RightCoset H G ((x ›~)G))
 °
+We write $G//H$ for the quotient of $G$ by $H$ by dint of the following alias declaration (overloading the alias for the quotient set operator).
 =SML
 declare_alias("//", ¬QuotientGroup®);
 =TEX
-\newpage
-\subsection{Examples of Groups}
 
-\subsubsection{Technical Prelude}
+Since the right cosets are the equivalence classes of the right congruence relation, the consistency of the above definition is an immediate consequence of the template theorems for introducing induced functions on quotient sets provided in the theory ``equiv\_rel'' once we have proved that the appropriate instances of the hypotheses of those theorems hold. This is captured in the following theorems.
+
+\ThmsII{%
+=GFT
+group_clauses1
+times_respects_right_congruent_lemma1
+times_respects_right_congruent_lemma2
+=TEX
+}{%
+=GFT
+inverse_respects_right_congruent_lemma
+QuotientGroup_consistent
+quotient_group_def
+=TEX
+}
+
+We can now show that the projection to the quotient group is surjective, that the quotient group is a group and that the projection is a homomorphism.
+
+\ThmsII{%
+=GFT
+quotient_group_rep_¶_thm
+quotient_group_group_thm
+=TEX
+}{%
+=GFT
+quotient_group_homomorphism_thm
+=TEX
+}
+
+
+\newpage
+\section{Examples of Groups}\label{groupegs}
+
+In this section we give one or two examples of specific groups.
+We specialise some of the theorems from section~\ref{groups} to show how they look.
+
+\subsection{Technical Prelude}
 
 First of all, we must give the the ML commands to  introduce the new theory ``group\_egs'' as a child of the theory `groups'' of groups.
 
@@ -369,9 +724,9 @@ set_merge_pcs["basic_hol1", "'sets_alg", "'ú", "'¯"];
 %%%%
 %%%%
 %%%%
-\subsubsection{The Definitions}
-=SML
+\subsection{The Examples}
 
+We define the group of integers under addition and the group of unit integers under multiplication:
 
 ¹HOLCONST
 Ü Ûú_plusİ :  ú GROUP;
@@ -381,18 +736,38 @@ set_merge_pcs["basic_hol1", "'sets_alg", "'ú", "'¯"];
 Ü ±	ú_units = ({~(îú 1); îú 1}, $*, îú 1, (Ìx·x))
 °
 
+We prove that both of these are indeed groups.
+We also show how the notational devices of our treatment of abstract group theory are easily converted into the familiar notation for specific groups, by instantiating the definition of {\em Car} etc. to these groups and using the result to simplify the appropriate instances of the definition of quotient groups (for the sake of an example).
+
+\ThmsIII{
+=GFT
+ú_group_thm
+ú_ones_group_thm
+=TEX
+}{%
+=GFT
+ú_plus_ops_thm
+ú_quotient_group_thm
+=TEX
+}{%
+=GFT
+ú_units_ops_thm
+ú_units_quotient_group_thm
+=TEX
+}
 %%%%
 %%%%
 %%%%
 %%%%
 {\let\Section\section
+\label{theorylistings}
 \def\section#1{\Section{#1}}
 \include{wrk0681.th}
 \include{wrk0682.th}
 \include{wrk0683.th}
 }  %\let
 
-\twocolumn[\section{INDEX}\label{INDEX}]
+\twocolumn[\section{INDEX}\label{index}]
 {\small\printindex}
 
 \end{document}
@@ -434,7 +809,7 @@ val Ûequiv_defİ = get_spec¬Equiv®;
 val Ûequiv_class_defİ = get_spec¬EquivClass®;
 val Ûquotient_set_defİ = get_spec¬$//®;
 val Ûrespects_defİ = get_spec¬$Respects®;
-val Ûinduced_defİ = get_spec¬$ç-ê®;
+val Ûinduced_defİ = get_spec¬$›-®;
 =SML
 push_consistency_goal ¬Contents®;
 a(¶_tac¬ÌA·Åx·A = {x}® THEN REPEAT strip_tac THEN rewrite_tac[]);
@@ -563,42 +938,27 @@ val Ûquotient_rep_¶_thmİ = save_pop_thm "quotient_rep_¶_thm";
 =TEX
 =SML
 set_goal([], ¬
-	µX f· Equiv(X, (Ìx y·f x = f y))
-®);
-a(PC_T1 "sets_ext1" rewrite_tac[ equiv_def, sym_def, refl_def, trans_def]
-		THEN REPEAT strip_tac THEN asm_rewrite_tac[]);
-val Ûequiv_fun_thmİ = save_pop_thm "equiv_fun_thm";
-=TEX
-=SML
-set_goal([], ¬
-	µX f· (f Respects (Ìx y·f x = f y)) X
-®);
-a(rewrite_tac[ respects_def] THEN REPEAT strip_tac);
-val Ûrespects_fun_thmİ = save_pop_thm "respects_fun_thm";
-=TEX
-=SML
-set_goal([], ¬
 	µX $¦ f x·
 		Equiv(X, $¦)
 	±	(f Respects $¦) X
 	±	x  X
-	´	(f ç-ê) (EquivClass(X, $¦) x) = f x
+	´	(f ›-) (EquivClass(X, $¦) x) = f x
 ®);
 a(rewrite_tac[induced_def] THEN REPEAT strip_tac);
 a(bc_thm_tac respects_image_contents_thm THEN REPEAT strip_tac);
-val Ûinduced_fun_thm1İ = save_pop_thm "induced_fun_thm1";
+val Ûinduced_fun_equiv_class_thmİ = save_pop_thm "induced_fun_equiv_class_thm";
 =TEX
 =SML
 set_goal([], ¬
 	µX $¦ f ·
 		Equiv(X, $¦)
 	±	(f Respects $¦) X
-	´	µA x· A  X // $¦ ± x  A ´ (f ç-ê) A = f x
+	´	µA x· A  X // $¦ ± x  A ´ (f ›-) A = f x
 ®);
 a(rewrite_tac[quotient_set_def] THEN REPEAT strip_tac THEN all_var_elim_asm_tac1);
 a(TOP_ASM_T (strip_asm_tac o rewrite_rule[equiv_class_def]));
 a(ALL_FC_T  rewrite_tac[conv_rule(ONCE_MAP_C eq_sym_conv) equiv_class_eq_thm,
-	induced_fun_thm1]);
+	induced_fun_equiv_class_thm]);
 a(DROP_NTH_ASM_T 5 (strip_asm_tac o rewrite_rule[respects_def]));
 a(all_asm_fc_tac[]);
 val Ûinduced_fun_thmİ = save_pop_thm "induced_fun_thm";
@@ -609,16 +969,16 @@ set_goal([], ¬
 		Equiv(X, R)
 	±	Equiv(Y, S)
 	±	(µy· y  Y ´ ((Ìx·f x y) Respects R) X)
-	±	(µx· x  X ´ (f x Respects S) Y)
+	±	(µx· x  X ´ ((Ìy·f x y) Respects S) Y)
 	´	µA x B y· A  X // R ± x  A ± B  Y // S ± y  B
-			´ ((Ìx·(f x ç-ê) B )ç-ê) A = f x y
+			´ ((Ìx·(f x ›-) B )›-) A = f x y
 ®);
-a(REPEAT strip_tac);
-a(lemma_tac¬µx·x  X ´ (f x ç-ê) B = f x y® THEN REPEAT strip_tac);
+a(conv_tac (ONCE_MAP_C È_conv) THEN REPEAT strip_tac);
+a(lemma_tac¬µx·x  X ´ (f x ›-) B = f x y® THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(all_asm_fc_tac[] THEN all_fc_tac[induced_fun_thm]);
 (* *** Goal "2" *** *)
-a(lemma_tac¬((Ì x· (f x ç-ê) B) Respects R) X®);
+a(lemma_tac¬((Ì x· (f x ›-) B) Respects R) X®);
 (* *** Goal "2.1" *** *)
 a(rewrite_tac[respects_def] THEN REPEAT strip_tac THEN ALL_ASM_FC_T rewrite_tac[]);
 a(lemma_tac¬y  Y® THEN1 all_fc_tac[arb_gen quotient__thm]);
@@ -638,7 +998,7 @@ set_goal([], ¬
 	´	¶g· µA x· A  X // $¦ ± x  A ´ g A = f x
 ®);
 a(REPEAT strip_tac);
-a(¶_tac¬f ç-ê® THEN REPEAT strip_tac);
+a(¶_tac¬f ›-® THEN REPEAT strip_tac);
 a(all_fc_tac[arb_gen induced_fun_thm]);
 val Ûinduced_fun_¶_thmİ = save_pop_thm "induced_fun_¶_thm";
 =TEX
@@ -666,9 +1026,8 @@ set_goal([], ¬
 	´	¶g· µA x B y· A  X // R ± x  A ± B  Y // S ± y  B
 			´ g A B = f x y
 ®);
-a(REPEAT µ_tac);
-a(rewrite_tac[prove_rule[]¬(Ìy·f x y) = f x®] THEN REPEAT strip_tac);
-a(¶_tac¬ ÌA B· ((Ìx·(f x ç-ê) B )ç-ê) A® THEN REPEAT strip_tac THEN rewrite_tac[]);
+a(REPEAT strip_tac);
+a(¶_tac¬ ÌA B· ((Ìx·(f x ›-) B )›-) A® THEN REPEAT strip_tac THEN rewrite_tac[]);
 a(all_fc_tac[ induced_fun_induced_fun_thm]);
 val Ûdyadic_induced_fun_¶_thmİ = save_pop_thm "dyadic_induced_fun_¶_thm";
 =TEX
@@ -711,33 +1070,6 @@ val Ûnormal_subgroup_defİ = get_spec¬NormalSubgroup®;
 val Ûkernel_defİ = get_spec¬Kernel®;
 val Ûright_congruent_defİ = get_spec¬RightCongruent®;
 val Ûright_coset_defİ = get_spec¬RightCoset®;
-=TEX
-%%%%
-%%%%
-%%%%
-=SML
-open_theory"group_egs";
-set_merge_pcs["basic_hol1", "'sets_alg", "'ú", "'¯"];
-=TEX
-=SML
-val Ûú_plus_defİ = ±_left_elim(get_spec¬ú_plus®);
-val Ûú_units_defİ = ±_right_elim(get_spec¬ú_units®);
-=TEX
-=SML
-set_goal([], ¬
-	ú_plus  Group
-®);
-a(rewrite_tac[ú_plus_def, group_def, group_ops_def, ú_plus_assoc_thm]);
-val Ûú_group_thmİ = save_pop_thm "ú_group_thm";
-=TEX
-=SML
-set_goal([], ¬
-	ú_units  Group
-®);
-a(rewrite_tac[ú_units_def, group_def, group_ops_def, ú_times_assoc_thm]);
-a(REPEAT strip_tac THEN_TRY asm_rewrite_tac[] THEN
-	all_var_elim_asm_tac1 THEN all_asm_ante_tac THEN rewrite_tac[]);
-val Ûú_ones_group_thmİ = save_pop_thm "ú_ones_group_thm";
 =TEX
 %%%%
 %%%%
@@ -1014,7 +1346,7 @@ We also derive a tactic which will simplify assertions that expressions are memb
 =SML
 fun gen_group__tac (cnvl : CONV -> CONV) : TACTIC = (fn gl as (hyps, conc) =>
 	let	val thm1 = cnvl _rw_conv conc;
-		val thm2 = all_´_intro (asm_±_intro_rule (iterate simplify_asm thm1));
+		val thm2 = all_´_intro (asm_±_intro_rule thm1);
 		val lemma_tm = fst(dest_´(concl thm2));
 		fun thm_tac lemma_thm = (
 			let	val thm3 = ´_elim thm2 lemma_thm;
@@ -1024,7 +1356,7 @@ fun gen_group__tac (cnvl : CONV -> CONV) : TACTIC = (fn gl as (hyps, conc) =>
 	in	LEMMA_T lemma_tm thm_tac gl
 	end
 );
-val group__tac : TACTIC = gen_group__tac TOP_MAP_C;
+val group__tac : TACTIC = REPEAT (gen_group__tac ONCE_MAP_C);
 =SML
 set_goal([], ¬
 	µG : 'a GROUP; H : 'b GROUP; f : 'a ­ 'b·
@@ -1146,6 +1478,28 @@ val Ûright_congruent_equiv_thmİ = save_pop_thm "right_congruent_equiv_thm";
 =TEX
 =SML
 set_goal([], ¬
+	µG : 'a GROUP; H : 'a GROUP; x : 'a·
+	G  Group ± H  Subgroup G ± x  Car G
+´	RightCoset H G x = EquivClass(Car G, RightCongruent H G) x
+®);
+a(rewrite_tac[respects_def, subgroup_def1, right_coset_def, right_congruent_def,
+	equiv_class_def]
+	THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(asm_rewrite_tac[] THEN group__tac THEN REPEAT strip_tac);
+a(all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(asm_rewrite_tac[] THEN group_eq_tac THEN REPEAT strip_tac);
+a(all_asm_fc_tac[]);
+(* *** Goal "3" *** *)
+a(¶_tac¬((x ›~)G.x')G® THEN REPEAT strip_tac);
+a(group_eq_tac THEN REPEAT strip_tac);
+val Ûright_coset_equiv_class_thmİ = save_pop_thm "right_coset_equiv_class_thm";
+=TEX
+The proofs of the following theorems incorporate a slightly odd technique that uses the multiplication in $H$ at certain points where using the multiplication in $G$ might be more natural.
+This is historical and arose as work-around for an infelicity in the original coding of the proof procedure for group membership.
+=SML
+set_goal([], ¬
 	µG : 'a GROUP; H : 'a GROUP·
 	G  Group ± H  NormalSubgroup G
 ´	µy· y  Car G ´ (
@@ -1265,26 +1619,6 @@ a(all_asm_fc_tac[]);
 val Ûinverse_respects_right_congruent_lemmaİ = save_pop_thm "inverse_respects_right_congruent_lemma";
 =TEX
 =SML
-set_goal([], ¬
-	µG : 'a GROUP; H : 'a GROUP; x : 'a·
-	G  Group ± H  Subgroup G ± x  Car G
-´	RightCoset H G x = EquivClass(Car G, RightCongruent H G) x
-®);
-a(rewrite_tac[respects_def, subgroup_def1, right_coset_def, right_congruent_def,
-	equiv_class_def]
-	THEN PC_T1 "sets_ext1" REPEAT strip_tac);
-(* *** Goal "1" *** *)
-a(asm_rewrite_tac[] THEN group__tac THEN REPEAT strip_tac);
-a(all_asm_fc_tac[]);
-(* *** Goal "2" *** *)
-a(asm_rewrite_tac[] THEN group_eq_tac THEN REPEAT strip_tac);
-a(all_asm_fc_tac[]);
-(* *** Goal "3" *** *)
-a(¶_tac¬((x ›~)G.x')G® THEN REPEAT strip_tac);
-a(group_eq_tac THEN REPEAT strip_tac);
-val Ûright_coset_equiv_class_thmİ = save_pop_thm "right_coset_equiv_class_thm";
-=TEX
-=SML
 (drop_main_goal(); ()) handle Fail _ => ();
 push_consistency_goal¬QuotientGroup®;
 a(prove_¶_tac THEN REPEAT strip_tac);
@@ -1378,12 +1712,22 @@ val Ûquotient_group_defİ = save_thm("quotient_group_def", get_spec¬QuotientGroup
 =TEX
 =SML
 set_goal([], ¬
+	µG : 'a GROUP; H : 'a GROUP; C : 'a SET·
+	G  Group ± H  NormalSubgroup G ± C  Car (G // H)
+´	¶x·x  Car G ± C = RightCoset H G x
+®);
+a(REPEAT strip_tac);
+a(POP_ASM_T ante_tac THEN ALL_FC_T rewrite_tac[quotient_group_def]);
+val Ûquotient_group_rep_¶_thmİ = save_pop_thm "quotient_group_rep_¶_thm";
+=TEX
+=SML
+set_goal([], ¬
 	µG : 'a GROUP; H : 'a GROUP·
 	G  Group ± H  NormalSubgroup G
 ´	G // H  Group
 ®);
 a(REPEAT strip_tac THEN rewrite_tac[group_def]);
-a(strip_asm_tac(list_µ_elim[¬H®, ¬G®]quotient_group_def));
+a(strip_asm_tac(list_µ_elim[¬G®, ¬H®]quotient_group_def));
 a(asm_rewrite_tac[] THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(¶_tac¬(x'.x'')G® THEN1 group__tac THEN REPEAT strip_tac);
@@ -1437,15 +1781,46 @@ a(¶_tac¬x® THEN REPEAT strip_tac);
 a(ALL_FC_T rewrite_tac[quotient_group_def]);
 val Ûquotient_group_homomorphism_thmİ = save_pop_thm "quotient_group_homomorphism_thm";
 =TEX
+%%%%
+%%%%
+%%%%
+=SML
+open_theory"group_egs";
+set_merge_pcs["basic_hol1", "'sets_alg", "'ú", "'¯"];
+=TEX
+=SML
+val Ûú_plus_defİ = ±_left_elim(get_spec¬ú_plus®);
+val Ûú_units_defİ = ±_right_elim(get_spec¬ú_units®);
+=TEX
 =SML
 set_goal([], ¬
-	µG : 'a GROUP; H : 'a GROUP; C : 'a SET·
-	G  Group ± H  NormalSubgroup G ± C  Car (G // H)
-´	¶x·x  Car G ± C = RightCoset H G x
+	ú_plus  Group
 ®);
-a(REPEAT strip_tac);
-a(POP_ASM_T ante_tac THEN ALL_FC_T rewrite_tac[quotient_group_def]);
-val Ûquotient_group_rep_¶_thmİ = save_pop_thm "quotient_group_rep_¶_thm";
+a(rewrite_tac[ú_plus_def, group_def, group_ops_def, ú_plus_assoc_thm]);
+val Ûú_group_thmİ = save_pop_thm "ú_group_thm";
+=TEX
+=SML
+set_goal([], ¬
+	ú_units  Group
+®);
+a(rewrite_tac[ú_units_def, group_def, group_ops_def, ú_times_assoc_thm]);
+a(REPEAT strip_tac THEN_TRY asm_rewrite_tac[] THEN
+	all_var_elim_asm_tac1 THEN all_asm_ante_tac THEN rewrite_tac[]);
+val Ûú_ones_group_thmİ = save_pop_thm "ú_ones_group_thm";
+=TEX
+=SML
+val Ûú_plus_ops_thmİ = save_thm("ú_plus_ops_thm", 
+	rewrite_rule[conv_rule (ONCE_MAP_C eq_sym_conv) ú_plus_def](
+		rewrite_rule[ú_plus_def](µ_elim¬ú_plus® group_ops_def)));
+val Ûú_plus_quotient_group_thmİ = save_thm("ú_plus_quotient_group_thm",
+	rewrite_rule[ú_plus_ops_thm, ú_group_thm] (µ_elim¬ú_plus® quotient_group_def));
+=TEX
+=SML
+val Ûú_units_ops_thmİ = save_thm("ú_units_ops_thm", 
+	rewrite_rule[conv_rule (ONCE_MAP_C eq_sym_conv) ú_units_def](
+		rewrite_rule[ú_units_def](µ_elim¬ú_units® group_ops_def)));
+val Ûú_units_quotient_group_thmİ = save_thm("ú_units_quotient_group_thm",
+	rewrite_rule[ú_units_ops_thm, ú_group_thm] (µ_elim¬ú_units® quotient_group_def));
 =TEX
 %%%%
 =TEX
@@ -1464,7 +1839,6 @@ open_theory"group_egs";
 output_theory{out_file="wrk0681.th.doc", theory="equiv_rel"};
 output_theory{out_file="wrk0682.th.doc", theory="groups"};
 output_theory{out_file="wrk0683.th.doc", theory="group_egs"};
-open_theory "groups";
 =TEX
 \end{document}
 =IGN
