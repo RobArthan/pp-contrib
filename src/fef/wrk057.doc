@@ -1,0 +1,622 @@
+=TEX
+% TQtemplate.tex
+\documentstyle[hol1,11pt,TQ]{article}
+\def\Hide#1{}
+\def\Bool{``$\it{:}bool\,$''}
+\def\Note#1{{\small\bf[Note: #1]}}
+\makeindex
+\TPPproject{{\Product}}  %% Mandatory field
+%\TPPvolume{}
+%\TPPpart{}
+\TPPtitle{Examples of HOL Type Definitions}  %% Mandatory field
+\TPPref{DS/FMU/IED/WRK057}  %% Mandatory field
+\def\SCCSversion{$Revision$
+}
+\TPPissue{\SCCSversion}  %% Mandatory field
+\TPPdate{\FormatDate{$Date$
+}}  %% Mandatory field (with sensible default)
+\TPPstatus{Informal}			%% Mandatory field
+\TPPtype{Specification}
+\TPPkeywords{}
+\TPPauthor{R.~D.~Arthan & WIN01}  %% Mandatory field
+%\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
+\TPPabstract{Examples of HOL Type Definitions.}
+%\TPPabstractB{}
+%\TPPabstractC{}
+%\TPPabstractD{}
+%\TPPabstractE{}
+%\TPPabstractF{}
+\TPPdistribution{\parbox[t]{4.0in}{%
+	Library \\
+}}
+%\TPPclass{CLASSIFICATION}
+\newfont{\icllogo}{icllogo50}
+\def\TPPheadlhs{$\vcenter{\halign{##\cr\icllogo ICL\cr}}$}
+%\def\TPPheadlhs{}
+%\def\TPPheadcentre{}
+%def\TPPheadrhs{}
+%\def\TPPfootlhs{}
+%\def\TPPfootcentre{}
+%\def\TPPfootrhs{}
+
+\begin{document}
+\TPPsetsizes
+\makeTPPfrontpage
+
+\vfill
+\begin{centering}
+
+%\bf Copyright \copyright\ : International Computers Ltd \number\year
+
+\end{centering}
+
+\newpage
+\section {DOCUMENT CONTROL}
+\subsection{Contents List}
+\tableofcontents
+\subsection{Document Cross References}
+\bibliographystyle{fmu}
+\bibliography{fmu}
+
+\subsection{Changes History}
+\begin{description}
+\item[Issue \SCCSversion ({\FormatDate{$Date$
+}}) ] First draft. 
+
+\end{description}
+
+\subsection{Changes Forecast}
+None.
+\pagebreak
+\section{GENERAL}
+\subsection{Scope}
+
+\subsection{Introduction}
+
+
+\subsection{Setting Up}
+The following \Product{} instructions set up the new theory $wrk057$ and set the context 
+for the proof tools..
+=SML
+open_theory"fin_thms";
+(force_delete_theory "wrk057" handle _ => ());
+new_theory Û"wrk057"Ý;
+push_pc "hol";
+=TEX
+\section{SOME GENERAL THEOREMS}
+=SML
+set_goal([], ¬µp j·
+	TypeDefn p j ´
+	(¶ abs· (µ a· abs (j a) = a) ± (µ r· p r ¤ j (abs r) = r))
+®);
+a(rewrite_tac(map get_spec[¬TypeDefn®, ¬OneOne®]) THEN REPEAT strip_tac);
+a(lemma_tac¬¶abs· µx· p x ´ j(abs x) = x®);
+(* *** Goal "1" *** *)
+a(prove_¶_tac THEN REPEAT strip_tac);
+a(cases_tac¬p x'® THEN asm_rewrite_tac[]);
+a(all_asm_fc_tac[]);
+a(¶_tac¬y® THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(¶_tac¬abs® THEN REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(lemma_tac ¬j(abs (j a)) = j a® THEN_LIST
+	[POP_ASM_T bc_thm_tac, all_asm_fc_tac[]]);
+a(asm_rewrite_tac[] THEN prove_tac[]);
+(* *** Goal "2.2" *** *)
+a(all_asm_fc_tac[]);
+(* *** Goal "2.3" *** *)
+a(asm_rewrite_tac[]);
+a(¶_tac ¬abs r® THEN asm_rewrite_tac[]);
+val Ûtype_defn_abs_thmÝ = save_pop_thm"type_defn_abs_thm";
+=SML
+set_goal([], ¬
+	µP : 'B ­ BOOL; p : 'b ­ BOOL; J : 'A ­ 'B; j : 'a ­ 'b; k : 'B ­ 'b·
+		TypeDefn P J ± TypeDefn p j ± (µx· P x ´ p(k x)) ´
+		¶‰1 K : 'A ­ 'a· µz· j(K z) = k (J z)
+®);
+a(REPEAT strip_tac);
+a(all_fc_tac[type_defn_abs_thm]);
+a(rename_tac[(¬abs'®, "ABS")]);
+a(¶‰1_tac¬abs o k o J® THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(rewrite_tac[]);
+a(lemma_tac¬p(k (J z))® THEN_LIST [id_tac, ALL_ASM_FC_T rewrite_tac[]]);
+a(lemma_tac¬P (J z)® THEN_LIST [asm_rewrite_tac[], ALL_ASM_FC_T rewrite_tac[]]);
+(* *** Goal "2" *** *)
+a(PC_T1 "hol2" rewrite_tac[] THEN REPEAT strip_tac);
+a(LEMMA_T¬abs(j (K' x)) = abs(j(abs (k (J x))))®
+	(fn th => ante_tac th THEN asm_rewrite_tac[]));
+a(POP_ASM_T rewrite_thm_tac);
+a(asm_rewrite_tac[]);
+val Ûtype_defn_constructor_thmÝ = save_pop_thm"type_defn_constructor_thm";
+=TEX
+=SML
+set_goal([], ¬
+µ	P : 'B ­ BOOL; p : 'b ­ BOOL;
+	J : 'A ­ 'B; j : 'a ­ 'b; K : 'A ­ 'a; k : 'B ­ 'b;
+	M‰b‰y : ('b ­ 'y) ­ ('B ­ 'Y); M‰a‰y : ('a ­ 'y) ­ ('A ­ 'Y);
+	M‰a‰b : ('a ­ 'b) ­ ('A ­ 'B)·
+	TypeDefn P J ± TypeDefn p j ±
+	M‰a‰b j = J ±
+	(µe : 'b ­ 'y;  f : 'a ­ 'b· M‰a‰y(e o f) = M‰b‰y e o M‰a‰b f) ±
+	(µx· P x ´ p(k x)) ± (µz· j(K z) = k (J z)) ±
+	(µc : 'B ¸ 'Y ­ 'y· ¶g : 'b ­ 'y·
+		(µz : 'B·P z ´ g (k z) = c(z, M‰b‰y g z)) ±
+		(µG·	(µz : 'B·P z ´ G (k z) = c(z, M‰b‰y G z))
+		´	(µv : 'b·p v ´ G v = g v)))
+´	(µd : 'A ¸ 'Y ­ 'y·
+		¶‰1h : 'a ­ 'y· µx : 'A· h(K x) = d(x, M‰a‰y h x))
+®);
+a(REPEAT strip_tac);
+a(all_fc_tac[type_defn_abs_thm]);
+a(rename_tac[(¬abs'®, "ABS")]);
+a(spec_nth_asm_tac 5 ¬Ì(v, w)· d(ABS v, w)®);
+a(¶‰1_tac¬g o j® THEN POP_ASM_T ante_tac THEN POP_ASM_T ante_tac THEN
+	asm_rewrite_tac[] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(lemma_tac¬J(ABS (J x)) = J x® THEN1 asm_rewrite_tac[]);
+a(ALL_ASM_FC_T rewrite_tac[]);
+a(asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(LEMMA_T¬M‰a‰y ((h' o abs) o j) = M‰b‰y(h' o abs) o J® ante_tac
+	THEN1 asm_rewrite_tac[]);
+a(LEMMA_T¬(h' o abs) o j = h'® rewrite_thm_tac
+	THEN1 PC_T1 "hol2" asm_rewrite_tac[]);
+a(REPEAT strip_tac);
+a(lemma_tac¬µz : 'B·J (ABS z) = z ´ (h' o abs) (k z) = d(ABS z, M‰b‰y (h' o abs) z)®);
+(* *** Goal "2.1" *** *)
+a(REPEAT strip_tac);
+a(rewrite_tac[]);
+a(LEMMA_T¬abs(k z) = abs(k(J(ABS z)))® rewrite_thm_tac
+	THEN1 asm_rewrite_tac[]);
+a(LEMMA_T¬k(J(ABS z)) = j(K(ABS z))® rewrite_thm_tac
+	THEN asm_rewrite_tac[]);
+(* *** Goal "2.2" *** *)
+a(DROP_NTH_ASM_T 4 (ante_tac o µ_elim¬h' o abs®));
+a(TOP_ASM_T rewrite_thm_tac);
+a(PC_T1 "hol2" REPEAT strip_tac);
+a(POP_ASM_T (ante_tac o µ_elim¬j x®));
+a(asm_rewrite_tac[]);
+val Ûtype_defn_rec_thmÝ = save_pop_thm"type_defn_rec_thm";
+=TEX
+=SML
+set_goal([], ¬
+µ	P : 'B ­ BOOL; p : 'b ­ BOOL;
+	J : 'A ­ 'B; j : 'a ­ 'b; k : 'B ­ 'b;
+	M‰b‰y : ('b ­ 'y) ­ ('B ­ 'Y); M‰a‰y : ('a ­ 'y) ­ ('A ­ 'Y);
+	M‰a‰b : ('a ­ 'b) ­ ('A ­ 'B)·
+	TypeDefn P J ± TypeDefn p j ±
+	M‰a‰b j = J ±
+	(µe : 'b ­ 'y;  f : 'a ­ 'b· M‰a‰y(e o f) = M‰b‰y e o M‰a‰b f) ±
+	(µx· P x ´ p(k x)) ±
+	(µc : 'B ¸ 'Y ­ 'y· ¶g : 'b ­ 'y·
+		(µz : 'B·P z ´ g (k z) = c(z, M‰b‰y g z)) ±
+		(µG·	(µz : 'B·P z ´ G (k z) = c(z, M‰b‰y G z))
+		´	(µv : 'b·p v ´ G v = g v)))
+´	¶rec : ('A ¸ 'Y ­ 'y) ­ ('a ­ 'y)·
+	¶K : 'A ­ 'a·
+	µd : 'A ¸ 'Y ­ 'y·
+		(µx· rec d (K x) = d(x, M‰a‰y (rec d) x)) ±
+		µh : 'a ­ 'y· (µx· h (K x) = d(x, M‰a‰y h x)) ´ h = rec d
+®);
+a(REPEAT strip_tac);
+a(lemma_tac¬
+	¶K : 'A ­ 'a·
+	¶rec : ('A ¸ 'Y ­ 'y) ­ ('a ­ 'y)·
+	µd : 'A ¸ 'Y ­ 'y·
+		(µx· rec d (K x) = d(x, M‰a‰y (rec d) x)) ±
+		µh : 'a ­ 'y· (µx· h (K x) = d(x, M‰a‰y h x)) ´ h = rec d®
+	THEN_LIST [id_tac, ¶_tac¬rec® THEN ¶_tac¬K® THEN asm_rewrite_tac[]]);
+a(all_fc_tac[type_defn_constructor_thm]);
+a(¶_tac¬K® THEN prove_¶_tac THEN REPEAT strip_tac);
+a(all_fc_tac[type_defn_rec_thm]);
+a(POP_ASM_T (strip_asm_tac o µ_elim¬d'®));
+a(¶_tac¬h® THEN REPEAT strip_tac THEN_TRY asm_rewrite_tac[]);
+a(all_asm_fc_tac[]);
+val Ûtype_defn_rec_fun_thmÝ = save_pop_thm"type_defn_rec_fun_thm";
+=TEX
+\section{TREES}
+=TEX
+¹HOLCONST
+Ü	Unparse : (î ¸ 'a) LIST ­ î ­ (î ¸ 'a) LIST
+÷üüüüüüüüüüüüüü
+Üµi nv more·
+Ü	Unparse [] i = []
+Ü±	Unparse (Cons nv more) i =
+Ü	if	i = 0
+Ü	then	[]
+Ü	else	Cons nv (Unparse more ((Fst nv + i) - 1))
+°
+
+¹HOLCONST
+Ü	Tree : (î ¸ 'a) LIST ð
+÷üüüüüüüüüüüüüü
+Ü	Tree =
+Ü	¥{	A
+Ü	|	µlab : 'a; trees : (î ¸ 'a) LIST LIST·
+Ü			Elems trees € A ´
+Ü			Cons (Length trees, lab) (Flat trees)  A}
+°
+
+=SML
+set_goal([], ¬µP·
+	(µx ts· (µt· t  Elems ts ´  P t)
+			´ P (Cons (Length ts, x) (Flat ts)))
+	´	µt· t  Tree ´ P t
+®);
+a(rewrite_tac[get_spec¬Tree®] THEN REPEAT strip_tac);
+a(PC_T1 "sets_ext" (spec_nth_asm_tac 1) ¬{x | P x}®);
+a(list_spec_nth_asm_tac 4 [¬lab®, ¬trees®]);
+a(all_asm_fc_tac[]);
+val Ûtree_induction_lemma1Ý = save_pop_thm"tree_induction_lemma1";
+=TEX
+=SML
+set_goal([], ¬
+	µx ts· (µt· t  Elems ts ´ t  Tree)
+			´ Cons (Length ts, x) (Flat ts)  Tree
+®);
+a(rewrite_tac[get_spec¬Tree®] THEN REPEAT strip_tac);
+a(PC_T1 "sets_ext" (list_spec_nth_asm_tac 1) [¬x®, ¬ts®]);
+a(all_asm_fc_tac[]);
+val Ûtree_induction_lemma2Ý = save_pop_thm"tree_induction_lemma2";
+=TEX
+=SML
+set_goal([], ¬µP·
+	(µx ts· (µt· t  Elems ts ´ t  Tree ± P t)
+			´ P (Cons(Length ts, x) (Flat ts)))
+	´	µt· t  Tree ´ P t
+®);
+a(REPEAT strip_tac);
+a(strip_asm_tac(rewrite_rule[](µ_elim¬Ìx· x  Tree ± P x® tree_induction_lemma1)));
+(* *** Goal "1" *** *)
+a(lemma_tac¬µ t· t  Elems ts ´ t  Tree® THEN1 (contr_tac THEN all_asm_fc_tac[]));
+a(all_fc_tac[tree_induction_lemma2]);
+a(all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(all_asm_fc_tac[] THEN all_asm_fc_tac[]);
+(* *** Goal "3" *** *)
+a(all_asm_fc_tac[]);
+val Ûtree_induction_lemmaÝ = save_pop_thm"tree_induction_lemma";
+=TEX
+=SML
+set_goal([], ¬µt· t  Tree ´
+	¶x; ts· Elems ts € Tree ± t = Cons (Length ts, x) (Flat ts)®);
+a(µ_tac THEN gen_induction_tac1 tree_induction_lemma);
+a(¶_tac¬x® THEN ¶_tac¬ts® THEN PC_T "sets_ext" contr_tac THEN all_asm_fc_tac[]);
+val Ûtree_cases_lemmaÝ = save_pop_thm"tree_cases_lemma";
+=TEX
+=SML
+set_goal([], ¬³ []  Tree®);
+a(lemma_tac¬µt·t  Tree ´ ³t = []® THEN_LIST[id_tac, asm_prove_tac[]]);
+a(µ_tac THEN gen_induction_tac1 tree_induction_lemma);
+a(rewrite_tac[]);
+val Û³_empty_list_tree_lemmaÝ = save_pop_thm"³_empty_list_tree_lemma";
+=TEX
+=SML
+push_goal([], ¬µl1 l2· l1 ë l2 = [] ¤ l1 = [] ± l2 = []®);
+a(µ_tac);
+a(list_induction_tac¬l1® THEN rewrite_tac[append_def]);
+val Ûë_empty_thmÝ = save_pop_thm"ë_empty_thm";
+=TEX
+=SML
+push_goal([], ¬µls· Flat ls = [] ¤ Elems ls € {[]}®);
+a(µ_tac);
+a(list_induction_tac¬ls® THEN
+	asm_rewrite_tac(ë_empty_thm :: map get_spec[¬Elems®, ¬Flat®]));
+(* *** Goal "1" *** *)
+a(PC_T1 "sets_ext1" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(PC_T1 "sets_ext1" asm_prove_tac[]);
+val Ûflat_empty_thmÝ = save_pop_thm"flat_empty_thm";
+=TEX
+=SML
+push_goal([], ¬µl1 l2 l3· (l1 ë l2) ë l3 = l1 ë l2 ë l3®);
+a(µ_tac);
+a(list_induction_tac¬l1® THEN asm_rewrite_tac(map get_spec[¬Append®]));
+val Ûappend_assoc_thmÝ = save_pop_thm"append_assoc_thm";
+=TEX
+=SML
+push_goal([], ¬µls1 ls2· Flat (ls1 ë ls2)  = Flat ls1 ë Flat ls2®);
+a(µ_tac);
+a(list_induction_tac¬ls1® THEN
+	asm_rewrite_tac(append_assoc_thm :: map get_spec[¬Flat®, ¬Append®]));
+val Ûflat_append_thmÝ = save_pop_thm"flat_append_thm";
+=TEX
+=SML
+push_goal([], ¬µls1 ls2· Length (ls1 ë ls2)  = Length ls1 + Length ls2®);
+a(µ_tac);
+a(list_induction_tac¬ls1® THEN
+	asm_rewrite_tac(plus_assoc_thm :: map get_spec[¬Length®, ¬Append®]));
+val Ûlength_append_thmÝ = save_pop_thm"length_append_thm";
+=TEX
+=SML
+push_goal([], ¬µl1 l2· Elems (l1 ë l2)  = Elems l1 À Elems l2®);
+a(µ_tac);
+a(list_induction_tac¬l1® THEN
+	asm_rewrite_tac(map get_spec[¬Flat®, ¬Elems®, ¬Append®]));
+a(PC_T1 "sets_ext" prove_tac[]);
+val Ûelems_append_thmÝ = save_pop_thm"elems_append_thm";
+=TEX
+=SML
+push_goal([], ¬µl· l ë []  = l®);
+a(µ_tac);
+a(list_induction_tac¬l® THEN
+	asm_rewrite_tac(map get_spec[¬Append®]));
+val Ûappend_empty_thmÝ = save_pop_thm"append_empty_thm";
+=TEX
+=SML
+push_goal([], ¬µl1 l2 l3· l1 ë l2  = l1 ë l3 ¤ l2 = l3®);
+a(µ_tac);
+a(list_induction_tac¬l1® THEN
+	asm_rewrite_tac(map get_spec[¬Append®]));
+val Ûappend_cancel_thmÝ = save_pop_thm"append_cancel_thm";
+=TEX
+Following may not be needed:
+=SML
+push_goal([], ¬µl· Length l = 0 ¤ l = []®);
+a(µ_tac);
+a(list_induction_tac¬l® THEN asm_rewrite_tac(map get_spec[¬Length®]));
+val Ûlength_0_thmÝ = save_pop_thm"length_0_thm";
+=TEX
+=SML
+set_goal([], ¬µts more·
+	Elems ts € Tree ´
+	Unparse (Flat ts ë more) (Length ts) = Flat ts
+®);
+a(REPEAT µ_tac);
+a(lemma_tac¬¶tm· Flat ts ë more = tm® THEN_LIST [prove_¶_tac, all_asm_ante_tac]);
+a(intro_µ_tac(¬ts®, ¬ts®) THEN list_induction_tac¬tm®);
+(* *** Goal "1" *** *)
+a(rewrite_tac[ë_empty_thm, flat_empty_thm] THEN REPEAT strip_tac);
+a(strip_asm_tac(µ_elim¬ts® list_cases_thm) THEN all_var_elim_asm_tac1
+	THEN rewrite_tac(map get_spec[¬Unparse®, ¬Length®, ¬$Append®, ¬Flat®]));
+a(i_contr_tac THEN all_asm_ante_tac);
+a(PC_T1 "sets_ext1" rewrite_tac(map get_spec[¬Elems®]) THEN REPEAT strip_tac);
+a(spec_nth_asm_tac 1 ¬x®);
+a(¶_tac ¬x® THEN asm_rewrite_tac[³_empty_list_tree_lemma]);
+(* *** Goal "2" *** *)
+a(REPEAT strip_tac);
+a(strip_asm_tac(µ_elim¬ts® list_cases_thm) THEN all_var_elim_asm_tac1
+	THEN rewrite_tac(map get_spec[¬Unparse®, ¬Length®, ¬$Append®, ¬Flat®]));
+(* *** Goal "2.1" *** *)
+a(strip_asm_tac(µ_elim¬more® list_cases_thm) THEN all_var_elim_asm_tac1
+	THEN rewrite_tac(map get_spec[¬Unparse®]));
+(* *** Goal "2.2" *** *)
+a(lemma_tac¬Elems (Cons x' list2) € Tree ´ x'  Tree®
+	THEN1 PC_T1 "sets_ext1" prove_tac[get_spec¬Elems®]);
+a(all_fc_tac[tree_cases_lemma]);
+a(var_elim_nth_asm_tac 1);
+a(all_asm_ante_tac THEN
+	rewrite_tac(map get_spec[¬$Append®, ¬Flat®, ¬Elems®, ¬Unparse®]));
+a(rewrite_tac[prove_rule[flat_append_thm]
+	¬Flat ts ë Flat list2 = Flat(ts ë list2)®]);
+a(REPEAT strip_tac);
+a(lemma_tac¬Elems(ts ë list2) € Tree®
+	THEN1 PC_T1 "sets_ext1" asm_prove_tac[elems_append_thm]);
+a(all_asm_fc_tac[]);
+a(POP_ASM_T ante_tac THEN rewrite_tac[plus_assoc_thm1, length_append_thm]);
+val Ûunparse_thmÝ = save_pop_thm"unparse_thm";
+=TEX
+=SML
+set_goal([], ¬µt more· t  Tree ´ Unparse (t ë more) 1 = t®);
+a(REPEAT strip_tac);
+a(ante_tac(list_µ_elim[¬[t]®, ¬more®] unparse_thm));
+a(rewrite_tac(append_empty_thm :: map get_spec[¬Elems®, ¬Length®, ¬Flat®]));
+a(PC_T1 "sets_ext1" asm_prove_tac[]);
+val Ûunparse_thm1Ý = save_pop_thm"unparse_thm1";
+=TEX
+=SML
+set_goal([], ¬µt· t  Tree ´
+	¶‰1(x, ts)· Elems ts € Tree ± t = Cons (Length ts, x) (Flat ts)®);
+a(REPEAT strip_tac THEN all_fc_tac[tree_cases_lemma]);
+a(¶‰1_tac¬(x, ts)® THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(REPEAT all_var_elim_asm_tac1);
+a(REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(REPEAT all_var_elim_asm_tac1);
+a(REPEAT_N 4 (POP_ASM_T ante_tac) THEN POP_ASM_T discard_tac);
+a(intro_µ_tac(¬ts®, ¬ts®) THEN list_induction_tac¬ts'®);
+(* *** Goal "2.1" *** *)
+a(rewrite_tac[get_spec¬Length®, length_0_thm]);
+a(prove_tac[]);
+(* *** Goal "2.2" *** *)
+a(REPEAT strip_tac);
+a(strip_asm_tac(µ_elim¬ts® list_cases_thm) THEN all_var_elim_asm_tac1);
+(* *** Goal "2.2.1" *** *)
+a(GET_NTH_ASM_T 2 ante_tac THEN rewrite_tac[get_spec¬Length®, length_0_thm]);
+(* *** Goal "2.2.2" *** *)
+a(lemma_tac¬x = x'® THEN all_asm_ante_tac
+	THEN rewrite_tac(
+		pc_rule1"sets_ext1" prove_rule[]
+			¬µz a b· {z} À a € b ¤ z  b ± a € b® ::
+		map get_spec[¬Flat®, ¬Elems®, ¬Length®])
+	THEN REPEAT strip_tac);
+(* *** Goal "2.2.2.1" *** *)
+a(LEMMA_T ¬Unparse(x ë Flat ts') 1 = Unparse(x' ë Flat list2) 1® ante_tac THEN1
+		asm_rewrite_tac[]);
+a(ALL_FC_T rewrite_tac[unparse_thm1]);
+(* *** Goal "2.2.2.2" *** *)
+a(var_elim_nth_asm_tac 1);
+a(POP_ASM_T ante_tac THEN rewrite_tac[append_cancel_thm] THEN strip_tac);
+a(all_asm_fc_tac[]);
+val Ûtree_cases_lemma1Ý = save_pop_thm"tree_cases_lemma1";
+=TEX
+=SML
+set_goal([], ¬µx·[(0, x)]  Tree®);
+a(rewrite_tac[get_spec¬Tree®] THEN REPEAT strip_tac);
+a(POP_ASM_T (ante_tac o list_µ_elim[¬x®, ¬[]: (î ¸ 'a) LIST LIST®]));
+a(PC_T1 "sets_ext" rewrite_tac(map get_spec [¬Elems®, ¬Flat®, ¬Length®]));
+val Ûleaf_is_a_tree_thmÝ = save_pop_thm"leaf_is_a_tree_thm";
+=TEX
+=SML
+set_goal([], ¬¶con args·µt·
+	t  Tree ´
+	Elems (args t) € Tree ± Cons (Length (args t), con t) (Flat (args t)) = t
+®);
+a(prove_¶_tac THEN REPEAT strip_tac);
+a(cases_tac¬t''  Tree® THEN asm_rewrite_tac[]);
+a(all_fc_tac[tree_cases_lemma]);
+a(all_var_elim_asm_tac1);
+a(¶_tac¬ts® THEN ¶_tac¬x® THEN REPEAT strip_tac);
+val Ûcon_args_lemmaÝ = save_pop_thm"con_args_lemma";
+=TEX
+\section{DEFINING THE TYPE OF TREES}
+=SML
+val Ûtree_defÝ = new_type_defn(["TREE", "tree_def"], "TREE", ["'a"],
+	tac_proof( ([], ¬¶tr· (Ìt· t  Tree) tr®), 
+		asm_tac leaf_is_a_tree_thm THEN asm_prove_tac[]));
+=TEX
+=IGN ¹HOLCONST
+=IGN Ü	AbsTree : (î ¸ 'a) LIST ­ 'a TREE;
+=IGN Ü	RepTree : 'a TREE ­ (î ¸ 'a) LIST
+=IGN ÷üüüüüüüüüüüüüüüüüü
+=IGN Ü	(µ a· AbsTree (RepTree a) = a) ±
+=IGN Ü	(µ r· r  Tree ¤ RepTree (AbsTree r) = r)
+=IGN °
+¹HOLCONST
+Ü	TreeRec : (('a ¸ ('a TREE LIST)) ¸ 'b LIST ­ 'b) ­ ('a TREE ­ 'b)
+÷üüüüüüüüüüüüüüüüüü
+Ü	¶MkTree : ('a ¸ ('a TREE LIST)) ­ 'a TREE·
+Ü	µd : ('a ¸ ('a TREE LIST)) ¸ 'b LIST ­ 'b·
+Ü	(µx· TreeRec d (MkTree x) = d(x, Map (TreeRec d) (Snd x))) ±
+Ü	(µh· (µx· h (MkTree x) = d(x, Map h (Snd x))) ´ h = TreeRec d)
+°
+=IGN ¹HOLCONST
+=IGN Ü	MkTree : ('a ¸ ('a TREE LIST)) ­ 'a TREE;
+=IGN Ü	DestTree : 'a TREE ­ ('a ¸ ('a TREE LIST))
+=IGN ÷üüüüüüüüüüüüüüüüüü
+=IGN Ü	(µ t· MkTree (DestTree t) = t) ±
+=IGN Ü	(µ r· DestTree (MkTree r) = r) ±
+=IGN Ü	µA: 'a TREE SET· (µx ts· Elems ts € A ´ MkTree(x, ts)  A) ´ µt·t  A
+=IGN °
+=TEX
+=SML
+push_goal([], ¬µf g l·(µx·x  Elems l ´ f(g x) = x) ´ Map f(Map g l) = l®);
+a(REPEAT µ_tac);
+a(list_induction_tac¬l® THEN PC_T1 "sets_ext1" asm_rewrite_tac(map get_spec
+	[¬Elems®, ¬Map®]));
+(* *** Goal "1" *** *)
+a(contr_tac THEN all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(REPEAT strip_tac);
+a(spec_nth_asm_tac 1 ¬x® THEN asm_rewrite_tac[]);
+val Ûmap_map_id_thmÝ = save_pop_thm"map_map_id_thm";
+=TEX
+=SML
+push_goal([], ¬µf g A·Elems (Map f l) = {y | ¶x· x  Elems l ± f x = y}®);
+a(REPEAT strip_tac);
+a(list_induction_tac¬l® THEN PC_T1 "sets_ext1" asm_rewrite_tac(map get_spec
+	[¬Elems®, ¬Map®]) THEN PC_T1 "sets_ext1" REPEAT strip_tac
+	THEN all_var_elim_asm_tac1 THEN asm_prove_tac[]);
+val Ûelems_map_thmÝ = save_pop_thm"elems_map_thm";
+=IGN
+push_consistency_goal¬MkTree®;
+a((strip_asm_tac o rewrite_rule[]) (´_match_mp_rule type_lemmas_thm tree_def));
+a(strip_asm_tac(con_args_lemma));
+a(¶_tac¬(
+	(Ì(x, ts)· abs(Cons (Length ts, x) (Flat (Map rep ts)))),
+	(Ìt· (con(rep t), Map abs (args (rep t)))))®
+	THEN rewrite_tac[] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(LEMMA_T¬Cons
+	(# (Map abs (args (rep t))), con (rep t))
+	(Flat (Map rep (Map abs (args (rep t))))) =
+	rep t® asm_rewrite_thm_tac);
+a(lemma_tac¬rep t  Tree® THEN1 asm_rewrite_tac[]);
+a(LIST_GET_NTH_ASM_T [2] all_fc_tac);
+a(DROP_NTH_ASM_T 2 ante_tac THEN PC_T1 "sets_ext" asm_rewrite_tac[]);
+a(REPEAT strip_tac THEN ALL_FC_T rewrite_tac[map_map_id_thm]);
+a(asm_rewrite_tac[length_map_thm]);
+(* *** Goal "2" *** *)
+a(lemma_tac¬¶(x, ts)·r = (x, ts)® THEN1 (¶_tac ¬r® THEN rewrite_tac[]));
+a(var_elim_nth_asm_tac 1 THEN rewrite_tac[]);
+a(lemma_tac¬Elems (Map rep ts) € Tree® THEN1 asm_rewrite_tac[elems_map_thm]);
+(* *** Goal "2.1" *** *)
+a(PC_T1 "sets_ext1" REPEAT strip_tac
+	THEN var_elim_nth_asm_tac 1 THEN asm_rewrite_tac[]);
+(* *** Goal "2.2" *** *)
+a(TOP_ASM_T (PC_T1 "sets_ext1" strip_asm_tac));
+a(all_fc_tac[tree_induction_lemma2]);
+a(POP_ASM_T (ante_tac o µ_elim¬x®) THEN rewrite_tac[length_map_thm]
+	THEN strip_tac);
+a(LIST_GET_NTH_ASM_T [5] (ALL_FC_T rewrite_tac));
+a(LIST_GET_NTH_ASM_T [4] all_fc_tac);
+a(asm_rewrite_tac[]);
+a(LEMMA_T ¬args (Cons (# ts, x) (Flat (Map rep ts))) = (Map rep ts)®
+	rewrite_thm_tac);
+(* *** Goal "2.2.1" *** *)
+a(strip_asm_tac(µ_elim¬Cons (# ts, x) (Flat (Map rep ts))® tree_cases_lemma1));
+a(var_elim_nth_asm_tac 3);
+a(POP_ASM_T (ante_tac o list_µ_elim[¬con (Cons (# ts, x') (Flat (Map rep ts)))®,
+	¬(args (Cons (# ts, x') (Flat (Map rep ts))))®]));
+a(LIST_GET_NTH_ASM_T [7] rewrite_tac);
+a(LIST_GET_NTH_ASM_T [6] rewrite_tac);
+a(LIST_GET_NTH_ASM_T [5] rewrite_tac);
+a(LIST_GET_NTH_ASM_T [4] rewrite_tac);
+
+
+a(asm_rewrite_tac[]);
+
+
+a(DROP_NTH_ASM_T 4 ante_tac THEN PC_T1 "sets_ext" asm_rewrite_tac[]);
+
+
+
+a(REPEAT strip_tac THEN all_fc_tac[
+(* *** Goal "1.1" *** *)
+a(lemma_tac ¬Elems(Map rep (Map abs (args (rep t)))) € Tree®);
+a(rewrite_tac[elems_map_thm] THEN PC_T1 "hol2" REPEAT strip_tac);
+a(all_var_elim_asm_tac1 THEN asm_rewrite_tac[]);
+
+
+a(lemma_tac ¬¶l· args (rep t) = l® THEN1 prove_¶_tac);
+a(POP_ASM_T ante_tac THEN POP_ASM_T ante_tac THEN intro_µ_tac(¬t®, ¬t®)
+	THEN list_induction_tac¬l®
+	THEN REPEAT strip_tac
+	THEN PC_T1 "sets_ext1" asm_rewrite_tac(map get_spec[¬Elems®, ¬Map®]));
+
+	
+val _ = save_consistency_thm ¬AbsTree® (pop_thm());
+=TEX
+=SML
+push_consistency_goal¬MkTree®;
+a((strip_asm_tac o rewrite_rule[]) (´_match_mp_rule type_lemmas_thm tree_def));
+a(¶_tac¬(abs, rep)® THEN asm_rewrite_tac[]);
+val _ = save_consistency_thm ¬AbsTree® (pop_thm());
+=TEX
+\section{CLOSING DOWN}
+The following \Product{} instruction restores the previous proof context.
+=SML
+pop_pc();
+=TEX
+=IGN
+output_theory{theory = "wrk057",out_file = "wrk057th.doc"};
+=TEX
+\newpage
+\HOLindexOff
+\input{wrk057th.tex}
+\HOLindexOn
+\newpage
+\twocolumn[\section{INDEX} \label{INDEX}]
+\small
+\printindex
+
+\end{document}
+
+=SML
+val up_conv = PC_C1 "hol2" rewrite_conv[get_spec¬Unparse®];
+
+up_conv¬Unparse [(0, x)] 1®			(* x --> x *);
+up_conv¬Unparse [(0, x)] 0®			(* x --> () *);
+up_conv¬Unparse [(1, x); (0, y)] 1®		(* x(y) --> x(y) *);
+up_conv¬Unparse [(1, x); (0, y); (0, z)] 1®	(* x(y); z() --> x(y) *);
+up_conv¬Unparse [(2, x); (0, y); (1, z); (0, y); (0, a)] 1®
+				(* x(y, z(y)); a --> x(y, z(y)) *);
+up_conv¬Unparse [(3, x); (0, y); (1, z); (0, y); (0, a); (0, c); (0, d)] 1®
+				(* x(y, z(y), a); c; d --> c; d *);
+up_conv¬Unparse [(3, x); (0, y); (1, z); (0, y); (0, a); (0, c); (0, d)] 2®
+				(* x(y, z(y), a); c; d --> x(y, z(y), a); c *);
+up_conv¬Unparse [(3, x); (0, y); (1, z); (0, y); (0, a); (1, c); (1, e); (0, f); (0, d)] 2®
+				(* x(y, z(y), a); c(e(f)); d --> x(y, z(y), a); c(e(f)) *);
+a(LIST_GET_NTH_ASM_T [5] rewrite_tac);
