@@ -401,7 +401,111 @@ a(asm_rewrite_tac[pc_rule1"sets_ext1"prove_rule[]¨µX Y∑ﬁ (X ¿ Y) = ﬁX ¿ ﬁYÆ]);
 a(GET_NTH_ASM_T 2 ante_tac THEN PC_T1 "sets_ext1" prove_tac[]);
 val €finite_chain_thm› = save_pop_thm"finite_chain_thm";
 =TEX
-[TBD --- move the miscellaneous lemmas about lists in the next section up here.]
+We also need a few general lemmas about lists:
+%%%%
+%%%%
+=SML
+set_goal([], ¨
+	(µl1 l2 : 'a LIST∑ Length(l1 @ l2) = Length l1 + Length l2)
+±	(µl:'a LIST∑ Length(Rev l) = Length l)
+Æ);
+a(once_rewrite_tac[taut_rule¨µp q∑ p ± q § p ± (p ¥ q)Æ]);
+a(±_tac THEN1 (REPEAT strip_tac THEN list_induction_tac¨l1:'a LISTÆ THEN
+	asm_rewrite_tac[rev_def, length_def, append_def] THEN PC_T1 "lin_arith" prove_tac[]));
+a(REPEAT strip_tac THEN list_induction_tac¨l:'a LISTÆ THEN
+	asm_rewrite_tac[rev_def, length_def] THEN PC_T1 "lin_arith" prove_tac[]);
+val €length_rev_append_thm› = pop_thm();
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨
+	µl: 'a LIST∑ Length l = 0 § l = []
+Æ);
+a(REPEAT strip_tac THEN_TRY asm_rewrite_tac[length_def]);
+a(strip_asm_tac (µ_elim¨lÆlist_cases_thm));
+a(all_var_elim_asm_tac1 THEN all_asm_ante_tac THEN rewrite_tac[length_def]);
+val €length_eq_0_thm› = pop_thm();
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨
+	µl1 l2 l3:'a LIST∑ (l1 @ l2) @ l3 = l1 @ l2 @ l3
+Æ);
+a(REPEAT strip_tac THEN list_induction_tac¨l1:'a LISTÆ THEN
+	asm_rewrite_tac[append_def]);
+val €append_assoc_thm› = pop_thm();
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨
+	µl∑ [] @ l = l ± l @ [] = l
+Æ);
+a(rewrite_tac[append_def]
+	THEN REPEAT strip_tac THEN list_induction_tac¨l:'a LISTÆ THEN
+	asm_rewrite_tac[append_def]);
+val €append_empty_thm› = pop_thm();
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨
+	µl1 l2 ∑ Rev (l1 @ l2) = Rev l2 @ Rev l1
+Æ);
+a(REPEAT strip_tac THEN list_induction_tac¨l1:'a LISTÆ THEN
+	asm_rewrite_tac[rev_def, append_def, append_assoc_thm, append_empty_thm]);
+val €rev_append_thm› = pop_thm();
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨
+	µl1 l2 ∑ l1 @ l2 = [] § l1 = [] ± l2 = []
+Æ);
+a(µ_tac THEN list_induction_tac¨l1: 'a LISTÆ THEN asm_rewrite_tac[append_def]);
+val €append_eq_empty_thm› = pop_thm();
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨
+	µl ∑ Rev l = [] § l = []
+Æ);
+a(µ_tac THEN list_induction_tac¨l: 'a LISTÆ THEN asm_rewrite_tac[append_eq_empty_thm, rev_def]);
+val €rev_eq_empty_thm› = pop_thm();
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨
+	µl ∑ Rev(Rev l) = l
+Æ);
+a(µ_tac THEN list_induction_tac¨l: 'a LISTÆ THEN
+	asm_rewrite_tac[rev_def, rev_append_thm, append_empty_thm, append_def]);
+val €rev_rev_thm› = pop_thm();
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨
+	(µf n∑ Length(f To n) = n)
+Æ);
+a(REPEAT strip_tac THEN induction_tac¨n:ÓÆ THEN
+	asm_rewrite_tac[length_rev_append_thm, length_def, to_def]);
+val €length_to_thm› = pop_thm();
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨
+	(µf:'a ≠ 'b; l∑ Length(Map f l) = Length l)
+Æ);
+a(REPEAT strip_tac THEN list_induction_tac¨l:'a LISTÆ THEN
+	asm_rewrite_tac[length_def, map_def]);
+val €length_map_thm› = pop_thm();
+=TEX
 %%%%
 %%%%
 %%%%
@@ -633,112 +737,7 @@ a(PC_T1 "Ø_lin_arith" prove_tac[]);
 val €poly_eval_append_thm› = save_pop_thm "poly_eval_append_thm";
 =TEX
 We are now going to prove various identities for polynomials.
-We need a few general lemmas about lists first:
-%%%%
-%%%%
-=SML
-set_goal([], ¨
-	(µl1 l2 : 'a LIST∑ Length(l1 @ l2) = Length l1 + Length l2)
-±	(µl:'a LIST∑ Length(Rev l) = Length l)
-Æ);
-a(once_rewrite_tac[taut_rule¨µp q∑ p ± q § p ± (p ¥ q)Æ]);
-a(±_tac THEN1 (REPEAT strip_tac THEN list_induction_tac¨l1:'a LISTÆ THEN
-	asm_rewrite_tac[rev_def, length_def, append_def] THEN PC_T1 "lin_arith" prove_tac[]));
-a(REPEAT strip_tac THEN list_induction_tac¨l:'a LISTÆ THEN
-	asm_rewrite_tac[rev_def, length_def] THEN PC_T1 "lin_arith" prove_tac[]);
-val €length_rev_append_thm› = pop_thm();
-=TEX
-%%%%
-%%%%
-=SML
-set_goal([], ¨
-	µl: 'a LIST∑ Length l = 0 § l = []
-Æ);
-a(REPEAT strip_tac THEN_TRY asm_rewrite_tac[length_def]);
-a(strip_asm_tac (µ_elim¨lÆlist_cases_thm));
-a(all_var_elim_asm_tac1 THEN all_asm_ante_tac THEN rewrite_tac[length_def]);
-val €length_eq_0_thm› = pop_thm();
-=TEX
-%%%%
-%%%%
-=SML
-set_goal([], ¨
-	µl1 l2 l3:'a LIST∑ (l1 @ l2) @ l3 = l1 @ l2 @ l3
-Æ);
-a(REPEAT strip_tac THEN list_induction_tac¨l1:'a LISTÆ THEN
-	asm_rewrite_tac[append_def]);
-val €append_assoc_thm› = pop_thm();
-=TEX
-%%%%
-%%%%
-=SML
-set_goal([], ¨
-	µl∑ [] @ l = l ± l @ [] = l
-Æ);
-a(rewrite_tac[append_def]
-	THEN REPEAT strip_tac THEN list_induction_tac¨l:'a LISTÆ THEN
-	asm_rewrite_tac[append_def]);
-val €append_empty_thm› = pop_thm();
-=TEX
-%%%%
-%%%%
-=SML
-set_goal([], ¨
-	µl1 l2 ∑ Rev (l1 @ l2) = Rev l2 @ Rev l1
-Æ);
-a(REPEAT strip_tac THEN list_induction_tac¨l1:'a LISTÆ THEN
-	asm_rewrite_tac[rev_def, append_def, append_assoc_thm, append_empty_thm]);
-val €rev_append_thm› = pop_thm();
-=TEX
-%%%%
-%%%%
-=SML
-set_goal([], ¨
-	µl1 l2 ∑ l1 @ l2 = [] § l1 = [] ± l2 = []
-Æ);
-a(µ_tac THEN list_induction_tac¨l1: 'a LISTÆ THEN asm_rewrite_tac[append_def]);
-val €append_eq_empty_thm› = pop_thm();
-=TEX
-%%%%
-%%%%
-=SML
-set_goal([], ¨
-	µl ∑ Rev l = [] § l = []
-Æ);
-a(µ_tac THEN list_induction_tac¨l: 'a LISTÆ THEN asm_rewrite_tac[append_eq_empty_thm, rev_def]);
-val €rev_eq_empty_thm› = pop_thm();
-=TEX
-%%%%
-%%%%
-=SML
-set_goal([], ¨
-	µl ∑ Rev(Rev l) = l
-Æ);
-a(µ_tac THEN list_induction_tac¨l: 'a LISTÆ THEN
-	asm_rewrite_tac[rev_def, rev_append_thm, append_empty_thm, append_def]);
-val €rev_rev_thm› = pop_thm();
-=TEX
-%%%%
-%%%%
-=SML
-set_goal([], ¨
-	(µf n∑ Length(f To n) = n)
-Æ);
-a(REPEAT strip_tac THEN induction_tac¨n:ÓÆ THEN
-	asm_rewrite_tac[length_rev_append_thm, length_def, to_def]);
-val €length_to_thm› = pop_thm();
-=TEX
-%%%%
-%%%%
-=SML
-set_goal([], ¨
-	(µf:'a ≠ 'b; l∑ Length(Map f l) = Length l)
-Æ);
-a(REPEAT strip_tac THEN list_induction_tac¨l:'a LISTÆ THEN
-	asm_rewrite_tac[length_def, map_def]);
-val €length_map_thm› = pop_thm();
-=TEX
-The next result gives the rule for evaluating a polynomial starting with the
+The following result gives the rule for evaluating a polynomial starting with the
 leading term.
 %%%%
 %%%%
@@ -1259,7 +1258,7 @@ a(rewrite_tac[pc_rule1 "Ø_lin_arith" prove_rule[]¨µx y∑x*e*t*y = e*(x*t)*yÆ]);
 a(lemma_tac¨≥ ÓØ 2 * t = ÓØ 0Æ THEN1
 	(strip_asm_tac(µ_elim¨xÆ Ø_0_º_abs_thm) THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
 a(ALL_FC_T rewrite_tac[Ø_times_recip_thm]);
-val €times_lim_seq_thm› = pop_thm ();
+val €times_lim_seq_lemma› = pop_thm ();
 =TEX
 Now we can prove that the product of two sequences each of which has a limit has
 the product of the limits as its limit:
@@ -1283,7 +1282,7 @@ a(all_asm_fc_tac[] THEN REPEAT strip_tac);
 a(∂_tac¨n+n'Æ THEN REPEAT strip_tac);
 a(lemma_tac¨n º m ± n' º mÆ THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
 a(LIST_GET_NTH_ASM_T[6, 7] all_fc_tac);
-a(bc_thm_tac (rewrite_rule[]times_lim_seq_thm));
+a(bc_thm_tac (rewrite_rule[]times_lim_seq_lemma));
 a(∂_tac¨b + Abs c2Æ THEN asm_rewrite_tac[]);
 a(spec_nth_asm_tac 13 ¨mÆ THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 val €times_lim_seq_thm› = save_pop_thm "times_lim_seq_thm";
