@@ -20,7 +20,7 @@
 \TPPauthor{G.~M.~Prout & WIN01}  %% Mandatory field
 %\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
 \TPPauthorisation{R.B.~Jones & HAT Manager}
-\TPPabstract{A specification of the SWORD output filter in \Product{} HOL for the
+\TPPabstract{A specification of the SWORD output filter in \ProductHOL{} for the
 DRA front end filter project RSRE 1C/6130.}
 %\TPPabstractB{}
 %\TPPabstractC{}
@@ -62,8 +62,8 @@ DRA front end filter project RSRE 1C/6130.}
 
 \subsection{Changes History}
 \begin{description}
-\item[Issue \SCCSversion ({\FormatDate{93/02/03
-}})]  First issue.
+\item[Issue \SCCSversion ({\FormatDate{$Date$
+}})]  New parent; definitions from DS/FMU/FEF/014 removed.
 \end{description}
 
 \subsection{Changes Forecast}
@@ -71,63 +71,33 @@ None.
 \pagebreak
 \section{GENERAL}
 \subsection{Scope}
-This document gives a formal specification in \Product HOL of the SWORD front end output filter of \cite{output}.
+This document gives a formal specification in \ProductHOL{} of the SWORD front end output filter of \cite{output}.
 
 \subsection{Introduction}
 \section{PRELIMINARIES}
 =SML
-open_theory"fef003";
+open_theory"fef015";
 new_theory"fef024";
 =TEX
 Some functions (similar to those in \cite{DS/FMU/FEF/014}) for dealing with
 errors are required.
-General constructor, discriminator and destructor functions 
- are provided for a sum type where one component is 
- an error.
 
 ¹HOLCONST
-Ü	ÛgiveValİ 	: 'a ­ 'a + 'Error;
-Ü	ÛgiveErrorİ 	: 'Error ­ 'a + 'Error;
-Ü	ÛdestValİ	: 'a + 'Error ­ 'a;
-Ü	ÛdestErrorİ	: 'a + 'Error ­ 'Error;
-Ü	ÛisValİ		: 'a + 'Error ­ BOOL;
-Ü	ÛisErrorİ	: 'a + 'Error ­ BOOL
-÷üüüüüüüüüüüüüü
-Ü	µ v; e; ve 
-Ü	·	giveVal v			= InL v
-Ü	±	giveError e			= InR e
-Ü	±	destVal (giveVal v)		= v 
-Ü	±	destError(giveError e)	= e	
-Ü	±	(isVal ve 			= ¶ v‰1 · ve = giveVal v‰1)
-Ü	±	(isError ve			= ¶ e‰1 · ve = giveError e‰1)
-°
-¹HOLCONST
-Ü	Ûseqİ : î ­ 'x  ­ 'x LIST 
+Ü	$ÛCons‰eİ : ('x + 'Error) ­ ('x LIST + 'Error) ­ ('x LIST + 'Error)
 ÷üüüüüüüüüüüüüüüüüüüüüüü
-Ü	µ n x · seq n x =	if n = 0 then []
-Ü				else Cons x (seq (n - 1) x)
-°
-=SML
-declare_infix (150,"&‰2");
-=TEX
-¹HOLCONST
-Ü	$Û&‰2İ : ('x + STRING) ­ ('x LIST + STRING) ­ ('x LIST + STRING)
-÷üüüüüüüüüüüüüüüüüüüüüüü
-Ü	µ x xl · (x &‰2 xl) =
+Ü	µ x xl · (Cons‰e x xl) =
 Ü	if 	isVal x
 Ü		then	if	isVal xl
 Ü			then	giveVal(Cons(destVal x) (destVal xl))
 Ü			else	giveError (destError xl)
-Ü	else	if 	isVal xl
-Ü		then	giveError (destError x)
-Ü		else	giveError(destError x ë destError xl)
+Ü	else	giveError (destError x)
 °
+
 ¹HOLCONST
-Ü	Ûpromoteİ : ('x ­ 'y + STRING) ­ ('x LIST­ 'y LIST + STRING) 
+Ü	ÛMap‰eİ : ('x ­ 'y + 'Error) ­ ('x LIST­ 'y LIST + 'Error) 
 ÷üüüüüüüüüüüüüüüüüüüüüüü
-Ü	µ f s · promote f s = 
-Ü	if 	s = [] then giveVal[]
-Ü	else	(f (Hd s) &‰2 promote f (Tl s)) 	
+Ü	µ f  · Map‰e f [] = giveVal[]
+Ü±	(µ h f list · Map‰e f (Cons h list) = (Cons‰e (f h) (Map‰e f list))) 	
 °
 
 
@@ -181,19 +151,24 @@ If the user is not cleared to see the data in a particular field, the string $no
 Ü	Ûfilter_colsİ: Class ­ ('DATA LIST ¸ BOOL LIST)  
 					­ (('DATA + STRING) LIST) + STRING
 ÷üüüüüüüüüüüüüü
-Ü	µ d c ds bs uc ·
+Ü	µ d b ds bs uc ·
 Ü	filter_cols uc ([],[]) = giveVal[]
-Ü±	filter_cols uc (Cons d (Cons c ds),Cons T bs) =
-Ü			(let fd = 	if uc dominates class_of_data c
+Ü±	filter_cols uc (Cons d ds,Cons b bs) = 
+Ü		(if  b then 
+Ü			(if ³ ds = []
+Ü			then 	(let fd = 	
+					if uc dominates class_of_data (Hd ds)
 Ü					then giveVal d
 Ü					else giveError"not_cleared"
-Ü			in if isVal(filter_cols uc (ds,bs))
-				then giveVal(Cons fd (destVal(filter_cols uc (ds,bs))))
-			else giveError"internalError")
-Ü±	filter_cols uc (Cons d ds,Cons F bs) = (if isVal(filter_cols uc (ds,bs))
-				then giveVal((Cons(giveVal d)(destVal(filter_cols uc (ds,bs)))))
+Ü				in 	if isVal(filter_cols uc (Tl ds,bs))
+					then giveVal(Cons fd (destVal(filter_cols uc (Tl ds,bs))))
 				else giveError"internalError")
-Ü±	filter_cols uc (ds,bs) = giveError"internalError"
+Ü			else giveError"internalError")
+Ü		else	(if isVal(filter_cols uc (ds,bs))
+			then giveVal((Cons(giveVal d)(destVal(filter_cols uc (ds,bs)))))
+			else giveError"internalError"))
+Ü±	filter_cols uc ([],Cons b bs) = giveError"internalError"
+Ü±	filter_cols uc (Cons d ds,[]) = giveError"internalError"
 °
 
 The boolean parameter to the function $filter\_select$ 
@@ -208,21 +183,22 @@ $mayNotBeComplete$
 message should be issued.
 ¹HOLCONST
 Ü	Ûfilter_selectİ: (BOOL ¸ BOOL LIST ¸ 'DATA LIST LIST ¸ Class)
-			  ­ (('DATA + STRING) LIST LIST ¸ BOOL) + STRING
+Ü			  ­ (('DATA + STRING) LIST LIST ¸ BOOL) + STRING
 ÷üüüüüüüüüüüüüü
-Ü	µ cls dss uc ·
-Ü	filter_select (T,cls ,dss ,uc) = 
-		(if isVal (filter_where(dss,uc))
-		then 	let (fdss,nc) =  destVal(filter_where(dss,uc))
-			in 
-			let d_or_e = promote (filter_cols uc)(Combine fdss (seq (# fdss) cls))
-			in	if isVal d_or_e then giveVal(destVal d_or_e,nc)
-				else giveError "internalError"
-		else giveError "internalError")
-Ü±	filter_select (F,cls ,dss ,uc) =  
-			let d_or_e = promote (filter_cols uc)(Combine dss (seq (# dss) cls))
-			in	if isVal d_or_e then giveVal(destVal d_or_e,F)
-				else giveError "internalError"
+Ü	µ b cls dss uc ·
+Ü	filter_select (b,cls ,dss ,uc) = 
+Ü	if b then
+Ü		(if isVal (filter_where(dss,uc))
+Ü		then 	let (fdss,nc) =  destVal(filter_where(dss,uc))
+Ü			in 
+Ü			let d_or_e = Map‰e (filter_cols uc)(Combine fdss (seq (# fdss) cls))
+Ü			in	if isVal d_or_e then giveVal(destVal d_or_e,nc)
+Ü				else giveError "internalError"
+Ü		else giveError "internalError")
+Ü	else  
+Ü		(let d_or_e = Map‰e (filter_cols uc)(Combine dss (seq (# dss) cls))
+Ü		in	if isVal d_or_e then giveVal(destVal d_or_e,F)
+Ü			else giveError "internalError")
 °
 
 
