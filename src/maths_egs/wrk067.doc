@@ -539,6 +539,23 @@ val €subspace_topology_space_thm› = save_pop_thm "subspace_topology_space_thm";
 %%%%
 %%%%
 =SML
+set_goal([], ¨µ‘∑ 
+	‘ ç Topology
+¥	(Space ‘ ÚâT ‘)  = ‘Æ);
+a(rewrite_tac[subspace_topology_def] THEN  REPEAT strip_tac);
+a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_var_elim_asm_tac1 THEN all_fc_tac[space_open_thm]);
+a(all_fc_tac[arb_gen °_open_thm]);
+(* *** Goal "2" *** *)
+a(∂_tac¨xÆ THEN REPEAT strip_tac);
+a(PC_T1 "sets_ext1" REPEAT strip_tac);
+a(all_fc_tac[ç_space_thm]);
+val €trivial_subspace_topology_thm› = save_pop_thm "trivial_subspace_topology_thm";
+=TEX
+%%%%
+%%%%
+=SML
 set_goal([], ¨µ” : 'a SET SET; ‘ : 'b SET SET∑ 
 	” ç Topology
 ±	‘ ç Topology
@@ -1594,7 +1611,8 @@ That the real line is topologically connected is a consequence of the intermedia
 value theorem: if the disjoint open sets $B$ and $C$ exhausted the real line,
 then the function which is 0 on $B$ and 1 on $C$ would be continuous but
 would not take on any real value (e.g., $1/2$) strictly between 0 and 1, contradicting
-the intermediate value theorem.
+the intermediate value theorem. (That the real line is connected is proved in [Analysis], but
+the proof is not as nice as this one.)
 %%%%
 %%%%
 =SML
@@ -1728,6 +1746,184 @@ a(ALL_FC_T rewrite_tac[closed_interval_connected_thm]);
 a(PC_T1 "sets_ext1" rewrite_tac[closed_interval_def]);
 a(REPEAT strip_tac THEN rename_tac[] THEN all_asm_fc_tac[] THEN asm_rewrite_tac[Ø_º_def]);
 val €connected_Ø_thm› = save_pop_thm "connected_Ø_thm";
+=TEX
+Note there is essentially no arithmetic involved in the following. The only fact being
+used is that the open intervals provide a basis for the topology of the real line
+that is closed under finite intersections.
+%%%%
+%%%%
+=SML
+set_goal([], ¨µX f∑
+	X ç (OpenâR ∏âT OpenâR)
+¥	(f ç (X ÚâT (OpenâR ∏âT OpenâR), OpenâR) Continuous
+	§	µx y u v∑ f(u, v) ç OpenInterval x y ± (u, v) ç X ¥
+		∂a b c d∑u ç OpenInterval a b ± v ç OpenInterval c d ±
+			µs t∑	s ç OpenInterval a b ± t ç OpenInterval c d ± (s, t) ç X
+			¥	f(s, t) ç OpenInterval x y)Æ);
+a(rewrite_tac[continuous_def]);
+a(strip_asm_tac open_Ø_topology_thm);
+a(all_fc_tac[product_topology_thm]);
+a(ALL_FC_T rewrite_tac [subspace_topology_space_thm, product_topology_space_thm]);
+a(rewrite_tac[space_Ø_thm]);
+a(rewrite_tac [open_Ø_def, product_topology_def, subspace_topology_def,
+	merge_pcs_rule1 ["'bin_rel", "sets_ext"] prove_rule[]¨(Universe ∏ Universe) = UniverseÆ]);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(DROP_NTH_ASM_T 4 discard_tac);
+a(DROP_NTH_ASM_T 3 (strip_asm_tac o µ_elim¨OpenInterval x yÆ));
+(* *** Goal "1.1" *** *)
+a(swap_nth_asm_concl_tac 1 THEN REPEAT strip_tac);
+a(∂_tac¨xÆ THEN REPEAT strip_tac);
+a(∂_tac¨yÆ THEN REPEAT strip_tac);
+(* *** Goal "1.2" *** *)
+a(lemma_tac¨(u, v) ç B ° XÆ THEN1
+	(POP_ASM_T (rewrite_thm_tac o eq_sym_rule) THEN asm_rewrite_tac[]));
+a(LIST_DROP_NTH_ASM_T [3] all_fc_tac);
+a(LIST_DROP_NTH_ASM_T [4, 5] all_fc_tac);
+a(MAP_EVERY ∂_tac [¨x''Æ, ¨y''Æ, ¨x'Æ, ¨y'Æ] THEN REPEAT strip_tac);
+a(LEMMA_T¨(s, t) ç B ° XÆ ante_tac THEN1 REPEAT strip_tac);
+(* *** Goal "1.2.1" *** *)
+a(all_fc_tac[pc_rule1 "sets_ext1" prove_rule[]¨µx a b∑x ç a ± a Ä b ¥ x ç bÆ]);
+a(lemma_tac¨(s, t) ç (A ∏ B')Æ THEN1 asm_rewrite_tac[∏_def]);
+a(all_fc_tac[pc_rule1 "sets_ext1" prove_rule[]¨µx a b∑x ç a ± a Ä b ¥ x ç bÆ]);
+(* *** Goal "1.2.2" *** *)
+a(DROP_NTH_ASM_T 12 (rewrite_thm_tac o eq_sym_rule) THEN PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "2" *** *)
+a(∂_tac¨{(s, t) | (s, t) ç X ±  f(s, t) ç A }Æ THEN REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(LIST_DROP_NTH_ASM_T [3] all_fc_tac);
+a(LIST_DROP_NTH_ASM_T [6] all_fc_tac);
+a(LIST_DROP_NTH_ASM_T [4, 5, 10] all_fc_tac);
+a(MAP_EVERY ∂_tac [¨OpenInterval a b ° OpenInterval x''' y'''Æ,
+	¨OpenInterval c d ° OpenInterval x''  y''Æ] THEN REPEAT strip_tac);
+(* *** Goal "2.1.1" *** *)
+a(strip_asm_tac (list_µ_elim[¨aÆ, ¨bÆ, ¨x'''Æ, ¨y'''Æ] °_open_interval_thm));
+a(MAP_EVERY ∂_tac [¨x''''Æ,	¨y''''Æ]);
+a(POP_ASM_T (rewrite_thm_tac o eq_sym_rule) THEN REPEAT strip_tac);
+(* *** Goal "2.1.2" *** *)
+a(strip_asm_tac (list_µ_elim[¨cÆ, ¨dÆ, ¨x''Æ, ¨y''Æ] °_open_interval_thm));
+a(MAP_EVERY ∂_tac [¨x''''Æ,	¨y''''Æ]);
+a(POP_ASM_T (rewrite_thm_tac o eq_sym_rule) THEN REPEAT strip_tac);
+(* *** Goal "2.1.3" *** *)
+a(rewrite_tac[∏_def] THEN PC_T1 "sets_ext1" rewrite_tac[]);
+a(REPEAT µ_tac THEN ¥_tac);
+a(once_rewrite_tac[taut_rule¨µa b∑a ± b § a ± (a ¥ b)Æ] THEN REPEAT strip_tac);
+(* *** Goal "2.1.3.1" *** *)
+a(all_fc_tac[pc_rule1 "sets_ext1" prove_rule[]¨µx a b∑x ç a ± a Ä b ¥ x ç bÆ]);
+a(lemma_tac¨(x1, x2) ç (A' ∏ B)Æ THEN1 asm_rewrite_tac[∏_def]);
+a(all_fc_tac[pc_rule1 "sets_ext1" prove_rule[]¨µx a b∑x ç a ± a Ä b ¥ x ç bÆ]);
+(* *** Goal "2.1.3.2" *** *)
+a(all_asm_fc_tac[] THEN PC_T1 "sets_ext1" all_asm_fc_tac[]);
+(* *** Goal "2.2" *** *)
+a(PC_T1 "sets_ext1" prove_tac[]);
+val €continuous_Ø_∏_Ø_Ø_thm› = save_pop_thm "plus_continuous_Ø_∏_Ø_Ø_thm";
+=TEX
+The special case of the above theorem when $X$ is the whole space is very useful:.
+%%%%
+%%%%
+=SML
+set_goal([], ¨µf∑
+	f ç ((OpenâR ∏âT OpenâR), OpenâR) Continuous
+	§	µx y u v∑ f(u, v) ç OpenInterval x y ¥
+		∂a b c d∑u ç OpenInterval a b ± v ç OpenInterval c d ±
+			µs t∑	s ç OpenInterval a b ± t ç OpenInterval c d
+			¥	f(s, t) ç OpenInterval x yÆ);
+a(ante_tac(µ_elim¨Space (OpenâR ∏âT OpenâR)Æ continuous_Ø_∏_Ø_Ø_thm));
+a(strip_asm_tac open_Ø_topology_thm);
+a(all_fc_tac[product_topology_thm]);
+a(ALL_FC_T rewrite_tac [trivial_subspace_topology_thm, space_open_thm]);
+a(ALL_FC_T rewrite_tac [product_topology_space_thm]);
+a(rewrite_tac[space_Ø_thm,
+	merge_pcs_rule1 ["'bin_rel", "sets_ext"] prove_rule[]¨(Universe ∏ Universe) = UniverseÆ]);
+val €continuous_Ø_∏_Ø_Ø_thm1› = save_pop_thm "plus_continuous_Ø_∏_Ø_Ø_thm1";
+=TEX
+TBD - the plan is to use the following to derive an equivalent condition to the above
+phrased in terms of absolute values for use in showing that multiplication defines a
+continuous mapping of the plane to the real line.
+%%%%
+%%%%
+=SML
+set_goal([], ¨µX∑
+	(µx y u v∑ f(u, v) ç OpenInterval x y ± (u, v) ç X ¥
+		∂a b c d∑u ç OpenInterval a b ± v ç OpenInterval c d ±
+			µs t∑	s ç OpenInterval a b ± t ç OpenInterval c d ± (s, t) ç X
+			¥	f(s, t) ç OpenInterval x y)
+§	(µe u v∑ ÓØ 0 < e ± (u, v) ç X ¥
+		∂d1 d2 ∑ ÓØ 0 < d1 ± ÓØ 0 < d2 ±
+			µs t∑	Abs(s - u) < d1 ± Abs(t - v) < d2 ± (s, t) ç X
+			¥	Abs(f(s, t) - f(u, v)) < e)
+Æ);
+a(rewrite_tac[open_interval_def] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(list_spec_nth_asm_tac 3 [¨f(u, v) + ~eÆ, ¨f(u, v) + eÆ, ¨uÆ, ¨vÆ]
+	THEN_TRY SOLVED_T(PC_T1"Ø_lin_arith" asm_prove_tac[]));
+a(lemma_tac¨ÓØ 0 < u + ~a ±  ÓØ 0 < b + ~u ± ÓØ 0 < v + ~c ± ÓØ 0 < d + ~vÆ
+	THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(cases_tac¨u + ~a < b + ~uÆ THEN cases_tac¨v + ~c < d + ~vÆ);
+(* *** Goal "1.1" *** *)
+a(∂_tac¨u + ~aÆ THEN ∂_tac¨v + ~cÆ THEN  asm_rewrite_tac[]);
+a(ALL_FC_T1 fc_§_canon rewrite_tac[Ø_abs_diff_bounded_thm] THEN REPEAT µ_tac THEN ¥_tac);
+a(once_rewrite_tac[pc_rule1"Ø_lin_arith" prove_rule[]¨µx y z:Ø∑x + ~y < z ± z < x + y § z + ~y < x ± x < z + yÆ]);
+a(DROP_NTH_ASM_T 12 bc_thm_tac);
+a(PC_T1"Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "1.2" *** *)
+a(∂_tac¨u + ~aÆ THEN ∂_tac¨d + ~vÆ THEN  asm_rewrite_tac[]);
+a(ALL_FC_T1 fc_§_canon rewrite_tac[Ø_abs_diff_bounded_thm] THEN REPEAT µ_tac THEN ¥_tac);
+a(once_rewrite_tac[pc_rule1"Ø_lin_arith" prove_rule[]¨µx y z:Ø∑x + ~y < z ± z < x + y § z + ~y < x ± x < z + yÆ]);
+a(DROP_NTH_ASM_T 12 bc_thm_tac);
+a(PC_T1"Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "1.3" *** *)
+a(∂_tac¨b + ~uÆ THEN ∂_tac¨v + ~cÆ THEN  asm_rewrite_tac[]);
+a(ALL_FC_T1 fc_§_canon rewrite_tac[Ø_abs_diff_bounded_thm] THEN REPEAT µ_tac THEN ¥_tac);
+a(once_rewrite_tac[pc_rule1"Ø_lin_arith" prove_rule[]¨µx y z:Ø∑x + ~y < z ± z < x + y § z + ~y < x ± x < z + yÆ]);
+a(DROP_NTH_ASM_T 12 bc_thm_tac);
+a(PC_T1"Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "1.4" *** *)
+a(∂_tac¨b + ~uÆ THEN ∂_tac¨d + ~vÆ THEN  asm_rewrite_tac[]);
+a(ALL_FC_T1 fc_§_canon rewrite_tac[Ø_abs_diff_bounded_thm] THEN REPEAT µ_tac THEN ¥_tac);
+a(once_rewrite_tac[pc_rule1"Ø_lin_arith" prove_rule[]¨µx y z:Ø∑x + ~y < z ± z < x + y § z + ~y < x ± x < z + yÆ]);
+a(DROP_NTH_ASM_T 12 bc_thm_tac);
+a(PC_T1"Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(lemma_tac¨∂e∑ÓØ 0 < e ± e º f(u, v) + ~x ± e º  y + ~(f(u, v))Æ THEN1
+	(cases_tac ¨f(u, v) + ~x º y + ~(f(u, v))Æ  THEN_LIST
+	[∂_tac¨f(u, v) + ~xÆ THEN PC_T1 "Ø_lin_arith" asm_prove_tac[],
+	 ∂_tac¨y + ~(f(u, v))Æ THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]]));
+a(all_asm_fc_tac[]);
+a(MAP_EVERY ∂_tac [¨u + ~d1Æ, ¨u + d1Æ, ¨v + ~d2Æ, ¨v + d2Æ]);
+a(strip_tac THEN_TRY SOLVED_T (PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(strip_tac THEN_TRY SOLVED_T (PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(REPEAT µ_tac THEN ¥_tac);
+a(LIST_SPEC_NTH_ASM_T 6 [¨sÆ, ¨tÆ] ante_tac);
+a(ALL_FC_T1 fc_§_canon rewrite_tac[Ø_abs_diff_bounded_thm]);
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+val €continuous_Ø_∏_Ø_Ø_lemma› = pop_thm ();
+=TEX
+%%%%
+%%%%
+=SML
+val €continuous_Ø_∏_Ø_Ø_thm3› = save_thm(
+	"continuous_Ø_∏_Ø_Ø_thm3",
+	rewrite_rule[continuous_Ø_∏_Ø_Ø_lemma] continuous_Ø_∏_Ø_Ø_thm);
+val €continuous_Ø_∏_Ø_Ø_thm4› = save_thm(
+	"continuous_Ø_∏_Ø_Ø_thm4",
+	rewrite_rule[
+		rewrite_rule[](µ_elim¨Universe:(Ø ∏ Ø) SETÆ
+			continuous_Ø_∏_Ø_Ø_lemma)] continuous_Ø_∏_Ø_Ø_thm1);
+=TEX
+The above lets us make light work of showing the addition viewed as a function from the plane
+to the real line is continuous:
+%%%%
+%%%%
+=SML
+set_goal([], ¨ (Uncurry $+) ç ((OpenâR ∏âT OpenâR), OpenâR) Continuous Æ);
+a(rewrite_tac[continuous_Ø_∏_Ø_Ø_thm1] THEN REPEAT strip_tac);
+a(MAP_EVERY ∂_tac[ ¨u - (1/2)*(u + v - x)Æ, ¨u + (1/2)*(y - (u + v))Æ,
+	¨v - (1/2)*(u + v - x)Æ, ¨v + (1/2)*(y - (u + v))Æ]);
+a(POP_ASM_T ante_tac THEN rewrite_tac[open_interval_def] THEN REPEAT strip_tac
+	THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+times_lim_seq_lemma;
+val €plus_continuous_Ø_∏_Ø_thm› = save_pop_thm "plus_continuous_Ø_∏_Ø_thm";
 =TEX
 \subsection{Homotopy}
 Continuing along the way towards the elements of algebraic topology, we now consider
