@@ -64,7 +64,8 @@ DRA front end filter project RSRE 1C/6130.}
 \subsection{Changes History}
 \begin{description}
 \item[Issue \SCCSversion ({\FormatDate{$Date$
-}}) ] First issue.
+}}) ] Typos corrected. Integrity checks incorporated into $processInsert$
+ and $processUpdate$.
 
 
 \end{description}
@@ -75,7 +76,7 @@ during  the transcription of the specification.
 \pagebreak
 \section{GENERAL}
 \subsection{Scope}
-This document completes the formal specifications of the  of the main functionality
+This document completes the formal specifications of the functionality
  of the SSQL semantics. Together with \cite{DS/FMU/FEF/004} it constitutes 
  deliverable D3 of work package 1a, as given
 in section 7 of the Secure Database Technical Proposal, \cite{DS/FMU/017}.
@@ -1342,7 +1343,7 @@ We first give a function which returns a list of data given a row.
 Ü		in
 Ü		key ts = distinct (key ts)	
 °
-We define $test$ as an auxiliary function to $CheckUniform$.
+We define $test$ as an auxiliary function to $checkUniform$.
 
 ¹HOLCONST
 Ü	Ûtestİ : Class LIST LIST ­ Bool
@@ -1383,7 +1384,7 @@ We give a version of $seq$ that scoops up errors.
 Ü		andBools (enseq(Ìn · check ts n))	
 °
 
-We define $inRange$ as an auxiliary function to $CheckUniform$.
+We define $inRange$ as an auxiliary function to $checkUniform$.
 
 ¹HOLCONST
 Ü	ÛinRangeİ :Class LIST ­ ColSpec LIST ­ Bool
@@ -1899,41 +1900,37 @@ function, hence there is no need for reordering. Classification of the new rows
  is also achieved by the update function. Only those columns that the user is 
 cleared to see are visible.
 
-The integrity checks are not carried out at this stage because the $updateState$
-function defined in \cite{DS/FMU/FEF/005} only allows an insert, delete
- or update query to update the database if no errors have been reported. This
-decision was made when the top level specification was initiated and the
-integrity checking procedure had not been determined. 
-We could handle integrity checks in one of four ways:
-\begin{enumerate}
-\item
-Carry out integrity checks on the hidden state
-of the database after the update has occurred.
-\item
-Provide an extra parameter $Warnings$ which contains integrity check information
-from a particular query. This would be
-returned from $processQuery$ and supplied to $updateState$, but would not 
-prevent an update taking place.
-\item
-Partition the errors so that if there are only integrity errors then the update proceeds.
-\item
-Carry out the integrity checks in $processInsert$ and $processUpdate$ and then 
-the update will fail if there are any integrity errors.
-\end{enumerate}
-These alternatives would all require some changes to be made to the top level 
-specifications or the functionality of the system.
-
-The function $processInsert$ returns a relation from column number to data, or a list of errors. The column default value is provided for column positions for which
-there is no corresponding data in the insert list. 
-
+If the integrity checks carried out in $processInsert$ and 
+$processUpdate$ 
+on the hidden state
+of the database give rise to errors then the update will fail because the function $updateState$, 
+defined in \cite{DS/FMU/FEF/005}, only allows an insert, delete
+ or update query to update the database if no errors have been reported. 
 The error $wrongWidth$ is not in the domain of possible errors - replaced by $tooWide$.
 
 
+We define $processIntegrity$ as an auxiliary function.
 ¹HOLCONST
-Ü	ÛprocessInsertİ : Table_spec ­ Col_name LIST ­ Insert_list  ­ State ­ 
+Ü	ÛprocessIntegrityİ : TableSpec ­  Errors
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Üµ t · processIntegrity t =
+Ü	(if	(checkGroup t CC_uniform checkUniform) = true
+Ü	then noErrors else seq 1 nonUniformValues)
+Üë	(if	(checkGroup t CC_unique checkUniqueness) = true
+Ü	then noErrors else seq 1 nonUniqueValues)
+Üë	(if	(checkIntegrity t checkFieldClasses) = true
+Ü	then noErrors else seq 1 fieldClassOutOfRange)	
+Üë	(if	(checkIntegrity t checkType) = true
+Ü	then noErrors else seq 1 wrongType)	
+Üë	(if	(checkIntegrity t checkNulls) = true
+Ü	then noErrors else seq 1 noNulls)
+°
+
+¹HOLCONST
+Ü	ÛprocessInsertİ : Class ­ Table_spec ­ Col_name LIST ­ Insert_list  ­ State ­ 
 Ü				Effect + Errors
 ÷üüüüüüüüüüüüüüüüüüüüüüü
-Üµ t cns il st · processInsert t cns il st = 
+Üµ c t cns il st · processInsert c t cns il st = 
 Ü	let spec = lookup st (Table_spec t)
 Ü	and givenNames = Map Col_name cns
 Üin	let defaults = ((spec *‰3 colposns) * CS_default)
@@ -1963,11 +1960,17 @@ The error $wrongWidth$ is not in the domain of possible errors - replaced by $to
 Ü			else	giveError(destError spec)
 Üin	if isError effect
 Ü	then giveError (destError effect)
-Ü	else giveVal(InsertEffect(Table_spec t,destVal effect))	
+Ü	else 
+Ü		let newSpec = replaceRows (destVal spec)((TS_rows (destVal spec)) ë 
+Ü				(Map (MkRow c) (destVal effect)))
+Ü	in	let integrity = processIntegrity newSpec 
+Ü	in	if ³(#integrity = 0)
+Ü		then 	giveError integrity
+Ü		else	giveVal(InsertEffect(Table_spec t,destVal effect))	
 °
 
-
-A set of rows to be deleted will only be passed on to $updataState$ if there are no errors.
+\newpage
+A set of rows to be deleted will only be passed on to $updateState$ if there are no errors.
 
 ¹HOLCONST
 Ü	ÛprocessDeleteİ : From_spec ­ Value ­ State ­ Effect + Errors
@@ -2004,6 +2007,24 @@ the appropriate partial function.
 Ü	else giveVal{(id,upd)|f id = giveVal upd} 
 °
 
+We provide a function which takes a list of rows and updates and returns the updated list of rows.
+
+¹HOLCONST
+Ü	ÛupdateRowListİ : Row LIST ­ (Num ª (Num ª Update)) ­ Row LIST
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Üµ rl nnu · updateRowList rl nnu = 
+Ü	let updateD ((u:Update),(d:Data)) =	
+Ü		if isItem u then MkData (Dat_class d)(destItem u)
+Ü		else if isClass u then MkData (destClass u)(Dat_item d)
+Ü		else destData u
+Üin	let updateR ((nu:Num ª Update),(r:Row)) = MkRow
+Ü		(R_exist r)((R_data r) « (RelCombine nu (R_data r)) » Graph updateD)
+Üin	RelList((ListRel rl) « (RelCombine nnu (ListRel rl) » Graph updateR))
+°
+
+
+\ftlinepenalty=9999
+
 ¹HOLCONST
 Ü	ÛprocessUpdateİ : From_spec ­ Set_clause LIST ­ Value ­ Col_spec LIST  
 Ü			­ Value ­ State ­ Effect + Errors
@@ -2012,7 +2033,7 @@ the appropriate partial function.
 Ü	let table = From_name f
 Üin	let spec = lookup st table
 Üin	let ts = From_spec f st
-Üin	let whereResults = 	let ev e =
+Üin	let whereResults =	let ev e =
 Ü				let elim = 
 Ü				let eliminate = 
 Ü					(Ì s env h·(promote
@@ -2041,16 +2062,23 @@ the appropriate partial function.
 Üin	if isError where
 Ü	then giveError(destError where)
 Ü	else 	if complete 
-Ü		then 	let upds = {(n,nu)|n  destVal where ± nu = rowUpd n} 
-Ü			in 	if ¶ pr · pr  upds ± isError(Snd pr)
+Ü		then 	let us = {(n,nu)|n  destVal where ± nu = rowUpd n} 
+Ü			in 	if ¶ pr · pr  us ± isError(Snd pr)
 Ü				then giveError(RelList(Enumerate(Ş{x|¶y· 
-Ü					y  upds ± x = Elems(destError(Snd y))})))
-Ü				else giveVal(UpdateEffect(table,
-Ü					{(n,nu)|n  destVal where ± nu = destVal(rowUpd n)}))
+Ü					y  us ± x = Elems(destError(Snd y))})))
+Ü				else 
+Ü				let ups = {(n,nu)|n  destVal where ± nu = destVal(rowUpd n)}
+Ü			in	let oldRows = TS_rows (destVal spec)
+Ü			in	let newSpec = replaceRows (destVal spec) 
+Ü					 (updateRowList oldRows ups)
+Ü		in	let integrity = processIntegrity newSpec
+Ü			in	if ³(#integrity = 0)
+Ü				then giveError integrity
+Ü				else giveVal(UpdateEffect(table,ups))
 Ü		else giveError(seq 1 mayNotBeComplete)
 °
 
-
+\ftlinepenalty=0
 
 ¹HOLCONST
 Ü	ÛprocessSelectİ : Tuple_list ­ State ­ Effect ¸ Errors
@@ -2081,7 +2109,7 @@ result of the query produced errors.
 ÷üüüüüüüüüüüüüüüüüüüüüüü
 Üµ c st t cns il f w ss g h tl ·
 Ü	processQuery((insert t cns il),c,st) = 	
-Ü		(let iorerr = processInsert t cns il st
+Ü		(let iorerr = processInsert c t cns il st
 Ü		in
 Ü		if isVal iorerr
 Ü		then (destVal iorerr,[])
