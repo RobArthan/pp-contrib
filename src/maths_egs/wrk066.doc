@@ -708,6 +708,8 @@ to be considered in proving the result on Darboux continuity: it says
 that if $f(x)$ lies in the open interval $(a, b)$, then when you test $f$ for continuity
 at $x$ using open intervals, you can assume the end-points of the
 ``challenge'' interval, $(c, d)$ are both contained in $(a, b)$.
+The result on Darboux continuity will be used to show that the natural logarithm function
+is continuous.
 
 \ThmsIII{%
 =GFT
@@ -796,6 +798,15 @@ After the results about derivatives of algebraic combinations of functions and p
 we show that the derivative is a local property and that the derivative is unique.
 For later use, we also provide the characterisation of derivatives in terms of limits of
 function values.
+
+These results are followed in the proof script by the coding of an inference rule, and
+a corresponding tactic that automatically calculate derivatives of algebraic combinations
+of functions whose derivatives are known.
+Unllike the tactic for continuity, these automatic proof procedures are fairly general ---
+they are parameterised by a list of theorems giving facts about the derivatives.
+The algorithm used is intended to be a little more general than the one described
+by Harrison; in particular, the algorithm is formulated so that the chain rule can be presented
+as one of the theorems rather than being wired in. 
 
 \ThmsIII{%
 =GFT
@@ -887,7 +898,10 @@ the intermediate value theorem, the mean value theorem etc.
 
 By contrast with Harrison's approach, later on, when we need explicit numerical estimates,
 for example, in demonstrating the existence of $\pi$, we tend to use these theorems, rather
-than obtaining numerical estimates from power series.
+than obtaining numerical estimates from power series. There would be little difficulty, however,
+in extending the results on the transcendental functions to give estimates for the error
+term in a polynomial approximation to a value of the power series.
+
 
 \ThmsIII{%
 =GFT
@@ -921,6 +935,8 @@ deriv_0_less_thm
 The next block of theorems is an excursion. We prove Cantor's theorem that
 the reals are uncountable. The proof is via nested intervals (and generalises
 to show that any perfect set in a metric space is uncountable --- see Rudin)
+This material does feed in, in spirit, if not in actual use of the theorems, to the
+theory of Cauchy sequences.
 
 \ThmsIII{%
 =GFT
@@ -984,6 +1000,17 @@ heine_borel_thm
 
 \subsection{Cauchy Sequences}\label{CauchySequences}
 
+Up to this point, we have generally only been able to show that particular sequences
+converge when a formula for the limit is known. In this section we prove that a sequence
+is convergent iff. it is a Cauchy seequence. The argument is the standard one: that a convergent
+sequence is necessarily a Cauchy sequence is a striaghtforward consequence of the definition
+of the limit of a sequence; conversely, a Cauchy sequence
+is bounded and hence has a $\LimSup$ and a $\LimInf$, by the Cauchy property, these two
+must be equal, and their common value is the limit of the sequence. Rather than define
+the notions of $\LimSup$ and $\LimInf$ as constants in the theory, we simply give theorems that
+assert the existence of these values.
+
+{\em En passant}, we prove one or two useful results about monotonic increasing and decreasing sequences.
 
 \ThmsIII{%
 =GFT
@@ -1023,6 +1050,18 @@ declare_infix(200, "-->");
 Ü	´	¶d·î¯ 0 < d ± µy· Abs(y - x) < d ± ³y = x ´ Abs(f y - c) < e
 °
 
+As usual, we prove the standard facts about the interaction between limits of function values
+and the field operations. These are all proved using a characterisation
+of the function value notion of limit in terms of limits of sequences.
+We then show that limits of function values are unique if they exist and give
+two results about limits of function values and functional composition: the first of
+these is the obvious one: if $f$ tends to $t$ at $x$ and $g$ is continuous at $t$, then
+$\lambda x \bullet g(f x)$ tends to $g(t)$ at $x$; the second is less obvious: if $f$ is continuous
+at $x$ and one-to-one, and $g$ tends to $t$ at $f(x)$, then $\lambda x \bullet g(f x)$ tends to
+$t$ at $x$. I have not seen the latter result in the usual textbooks, but it seems to be needed to
+show that the $f$ if $g$ is right-inverse to $f$ in some open interval $(a, b)$ and if $f$ has derivative
+$c \not= 0$ at $g(x)$ for $x$ in $(a, b)$, then $g$ has derivative $\frac{1}{c}$ at $x$.
+This is needed later to calculate the derivative of the natural logarithm function.
 \ThmsIII{%
 =GFT
 lim_fun_lim_seq_thm
@@ -1051,7 +1090,7 @@ inverse_deriv_thm
 \subsection{Limits of Sequences of Functions}\label{LimitsOfSequencesOfFunctions}
 We write $(u {-}{-}{-}{>} h) X$ to indicate that the sequence of functions $u_n$, indexed by
 natural numbers, tends uniformly to the limit function $h$ on the
-set $X$ as $n$ tends to infinity. The definition requires $a < b$.
+set $X$ as $n$ tends to infinity. 
 %%%%
 %%%%
 =SML
@@ -1063,6 +1102,52 @@ declare_infix(200, "--->");
 Ü	(u ---> h) X
 Ü ¤	µe·î¯ 0 < e ´ ¶n·µm y· n ¼ m ± y  X ´ Abs(u m y - h y) < e
 °
+
+We prove a small selection of results about algebraic combinations
+of uniform limits of sequences of functions, just covering constants, addition and multiplication
+The proofs are done, essentially, by cut and paste reuse of the analogous results for
+sequences of values. Note that we could have defined the notion of the limit of a sequence
+of values as a special case of a limit of a sequence of functions (namely as a limit of a sequence
+of constant functions). However, it seems clearer not to do this (and some facts about sequences
+of values do not hold in general, e.g., if $f_n$ converges uniformly in $X$ as $n$ tends to $\infty$,
+$\frac{1}{f_n}$ is not uniformly convergent in general).
+
+We then show that (inifromly) convergent sequences of functions are Cauchy sequences and,
+more interestingly, that sequences of functions that are uniformly Cauchy are uniformly convergent.
+This is followed by our two big theorems on uniform convergence: the first of these is Rudin's 7.11, which is an
+interchange theorem relating our three notions of limit, which says
+that if $u_m$ converges uniformly to $f$ one some set of the form $(a, b) \backslash \{x\}$
+for $x$ in the open interval $(a, b)$ and if for each $m$ $u_m(y)$ converges
+to $s_m$ as $y$ tends to $x$, then $f(y)$ converges to some limit $x$ as $y$ tends to $x$
+and $s_m$ converges to that same value $c$ as $m$ tends to $\infty$.
+Rudin states and proves this in greater generality, but we just do the case that is needed for
+the the second big theorems, namely Rudin's theorem 7.17, which
+(in our formulation) says that if, a sequence of functions $du_m$ converges uniformly to some function
+$df$ on an open interval $(a, b)$ and each $du_m$ is the derivative of some function $u_m$ throughout
+$(a, b)$, and if the sequence of values $u_m(x_0)$ is convergent for some $x_0$ in $(a, b)$, then
+the sequence of functions $u_m$ is uniformly convergent to a function $f$ in $(a, b)$ whose derivative
+is given by $df$ throughout $(a, b)$. This is the key result that justifies ``differentiation under the
+summation sign'' for convergent power series.
+
+Our formulation of the result on uniform convergence and derivatives differs from the standard
+one (as given in Rudin) in using open intervals rather than closed ones. In general, it is customary
+to state results about uniform convergence for closed intervals, or more general for compact sets.
+Unfortunately, to get this to work requires some special case treatment of the end-points of
+the interval (see Rudin's definition of 5.1 for the sort of things that go on). We prefer to stick
+with our single simple notion of a two-sided derivative. This does mean that some results might
+have to be stated as hoilding for all open intervals (or sets) contained in some closed interval
+(or compact set) rather than holding on the closed interval or compact set. However, this has not
+arisen in practice, and there is no real loss of generality: any function that is, say differentiable, on
+a closed interval $[a, b]$ can be extended to a differentiable on an open interval $(A, B)$ containing
+$[a, b]$ and our way of formulating the kind of results in question will then apply to $(A, B)$>
+
+It is instructive to compare the formal statements (and the formal proofs)
+of these two big theorems with their statements as in Rudin: the formal versions make
+it much more evident that these results are pure existence theorems, with proofs that conjure up
+witnesses out of the air using the Cauchy condition and use uniqueness properties of limits to show
+that these witnesses satisfy our requirements. The usual mathematical notation, in contrast, gives an
+illusion of ``constructiveness'' as if notations like $\lim_{n \mapsto \infty} f_n'(x)$ denoted
+things that exist {\em a priori}.
 
 \ThmsII{%
 =GFT
@@ -1114,6 +1199,7 @@ subsequences of the sequence:
 Ü µs n· PowerSeries s n = PolyEval (s To n)
 °
 \subsubsection{Elementary Properties}\label{PowerSeriesElementaryProperties}
+We first prove a few elementary properties of series and power series.
 
 \ThmsIII{%
 =GFT
@@ -1140,6 +1226,9 @@ lim_series_bounded_thm
 }
 
 \subsubsection{Geometric Series}\label{PowerSeriesGeometricSeries}
+We next show that geometric series have radius of convergence $1$,
+using the result on the polynomial $x^n - y^n$ previously
+proved (as {\em poly\_diff\_powers\_thm}) to give the usual explicti formula for the limit.
 
 \ThmsII{%
 =GFT
@@ -1154,6 +1243,29 @@ geometric_series_thm1
 }
 
 \subsubsection{Convergence Tests}\label{PowerSeriesConvergenceTests}
+We now give the standard convergence tests for series and power series.
+The first two results are a good example of the case where our {\em idiot savant}
+has no need of spoon feeding: the Weierstrass test for uniform convergence of the sum
+of a series of functions has the comparison test for convergence of series of values as
+a special case, and there is no point in presenting the comparison test first (as seems to be
+invariably done in the text books).
+
+Our formulation of the root test for the convergence of a series is somewhat non-standard.
+This test is usually couched in terms of $\LimSup\sqrt[n]{\Abs{s_n}}$, but we have not chosen to develop
+the theory of $n$-th roots yet, nor to define a constant for the notion of {\em limes superior}.
+However, the proof of the root test immediately derives from the usual statement the fact
+that a series for which  $\LimSup\sqrt[n]{\Abs{s_n}}$, exists and is less than $1$ is majorised
+in absolute value by a convergent geometric series. We just make that our condition: this appears
+to be entirely equivalent to the standard definition (and states the result in terms of what you
+generally have too prove to show the $\LimSup$ in question exists as required). With this formulation,
+the test will actuallly work up to a multiplicative constant, which can sometimes ease the burden of
+proof (see the statement of {\em root\_test\_thm}).
+
+We then give the ratio test, firstly  in its most general form which says that a series $s_n$ will
+converge if the ratios $\Abs{\frac{s_{n+1}}{s_n}}$ are bounded above by som4 $b < 1$ for all
+large enough $n$. We then give the more commonly stated form which requires these ratios
+to converge to a limit less than $1$, which is strictly less general, but useful if you have to
+hand facts about the limits in question.
 
 \ThmsII{%
 =GFT
@@ -1170,6 +1282,17 @@ ratio_test_thm
 }
 
 \subsubsection{Convergence of Power Series}\label{ConvergenceOfPowerSeries}
+We now give the main result on convergent power series which says that if
+a power series $\Sigma c_n x^n$ converges pointwise in absolute value for $x = B$
+for some positive $B$, then for any positive $b < B$, the power series converges
+(viewed as a sequence of functions) uniformly for $x$ in the open interval $(-b, b)$
+and is diferentiable on that interval with a derivative given as the limit of the result
+of differentiating the power series term by term (the which limit existing and being
+uniformly convergent as part of the conclusion of the theorem).
+
+After a few lemmas which break out some important steps on the main result, we present
+the main result in several guises, including a corollary about second derivatives that
+will be useful for the sine and cosine functions.
 
 \ThmsII{%
 =GFT
@@ -1237,6 +1360,12 @@ The exponential function, which we define by a differential equation with an ini
 Ü ±	(µx· (Exp Deriv Exp x) x)
 °
 
+The first block of theorems lead up to the consistency of the above definition using
+the usual power series to provide the witness.
+Then we give a uniqueness property for the exponential function and develop its usual
+algebraic properties.
+[TBS: I don't have a reference for this ``axiomatic'' development of the properties of $\ExpName$,
+but it is (surely) well-known. Should write up a sketch here.]
 
 \ThmsIII{%
 =GFT
@@ -1277,6 +1406,12 @@ the exponential function:
 Ü	µx· Log (Exp x) = x
 °
 
+We know enough about $\ExpName$ to show that it does indeed have a left inverse
+(which amounts to showing that it is one-to-one, which follows since it is strictly
+order-preserving).
+From this follow standard algebraic facts about $\LogName$ as well as the
+fact that it is continuous and a calculation of its derivative.
+
 \ThmsIII{%
 =GFT
 Log_consistent
@@ -1313,6 +1448,15 @@ The sine and cosine functions defined by a differential equation and initial con
 Ü ±	(µx· (Cos Deriv ~(Sin x)) x)
 °
 
+Using $\LogName$ and $\ExpName$, we can now easily derive some facts about
+roots, particularly square roots, that we will need to reason about the sine and cosine functions.
+The existence of roots could be proved by more elementary means using the intermediate value theorem,
+but now we have $\LogName$ and $\ExpName$ it is much easier to use them instead.
+We also need some facts about even and odd numbers etc. to work with the terms of
+the power series for sine and cosine.
+With these in hand, we can show using the power series, that the definitions of sine
+and cosine are consistent, and begin to develop their basic properties using the ``axiomatic''
+approach (see Mitchell).
 
 \ThmsIII{%
 =GFT
@@ -1367,8 +1511,9 @@ Archimedes' constant is of course almost always known by another name:
 =SML
 declare_alias("Ð", ¬ArchimedesConstant®);
 =TEX
-From one point of view, almost the whole of the formal treatment in this document may
-be viewed as a systematic and informative proof of the consistency of the definitions above.
+
+We continue to develop the properties of sine and cosine via the axiomatic approach.
+This part of the work amounts to a consistency proof for the above definition of $\pi$.
 
 \ThmsIII{%
 =GFT
@@ -1400,7 +1545,10 @@ ArchimedesConstant_consistent
 }
 
 \subsubsection{Periodicity of the Sine and Cosine Functions}\label{PeriodicityOfTheSineAndCosineFunctions}
-
+We conclude the axiomatic development of the properties of sine and cosine by proving their
+periodic behaviour and finally, with a view to later geometric applications, show that any pair
+of numbers $x$ and $y$ with $x^2 + y^2 = 1$ are equal to $\Cos{z}$ and $\Sin{z}$ respectively
+for some, unique, $z$ in the interval $[0, 2\pi)$.
 
 \ThmsIII{%
 =GFT
