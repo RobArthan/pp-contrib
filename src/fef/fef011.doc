@@ -65,8 +65,7 @@ DRA front end filter project RSRE 1C/6130.}
 \subsection{Changes History}
 \begin{description}
 \item[Issue \SCCSversion(\FormatDate{$Date$
-})] Runs on \Product{} release 000001.0.1.1. New theorems
-required - $squash\_À\_ax$ replaced by $squash\_À\_thm$.
+})] Some theorems renamed; proof context renamed.
 \end{description}
 
 \subsection{Changes Forecast}
@@ -79,7 +78,7 @@ This document provides a formal proof  that the components $hide$ and $updateSta
 satisfy some of their critical 
 requirements, as specified in 
 the proof strategy \cite{DS/FMU/FEF/007}. It constitutes part of deliverable D6 
-of work package 1a, as given
+of work package 1c, as given
 in section 7 of the Secure Database Technical Proposal, \cite{DS/FMU/017}.
 
 \subsection{Introduction}
@@ -112,10 +111,13 @@ The following \Product{} instructions set up the new theory $fef011$.
 =SML 
 open_theory "fef010";
 new_theoryÛ"fef011"Ý;
-push_merge_pcs["hol","fefhol","'pair1"] ;
+push_merge_pcs["hol","wrk049","'pair1"] ;
 =TEX
 
 \section{CONSISTENCY PROOFS}
+We satisfy the consistency proof obligations
+for constants defined in \cite{DS/FMU/FEF/004} that
+are needed in the proofs that follow.
 =SML
 val ÛInsertEffect_defÝ = get_spec¬InsertEffect®;
 push_consistency_goal¬destInsert®;
@@ -198,6 +200,7 @@ val ÛupdateState_defÝ = conv_rule(MAP_C let_conv)(get_spec¬updateState®);
 =TEX
 
 \section{AUXILIARY THEOREMS}
+First we simplify some of the constant defining theorems.
 =SML
 val ÛgiveVal_eq_thmÝ = save_thm("giveVal_eq_thm",prove_rule[giveVal_def]
 	¬µ x y · giveVal x = giveVal y ¤ x = y®);
@@ -223,6 +226,7 @@ val thm1 = (push_goal([],¬µ x y z · ³((z = InL x) ± (z = InR y))®);
 a(REPEAT strip_tac THEN asm_rewrite_tac[]);
 pop_thm());
 =TEX
+We provide the obvious results for sum types.
 =SML
 push_goal([],¬µq· (isInsert q ± ³(isDelete q ² isUpdate q ² isSelect q))
 	² (isDelete q ± ³(isInsert q ² isUpdate q ² isSelect q))		
@@ -432,6 +436,8 @@ conjunct4 = ô µ c s e· Fst (Snd (updateState (c, e, s))) = c
 =TEX
 \subsection{Conjunct 3}
 \subsubsection{Auxiliary Lemmas}
+Before we give a proof of conjunct 3, we provide a
+series of auxiliary results.
 =SML
 push_goal([],¬µ c s · isState(hideR(c, repState s))®);
 a(REPEAT strip_tac);
@@ -1004,7 +1010,7 @@ a(rewrite_tac[map_def,map_null_thm]);
 a(µ_tac THEN cases_tac¬c dominates R_exist last® THEN  asm_rewrite_tac[]);
 a(´_T (asm_tac o rewrite_rule[all_µ_intro(eq_sym_rule(all_µ_elim list_rel_list_thm))]));
 a(asm_rewrite_tac[list_rel_ë_singleton_thm,list_rel_null_thm,
-	’_null_thm,À_’_thm,’_single_lemma]);
+	’_null_thm,À_’_thm,’_singleton_thm]);
 (* *** Goal "2.2" *** *)
 a(REPEAT µ_tac);
 a(cases_tac¬c dominates R_exist last'®	THEN asm_rewrite_tac[] THEN
@@ -1012,7 +1018,7 @@ a(cases_tac¬c dominates R_exist last'®	THEN asm_rewrite_tac[] THEN
 (* *** Goal "2.2.1" *** *)
 a(´_tac THEN DROP_NTH_ASM_T 6 (ante_tac o µ_elim¬l'®) THEN asm_rewrite_tac[]
 	THEN ´_tac);
-a(asm_rewrite_tac[list_rel_ë_singleton_thm,À_’_thm,’_single_lemma]);
+a(asm_rewrite_tac[list_rel_ë_singleton_thm,À_’_thm,’_singleton_thm]);
 a(lemma_tac¬µ l last · (ListRel l ’ {r|c dominates R_exist r}) ¡ {(# l + 1, last)} 
 	= {}®);
 =TEX
@@ -1141,11 +1147,11 @@ a(strip_asm_tac(list_µ_elim[¬l'®,¬last®,¬{r|c dominates R_exist r}®,¬u®]doms_nul
 a(strip_asm_tac(list_µ_elim[¬l®,¬last'®,¬{r|c dominates R_exist r}®,¬u®]doms_null_lemma1));
 a(strip_asm_tac(list_µ_elim[¬(ç~ê (Squash
                            (Id (Dom (ListRel l' ’ {r|c dominates R_exist r}))))
-                     » u)®,¬{(# l' + 1, last)}®]rel_combine_lemma));
+                     » u)®,¬{(# l' + 1, last)}®]rel_combine_null_thm2));
 a(POP_ASM_T rewrite_thm_tac);
 a(strip_asm_tac(list_µ_elim[¬(ç~ê (Squash
                            (Id (Dom (ListRel l ’ {r|c dominates R_exist r}))))
-                     » u)®,¬{(# l + 1, last')}®]rel_combine_lemma));
+                     » u)®,¬{(# l + 1, last')}®]rel_combine_null_thm2));
 a(POP_ASM_T rewrite_thm_tac);
 =TEX
 =SML
@@ -1159,7 +1165,7 @@ a(strip_asm_tac(list_µ_elim[¬(ç~ê {(#
                                                    ’ {r
                                                    |c dominates R_exist r}))))
                                  + 1, # l + 1)}
-                     » u)®,¬ListRel l®]rel_combine_lemma));
+                     » u)®,¬ListRel l®]rel_combine_null_thm2));
 a(POP_ASM_T rewrite_thm_tac);
 =TEX
 =SML
@@ -1171,7 +1177,7 @@ a(strip_asm_tac(list_µ_elim[¬(ç~ê {(#
                                                    ’ {r
                                                    |c dominates R_exist r}))))
                                  + 1, # l' + 1)}
-                     » u)®,¬ListRel l'®]rel_combine_lemma));
+                     » u)®,¬ListRel l'®]rel_combine_null_thm2));
 a(POP_ASM_T rewrite_thm_tac);
 a(LIST_DROP_NTH_ASM_T [1,2,3,4] (fn _ => id_tac));
 a(asm_rewrite_tac[»_À_thm,À_’_thm,À_null_thm]);
@@ -1267,7 +1273,7 @@ a(asm_rewrite_tac[list_rel_ë_’_thm]
 a(strip_asm_tac(list_µ_elim[¬l'®,¬last®,¬{r|c dominates R_exist r}®,¬u®]doms_null_lemma1));
 a(strip_asm_tac(list_µ_elim[¬(ç~ê (Squash
                            (Id (Dom (ListRel l' ’ {r|c dominates R_exist r}))))
-                     » u)®,¬{(# l' + 1, last)}®]rel_combine_lemma));
+                     » u)®,¬{(# l' + 1, last)}®]rel_combine_null_thm2));
 a(POP_ASM_T rewrite_thm_tac);
 =TEX
 =SML
@@ -1282,7 +1288,7 @@ a(asm_rewrite_tac[list_rel_ë_’_thm]
 a(strip_asm_tac(list_µ_elim[¬l®,¬last'®,¬{r|c dominates R_exist r}®,¬u®]doms_null_lemma1));
 a(strip_asm_tac(list_µ_elim[¬(ç~ê (Squash
                            (Id (Dom (ListRel l ’ {r|c dominates R_exist r}))))
-                     » u)®,¬{(# l + 1, last')}®]rel_combine_lemma));
+                     » u)®,¬{(# l + 1, last')}®]rel_combine_null_thm2));
 a(POP_ASM_T rewrite_thm_tac);
 =TEX
 =SML
@@ -1292,12 +1298,12 @@ a(asm_rewrite_tac[list_rel_ë_’_thm]
 a(strip_asm_tac(list_µ_elim[¬l'®,¬last®,¬{r|c dominates R_exist r}®,¬u®]doms_null_lemma1));
 a(strip_asm_tac(list_µ_elim[¬(ç~ê (Squash
                            (Id (Dom (ListRel l' ’ {r|c dominates R_exist r}))))
-                     » u)®,¬{(# l' + 1, last)}®]rel_combine_lemma));
+                     » u)®,¬{(# l' + 1, last)}®]rel_combine_null_thm2));
 a(POP_ASM_T rewrite_thm_tac);
 a(strip_asm_tac(list_µ_elim[¬l®,¬last'®,¬{r|c dominates R_exist r}®,¬u®]doms_null_lemma1));
 a(strip_asm_tac(list_µ_elim[¬(ç~ê (Squash
                            (Id (Dom (ListRel l ’ {r|c dominates R_exist r}))))
-                     » u)®,¬{(# l + 1, last')}®]rel_combine_lemma));
+                     » u)®,¬{(# l + 1, last')}®]rel_combine_null_thm2));
 a(asm_rewrite_tac[]);
 val ÛcleanRows_errors_or_vals_lemmaÝ = save_pop_thm"cleanRows_errors_or_vals_lemma";
 =TEX
@@ -1528,12 +1534,12 @@ a(´_tac THEN DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[]
 a(strip_asm_tac(list_µ_elim[¬l®,¬last'®,¬{r|c dominates R_exist r}®,¬Snd u®]doms_null_lemma1));
 a(strip_asm_tac(list_µ_elim[¬(ç~ê (Squash
                            (Id (Dom (ListRel l ’ {r|c dominates R_exist r}))))
-                     » Snd u)®,¬{(# l + 1, last')}®]rel_combine_lemma));
+                     » Snd u)®,¬{(# l + 1, last')}®]rel_combine_null_thm2));
 a(POP_ASM_T rewrite_thm_tac THEN POP_ASM_T (fn _ => id_tac));
 a(strip_asm_tac(list_µ_elim[¬l'®,¬last®,¬{r|c dominates R_exist r}®,¬Snd u®]doms_null_lemma1));
 a(strip_asm_tac(list_µ_elim[¬(ç~ê (Squash
                            (Id (Dom (ListRel l' ’ {r|c dominates R_exist r}))))
-                     » Snd u)®,¬{(# l' + 1, last)}®]rel_combine_lemma));
+                     » Snd u)®,¬{(# l' + 1, last)}®]rel_combine_null_thm2));
 =TEX
 =SML
 a(POP_ASM_T rewrite_thm_tac THEN POP_ASM_T (fn _ => id_tac));
@@ -1546,7 +1552,7 @@ a(strip_asm_tac(list_µ_elim[¬(ç~ê {(#
                                                    ’ {r
                                                    |c dominates R_exist r}))))
                                  + 1, # l + 1)}
-                     » Snd u)®,¬ListRel l®]rel_combine_lemma));
+                     » Snd u)®,¬ListRel l®]rel_combine_null_thm2));
 a(POP_ASM_T rewrite_thm_tac THEN POP_ASM_T (fn _ => id_tac));
 =TEX
 =SML
@@ -1559,7 +1565,7 @@ a(strip_asm_tac(list_µ_elim[¬(ç~ê {(#
                                                    ’ {r
                                                    |c dominates R_exist r}))))
                                  + 1, # l' + 1)}
-                     » Snd u)®,¬ListRel l'®]rel_combine_lemma));
+                     » Snd u)®,¬ListRel l'®]rel_combine_null_thm2));
 a(POP_ASM_T rewrite_thm_tac THEN POP_ASM_T (fn _ => id_tac));
 a(rewrite_tac[»_À_thm,À_’_thm]);
 =TEX
@@ -1818,7 +1824,7 @@ a(DROP_NTH_ASM_T 7 ante_tac THEN asm_rewrite_tac[]);
 (* *** Goal "2.2.2.2" *** *)
 a(strip_asm_tac(list_µ_elim[¬(ç~ê (Squash
                            (Id (Dom (ListRel l' ’ {r|c dominates R_exist r}))))
-                     » Snd u)®,¬{(# l' + 1, last)}®]rel_combine_lemma));
+                     » Snd u)®,¬{(# l' + 1, last)}®]rel_combine_null_thm2));
 a(POP_ASM_T rewrite_thm_tac);
 =TEX
 =SML
@@ -1841,7 +1847,7 @@ a(DROP_NTH_ASM_T 7 ante_tac THEN asm_rewrite_tac[]);
 (* *** Goal "2.2.3.2" *** *)
 a(strip_asm_tac(list_µ_elim[¬(ç~ê (Squash
                            (Id (Dom (ListRel l ’ {r|c dominates R_exist r}))))
-                     » Snd u)®,¬{(# l + 1, last')}®]rel_combine_lemma));
+                     » Snd u)®,¬{(# l + 1, last')}®]rel_combine_null_thm2));
 a(POP_ASM_T rewrite_thm_tac);
 =TEX
 =SML
@@ -1861,13 +1867,13 @@ a(DROP_NTH_ASM_T 7 ante_tac THEN asm_rewrite_tac[]);
 a(TOP_ASM_T(strip_asm_tac o list_µ_elim[¬l'®,¬last®]));
 a(strip_asm_tac(list_µ_elim[¬(ç~ê (Squash
                            (Id (Dom (ListRel l' ’ {r|c dominates R_exist r}))))
-                     » Snd u)®,¬{(# l' + 1, last)}®]rel_combine_lemma));
+                     » Snd u)®,¬{(# l' + 1, last)}®]rel_combine_null_thm2));
 a(POP_ASM_T rewrite_thm_tac);
 a(POP_ASM_T (fn _ => id_tac) 
 	THEN POP_ASM_T(strip_asm_tac o list_µ_elim[¬l®,¬last'®]));
 a(strip_asm_tac(list_µ_elim[¬(ç~ê (Squash
                            (Id (Dom (ListRel l ’ {r|c dominates R_exist r}))))
-                     » Snd u)®,¬{(# l + 1, last')}®]rel_combine_lemma));
+                     » Snd u)®,¬{(# l + 1, last')}®]rel_combine_null_thm2));
 a(asm_rewrite_tac[]);
 val ÛcleanTable_updateQuery_lemmaÝ = save_pop_thm"cleanTable_updateQuery_lemma";
 =TEX
@@ -2050,8 +2056,9 @@ pop_pc();
 =TEX
 
 \newpage
+\HOLindexOff
 \input{fef011th.tex}
-
+\HOLindexOn
 \newpage
 \twocolumn[\section{INDEX} \label{INDEX}]
 \small
