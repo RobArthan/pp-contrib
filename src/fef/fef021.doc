@@ -1,0 +1,342 @@
+=TEX
+% TQtemplate.tex
+\documentstyle[hol1,11pt,TQ]{article}
+\def\Hide#1{}
+\def\Bool{``$\it{:}bool\,$''}
+\makeindex
+\TPPproject{DRA FRONT END FILTER PROJECT}  %% Mandatory field
+%\TPPvolume{}
+%\TPPpart{}
+\TPPtitle{Specification of TSQL}  %% Mandatory field
+\TPPref{DS/FMU/FEF/021}  %% Mandatory field
+\def\SCCSversion{$Revision$
+}
+\TPPissue{\SCCSversion}  %% Mandatory field
+\TPPdate{\FormatDate{$Date$
+}}  %% Mandatory field (with sensible default)
+\TPPstatus{Draft}			%% Mandatory field
+\TPPtype{Specification}
+\TPPkeywords{}
+\TPPauthor{G.~M.~Prout & WIN01}  %% Mandatory field
+%\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
+\TPPauthorisation{R.B.~Jones & HAT Manager}
+\TPPabstract{The formal specifications of the TSQL abstract machine  for the
+DRA front end filter project RSRE 1C/6130.}
+%\TPPabstractB{}
+%\TPPabstractC{}
+%\TPPabstractD{}
+%\TPPabstractE{}
+%\TPPabstractF{}
+\TPPdistribution{\parbox[t]{4.0in}{%
+	HAT FEF File \\
+	Simon Wiseman
+}}
+%\TPPclass{CLASSIFICATION}
+\newfont{\icllogo}{icllogo50}
+\def\TPPheadlhs{$\vcenter{\halign{##\cr\icllogo ICL\cr}}$}
+%\def\TPPheadlhs{}
+%\def\TPPheadcentre{}
+%def\TPPheadrhs{}
+%\def\TPPfootlhs{}
+%\def\TPPfootcentre{}
+%\def\TPPfootrhs{}
+
+\begin{document}
+\TPPsetsizes
+\makeTPPfrontpage
+
+\vfill
+\begin{centering}
+
+%\bf Copyright \copyright\ : International Computers Ltd \number\year
+
+\end{centering}
+
+\newpage
+\section {DOCUMENT CONTROL}
+\subsection{Contents List}
+\tableofcontents
+\subsection{Document Cross References}
+\bibliographystyle{fmu}
+\bibliography{fmu,fef}
+
+\subsection{Changes History}
+\begin{description}
+\item[Issue \SCCSversion ({\FormatDate{$Date$
+}}) ] First version.
+\end{description}
+
+\subsection{Changes Forecast}
+None.
+\pagebreak
+\section{GENERAL}
+\subsection{Scope}
+This document gives a formal specification of the TSQL semantics. It constitutes
+ deliverable D9 of work package 3, as given
+in the Proposal for Phase~2, \cite{DS/FMU/FEF/018}.
+
+\subsection{Introduction}
+We propose defining the semantics of SSQL as a subset of TSQL
+ with all classes in the state, except those that are 
+actually stored as data, set at the lowest 
+possible classification, $lattice\_bottom$. This means that
+ the $hide$ function of \cite{DS/FMU/FEF/005} will have no
+effect on a TSQL state. A TSQL abstract 
+machine will be comprised of  two components $processQuery‰t$ and $updateState‰t$. We will define the function $processQuery‰t$, which captures the functionality of the semantics of TSQL, to be the same as $processQuery$, specified in \cite{DS/FMU/FEF/014}, except that it will be defined on TSQL 
+states and will only return $Effect$s that have all 
+classifications at $lattice\_bottom$. The function 
+$updateState‰t$  operates on the output from the function $processQuery‰t$ and  essentially determines
+whether or not the query should succeed.
+
+
+\section{PRELIMINARIES}
+The following \Product{} instructions set up the new theory $fef021$  and set the context 
+for the proof tools.
+=SML 
+open_theory "fef015";
+new_theoryÛ"fef021"İ;
+push_pc "hol";
+=TEX
+\subsection{The Classification $lattice\_bottom$}
+First, the lowest possible classification.
+¹HOLCONST
+Ü	Ûlattice_bottomİ : Class
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ c : Class · c dominates lattice_bottom  	
+°
+
+A function that takes a piece of data and sets its class to bottom.
+
+¹HOLCONST
+Ü	Ûclass_bottomİ :  Data ­ Data 
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ d · class_bottom d =  MkData lattice_bottom (Dat_item d)
+°
+
+Now a function that takes a   relation between column number and data and sets all classifications to $lattice\_bottom$.
+
+¹HOLCONST
+Ü	Ûset_bottom‰dİ : (Num ª Data) ­ (Num ª Data) 
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ nd · set_bottom‰d nd = {(n,d)|n  Dom nd ± d = class_bottom (nd @ n)}		
+°
+
+A similar function that takes a   relation between column number and update and sets all classifications to $lattice\_bottom$.
+¹HOLCONST
+Ü	Ûset_bottom‰uİ : (Num ª Update) ­ (Num ª Update) 
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ nu · set_bottom‰u nu = 
+Ü	{(n,u)|n  Dom nu ± u = 
+Ü		let u' = nu @ n 
+Ü		in
+Ü		if isItem u' then u'
+Ü		else if isClass u' then ClassUpdate lattice_bottom
+Ü		else DataUpdate(class_bottom (destData u'))}
+°
+
+\section{TSQL STATE}
+
+We define the TSQL state $State‰t$ as a subset of the SSQL state, $State$ specified in \cite{DS/FMU/FEF/004}, where all 
+classifications in the state are set at $lattice\_bottom$ 
+except for those classifications that are stored as data.
+
+The constant $State‰tS$  is the set of everything of type  $State$ where the required 
+classifications are at $lattice\_bottom$.
+
+
+¹HOLCONST
+Ü	ÛState‰tSİ 		: State ğ
+÷üüüüüüüüüüüüüü
+ÜState‰tS = {st |µdir · 
+Ü			dir  Ran (repState st)	
+Ü			´ Dir_exist dir = lattice_bottom
+Ü			± Dir_class dir = lattice_bottom
+Ü			± µ tab · 
+Ü				tab  Ran(Dir_tables dir)
+Ü				´ TS_class tab = lattice_bottom
+Ü				± TS_maxRow tab = lattice_bottom
+Ü				± µ col · 
+Ü					col  TS_colspecs tab
+Ü					´ CS_min col = lattice_bottom
+Ü					± CS_max col = lattice_bottom
+Ü				± µ row · 
+Ü				row  Elems (TS_rows tab)
+Ü					´ R_exist row = lattice_bottom
+Ü					± µ data · 
+						data  Ran(R_data row)
+Ü						´ Dat_class data = lattice_bottom}
+°
+
+We define the property required on the representation state.
+
+¹HOLCONST
+Ü	ÛisState‰tİ 	: State ­ Bool
+÷üüüüüüüüüüüüüü
+Ü	µ s · isState‰t s ¤ s  State‰tS
+°
+
+We demonstrate that the new type will be non-empty.
+
+=SML
+push_goal([],¬¶ s : State · isState‰t s®);
+a(rewrite_tac[get_spec¬isState‰t®]);
+a(¶_tac¬absState{}®);
+a(rewrite_tac[get_spec¬State‰tS®]);
+a(lemma_tac¬isState{}®);
+(* *** Goal "1" *** *)
+a(rewrite_tac[get_spec¬isState®,get_spec¬StateS®,ß_def,functional_def,¡_def,ª_def]);
+(* *** Goal "2" *** *)
+a(asm_fc_tac[isState_lemma1]);
+a(asm_rewrite_tac[get_spec¬Ran®]);
+=TEX
+
+Now the new type $State‰t$ is defined.
+
+=SML
+val state‰t_type_def = new_type_defn(["state‰t_type_def"],"State‰t",[],pop_thm());
+=TEX
+\section{FUNCTIONALITY OF THE TSQL QUERY PROCESSING}
+The functionality of the semantics of TSQL will be captured by the function $processQuery‰t$  which is similar to $processQuery$, specified in \cite{DS/FMU/FEF/014} except that it 
+works on TSQL states, of type $State‰t$, with user 
+clearance at $lattice\_bottom$. The effect of $processQuery‰t$ is the same as that of $processQuery$ with all classifications returned (except for those that are actually stored as data) set at $lattice\_bottom$.
+
+\subsection{Representation and Abstraction Functions for $State‰t$}
+
+First the representation function, $repState‰t$, and abstraction function, $absState‰t$, for the type $State‰t$.
+
+¹HOLCONST
+Ü	ÛrepState‰tİ : State‰t ­ State;
+Ü	ÛabsState‰tİ : State ­ State‰t
+÷üüüüüüüüüüüüüü
+Ü	(µ a · absState‰t (repState‰t a) = a)
+Ü±	(µr · isState‰t r ´ repState‰t (absState‰t r) = r)
+Ü±	(µ a‰1 a‰2 · repState‰t a‰1 = repState‰t a‰2 ¤ a‰1 = a‰2)
+Ü±	(µ r‰1 r‰2 ·  (isState‰t r‰1 ± isState‰t r‰2) ´ 
+Ü		(absState‰t r‰1 = absState‰t r‰2 ¤ r‰1 = r‰2))
+Ü±	(µs · isState‰t (repState‰t s))
+°
+We prove the consistency of $repState‰t$ and $absState‰t$ and retrieve their definitions  with
+the consistency obligation satisfied.
+=SML
+push_consistency_goal¬repState‰t®;
+a(strip_asm_tac (simple_´_match_mp_rule type_lemmas_thm state‰t_type_def));
+a(¶_tac¬(rep,abs)® THEN asm_rewrite_tac[]);
+a ±_tac;
+=TEX
+=SML
+(* *** Goal "1" *** *)
+a(REPEAT strip_tac THEN_TRY asm_rewrite_tac[]);
+a(POP_ASM_T (ante_tac o app_fun_rule¬abs®) THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(REPEAT µ_tac THEN ´_tac);
+a(REPEAT strip_tac THEN_TRY asm_rewrite_tac[]);
+a(POP_ASM_T (ante_tac o app_fun_rule¬rep®) THEN asm_rewrite_tac[]);
+save_consistency_thm¬repState‰t®(pop_thm());
+val ÛrepState‰t_absState‰t_defİ = get_spec¬repState‰t®;
+=TEX
+
+\subsection{The function $processQuery‰t$}
+
+
+¹HOLCONST
+Ü	ÛprocessQuery‰tİ : Query ¸ State‰t ­ Effect ¸ Errors
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ q s · processQuery‰t (q, s) =
+Ü		let (ef,es) = processQuery(q,lattice_bottom,repState‰t s)
+Ü		in 
+Ü		let ef' = 	
+		if isInsert ef
+Ü		then	let (t,ndl) = destInsert ef
+Ü			in InsertEffect(t,Map set_bottom‰d ndl)
+Ü		else if isDelete ef then ef
+Ü		else if isUpdate ef 
+Ü		then	let (t,nnu) = destUpdate ef
+Ü			in UpdateEffect(t,{(n,nu)|n  Dom nnu ± nu = set_bottom‰u(nnu @ n)})
+Ü		else 	let dll = destSelect ef
+			in SelectEffect(Map (Map class_bottom) dll)	
+Ü		in (ef',es)
+°
+
+\section{UPDATING A TSQL STATE}
+
+¹HOLCONST
+Ü	ÛupdateState‰tİ : (Effect ¸ Errors) ¸ State‰t ­ 
+Ü				State‰t ¸ (Data LIST LIST ¸ Errors)
+÷üüüüüüüüüüüüüü
+Ü	µ efes : Effect ¸ Errors; s : State‰t
+Ü	·	updateState‰t(efes,s) 
+Ü		=
+Ü		let (s',(c,out)) = updateState(lattice_bottom,efes,repState‰t s)
+Ü		in (absState‰t s',out)
+°
+\section{CONSTRUCTION OF A TSQL ABSTRACT MACHINE} \label{CONSTR}
+We model a TSQL  abstract machine as a pair
+consisting of a state transition function and an initial state.
+The transition function is to be built from the two components
+$updateState‰t$ and  $processQuery‰t$. 
+We first give abbreviation definitions for the types 
+$Process‰t$ of the $processQuery‰t$ component and $Ustate‰t$ of the $updateState‰t$ component.
+
+=SML
+declare_type_abbrev(Û"Process‰t"İ,[],” Query ¸ State‰t ­ Effect ¸ Errors®);
+=TEX
+
+=SML
+declare_type_abbrev(Û"Ustate‰t"İ,[],” (Effect ¸ Errors) ¸ State‰t 
+							­ State‰t ¸ (Data LIST LIST ¸ Errors)®);
+=TEX
+
+We also give an abbreviation definition for the type of TSQL state transition functions, $tf‰t$.
+
+=SML
+declare_type_abbrev(Û"tf‰t"İ,[],” Query ¸ State‰t ­ State‰t ¸ (Data LIST LIST ¸ Errors)®);
+=TEX
+
+\subsection{Building a Transition Function}
+
+We define a function, $mkTf‰t$, which builds a transition function from two components:  a component of type $Process‰t$ and a component of type $Ustate‰t$. The resulting transition function
+updates the original state of the database by using the
+result of processing a query on the  state of the database. 
+
+¹HOLCONST
+Ü	ÛmkTf‰tİ : Process‰t ­ Ustate‰t ­ tf‰t
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü	µp:Process‰t; u:Ustate‰t; q : Query; s : State‰t
+Ü	·	(mkTf‰t p u) (q,s) = u(p(q,s),s)
+° 
+\subsection{The TSQL Abstract Machine}
+
+An abstract machine is constructed from a pair consisting of a 
+transition function and some initial state, of type $State‰t$.
+
+=SML
+declare_type_abbrev(Û"Am‰t"İ,[],” tf‰t ¸ State‰t®);
+=TEX
+
+We specify the initial state, $istate‰t$ of the TSQL abstract machine.
+
+¹HOLCONST
+Ü	Ûistate‰tİ : State‰t
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü	T
+° 
+
+A TSQL abstract machine is one which is constructed from the
+transition function built from the two components
+ $processQuery‰t$ and $updateState‰t$, and the initial state $isstate‰t$. 
+
+¹HOLCONST
+Ü	ÛTSQLamİ : Am‰t
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü	TSQLam = (mkTf‰t processQuery‰t updateState‰t,istate‰t)
+° 
+
+
+
+\newpage
+\twocolumn[\section{INDEX} \label{INDEX}]
+\small
+\printindex
+
+\end{document}
+
