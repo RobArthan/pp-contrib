@@ -8,7 +8,7 @@
 %\TPPvolume{}
 %\TPPpart{}
 \TPPtitle{SWORD Front End Architectural Model}  %% Mandatory field
-\TPPref{DS/FMU/FEF/004}  %% Mandatory field
+\TPPref{DS/FMU/FEF/022}  %% Mandatory field
 \def\SCCSversion{$Revision$
 }
 \TPPissue{\SCCSversion}  %% Mandatory field
@@ -61,12 +61,16 @@ DRA front end filter project RSRE 1C/6130.}
 
 \subsection{Document Cross References}
 \bibliographystyle{fmu}
-\bibliography{fmu,fef,rdafef}
+\bibliography{fmu,fef}
 
 \subsection{Changes History}
 \begin{description}
-\item[Issue \SCCSversion ({\FormatDate{$Date$
-}}) ] First draft.
+\item[Issue 1.2 ({\FormatDate{93/02/08}}) ] First draft.
+\item[Issue \SCCSversion~({\FormatDate{$Date$
+}}) ] Corrected after comments and further thought.
+Check function removed, since the test is always that it returns
+no rows. Subsystem security property reformulated so as not to
+mention the construction function.
 \end{description}
 
 \subsection{Changes Forecast}
@@ -77,7 +81,7 @@ None.
 This document gives a formal specification of part of the SWORD Front
 End giving the high-level security properties required of both the
 Query Transformations of \cite{trans} and of the Front End Filter of
-\cite{filter}.  It constitutes deliverable D3 of work package 1a, as
+\cite{filter}.  It constitutes part of deliverable D3 of work package 1a, as
 given in the Phase 2 Technical Proposal, \cite{DS/FMU/017}.
 
 \subsection{Introduction}
@@ -104,8 +108,6 @@ subsystems, which, if met, are conjectured to ensure that the model of
 the SWORD Front End satisfies the policy.  \end{itemize}
 
 
-\subsection{Issues}
-
 \section{PRELIMINARIES}
 The following \Product{} instructions set the context for the proof
 tools and set up the new theory $fef022$, with parent the theory
@@ -124,7 +126,9 @@ supplied by a client is transformed by the Front End into a TSQL query
 to perform the operation intended by the SSQL query, together with an
 optional TSQL query to make certain security checks. The Front End
 executes the check query, if any, on the conventional DBMS and uses the
-response to determine whether the SSQL access is permitted. If the
+response to determine whether the SSQL access is permitted (the check
+query is always a $SELECT$ query which returns an empty table
+if the access is permitted). If the
 access is permitted, then the other TSQL query is executed to select
 data from, or to modify, the database. The results of a $SELECT$ query
 are not returned directly to the user, since they may still include
@@ -149,7 +153,7 @@ Abstract Machine states as states of the TSQL DBMS.
 \subsection{Transition Function Construction}
 
 We choose to model the transition function by considering it to be made
-up from four subsystems as follows:
+up from three subsystems as follows:
 
 \begin{itemize}
 	\item The TSQL query processor of the conventional DBMS.
@@ -160,8 +164,6 @@ components.
 	\item An Output Filter for removing data which the client is
 not allowed to see from the output of the TSQL DBMS and for deciding
 whether the data may not be complete.
-	\item A Check Function for testing the results of the optional
-check query.
 \end{itemize}
 
 The DBMS is modelled using the following types, the first of which is
@@ -192,15 +194,13 @@ declare_type_abbrev(€"STP_TYPE"›, ["'TSQL_QUERY", "'PARS"],
 
 declare_type_abbrev(€"FILTER_TYPE"›, ["'PARS"],
 	î (Class ∏ ANSWER ∏ 'PARS) ≠ ANSWERÆ);
-
-declare_type_abbrev(€"CHECK_TYPE"›, ["'PARS"],
-	î ANSWER ∏ 'PARS ≠ ErrorsÆ);
 =TEX
-Note that the type of the SSQL Transformation Processor does not
-involve the TSLQ state; this reflects the fact that, while it is
-planned in the SWORD Front End implementation to store information
+Note that the type of the SSQL Transformation Processor means that its
+effect does not depend upon TSQL state;
+this reflects the fact that, while it is planned in the SWORD Front End
+implementation to store information
 relating to the structure of the database in the TSQL DBMS, in the
-model, it is assumed, as agreed, that the structure of the database is
+model, it is assumed that the structure of the database is
 fixed.
 
 The transition function itself has the following type:
@@ -216,21 +216,19 @@ as follows:
 ‹	€mkTfât›	: ('TSQL_QUERY, 'ST) DBMS_TYPE
 ‹			≠ ('TSQL_QUERY, 'PARS) STP_TYPE
 ‹			≠ 'PARS FILTER_TYPE
-‹			≠ 'PARS CHECK_TYPE
 ‹			≠ 'ST TF_TYPE
 ˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
-‹	µ dbms stp filter check q c st∑
-‹		mkTfât dbms stp filter check ((q, c), st)
+‹	µ dbms stp filter q c st∑
+‹		mkTfât dbms stp filter ((q, c), st)
 ‹	=	let	(dq, ocq, pars) = stp (q, c)
-‹		in let	(st', errs) =
+‹		in let	(st', (cks, errs)) =
 ‹				if IsL ocq
-‹				then	let (st', ans1) = dbms (OutL ocq, st)
-‹					in (st', check (ans1, pars))
-‹				else	(st, [])
-‹		in	if errs = []
+‹				then	dbms (OutL ocq, st)
+‹				else	(st, ([], []))
+‹		in	if cks = [] ± errs = [] 
 ‹			then	let	(st'',ans2) = dbms (dq, st')
 ‹				in	(st'', (c, filter (c, ans2, pars)))
-‹			else	(st', (c, [], errs))
+‹			else	(st', (c, [], [notCleared]))
 ∞
 
 
@@ -240,7 +238,7 @@ In order to specify the initial state, and later to define the security
 requirements on the subsystems, we need to have available a function to
 map any state of the SSQL abstract machine of \cite{DS/FMU/FEF/006} to
 the TSQL state which represents it.  The initial TSQL state is the
-result of representing the initial SSQL state:
+result of representing the initial SSQL state.
 
 πHOLCONST
 ‹	€istateât› : (State ≠ 'ST) ≠ 'ST
@@ -249,6 +247,10 @@ result of representing the initial SSQL state:
 ‹	
 ∞
 
+(The initial state is presented in this way, rather than just by using
+$repr\,isstate$ in the behavioural model, to emphasise the analogy between
+the construction of the Front End Implementation model and the SSQL
+abstract machine.)
 \subsection{Behavioural Model}
 The top-level structure of the Front End implementation of SWORD is
 then captured in the following definition, which defines how subsystems
@@ -264,15 +266,14 @@ in addition to the subsystems proper.
 ‹			≠ ('TSQL_QUERY, 'ST) DBMS_TYPE
 ‹			≠ ('TSQL_QUERY, 'PARS) STP_TYPE
 ‹			≠ 'PARS FILTER_TYPE
-‹			≠ 'PARS CHECK_TYPE
 ‹			≠ (Query, ANSWER) BEHAVIOURS
 ˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
-‹	µrepr dbms stp filter check∑
-‹		FE_SWORD repr dbms stp filter check
-‹	=	behaviours (mkTfât dbms stp filter check, istateât repr)
+‹	µrepr dbms stp filter∑
+‹		FE_SWORD repr dbms stp filter
+‹	=	behaviours (mkTfât dbms stp filter, istateât repr)
 ∞
 
-\section{Correctness Conjecture}
+\section{Subsystem Correctness Conjecture}\label{SubsystemCorrectness}
 
 For a given representation function, $repr$, and subsystems, $dbms$,
 $stp$, $filter$, and $check$, the security policy of
@@ -286,47 +287,92 @@ But, of course, this places stringent requirements on the parameters to
 $FE\_SWORD$. In order to formulate these requirements, we use the
 $hide$ function of \cite{DS/FMU/FEF/005} and quantification over the
 SSQL states to make the necessary assertions about information flow in
-the TSQL states:
+the TSQL states. Of necessity, at the level of abstraction taken
+so far in this document, it is only possible to make these assertions
+as properties of the three subsystems taken together. The following
+formulation has been derived by attempting to
+give necessary conditions on the results of the SSQL Transformation
+Processor to ensure that a secure system results for a given DBMS and
+filter operation. As with the initial state and behavioural model,
+the assertion is parameterised by the represention function, $repr$.
 
 πHOLCONST
 ‹	€subsys_secure›	: (State ≠ 'ST)
 ‹			≠ (('TSQL_QUERY, 'ST) DBMS_TYPE
 ‹			∏  ('TSQL_QUERY, 'PARS) STP_TYPE
-‹			∏  'PARS FILTER_TYPE
-‹			∏  'PARS CHECK_TYPE ) SET
+‹			∏  'PARS FILTER_TYPE) SET
 ˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
-‹µrepr dbms stp filter check∑
-‹	(dbms, stp, filter, check) ç subsys_secure repr
-‹§	(µq c s∑ ∂â1s'∑ s' = Fst(mkTfât dbms stp filter check ((q, c), repr s)))
-‹±
-‹	(µq c s1 s2 s1' s2' d1 d2∑
-‹		hide(c, s1) = hide(c, s2)
-‹	±	(repr s1', d1) = mkTfât dbms stp filter check ((q, c), repr s1)
-‹	±	(repr s2', d2) = mkTfât dbms stp filter check ((q, c), repr s2)
-‹	¥	d1 = d2 ± hide(c, s1') = hide(c, s2'))
-‹±
-‹	(µq c1 c2 s' s d∑
-‹		(repr s', d) = mkTfât dbms stp filter check ((q, c1), repr s)
-‹	±	≥c2 dominates c1
-‹	¥	hide(c2, s') = hide(c2, s))
+‹µrepr dbms stp filter∑
+‹	(dbms, stp, filter) ç subsys_secure repr
+‹§	µq c∑
+‹	let	(dq, ocq, pars) = stp(q, c)
+‹	in let	check st =
+‹			if	IsL ocq
+‹			then	let	(cks, errs) = Snd(dbms(OutL ocq, st))
+‹				in	≥errs = [] ± cks = []
+‹			else	T
+‹	in
+‹(*A*)		(µs∑ ∂â1s'∑ check (repr s) ¥ repr s' = Fst(dbms(dq, repr s)))
+‹
+‹(*B*)	±	(µstâ1∑	IsL ocq
+‹		¥	let	(stâ2, (cks, errs)) = dbms(OutL ocq, stâ1)
+‹			in	stâ2 = stâ1 ± errs = [])
+‹
+‹(*C*)	±	(µc' s' s d∑
+‹			(repr s', d) = dbms(dq, repr s)
+‹		±	≥hide(c', s) = hide(c', s')
+‹		±	≥c' dominates c
+‹		¥	≥check(repr s))
+‹
+‹(*D*)	±	(µc' sâ1 sâ2 sâ1' sâ2' dâ1 dâ2∑
+‹			hide(c, sâ1) = hide(c, sâ2)
+‹		±	(repr sâ1', dâ1) = dbms(dq, repr sâ1)
+‹		±	(repr sâ2', dâ2) = dbms(dq, repr sâ2)
+‹		±	c' dominates c
+‹		±	≥hide(c', sâ1') = hide(c', sâ2')
+‹		¥	≥check(repr sâ1))
+‹
+‹(*E*)	±	(µsâ1 sâ2 sâ1' sâ2' dâ1 dâ2∑
+‹			hide(c, sâ1) = hide(c, sâ2)
+‹		±	(repr sâ1', dâ1) = dbms(dq, repr sâ1)
+‹		±	(repr sâ2', dâ2) = dbms(dq, repr sâ2)
+‹		±	≥filter(c, dâ1, pars) = filter(c, dâ2, pars)
+‹		¥	≥check(repr sâ1))
 ∞
 
-Informally, the above says that the components $dbms$, $stp$, $filter$
-and $check$ are secure subsystems with respect to a given
-representation function $repr$ provided the transition function which
-$mkTf\sb{t}$ constructs from them has the following properties:
-	{\em(a)} execution of a query preserves all the structural
+Informally, the above says that the components $dbms$, $stp$ and $filter$
+are secure subsystems with respect to a given
+representation function $repr$
+if the data query, $dq$, optional check query, $ocq$ and parameters,
+$pars$ returned by $stp$ for any query, $q$, at any clearance, $c$, have the
+following properties (where we say that ``the check succeeds for a state''
+if there is no query in $ocq$ or if there is but its execution gives an
+empty table):
+
+\begin{description}
+\item{$A$}
+Execution of $dq$ on any state for which the check succeeds
+preserves all the structural
 constraints which allow a TSQL state to be viewed in a unique way as an
 SSQL state;
-	{\em(b)} execution of a query at clearance $c$ does not allow
-information to flow from the parts of the state which are not visible
-at clearance $c$ into the output or into parts of the state which are
-visible at that clearance;
-	{\em(c)} the effect on the state of executing a query at
-clearance $c1$ is not visible at any clearance $c2$ which does not
-dominate $c1$.
+\item{$B$}
+If there is a query in $dcq$ then its execution does not change the
+state (i.e., it is a $SELECT$ query) and gives rise to no errors;
+\item{$C$}
+If for some clearance $c'$, execution of $dq$ changes the state
+in a way which is visible at clearance $c'$, and $c'$ does not dominate
+$c$, then the check must not succeed;
+\item{$D$}
+If the states resulting from execution of $dq$
+reveal a distinction which a client at clearance $c'$,
+dominating $c$, is not allowed then the check must not succeed.
+\item{$E$}
+If the output resulting from execution of $dq$ reveal a distinction
+which a client at clearance $c$ is not allowed to see between two states,
+then the check must not succeed.
+\end{description}
 
-Clearly the first of the above three clauses only makes sense if $repr$
+Clearly clause $A$ makes little sense unless $repr$
 is 1-1. The space optimisations made in the transformations imply that
 one cannot recover the SSQL state from the TSQL state alone, since, for
 example, without knowledge of the structure of the SSQL table it
@@ -336,9 +382,17 @@ whether the row class, first column class or both are known to be
 constant). It is assumed, therefore, that both the transformations and
 the representation function will be defined using some loosely
 specified, but constant, specification of the structure of the SSQL
-state.
+state (essentially, the structure implicit in the loosely defined
+initial abstract state, $isstate$, of \cite{DS/FMU/FEF/006}).
 
-
+Clauses $C$, $D$ and $E$ correspond to clauses $1$, $2$ and $3$
+of the $4$ clauses of the relation
+$secureUpdate$ of \cite{DS/FMU/FEF/007}, which captures the
+security properties on the relationship between the $hide$ and $updateState$
+components of the SSQL Abstract Machine.
+Clause $4$ of $secureUpdate$ just says that the client clearance is
+faithfully passed on from the input to the output, and is ensured by
+the definition of $mkTf\sb{t}$.
 
 The correctness conjecture for the architectural model presented in
 this document is then the following conjecture
@@ -347,8 +401,6 @@ this document is then the following conjecture
 	?Ù	µrepr dbms stp filter check∑
 			(dbms, stp, filter, check) ç subsys_secure repr
 		¥	FE_SWORD repr dbms stp filter check ç secure
-=TEX
-
 =TEX
 \section{CLOSING DOWN}
 The following \Product{} instruction restores the previous proof context.
