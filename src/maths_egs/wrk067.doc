@@ -1271,6 +1271,33 @@ val €connected_pointwise_thm› = save_pop_thm "connected_pointwise_thm";
 %%%%
 %%%%
 =SML
+set_goal([], ¨µ‘ X∑ 
+	‘ ç Topology
+± 	(µx y∑ x ç X ± y ç X ¥ ∂Y∑ Y Ä X ± x ç Y ± y ç Y ± Y ç ‘ Connected)
+¥	X ç ‘ ConnectedÆ);
+a(REPEAT strip_tac THEN ALL_FC_T1 fc_§_canon once_rewrite_tac[connected_pointwise_thm]);
+a(POP_ASM_T ante_tac THEN taut_tac);
+val €connected_pointwise_bc_thm› = save_pop_thm "connected_pointwise_bc_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µ‘∑ ‘ ç Topology ¥ {} ç ‘ ConnectedÆ);
+a(REPEAT strip_tac THEN bc_thm_tac connected_pointwise_bc_thm);
+a(asm_rewrite_tac[]);
+val €empty_connected_thm› = save_pop_thm "empty_connected_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µ‘ x∑ ‘ ç Topology ± x ç Space ‘ ¥ {x} ç ‘ ConnectedÆ);
+a(REPEAT strip_tac THEN rewrite_tac[connected_def, enum_set_clauses]);
+a(PC_T1 "sets_ext1" prove_tac[]);
+val €singleton_connected_thm› = save_pop_thm "singleton_connected_thm";
+=TEX
+%%%%
+%%%%
+=SML
 set_goal([], ¨µC D ”∑ 
 	C ç ” Connected
 ±	D ç ” Connected
@@ -1472,22 +1499,112 @@ set_goal([], ¨µf∑ f ç (OpenâR, OpenâR) Continuous § µx∑f CtsAt xÆ);
 a(rewrite_tac[continuous_def, cts_open_Ø_thm, space_Ø_thm] THEN REPEAT strip_tac);
 val €continuous_cts_at_Ø_thm› = save_pop_thm "continuous_cts_at_Ø_thm";
 =TEX
+That the real line is topologically connected is a consequence of the intermediate
+value theorem: if the disjoint open sets $B$ and $C$ exhausted the real line,
+then the function which is 0 on $B$ and 1 on $C$ would be continuous but
+would not take on any real value (e.g., $1/2$) strictly between 0 and 1, contradicting
+the intermediate value theorem.
 %%%%
 %%%%
 =SML
-(*
+set_goal([], ¨Universe ç OpenâR ConnectedÆ);
+a(rewrite_tac[connected_def, space_Ø_thm] THEN PC_T1 "sets_ext1" rewrite_tac[]);
+a(strip_asm_tac open_Ø_topology_thm THEN contr_tac);
+a(lemma_tac¨∂f∑µt∑ f t = if t ç B then ÓØ 0 else ÓØ 1Æ THEN1 prove_∂_tac);
+a(lemma_tac¨µt∑f CtsAt tÆ);
+(* *** Goal "1" *** *)
+a(rewrite_tac[cts_open_Ø_thm] THEN REPEAT strip_tac);
+a(cases_tac¨ÓØ 0 ç AÆ THEN cases_tac¨ÓØ 1 ç AÆ);
+(* *** Goal "1.1" *** *)
+a(LEMMA_T ¨{x | f x ç A} = Space OpenâRÆ rewrite_thm_tac THEN_LIST
+	[rewrite_tac[space_Ø_thm], ALL_FC_T rewrite_tac[space_open_thm]]);
+a(PC_T1 "sets_ext1" REPEAT strip_tac THEN asm_rewrite_tac[]);
+a(cases_tac ¨x'' ç BÆ THEN asm_rewrite_tac[]);
+(* *** Goal "1.2" *** *)
+a(LEMMA_T ¨{x | f x ç A} = BÆ  asm_rewrite_thm_tac);
+a(PC_T1 "sets_ext1" REPEAT strip_tac THEN_TRY asm_rewrite_tac[]);
+a(swap_nth_asm_concl_tac 1 THEN asm_rewrite_tac[]);
+(* *** Goal "1.3" *** *)
+a(LEMMA_T ¨{z | f z ç A} = CÆ  asm_rewrite_thm_tac);
+a(LEMMA_T¨µt∑t ç B § ≥t ç CÆ asm_rewrite_thm_tac THEN1 asm_prove_tac[]);
+a(PC_T1 "sets_ext1" REPEAT strip_tac THEN_TRY asm_rewrite_tac[]);
+a(swap_nth_asm_concl_tac 1 THEN asm_rewrite_tac[]);
+(* *** Goal "1.4" *** *)
+a(LEMMA_T ¨{x | f x ç A} = {}Æ rewrite_thm_tac THEN_LIST
+	[PC_T "sets_ext1" contr_tac, ALL_FC_T rewrite_tac[empty_open_thm]]);
+a(POP_ASM_T ante_tac THEN spec_nth_asm_tac 8 ¨x''Æ THEN asm_rewrite_tac[]);
+a(LEMMA_T¨µt∑t ç B § ≥t ç CÆ asm_rewrite_thm_tac THEN1 asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(lemma_tac¨µt∑≥f t = 1/2Æ THEN1 (strip_tac THEN cases_tac¨t ç BÆ THEN asm_rewrite_tac[]));
+a(lemma_tac¨f x = ÓØ 1Æ THEN1 asm_rewrite_tac[]);
+a(lemma_tac¨f x' = ÓØ 0Æ THEN1
+	(cases_tac ¨x' ç BÆ THEN asm_rewrite_tac[] THEN asm_prove_tac[]));
+a(DROP_NTH_ASM_T 5 discard_tac);
+a(lemma_tac¨≥x = x'Æ THEN1  (contr_tac THEN all_var_elim_asm_tac THEN asm_prove_tac[]));
+a(strip_asm_tac (list_µ_elim[¨xÆ, ¨x'Æ] Ø_less_cases_thm));
+(* *** Goal "2.1" *** *)
+a(ante_tac(list_µ_elim[¨fÆ, ¨xÆ, ¨x'Æ] intermediate_value_thm)
+	THEN asm_rewrite_tac[] THEN REPEAT strip_tac);
+a(∂_tac¨1/2Æ  THEN asm_rewrite_tac[]);
+(* *** Goal "2.2" *** *)
+a(ante_tac(list_µ_elim[¨fÆ, ¨x'Æ, ¨xÆ] intermediate_value_thm)
+	THEN asm_rewrite_tac[] THEN REPEAT strip_tac);
+a(∂_tac¨1/2Æ  THEN asm_rewrite_tac[]);
+val €universe_Ø_connected_thm› = save_pop_thm "universe_Ø_connected_thm";
+=TEX
+We can now apply the theorem that continuous images of connected sets are connected
+to show that closed intervals are connected.
+%%%%
+%%%%
+=SML
+set_goal([], ¨µx y∑ x < y ¥ ClosedInterval x y ç OpenâR ConnectedÆ);
+a(REPEAT strip_tac);
+a(ante_tac(list_µ_elim[¨xÆ, ¨yÆ,  ¨Ãt:Ø∑tÆ] cts_extension_thm1));
+a(asm_rewrite_tac[id_cts_thm,
+	conv_rule(ONCE_MAP_C eq_sym_conv) continuous_cts_at_Ø_thm] THEN strip_tac);
+a(strip_asm_tac universe_Ø_connected_thm THEN strip_asm_tac open_Ø_topology_thm);
+a(all_fc_tac[image_connected_thm]);
+a(POP_ASM_T ante_tac THEN rewrite_tac[]);
+a(bc_thm_tac(prove_rule[]¨µx y a∑x = y ¥ x ç a ¥ y ç aÆ));
+a(rewrite_tac[closed_interval_def] THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_var_elim_asm_tac1);
+a(cases_tac¨x'' < xÆ THEN1 ALL_ASM_FC_T rewrite_tac[]);
+a(cases_tac¨y < x''Æ THEN1 
+	(ALL_ASM_FC_T rewrite_tac[] THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(lemma_tac¨x º x'' ± x'' º yÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(ALL_ASM_FC_T asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(all_var_elim_asm_tac1);
+a(cases_tac¨y < x''Æ THEN1 ALL_ASM_FC_T rewrite_tac[]);
+a(cases_tac¨x'' < xÆ THEN1 
+	(ALL_ASM_FC_T rewrite_tac[] THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(lemma_tac¨x º x'' ± x'' º yÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(ALL_ASM_FC_T asm_rewrite_tac[]);
+(* *** Goal "3" *** *)
+a(∂_tac¨x'Æ THEN ALL_ASM_FC_T asm_rewrite_tac[]);
+val €closed_interval_connected_thm› = save_pop_thm "closed_interval_connected_thm";
+=TEX
+We can now characterise the connected subsets of the real line as those
+which sets which contain every point lying between any two members.
+%%%%
+%%%%
+=SML
 set_goal([], ¨µX∑
 		X ç OpenâR Connected
-	§	µx y∑x ç X ± y ç X ± x < y ¥ ∂z∑z ç X ± x < z ± z < yÆ
+	§	µx y z∑x ç X ± y ç X ± x º z ± z º y ¥ z ç XÆ
 );
-a(rewrite_tac[connected_def, space_Ø_thm] THEN REPEAT strip_tac);
-a(contr_tac THEN all_fc_tac[Ø_less_dense_thm]);
+a(REPEAT_N 3 strip_tac);
+(* *** Goal "1" *** *)
+a(rewrite_tac[connected_def, space_Ø_thm, Ø_º_def] THEN REPEAT strip_tac
+	THEN_TRY all_var_elim_asm_tac THEN contr_tac);
 a(strip_asm_tac (µ_elim¨zÆ half_infinite_intervals_open_thm));
 a(lemma_tac¨X Ä {t|t < z} ¿ {t | z < t}Æ THEN PC_T1 "sets_ext1" REPEAT strip_tac);
 (* *** Goal "1.1" *** *)
-a(spec_nth_asm_tac 7 ¨x'Æ THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a((cases_tac¨x' = zÆ THEN1 all_var_elim_asm_tac) THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 (* *** Goal "1.2" *** *)
 a(lemma_tac¨X ° {t|t < z} ° {t | z < t} = {}Æ THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "1.2.1" *** *)
 a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 (* *** Goal "1.2.2" *** *)
 a(lemma_tac¨≥X Ä {t|t < z}Æ THEN PC_T "sets_ext1" contr_tac);
@@ -1495,13 +1612,30 @@ a(lemma_tac¨≥X Ä {t|t < z}Æ THEN PC_T "sets_ext1" contr_tac);
 a(spec_nth_asm_tac 1 ¨yÆ THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 (* *** Goal "1.2.2.2" *** *)
 a(lemma_tac¨≥X Ä {t|z < t}Æ THEN PC_T "sets_ext1" contr_tac);
+(* *** Goal "1.2.2.2.1" *** *)
 a(spec_nth_asm_tac 1 ¨xÆ THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 (* *** Goal "1.2.2.2.2" *** *)
 a(all_asm_fc_tac[]);
 (* *** Goal "2" *** *)
-a(contr_tac);
-val €continuous_cts_at_Ø_thm› = save_pop_thm "continuous_cts_at_Ø_thm";
-*)
+a(REPEAT strip_tac THEN strip_asm_tac open_Ø_topology_thm);
+a(bc_thm_tac connected_pointwise_bc_thm);
+a(REPEAT strip_tac);
+a(strip_asm_tac (list_µ_elim[¨xÆ, ¨yÆ] Ø_less_cases_thm));
+(* *** Goal "2.1" *** *)
+a(∂_tac¨ClosedInterval x yÆ);
+a(ALL_FC_T rewrite_tac[closed_interval_connected_thm]);
+a(PC_T1 "sets_ext1" rewrite_tac[closed_interval_def]);
+a(REPEAT strip_tac THEN all_asm_fc_tac[] THEN asm_rewrite_tac[Ø_º_def]);
+(* *** Goal "2.2" *** *)
+a(∂_tac¨{x}Æ THEN asm_rewrite_tac[enum_set_clauses]);
+a(lemma_tac¨y ç Space OpenâRÆ THEN1 rewrite_tac[space_Ø_thm]);
+a(ALL_FC_T rewrite_tac[singleton_connected_thm]);
+(* *** Goal "2.3" *** *)
+a(∂_tac¨ClosedInterval y xÆ);
+a(ALL_FC_T rewrite_tac[closed_interval_connected_thm]);
+a(PC_T1 "sets_ext1" rewrite_tac[closed_interval_def]);
+a(REPEAT strip_tac THEN rename_tac[] THEN all_asm_fc_tac[] THEN asm_rewrite_tac[Ø_º_def]);
+val €connected_Ø_thm› = save_pop_thm "connected_Ø_thm";
 =TEX
 \subsection{Epilogue}
 =TEX
