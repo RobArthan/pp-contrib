@@ -71,14 +71,19 @@ None.
 \pagebreak
 \section{GENERAL}
 \subsection{Scope}
-This document gives a formal specification in Standard ML of the query transformations of \cite{trans}. It constitutes part of
+This document gives a formal specification in Standard ML (\cite{milner90}, \cite{paulson91}) of the SSQL query transformations of \cite{trans}. It constitutes part of
  deliverable D8 of work package 3, as given
 in the Proposal for Phase~2, \cite{DS/FMU/FEF/018}.
 
 \subsection{Introduction}
+We provide Standard ML specifications of the 
+SSQL query transformations of \cite{trans}. Preliminary 
+material needed
+ to support these query 
+transformation specifications may be found in \cite{DS/FMU/FEF/019}.
 
 \section{THE TRANSFORMATIONS}
-The following exceptions are raised by the SSQL transformations.
+Exceptions are raised by the SSQL transformations:
 =SML
 exception internalError;
 exception wrongType;
@@ -100,7 +105,7 @@ exception tooWide;
 exception emptyUnionList;
 =TEX
 \subsection{Incompletely Specified Transformations}
-The following functions have not been specified in \cite{trans}. The exception $notDefined$ is raised.
+The following functions have not been specified in \cite{trans}. The exception $notDefined$, from \cite{DS/FMU/FEF/019}, is raised.
 =SML
 fun 	(Ûcheck_enumÝ : Enum * int * Table_specèssqlê -> bool) x 
 					= raise notDefined "check_enum";
@@ -517,7 +522,7 @@ fun 	(ÛextractèparameterêÝ : string * ParamInfo list  -> ParamInfo list)
 |	extractèparameterê		(name,l) = 	let	val more = rev(tl(rev l))
 							val pi = hd(rev l)
 						in
-							if name = #name‰p pi
+							if name = #name pi
 							then extractèparameterê(name,more) @ [pi]
 							else 	extractèparameterê(name,more)
 						end;
@@ -528,7 +533,7 @@ fun 	(ÛenterèparameterêÝ : string * Constant_valueèssqlê * Class -> unit) (name,
 	then raise wrongScope
 	else 	case extractèparameterê(name,!parameterTable) of
 			[] => parameterTable := !parameterTable @  
-						[{name‰p =name,val‰p =v,clasf‰p =clasf}]
+						[{name =name,val‰p =v,clasf =clasf}]
 		|	ps => raise ambiguousName;
 =TEX
 =SML
@@ -625,7 +630,7 @@ fun 	(Ûlookupèlocal_table_infoêÝ : unit -> TableInfo list )
 fun 	(Ûlookupèparam_dataêÝ : string -> Constant_valueèssqlê * Class) 
 	name = case extractèparameterê(name,!parameterTable) of
 			[] => raise noSuchParameter
-		|	[info] => (#val‰p info,#clasf‰p info)
+		|	[info] => (#val‰p info,#clasf info)
 		|	other => raise internalError;
 =TEX
 Entering and leaving scope is achieved by side effect. We define a function to  this.
@@ -1082,10 +1087,10 @@ fun 	(Ûconvertècol_specêÝ : Col_specèssqlê -> ColumnSpecification)
 =SML
 fun 	(Ûclass_columnÝ : Col_specèssqlê-> (Col_specètsqlê,Class)Sum) cs = 
 	case 	(lookupècol_spec_classê(true,convertècol_specê cs)) of 
-		(local_identifier name, lub_cl) => Inl(denote_col_spec‰t name)
+		(local_identifier name, lub_cl) => inL(denote_col_spec‰t name)
 	|	(column(gen_corr,gen_col), lub_cl) => 
-						Inl(absolute_col_spec‰t([],gen_corr,gen_col))
-	|	(constant_class cl, lub_cl) => Inr cl
+						inL(absolute_col_spec‰t([],gen_corr,gen_col))
+	|	(constant_class cl, lub_cl) => inR cl
 	| 	(constant_null, lub_cl) => raise internalError;		
 =TEX
 =SML
@@ -1366,8 +1371,8 @@ end;
 =TEX
 =SML
 fun 	(Ûremove_constantsÝ : (Col_specètsqlê,Class)Sum list -> Col_specètsqlê list) [] = []
-|	remove_constants ((Inl c) :: s) = c :: (remove_constants s)
-|	remove_constants ((Inr c) :: s) = remove_constants s;
+|	remove_constants ((inL c) :: s) = c :: (remove_constants s)
+|	remove_constants ((inR c) :: s) = remove_constants s;
 =TEX
 =SML
 fun 	(Ûremove_nullsÝ : TsqlRepr list -> TsqlRepr list) [] = []
@@ -1467,7 +1472,9 @@ fun 	(Ûupb_row_classÝ : TableInfo -> Class)
 =TEX
 In the following, the specifications of $internal\_valueèclassê$  and 
 $value\_type$  are incomplete. ($all\_binop$, 
-$some\_binop$, $all\_binop\_list$ and $some\_binop\_list$ missing from $internal\_valueèclassê$ and $caseVal$ missing from $value\_type$.)
+$some\_binop$, $all\_binop\_list$ and $some\_binop\_list$ 
+are missing from $internal\_valueèclassê$ and $caseVal$ is 
+missing from $value\_type$.)
 
 =SML
 fun 	(ÛvalueèdataêÝ : Valueèssqlê -> Valueètsqlê)
