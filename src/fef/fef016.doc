@@ -7,7 +7,7 @@
 \TPPproject{DRA FRONT END FILTER PROJECT}  %% Mandatory field
 %\TPPvolume{}
 %\TPPpart{}
-\TPPtitle{Informal Justification for Proof of Security}  %% Mandatory field
+\TPPtitle{Informal Justifications for Proof of Security}  %% Mandatory field
 \TPPref{DS/FMU/FEF/016}  %% Mandatory field
 \def\SCCSversion{$Revision$
 }
@@ -20,8 +20,8 @@
 \TPPauthor{G.~M.~Prout & WIN01}  %% Mandatory field
 %\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
 \TPPauthorisation{R.B.~Jones & HAT Manager}
-\TPPabstract{This document gives an informal justification
-of those axioms which have been included in the formal proof of security for Phase 1 of the
+\TPPabstract{This document gives informal justifications
+of those unproven axioms which have been included in the formal proof of security for Phase 1 of the
 DRA front end filter project RSRE 1C/6130.}
 %\TPPabstractB{}
 %\TPPabstractC{}
@@ -64,21 +64,35 @@ DRA front end filter project RSRE 1C/6130.}
 \subsection{Changes History}
 \begin{description}
 \item[Issue \SCCSversion ({\FormatDate{$Date$
-}}) ] First issue.
+}}) ] Informal justifications added.
 \end{description}
 
 \subsection{Changes Forecast}
 \pagebreak
 \section{GENERAL}
 \subsection{Scope}
-This document gives an informal justification for the axioms used in the  formal Phase 1 proof  that  
+This document gives informal justifications for the unproven
+ axioms used in the  formal Phase 1 proof  that  
 the behaviour of the SSQL abstract machine is secure. 
 It constitutes deliverable D17 
 of work package 1a, as given
 in the amendment to the Secure Database Technical Proposal, \cite{amend1}.
 
 \subsection{Introduction}
+For the purpose of proving the security of the 
+SSQL semantics, DRA-ED has agreed that they do not 
+require the proof of all lemmas whose substance is
+a mathematical result whose proof would be routine
+and would not depend on any of the security features in 
+SWORD. Five unproven axioms have been used in the proof
+of the main result $secureSSQL$, given in \cite{DS/FMU/FEF/015}, 
+that the behaviour of the SSQL abstract machine is secure:
 
+=GFT HOL output
+secureSSQL = Ù behaviours SSQLam ç secure
+=TEX
+
+Informal justifications of these axioms are given below.
 
 
 \section{AXIOMS USED}
@@ -88,6 +102,17 @@ in the amendment to the Secure Database Technical Proposal, \cite{amend1}.
 €fin_enumerate_ax› = 
 µ s ∑ s ç Finite ¥ Enumerate s ç Finite ± # s = # (Enumerate s)
 =TEX
+
+The constant $Enumerate$ orders a set of natural numbers.
+For example: 
+=GFT
+Enumerate {4,9,2,7} = {(1,2),(2,4),(3,7),(4,9)}
+=TEX
+For every element in the set $s$ there is exactly one 
+element in $Enumerate\ s$. Hence $Enumerate\ s$ is 
+finite if and only if $s$ is finite, and if $s$ is finite 
+then it must be the same size as $Enumerate\ s$.
+
 \subsection{Squash Axiom}
 
 =GFT
@@ -96,6 +121,19 @@ in the amendment to the Secure Database Technical Proposal, \cite{amend1}.
 	râ1 ç Finite ± râ2 ç Finite ± Squash râ1 = Squash râ2
 	¥ #(Dom râ1) = #(Dom râ2)
 =TEX
+The constant $Squash$ takes a relation whose domain is a set
+of natural numbers and returns a relation where the domain
+is `squashed' into consecutive numbers. For example:
+=GFT
+Squash {(3,p),(5,q),(7,r),(7,s),(8,t),(9,s)} = {(1,p),(2,q),(3,r),(3,s),(4,t),(5,s)}
+=TEX
+
+For every element in the relation $r$ there is exactly 
+one element in $Squash\ r$. Hence $Squash\ r$ is 
+finite if and only if $r$ is finite, and if 
+the squash of two finite relations is equal, then 
+the domains of the two relations must be the same size.
+
 \subsection{Extract Axiom}
 
 
@@ -106,8 +144,41 @@ in the amendment to the Secure Database Technical Proposal, \cite{amend1}.
 		then (Extract a l) Î [x]
 		else Extract a l
 =TEX
-\subsection{RelList Axiom I}
+The constant $Extract$ takes a set of indices and a list and returns
+the list obtained by extracting those elements from the list which are indexed by the elements of the set.
+For example: 
+=GFT
+Extract {2,3,5} [a,b,c,d] = [b,c]
+=TEX
 
+
+Given a list $l$ with a single element $x$ appended to it, then the list obtained by extracting elements identified by a set of indices $s$
+will be the same as appending $x$ to that list obtained
+ by extracting elements from $l$ provided that $s$ contains the index for the next element in the list. If not, the result will be the same list as that obtained
+ by just extracting elements from the list $l$.
+
+\subsection{RelList Axioms}
+
+The constant $ListRel$ takes a list and returns a 
+sequence.
+For example: 
+=GFT
+ListRel [a,f,d,a] = {(1,a),(2,f),(3,d),(4,a)}
+=TEX
+The constant $RelList$ is the left inverse of $ListRel$.
+
+The relational override constant $´$ takes a relation
+ $f$ and a relation $g$ and returns the relation 
+which agrees with $f$ in the case where the domain 
+ of $f$ differs from the domain of $g$, and agrees 
+with $g$ elsewhere. For example:
+
+=GFT
+{(aâ1,bâ1),(aâ2,bâ2)} ´ {(aâ2,câ1),(aâ3,câ2)} = {(aâ1,bâ1),(aâ2,câ1),(aâ3,câ2)}
+
+(where aâ1 Ω aâ2, aâ2 Ω aâ3, aâ1 Ω aâ3)
+=TEX
+\subsubsection{RelList Axiom I}
 
 =GFT
 €rel_list_´_ax1› =  
@@ -118,18 +189,83 @@ in the amendment to the Secure Database Technical Proposal, \cite{amend1}.
 	= 
 	RelList((ListRel l) ´ r) Î [x]
 =TEX
-\subsection{RelList Axiom II}
+
+This axiom is for use in an inductive proof
+ where the elements of a list are to be overridden by
+ values given from a relation for which there is
+no value for the last element of the list, 
+hence it remains unchanged. 
 
 
+$rel\_list\_´\_ax1$
+ is given a
+relation $r$ whose domain is
+contained in the sequence obtained from the list $l$.
+Hence: 
 =GFT
-€rel_list_´_ax2› = 
-µ r l x y ∑ 
-	r ç Functional ± Dom r Ä Dom(ListRel l)
-	¥ 
-	RelList((ListRel(l Î [x])) ´ (r ¿ {(#l + 1,y)})) 
-	= 
-	RelList((ListRel l) ´ r) Î [y]Æ);
+(ListRel(l Î [x])) ´ r = ((ListRel l) ´ r) ¿ {(#l + 1,x)}
 =TEX
+and since $r$ is also functional
+=GFT
+∂ lâ1 ∑ ListRel lâ1 = (ListRel l) ´ r ± # lâ1 = #l
+=TEX
+Hence:  
+=GFT
+RelList((ListRel(l Î [x])) ´ r) = RelList(((ListRel l) ´ r) ¿ {(#l + 1,x)})
+=TEX
+and
+=GFT
+RelList(((ListRel l) ´ r) ¿ {(#l + 1,x)}) = RelList((ListRel lâ1)  ¿ {(#lâ1 + 1,x)})
+=TEX
+and 
+=GFT
+RelList((ListRel lâ1)  ¿ {(#lâ1 + 1,x)})  = RelList((ListRel lâ1) Î [x]
+=TEX
+and finally
+=GFT
+RelList((ListRel lâ1) Î [x] = RelList((ListRel l) ´ r) Î [x]
+=TEX
+as required.
+
+\subsubsection{RelList Axiom II}
+
+This axiom is for use in an inductive proof
+ where the elements of a list are to be overridden by
+ values given from a relation for which there is
+a value for the last element of the list, 
+hence it takes that value. 
+
+
+$rel\_list\_´\_ax2$ 
+ is given a
+relation $r$ whose domain is
+contained in the sequence obtained from the list $l$.
+Hence: 
+=GFT
+(ListRel(l Î [x])) ´ (r ¿ {(#l + 1,y)}) = ((ListRel l) ´ r) ¿ {(#l + 1,y)}
+=TEX
+and again, since $r$ is also functional 
+=GFT
+∂ lâ1 ∑ ListRel lâ1 = (ListRel l) ´ r ± # lâ1 = #l
+=TEX
+Hence:  
+=GFT
+RelList((ListRel(l Î [x])) ´ (r ¿ {(#l + 1,y)})) = RelList(((ListRel l) ´ r) ¿ {(#l + 1,y)})
+=TEX
+and
+=GFT
+RelList(((ListRel l) ´ r) ¿ {(#l + 1,y)}) = RelList((ListRel lâ1)  ¿ {(#lâ1 + 1,y)})
+=TEX
+and 
+=GFT
+RelList((ListRel lâ1)  ¿ {(#lâ1 + 1,y)})  = RelList((ListRel lâ1) Î [y]
+=TEX
+and finally
+=GFT
+RelList((ListRel lâ1) Î [y] = RelList((ListRel l) ´ r) Î [y]
+=TEX
+as required.
+ 
 
 \newpage
 \twocolumn[\section{INDEX} \label{INDEX}]
