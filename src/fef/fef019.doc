@@ -68,15 +68,28 @@ DRA front end filter project RSRE 1C/6130.}
 
 \subsection{Changes Forecast}
 None.
-\pagebreak
 \section{GENERAL}
 \subsection{Scope}
-This document gives preliminary specifications in Standard ML of the SSQL and TSQL abstract syntax to support a formal specification in Standard ML of the query transformations of \cite{trans}. It constitutes part of
+This document gives  specifications in Standard ML (\cite{milner90}, \cite{paulson91}) of the SSQL and TSQL abstract syntax  and preliminary specifications from \cite{trans} to support a formal specification in Standard ML of the SSQL query transformations of \cite{trans}. 
+
+It constitutes part of
  deliverable D8 of work package 3, as given
 in the Proposal for Phase~2, \cite{DS/FMU/FEF/018}.
 
 \subsection{Introduction}
+We proposed in \cite{DS/FMU/FEF/018} to formalise the 
+SSQL query transformations of \cite{trans} in Standard ML. 
+Here we provide Standard ML specifications of the SSQL 
+and TSQL datatypes together with specifications of the transformation notation,  
+generic functions, primitive routines, transformation types 
+and symbol table from \cite{trans}. Standard ML specifications of the 
+transformations may be found in \cite{DS/FMU/FEF/020}.
 
+In order to avoid overloading of Standard ML identifiers, 
+subscripts have been used 
+to distinguish between constructors of SSQL types and TSQL 
+types. Subscripts or abbreviations have also been used in the case where 
+an identifier used in \cite{trans} is a reserved word in Standard ML (e.g. $val$).
 
 
 \section{UNIVERSAL TYPES} \label{UNI}
@@ -91,6 +104,7 @@ datatype €Interval› = mk_interval;
 datatype €Class› = mk_class;
 datatype €Code› = mk_code;
 =TEX
+We define a datatype $Op$, rather than use type $Integer$.
 =SML
 datatype €Op› =	  not_op
 			| definitely_op
@@ -122,8 +136,6 @@ datatype €Op› =	  not_op
 			| minimum_op
 			| between_op
 			| liket_op;
-
-	
 =TEX
 \section{SSQL ABSTRACT SYNTAX}
 \subsection{Sorts}
@@ -459,25 +471,23 @@ fun 	(a : int) €min› (b : int) = if a < b then a else b;
 infix max;
 fun 	(a : int) €max› (b : int) = if a > b then a else b;
 =TEX
+Head and Tail of a list.
+=SML
+exception Hd;
+fun	(€hd› : 'a list -> 'a)
+	[] = raise Hd
+|	hd(h::t) =h;
+exception Tl;
+fun	(€tl› : 'a list -> 'a list)
+	[] = raise Tl
+|	tl(h::t) =t;
+
+=TEX
 The functions $invert$ and $split$.
 =SML
-local 	
-fun 	(transpose1: 'a list -> 'a list list)
-			[] = []
-|	transpose1	(h::t) = 	[[h]] @ transpose1 t
-	fun (invert1 : 'a list -> 'a list list -> 'a list list)
-					[] [] = []
-				|	invert1 [] l = raise diffLengths "invert"
-				|	invert1  (h1::t1) l = (h1::(hd l))::(invert1 t1 (tl l))
-in
 fun	(€invert› : 'a list list -> 'a list list)
-		[] = []
-|	invert (h::t) = if length t = 0 then transpose1 h
-			else
-				if length h = length(hd t)
-				then invert1 h (invert t)
-				else raise diffLengths "invert"	
-end;
+		([] :: _) = []
+|	invert x = map hd x :: invert (map tl x);
 =TEX
 =SML
 fun 	(€split›: ('a * 'b) list -> 'a list * 'b list) [] = ([],[])
@@ -509,23 +519,24 @@ Finally, the function $or$.
 fun 	(€or› : bool * bool -> bool) (b1,b2) = b1 orelse b2;
 =TEX
 \subsection{Transformation Notation}
-We will use the standard ML type $unit$ in place of $Null$. We give a datatype $Sum$ to allow us to form the disjoint
+The primitive types are 
+given in section \ref{UNI}. We will use the standard ML type $unit$ in place of $Null$. We give a datatype $Sum$ to allow us to form the disjoint
  sum of two types.
 =SML
-datatype ('a ,'b)€Sum› = Inl of 'a | Inr of 'b;
+datatype ('a ,'b)€Sum› = inL of 'a | inR of 'b;
 =TEX
 Then  discriminator and destructor functions for a sum type.
 =SML
 =SML
-fun (€isL›: ('a ,'b)Sum -> bool) (Inl x) = true
+fun (€isL›: ('a ,'b)Sum -> bool) (inL x) = true
 | 	isL _ = false;
-fun (€isR›: ('a ,'b)Sum -> bool) (Inr x) = true
+fun (€isR›: ('a ,'b)Sum -> bool) (inR x) = true
 | 	isR _ = false;
 exception notLeft;
-fun (€getL›: ('a ,'b)Sum -> 'a) (Inl x) = x
+fun (€getL›: ('a ,'b)Sum -> 'a) (inL x) = x
 | 	getL _ = raise notLeft;
 exception notRight;
-fun (€getR›: ('a ,'b)Sum -> 'b) (Inr x) = x
+fun (€getR›: ('a ,'b)Sum -> 'b) (inR x) = x
 | 	getR _ = raise notRight;
 =TEX
 
@@ -651,14 +662,15 @@ type €Scope› =	{tables : TableDetail list,
 		identifiers : IdentDetail list};
 =TEX
 =SML
-type €ParamInfo› =	{nameâp : string,
+type €ParamInfo› =	{name : string,
 			valâp : Constant_valueËssqlÍ,
-			clasfâp : Class};
+			clasf : Class};
 =TEX
 =SML
 val symbolTable = ref ([]:Scope list);
 val parameterTable = ref ([]:ParamInfo list);
 =TEX
+
 \newpage
 \twocolumn[\section{INDEX} \label{INDEX}]
 \small
