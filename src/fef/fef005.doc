@@ -14,7 +14,7 @@
 \TPPissue{\SCCSversion}  %% Mandatory field
 \TPPdate{\FormatDate{$Date$
 }}  %% Mandatory field (with sensible default)
-\TPPstatus{Approved}			%% Mandatory field
+\TPPstatus{Draft}			%% Mandatory field
 \TPPtype{Specification}
 \TPPkeywords{}
 \TPPauthor{G.~M.~Prout & WIN01}  %% Mandatory field
@@ -61,10 +61,24 @@ DRA front end filter project RSRE 1C/6130.}
 \bibliography{fmu,fef}
 
 \subsection{Changes History}
-\begin{description}
-\item[Issue \SCCSversion ({\FormatDate{$Date$
-}}) ]  Latest approved version.
-\end{description}
+{\bf Issue \SCCSversion ({\FormatDate{$Date$
+}}) } 
+
+\begin{enumerate}
+\item
+Changes made to $updateRow$ and $updateQuery$. The function $RelList$ moved
+to case where {\bf set} of errors is non-empty, since  
+=INLINEFT
+RelList(Squash r) = []
+=TEX
+is undefined ($RelList$ is only defined on $ListRel$). 
+\item
+Function $deleteQuery$ insecure. User may only delete rows whose existence classifications are the same as his clearance. 
+\item
+Function $insertQuery$ returns a state rather than a state and an empty list of error messages. Function $updateStateR$ amended accordingly. 
+\item
+Function $colDefaults$ used in $insertQuery$ simplified.
+\end{enumerate}
 
 \subsection{Changes Forecast}
 Changes  may be necessary  as a result of issues raised
@@ -438,28 +452,27 @@ default values are obtained from the table information.
 
 
 ¹HOLCONST
-Ü	ÛcolDefaultsİ :  Class ­ TableSpec ­ (Num ª Data) ­  (Numª Data)
+Ü	ÛcolDefaultsİ :  Class ­ TableSpec ­ (Num ª Data) ­  (Num ª Data)
 ÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
 Ü	µ  clear : Class; ts : TableSpec; ds : Num ª Data
 Ü	·	colDefaults clear ts ds
 Ü		=
-Ü		let hiddencols = (TS_colspecs ts) \ visibleCols clear ts
-Ü		in 
-Ü		ds « {(n,d)|¶c · c  hiddencols ± n = CS_posn c ± d = CS_default c}
+Ü		ds « {(n,d) | ¶c · ³ c  visibleCols clear ts 
+Ü					± n = CS_posn c ± d = CS_default c}
 °
 
 
 
 
 ¹HOLCONST
-Ü	ÛinsertQueryİ :  (Class ¸ Insert ¸ StateR ¸ TableSpec) ­ StateR ¸ Errors
+Ü	ÛinsertQueryİ :  (Class ¸ Insert ¸ StateR ¸ TableSpec) ­ StateR 
 ÷üüüüüüüüüüüüüü
 Ü	µ clear:Class; i:Tab; ds : (Num ª Data) LIST; s:StateR; ts : TableSpec
 Ü	·	insertQuery (clear,(i,ds),s,ts)
 Ü		=
 Ü		let rl = Map ((MkRow clear) o (colDefaults clear ts)) ds 
 Ü		in	
-Ü		(changeSpec i (replaceRows ts ((TS_rows ts) ë rl)) s,[])	
+Ü		(changeSpec i (replaceRows ts ((TS_rows ts) ë rl)) s)	
 °
 
 \subsection{Delete}
@@ -479,9 +492,12 @@ then the structure of the table would have been hidden from him and therefore th
 Ü	µ clear:Class; i:Tab; ns : Num ğ; e:Errors; s:StateR; ts:TableSpec
 Ü	·	deleteQuery(clear,(i,ns),s,ts)
 Ü		=
-Ü		let	rs = Extract (Ran(ns á (revealRow clear ts)))(TS_rows ts) 
+Ü		let	ns' = (revealRow clear ts) Image ns 
 Ü		in	
-Ü		(changeSpec i (replaceRows ts rs) s)	
+Ü			let ns'' = ns' ¡ {i|R_exist(Nth(TS_rows ts)i) = clear}
+Ü			in	let rs = Extract (1 .. Length (TS_rows ts) \ ns'')(TS_rows ts)
+Ü				in
+Ü				(changeSpec i (replaceRows ts rs) s)	
 °	
 
 
@@ -529,11 +545,11 @@ Now the effect of an update on a row.  A new row is only returned if all updates
 Ü		=
 Ü		let 	us' = 	RelCombine us (R_data r) » Graph(updateField clear table_class)
 Ü		in
-Ü		let 	es = RelList(Squash((us' ’ {x|isError x}) » Graph destError))  
+Ü		let 	es = (us' ’ {x|isError x}) » Graph destError  
 Ü		in
-Ü		if 	es = []
+Ü		if 	es = {}
 Ü		then	giveVal(MkRow (R_exist r)((R_data r) « (us' » Graph destVal)))
-Ü		else	giveError es
+Ü		else	giveError (RelList(Squash es))
 °
 
 
@@ -555,12 +571,12 @@ Finally, the $updateQuery$ function. A check is made to prevent access to hidden
 Ü			let	pr = RelCombine us' (ListRel(TS_rows ts)) 
 Ü						» Graph(updateRow clear (TS_class ts))
 Ü			in	
-Ü			let 	es = RelList(Squash((pr ’ {x|isError x}) » Graph destError))
-Ü			in	if 	es = []
+Ü			let 	es = (pr ’ {x|isError x}) » Graph destError
+Ü			in	if 	es = {}
 Ü				then	let	rs =  RelList(ListRel(TS_rows ts)
 Ü								« (pr » Graph destVal))
 Ü					in 	(changeSpec i(replaceRows ts rs) s,[])
-Ü				else	(s,Flat es)
+Ü				else	(s,Flat(RelList(Squash es)))
 °
 
 
@@ -612,7 +628,7 @@ First, we define $updateStateR$ on the representation state.
 Ü				let	(s',es') 
 Ü					=	
 Ü					if 	isInsert ef
-Ü					then	insertQuery(clear,destInsert ef,s,ts)
+Ü					then	(insertQuery(clear,destInsert ef,s,ts),[])
 Ü					else if	isDelete ef
 Ü					then	(deleteQuery(clear,destDelete ef,s,ts),[])
 Ü					else	updateQuery(clear,destUpdate ef,s,ts)
