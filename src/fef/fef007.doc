@@ -1,7 +1,7 @@
+
 =TEX
 % TQtemplate.tex
 \documentstyle[hol1,11pt,TQ]{article}
-\ftlinepenalty=9999
 \def\Hide#1{}
 \def\Bool{``$\it{:}bool\,$''}
 \makeindex
@@ -64,7 +64,8 @@ DRA front end filter project RSRE 1C/6130.}
 
 \subsection{Changes History}
 \begin{description}
-\item[1.1] First draft version.
+\item[Issue \SCCSversion(\FormatDate{$Date$
+})] First draft version.
 \end{description}
 
 \subsection{Changes Forecast}
@@ -73,8 +74,20 @@ during  the transcription of the specification.
 \pagebreak
 \section{GENERAL}
 \subsection{Scope}
+This document provides a proof strategy for proving
+ the security of the SSQL semantics. 
 
 \subsection{Introduction}
+In \cite{DS/FMU/FEF/006}, the  correctness conjecture for the SSQL Abstract Machine
+was given. In section 6.2.3 of the Secure Database Technical Proposal, \cite{DS/FMU/017},
+we proposed that a major part of the proof of this conjecture
+would be an unwinding result independent of the semantics of SSQL.
+In this document, we provide 
+a proof strategy for the proof of the  correctness conjecture for the SSQL Abstract Machine
+which comprises the proof of an unwinding result
+together with a proof about the critical components $hide$ and $updateState$, defined 
+in \cite{DS/FMU/FEF/005}.
+
 
 
 \section{PRELIMINARIES}
@@ -109,24 +122,56 @@ An unwinding result,  formalised in section \ref{UNWIND}.
 
 \section{CRITICAL REQUIREMENTS ON COMPONENTS} 
 We formalise the critical requirements on the critical components $hide$
-and $updateState$ of the  SSQL abstract machine. In fact, the critical requirement on the component of $hide$ is that two states 
-are the `same' when viewed from a clearance $clear$ if we get the same result when we 
-view each one with respect to that clearance. By `two states being the same when 
-viewed from a clearance $clear$ ',we mean exactly that the resulting 
-states when each is hidden at $clear$ are the same. This requirement is expressed as 
-part of a requirement on the relationship between $hide$ and $updateState$. 
+and $updateState$ of the  SSQL abstract machine. The only requirement exclusively
+on the  $hide$ component
+ is that it is monotonic with respect to classification. This is 
+formalised as the property $secureHide$.
 
-The critical requirement on the relationship between $hide$ and $updateState$
-is that if we have
-two clearances $clear‰1$ and $clear‰2$ and we update
- the database at $clear‰1$ and a change is visible when hiding w.r.t $clear‰2$, then
-$clear‰2$ must dominate $clear‰1$. This requirement concerns the security of the 
-state of the database. We also need to address the issue of security of 
-the outputs from the database to the user. If we perform an update on two states
-$s‰1$ and $s‰2$ that are the same when viewed at a clearance $clear$,
-then the outputs must be the same, and they must be at clearance $clear$.
+¹HOLCONST
+Ü	ÛsecureHideİ : Hide ğ
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ h : Hide · 
+Ü		h  secureHide
+Ü		¤
+Ü		µc‰1 c‰2 : Class; s‰1 s‰2 : State ·	
+Ü			h(c‰1,s‰1) = h(c‰1,s‰2)
+Ü			±
+Ü			c‰1 dominates c‰2	
+Ü			´
+Ü			h(c‰2,s‰1) = h(c‰2,s‰2)
+°
 
-We define a property  $secureUpdate$ that captures these rquirements
+The remaining critical requirements on $hide$ and $updateState$
+are expressed as a critical requirement on the relationship between $hide$ and $updateState$.
+We divide this into four components:
+\begin{enumerate}
+\item
+If we have
+two clearances $c‰1$ and $c‰2$ and we update
+ the database at $c‰1$ and a change is visible when hiding w.r.t $c‰2$, then
+$c‰2$ must dominate $c‰1$. 
+\item
+If we have
+two clearances $c‰1$ and $c‰2$  where $c‰1$ dominates $c‰2$
+and we update
+ the database at $c‰2$ in states $s‰1$ and $s‰2$,  which are the same when viewed at $c‰1$,
+then the resulting states are the same when viewed at $c‰1$.
+
+These first two  requirements concern the security of the 
+state of the database. 
+\item
+If we perform an update on two states
+$s‰1$ and $s‰2$ that are the same when viewed at a clearance $c$,
+then the outputs must be the same. 
+\item
+Outputs from updates performed at 
+a clearance $c$ must be at clearance $c$.
+
+These last two requirements concern the security of the 
+ outputs from the database to the user.
+\end{enumerate}
+
+We define a property  $secureUpdate$ that captures these requirements
 
 
 ¹HOLCONST
@@ -135,20 +180,29 @@ We define a property  $secureUpdate$ that captures these rquirements
 Ü	µ h : Hide ;u : Ustate ·
 Ü		(h,u)  secureUpdate
 Ü		¤
-Ü		(µclear‰1 clear‰2 : Class; s : State; e:Effect ¸ Errors ·	
-Ü			let 	s' = Fst(u(clear‰1,e,s)) 
+Ü	(*1*)	(µc‰1 c‰2 : Class; s : State; e:Effect ¸ Errors ·	
+Ü			let 	s' = Fst(u(c‰1,e,s)) 
 Ü			in
-Ü				³(h(clear‰2,s) = h(clear‰2,s'))
-Ü				´ 	clear‰2 dominates clear‰1)	
+Ü				³(h(c‰2,s) = h(c‰2,s'))
+Ü				´ 	c‰2 dominates c‰1)	
 Ü		±
-Ü		µclear : Class; s‰1 s‰2: State; e:Effect ¸ Errors ·
-Ü			let	o‰1 = Snd(u(clear,e,s‰1))
-Ü			and 	o‰2 = Snd(u(clear,e,s‰2))
+Ü	(*2*)	(µc‰1 c‰2 : Class; s‰1 s‰2 : State; e:Effect ¸ Errors ·	
+Ü			let 	s‰1' = Fst(u(c‰2,e,s‰1)) 
+Ü			and	s‰2' = Fst(u(c‰2,e,s‰2))
 Ü			in
-Ü				(h(clear,s‰1) = h(clear,s‰2)
-Ü				´	o‰1 = o‰2
-Ü				±	Fst o‰1 = clear)
-° 
+Ü				h(c‰1,s‰1) = h(c‰1,s‰2)
+Ü				±	c‰1 dominates c‰2
+Ü				´	h(c‰1,s‰1') = h(c‰1,s‰2'))	
+Ü		±
+Ü	(*3*)	(µc : Class; s‰1 s‰2: State; e:Effect ¸ Errors ·
+Ü			let	o‰1 = Snd(u(c,e,s‰1))
+Ü			and 	o‰2 = Snd(u(c,e,s‰2))
+Ü			in
+Ü				h(c,s‰1) = h(c,s‰2) ´	o‰1 = o‰2)
+Ü		±
+Ü	(*4*)	(µc : Class; s: State; e:Effect ¸ Errors ·
+Ü			Fst(Snd(u(c,e,s))) = c)
+°
 
 
 \subsection{Lemma1 : Component Correctness Conjecture} \label{COMP}
@@ -156,13 +210,16 @@ We define a property  $secureUpdate$ that captures these rquirements
 We formalise the security conjecture that $hide$ and $updateState$ are secure.
 
 =GFT
-	?ô 	(hide,updateState)  secureUpdate
+	?ô 	hide  secureHide ± (hide,updateState)  secureUpdate
 =TEX
 
 ¹HOLCONST
 Ü	ÛLemma1İ : BOOL
 ÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
-Ü	Lemma1 = (hide,updateState)  secureUpdate
+Ü	Lemma1 = 
+Ü		(hide  secureHide 
+Ü		± 
+Ü		(hide,updateState)  secureUpdate)
 ° 
 
 
@@ -171,13 +228,15 @@ We formalise the security conjecture that $hide$ and $updateState$ are secure.
 The main unwinding result  of the proof of security of the SSQL abstract machine states that if 
 we build an SSQL abstract machine
 as prescribed in \cite{DS/FMU/FEF/006} from an $SSQLtf$ and an initial state $isstate$, and $hide$
-and $updateState$ satisfy  $secureUpdate$, the security property
-on components, then the 
+ and $updateState$ satisfy  $secureHide$ and $secureUpdate$, the security properties on components,
+ then the 
 `behaviour' of the 
 SSQL abstract machine is $secure$, as defined in \cite{DS/FMU/FEF/003}.
 This is formalised as $Lemma2$.
 =GFT
-	?ô 	(hide,updateState)  secureUpdate 
+	?ô 	(hide  secureHide 
+		± 
+		(hide,updateState)  secureUpdate) 
 		´ 
 		behaviours SSQLam  secure
 =TEX
@@ -186,7 +245,9 @@ This is formalised as $Lemma2$.
 Ü	ÛLemma2İ : BOOL
 ÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
 Ü	Lemma2 = 
-Ü		((hide,updateState)  secureUpdate 
+Ü		((hide  secureHide 
+Ü		± 
+Ü		(hide,updateState)  secureUpdate) 
 Ü		´ 
 Ü		behaviours SSQLam  secure)
 ° 
@@ -212,7 +273,7 @@ transition functions.
 Ü	µ stf : Stf ·
 Ü		stf  secureStf
 Ü		¤
-Ü		µs‰1 s‰2: State;i‰1 i‰2 : Query ¸ Class; c : Class ·	
+Ü		(µs‰1 s‰2: State; i‰1 i‰2: Query ¸ Class;c : Class ·	
 Ü			(hide(c,s‰1) = hide(c,s‰2)
 Ü			±
 Ü			([i‰1],[i‰2])  same_ins c)
@@ -222,7 +283,14 @@ transition functions.
 Ü			in
 Ü			(hide(c,s‰1') = hide(c,s‰2')
 Ü			±
-Ü			([o‰1],[o‰2])  same_outs c)
+Ü			([o‰1],[o‰2])  same_outs c))
+Ü		±
+Ü		(µ s: State; i: Query ¸ Class; c: Class · 
+Ü			³ c dominates(Snd i)
+Ü			´ 
+Ü			((hide (c, s) = hide (c, Fst (stf (i, s))))
+Ü			± 
+Ü			³ c dominates(Fst(Snd(stf (i, s))))))
 ° 
 
 We define  a constant SSQLtf, the SSQL abstract machine
@@ -235,12 +303,14 @@ transition function.
 ° 
 
 \subsubsection{Lemma3} \label{TF}
-We now formalise a proposition that states that if $hide$ and $updateState$
+We formalise a proposition that states that if $hide$ and $updateState$
 satisfy their critical requirements, then $SSQLtf$ satisfies $secureStf$, the security property
 on transition functions. 
 
 =GFT
-	?ô 	(hide,updateState)  secureUpdate 
+	?ô 	(hide  secureHide 
+		± 
+		(hide,updateState)  secureUpdate) 
 		´
 		SSQLtf  secureStf 
 =TEX
@@ -249,14 +319,16 @@ on transition functions.
 Ü	ÛLemma3İ : BOOL
 ÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
 Ü	Lemma3 = 
-Ü		((hide,updateState)  secureUpdate 
+Ü		((hide  secureHide 
+Ü		± 
+Ü		(hide,updateState)  secureUpdate) 
 Ü		´
 Ü		SSQLtf  secureStf)
 ° 
 
 
 \subsection{Iterated Transition Function Property} 
-We now state a property on 
+We state a property on 
 iterated transition functions. 
 
 First an abbreviation definition for the type of iterated state transition functions, $Itf$.
@@ -285,7 +357,7 @@ declare_type_abbrev(Û"Itf"İ,[],” (Query ¸ Class)LIST ¸ State
 Ü			(so‰1,so‰2)  same_outs c)
 ° 
 \subsubsection{Lemma4} \label{ITF}
-We now formalise the proposition that if an $SSQLtf$ satisfies $secureStf$, then an iterated
+We formalise the proposition that if an $SSQLtf$ satisfies $secureStf$, then an iterated
 $SSQLtf$ satisfies $secureItf$, the security property
 on iterated transition functions. 
 
@@ -359,13 +431,15 @@ The main proof conjecture, given in section \ref{MAIN}, that:
 follows from the proofs of $Lemma1$:
 
 =GFT
-	?ô 	(hide,updateState)  secureUpdate
+	?ô 	hide  secureHide ± (hide,updateState)  secureUpdate
 =TEX
 
 and $Lemma2$:
 
 =GFT
-	?ô 	(hide,updateState)  secureUpdate 
+	?ô 	((hide  secureHide 
+		± 
+		(hide,updateState)  secureUpdate) 
 		´ 
 		behaviours SSQLam  secure
 =TEX
@@ -375,11 +449,11 @@ We prove  $lemma1\_2\_thm$ which states that if we can prove $Lemma1$ and $Lemma
 
 =SML
 val Ûlemma1_2_thmİ = save_thm("lemma1_2_thm",(prove_rule[Lemma1,Lemma2]
-	¬Lemma1 ´ Lemma2 ´ behaviours SSQLam  secure®));
+	¬Lemma1 ± Lemma2 ´ behaviours SSQLam  secure®));
 =TEX
 
 =GFT
-lemma1_2_thm = ô Lemma1 ´ Lemma2 ´ behaviours SSQLam  secure
+lemma1_2_thm = ô Lemma1 ± Lemma2 ´ behaviours SSQLam  secure
 =TEX
 
 Finally, we prove the $main\_thm$ that states thatif we can prove $Lemma1$, $Lemma3$, $Lemma4$ and $Lemma5$ then the behaviour of the SSQL abstract machine is secure.
