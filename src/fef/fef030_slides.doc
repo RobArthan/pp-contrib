@@ -1,0 +1,490 @@
+% fef030_slides.doc   %Z% $Date$ $Revision$ $RCSfile$
+=TEX
+% fef030_slides.doc   %Z% $Date$ $Revision$ $RCSfile$
+% COPYRIGHT (c) International Computers Limited, 1992
+\sloppy
+\def\SCCSissue{$Revision$
+}
+\def\ignore#1{}
+\ignore{
+=SML
+set_flag("ignore_warnings", true);
+open_theory "hol";
+set_pc"hol2";
+=TEX
+% This is a slitex document and can only be processed for printing
+% when invoked from fef030.doc.
+}
+% =====normal==================================
+% =====small========================================
+% =====tiny=========================================
+
+
+\begin{slide}{1}
+
+\begin{center}
+\vfill
+\label{intro}
+{\bf {\Large SWORD}
+
+Front End Filter
+
+Verification, Phase 1\\}
+
+\vfill
+
+A Specification and Security Proof\\
+in\\
+Higher Order Logic\\
+using\\
+{\large ProofPower}
+\vfill
+\end{center}
+
+\end{slide}
+
+% =====================================================================
+
+\begin{slide}{2}
+
+Aims of the Contract:
+
+\begin{itemize}
+\item
+Assessment of applicability of computer assisted formal proof in development of secure systems.
+\item
+To undertake formal parts of development of prototype secure DBMS.
+\end{itemize}
+
+Specific Objectives:
+
+\begin{itemize}
+\item
+Verification of security of SSQL specifications
+\item
+Verification of formal model of implementation of .
+\end{itemize}
+
+\vfill
+
+\end{slide}
+
+% ==================================================
+{\small
+
+\begin{slide}{3}
+\begin{center}
+
+{\bf Policy (I)}
+
+\end{center}
+\vfill
+
+=SML
+declare_type_abbrev
+("BEHAVIOURS",["'QUERY","'DATA"],
+ ¬: ('QUERY ¸ Class)LIST ­ (Class ¸ 'DATA)LIST®);
+=TEX
+\vfill
+¹HOLCONST
+Ü Ûsame_insİ : Class ­
+Ü (('QUERY ¸ Class)LIST ª ('QUERY ¸ Class)LIST)
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü µclear: Class; si1 si2: ('QUERY ¸ Class)LIST
+Ü ·	(si1,si2)  same_ins clear 
+Ü	¤
+Ü	let v = {(q,c)|(clear dominates c)}
+Ü	in
+Ü	si1 ù v = si2 ù v
+°
+\vfill
+¹HOLCONST
+Ü Ûsame_outsİ : Class ­ 
+Ü ((Class ¸ 'DATA)LIST ª (Class ¸ 'DATA)LIST)
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü µclear: Class; so1 so2: (Class ¸ 'DATA)LIST
+Ü ·	(so1,so2)  same_outs clear 
+Ü	¤
+Ü	let v = {(c,d)|(clear dominates c)}
+Ü	in
+Ü	so1 ù v = so2 ù v
+°
+\vfill
+
+\end{slide}
+% =====================================================================
+
+\begin{slide}{4}
+\begin{center}
+
+{\bf Policy (II)}
+
+\end{center}
+\vfill
+
+¹HOLCONST
+Ü Ûsecureİ: ('QUERY,'DATA)BEHAVIOURS ğ 
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü µbm:('QUERY,'DATA)BEHAVIOURS
+Ü ·	bm  secure 
+Ü	¤
+Ü	µ clear : Class; si1 si2 :('QUERY ¸ Class)LIST
+Ü	·	(si1,si2)  same_ins clear 
+Ü		´
+Ü		(bm si1,bm si2)  same_outs clear
+°
+
+\vfill
+
+\end{slide}
+
+% ==================================================
+
+\begin{slide}{5}
+\begin{center}
+
+{\bf State Transition Models}
+
+\end{center}
+\vfill
+
+=SML
+declare_type_abbrev(Û"Stf"İ,[],
+ ” (Query ¸ Class) ¸ State ­
+ State ¸ (Class ¸ (Data LIST LIST ¸ Errors))®);
+=TEX
+
+\vfill
+An ``Abstract Machine'' is a transition function together with an initial state:
+\vfill
+=SML
+declare_type_abbrev(Û"Am"İ,[],” Stf ¸ State®);
+=TEX
+\vfill
+
+\end{slide}
+
+% ==================================================
+
+\begin{slide}{6}
+\begin{center}
+
+{\bf Behavioural Abstraction}
+
+\end{center}
+\vfill
+
+¹HOLCONST
+Ü Ûiterateİ :
+Ü    ((('QUERY ¸ Class) ¸ 'STATE)
+Ü	­ ('STATE ¸ (Class ¸ 'DATA)))
+Ü ­ ((('QUERY ¸ Class)LIST ¸ 'STATE) 
+Ü	­ ('STATE ¸ ((Class ¸ 'DATA)LIST)))
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	T
+°
+
+\vfill
+
+We define $behaviours$ as an iterated transition function from the initial state:
+
+\vfill
+
+¹HOLCONST
+Ü Ûbehavioursİ :
+Ü	(((('QUERY ¸ Class) ¸ 'STATE)
+Ü		­ ('STATE ¸ (Class ¸ 'DATA)))
+Ü	¸ 'STATE)
+Ü
+Ü	­ ('QUERY,'DATA) BEHAVIOURS
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü µ tf:((('QUERY ¸ Class) ¸ 'STATE)
+Ü		­ ('STATE ¸ (Class ¸ 'DATA)));
+Ü   istate:'STATE;  si:('QUERY ¸ Class)LIST
+Ü ·
+Ü	behaviours(tf,istate) si
+Ü	=
+Ü	Snd((iterate tf)(si,istate))
+°
+
+\vfill
+
+\end{slide}
+
+% ==================================================
+
+\begin{slide}{7}
+\begin{center}
+
+{\bf Top Level Structure\\
+of\\
+SSQL Specification}
+
+\end{center}
+\vfill
+
+The security relevant aspects of the SSQL specification are separated from other aspects by splitting the specification into three parts:
+
+\vfill
+
+``Hide'' filters the state to obtain a view from a particular classification.
+
+\vfill
+
+=SML
+declare_type_abbrev(Û"Hide"İ,[],
+    ” Class ¸ State ­ State®);
+=TEX
+
+\vfill
+
+``Process'' encapsulates the non-security aspects of the semantics of the Query Language.
+
+\vfill
+
+=SML
+declare_type_abbrev(Û"Process"İ,[],
+    ” Query ¸ Class ¸ State ­ Effect ¸ Errors®);
+=TEX
+
+\vfill
+
+``Ustate''  updates the state in a secure way using the results of the untrusted query processing.
+
+\vfill
+
+=SML
+declare_type_abbrev(Û"Ustate"İ,[],
+    ” Class ¸ (Effect ¸ Errors) ¸ State ­ 
+      State ¸ (Class ¸ (Data LIST LIST ¸ Errors))®);
+=TEX
+
+\vfill
+
+\end{slide}
+% ==================================================
+
+\begin{slide}{8}
+\begin{center}
+
+{\bf Building the Transition Function}
+
+\end{center}
+
+\vfill
+
+The Hide, Process and Ustate specifications are combined to give a specification of the transition function:
+
+\vfill
+
+¹HOLCONST
+Ü ÛmkTfİ : Hide ­ Process ­ Ustate ­ Stf
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü
+Ü µh:Hide; p:Process; u:Ustate; q : Query;
+Ü	 c : Class; s : State
+Ü ·	(mkTf h p u) ((q,c),s) 
+Ü	= 
+Ü	u (c, p(q, c, h(c, s)), s)
+° 
+
+\vfill
+
+¹HOLCONST
+Ü Ûisstateİ : State
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü T
+° 
+
+\vfill
+
+¹HOLCONST
+Ü ÛSSQLamİ : Am
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü SSQLam =
+Ü (mkTf hide processQuery updateState, isstate)
+° 
+
+\vfill
+
+=GFT
+?ô 	behaviours SSQLam  secure
+=TEX
+
+\end{slide}
+
+% ==================================================
+
+\begin{slide}{9}
+\begin{center}
+
+{\bf ``Critical Requirements'' on Components\\
+Hide}
+
+\end{center}
+
+\vfill
+
+¹HOLCONST
+Ü ÛsecureHideİ : Hide ğ
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü µ h:Hide · 
+Ü   h  secureHide ¤
+Ü     µc‰1 c‰2 : Class; s‰1 s‰2 : State ·	
+Ü      h(c‰1,s‰1) = h(c‰1,s‰2) ± c‰1 dominates c‰2
+Ü      ´ h(c‰2,s‰1) = h(c‰2,s‰2)
+°
+
+\vfill
+
+\end{slide}
+
+% ==================================================
+
+\begin{slide}{10}
+\begin{center}
+{\bf ``Critical Requirements'' on Components\\
+Update}
+
+\end{center}
+
+
+\vfill
+
+¹HOLCONST
+Ü ÛsecureUpdateİ : Hide ª Ustate
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü µ h : Hide ;u : Ustate ·
+Ü	(h,u)  secureUpdate
+Ü	¤
+Ü(µc‰1 c‰2 : Class; s : State; e:Effect ¸ Errors·
+Ü	let 	s' = Fst(u(c‰1,e,s)) 
+Ü	in	³(h(c‰2,s) = h(c‰2,s'))
+Ü		´ c‰2 dominates c‰1)
+Ü ±
+Ü(µc‰1 c‰2:Class; s‰1 s‰2:State; e:Effect ¸ Errors·
+Ü	let 	s‰1' = Fst(u(c‰2,e,s‰1)) 
+Ü	and	s‰2' = Fst(u(c‰2,e,s‰2))
+Ü	in	h(c‰1,s‰1) = h(c‰1,s‰2)
+Ü		± c‰1 dominates c‰2
+Ü		´ h(c‰1,s‰1') = h(c‰1,s‰2'))
+Ü ±
+Ü(µc :Class; s‰1 s‰2:State; e:Effect ¸ Errors·
+Ü	let	o‰1 = Snd(u(c,e,s‰1))
+Ü	and 	o‰2 = Snd(u(c,e,s‰2))
+Ü	in	h(c,s‰1) = h(c,s‰2) ´ o‰1 = o‰2)
+Ü ±
+Ü(µc :Class; s:State; e:Effect ¸ Errors·
+Ü	Fst(Snd(u(c,e,s))) = c)
+°
+
+\vfill
+
+\end{slide}
+
+% ==================================================
+
+\begin{slide}{11}
+\begin{center}
+
+{\bf The ``Unwinding'' Lemma}
+
+\end{center}
+
+\vfill
+
+¹HOLCONST
+Ü ÛLemma2İ : BOOL
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü Lemma2 = 
+Ü	((hide  secureHide 
+Ü	± 
+Ü	(hide,updateState)  secureUpdate) 
+Ü	´ 
+Ü	behaviours SSQLam  secure)
+° 
+
+\vfill
+
+\end{slide}
+
+% ==================================================
+}%\small
+
+\begin{slide}{12}
+\begin{center}
+
+{\bf Phase 1 Results}
+
+\end{center}
+
+\vfill
+
+\begin{itemize}
+
+\item
+
+Specifications reorganised, machine checked and debugged.
+
+\item
+
+``Unwinding'' Proof completed.
+
+\item
+
+Security conjecture proven.
+
+\item
+
+All specifications and proofs developed and checked using ProofPower v0.1 (since transferred to ProofPower v0.3).
+
+
+\end{itemize}
+\vfill
+
+\end{slide}
+
+% ==================================================
+
+\begin{slide}{13}
+\begin{center}
+
+{\bf Success Factors}
+
+\end{center}
+
+\vfill
+
+\begin{itemize}
+
+\item
+
+Customised Formal Security Model.
+
+\item
+
+Simple Security Model.
+
+\item
+
+Well Structured Specifications.
+
+\item
+
+Good Tool Support {\PRODUCT}
+
+\item
+
+Experienced and Competent Staff.
+
+\item
+
+Good Customer/Supplier Relations
+
+\end{itemize}
+\vfill
+
+\end{slide}
+
+% ==================================================
+\end{document}
