@@ -1,5 +1,5 @@
 =TEX
-\documentclass{article}
+\documentclass[12pt]{article}
 \usepackage{ProofPower}
 \usepackage{A4}
 \usepackage{latexsym}
@@ -107,7 +107,13 @@ formal presently, our reading of a specification requires the program
 not to terminate in before-states that satisfy the pre-condition but to
 which the post-condition cannot respond.
 πZ
-‹ €SPEC› ¶ PRED ∏ STATE_TRANSFORMER
+‹ €PRE_COND› ¶ PRED
+∞
+πZ
+‹ €POST_COND› ¶ STATE ™ STATE
+∞
+πZ
+‹ €SPEC› ¶ PRE_COND ∏ POST_COND
 ∞
 
 We can now represent programs abstractly using the following free type, in which we freely
@@ -211,7 +217,7 @@ includes the possibility that $s_2$ may be unable to respond where $s_1$ can.
 πZAX
 ‹ €_ √ _› : SPEC ™ SPEC
 ˜¸¸¸¸¸¸
-‹ µprecâ1, precâ2 : PRED; postcâ1, postcâ2 : STATE_TRANSFORMER∑
+‹ µprecâ1, precâ2 : PRE_COND; postcâ1, postcâ2 : POST_COND∑
 ‹	(precâ1, postcâ1) √ (precâ2, postcâ2)
 ‹ §	precâ1 Ä precâ2
 ‹ ±	precâ1 Ú postcâ2 Ä postcâ1
@@ -220,7 +226,7 @@ To check the definitions, we state a few simple conjectures about refinement.
 The first says that any specification with an empty pre-condition is
 chaotic --- it may be refined by any specification:
 πZ
-‹ chaos_cnj ?Ù µ postc : STATE_TRANSFORMER; s : SPEC∑ (ö, postc) √ s
+‹ chaos_cnj ?Ù µ postc : POST_COND; s : SPEC∑ (ö, postc) √ s
 ∞
 The second conjecture says that when $s_2$ refines $s_1$, then
 the post-condition of $s_2$ cannot respond in any 
@@ -228,7 +234,7 @@ state in the pre-condition of $s_1$ for which the post-condition of
 $s_1$ cannot respond.
 πZ
 ‹ deadlock_cnj ?Ù
-‹ µ precâ1, precâ2 : PRED; postcâ1, postcâ2 : STATE_TRANSFORMER∑
+‹ µ precâ1, precâ2 : PRE_COND; postcâ1, postcâ2 : POST_COND∑
 ‹	(precâ1, postcâ1) √ (precâ2, postcâ2)
 ‹ ¥	(precâ1 \ dom postcâ1) ° dom postcâ2 = ö
 ∞
@@ -238,72 +244,84 @@ inclusions needs to be stated explicitly since the fourth is in
 the definition of refinement:
 πZ
 ‹ diamond_refines_cnj ?Ù
-‹	µa, b, c, d : PRED; tâ1, tâ2 : STATE_TRANSFORMER∑
+‹	µa, b, c, d : PRE_COND; tâ1, tâ2 : POST_COND∑
 ‹		a Ä b ± (b, tâ1) √ (d, tâ2)
 ‹	±	a Ä c Ä d
 ‹	¥	(a, tâ1) √ (c, tâ2)
 ∞
 
 \section{Program Correctness}
-Intuitively, a program is correct if every part of it that has a specification
-satisfies that specification. We relativise this notion to a notion
-of correctness with respect to a given set of starting states, identified
-by some predicate, $c$. A program, $p$, is then correct with respect to $c$
-if every part of it that has a specification will satisfy the specification
-when $p$ is started in a state in $c$. We write
+For a program to be correct every part of it that has a specification
+must satisfy that specification. We write
 =INLINEFT
-c %models% p
+p %models% s
 =TEX
-\ when this holds.
+\ to mean that program $p$ satisfies specification £s£.
 πZ
 ‹ relation _ %models% _
 ∞
 πZAX
-‹ €_ %models% _› : PRED ™ PROG
+‹ €_ %models% _› : PROG ™ SPEC
 ˜¸¸¸¸¸¸
-‹ µt, postc : STATE_TRANSFORMER; pâ1, pâ2 : PROG; câ1, câ2, prec : PRED∑
-‹	(câ1 %models% (Atom t))
-‹ ±	(câ1 %models% (Seq (pâ1, pâ2)) § câ1 %models% pâ1 ± semantics pâ1 ®câ1© %models% pâ2)
-‹ ±	(câ1 %models% (If(câ2, pâ1, pâ2)) § câ1 ° câ2 %models% pâ1 ± câ1 \ câ2 %models% pâ2)
-‹ ±	(câ1 %models% (While(câ2, pâ1)) § (câ1 ° câ2) %models% pâ1)
-‹ ±	(câ1 %models% (Spec((prec, postc), pâ1))
-‹		§ (câ1 ° prec, postc) √ (câ1, semantics pâ1) ± (câ1 ° prec) %models% pâ1)
+‹ µ prog : PROG; prec : PRE_COND; postc : POST_COND ∑
+‹	prog %models% (prec, postc) § (prec, postc) √ (prec, semantics prog)
 ∞
-Any program should be correct with respect to the empty set of starting states:
+
+However, correctness also requires the pre-condition of each specification
+in the program to be satisfied whenever the relevant part of the program
+is executed.
+if $p$ is a program and $c$ is a set of states, we write $p \perp c$,
+if no pre-condition in $p$ will be violated when $p$ is executed in
+a starting state in $c$.
+For the want of a better name, we will say that $p$ is {\em upright} on $c$.
+
 πZ
-‹ empty_correct_cnj ?Ù µprog : PROG∑ ö %models% prog
+‹ relation _ ‚ _
 ∞
-Moreover if a program is correct with respect to some set of starting states
-it is also correct with respect to any subset of those states.
+
+πZAX
+‹ €_ ‚ _› : PROG ™ PRED
+˜¸¸¸¸¸¸
+‹ µt : STATE_TRANSFORMER; postc : POST_COND; pâ1, pâ2 : PROG;
+‹  câ1, câ2, prec : PRE_COND∑
+‹	((Atom t) ‚ câ1)
+‹ ±	((Seq (pâ1, pâ2) ‚ câ1) § pâ1 ‚ câ1 ± pâ2 ‚ semantics pâ1 ®câ1©)
+‹ ±	((If(câ2, pâ1, pâ2) ‚ câ1) § pâ1 ‚ câ1 ° câ2 ± pâ2 ‚ câ1 \ câ2)
+‹ ±	((While(câ2, pâ1) ‚ câ1) § pâ1 ‚ (câ1 ° câ2))
+‹ ±	((Spec((prec, postc), pâ1) ‚ câ1) § (câ1 Ä prec ± pâ1 ‚ câ1))
+∞
+Uprightness enjoys the following two useful properties:
 πZ
-‹ correct_mono_cnj ?Ù
-‹	µcâ1, câ2 : PRED; prog : PROG∑ câ1 Ä câ2 ± câ2 %models% prog ¥ câ1 %models% prog
+‹ upright_mono_cnj ?Ù
+‹	µ prog : PROG; câ1, câ2 : PRED∑
+‹		prog ‚ câ1
+‹	±	câ2 Ä câ1
+‹	¥	prog ‚ câ2
+∞
+πZ
+‹ upright_cup_cnj ?Ù
+‹	µ prog : PROG; câ1, câ2 : PRED∑
+‹		prog ‚ câ1
+‹	±	prog ‚ câ2
+‹	¥	prog ‚ câ1 ¿ câ2
 ∞
 
 \section{Pre-condition Calculation}
-The basic idea pre-condition calculator is a function that takes a program and a 
+The simplest idea of a pre-condition calculator is a function that takes a program and a 
 post-condition as
 its argument and returns a predicate that, we hope, gives the pre-condition for
 achieves the post-condition.
-In practice, such a function might conceptually
-be partial, because, for example, there may be atomic statement forms that are
-intractable. However, these can always be handled by returning an empty
-pre-condition, so we take pre-condition calculators to be total functions.
 
 When one looks into the details of defining a useful pre-condition calculator
 one finds that it is a really a post-condition transformer: in order to
 give an algorithm that works by recursion over the structure of a program,
 one must work with post-conditions, i.e., relations on states, rather than
 just states. The domain of all these relations corresponds
-as the initial program state throughout the calculation. The calculation
+to an appropriate initial program state throughout the calculation. The calculation
 essentially works backwards through the program reversing the effects
-of program execution. When one has completed the pre-condition
-calculation the range of the resulting relation now corresponds to the
-initial program state as well, and one may extract the desired post-condition
-by intersecting with the identity relation.
-
+of program execution. 
 πZ
-‹ €PREC_CALC› ¶ PROG ∏ STATE_TRANSFORMER ≠ STATE_TRANSFORMER
+‹ €PREC_CALC› ¶ PROG ∏ POST_COND ≠ POST_COND
 ∞
 In principle, a pre-condition calculator is sound if the pre-condition it returns
 for any program and post-condition is such that execution
@@ -317,9 +335,26 @@ pre-condition calculation interacts nicely with sequential composition.
 ˜¸¸¸¸¸¸
 ‹ µpc : PREC_CALC∑
 ‹	pc ç sound_prec_calc
-‹ §	(µprog : PROG; postc, postc' : STATE_TRANSFORMER
+‹ §	(µprog : PROG; postc, postc' : POST_COND
 ‹	|	postc = pc(prog, postc')
 ‹	∑	(dom postc, postc') √ (dom postc, postc ª semantics prog))
+∞
+When one has completed the pre-condition
+calculation the range of the resulting relation now corresponds to the
+initial program state as well, and one may extract the desired post-condition
+by intersecting with the identity relation.
+Using this idea, we can formulate, the (not very deep) conjecture that
+if the program has a specification at the top level and if the calculated
+pre-condition contains the pre-condition of the specification, then
+the program satisfies the specification:
+πZ
+‹ prec_calc_sat_cnj ?Ù
+‹	µ pc : PREC_CALC; c_prec, s_prec: PRE_COND;
+‹	  s_postc : POST_COND; p : PROG
+‹	|	pc ç sound_prec_calc
+‹	±	c_prec = dom (pc(Spec((s_prec, s_postc), p), s_postc) ° (id STATE))
+‹	±	s_prec Ä c_prec
+‹	∑	p %models% (s_prec, s_postc)
 ∞
 
 We can easily exhibit a sound but not at all useful, pre-condition calculator,
@@ -328,7 +363,7 @@ any desired post-condition:
 πZ
 ‹ trivial_prec_calc_sound_cnj ?Ù
 ‹	µ pc : PREC_CALC
-‹	|	µprog : PROG; post : STATE_TRANSFORMER∑ pc (prog, post) = ö
+‹	|	µprog : PROG; postc : POST_COND∑ pc (prog, postc) = ö
 ‹	∑	pc ç sound_prec_calc
 ∞
 
@@ -351,7 +386,7 @@ range anti-restriction:
 à¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
 The useful pre-condition calculator will use a heuristic to propose
 a specification for the body of a while-loop. The following loose specification
-suggests how this id done in the Compliance Notation, which actually insists
+suggests how this is done in the Compliance Notation, which actually insists
 syntactically that the body of a loop be given as a specification statement.
 The soundness of the pre-condition calculator is independent of
 the heuristic --- it has to be, because as the following definition shows,
@@ -365,8 +400,9 @@ Now we can define the useful pre-condition calculator.
 πZAX
 ‹ €prec_calc› : PREC_CALC
 ˜¸¸¸¸¸¸
-‹ µt, postc, postcâ1 : STATE_TRANSFORMER; pâ1, pâ2 : PROG; c, precâ1 : PRED;
-‹  body_prec : PRED; body_postc : STATE_TRANSFORMER∑
+‹ µt : STATE_TRANSFORMER; postc, postcâ1 : POST_COND;
+‹  pâ1, pâ2 : PROG; c : PRED;
+‹  precâ1 : PRE_COND; body_prec : PRED; body_postc : POST_COND∑
 ‹
 ‹	prec_calc (Atom t, postc) = {s, s' : STATE | {s'} Ú t Ä {s} Ú postc}
 ‹
@@ -384,12 +420,31 @@ Now we can define the useful pre-condition calculator.
 ‹			± dom postc ∏ (body_postc®body_prec© \ c) Ä postc })
 ‹
 ‹ ±	prec_calc (Spec((precâ1, postcâ1), pâ1), postc) =
-‹		{ s : STATE; s' : STATE | {s'} Ú postcâ1 Ä {s} Ú postc } í
+‹		{ s : STATE; s' : STATE | {s'} Ú postcâ1 Ä {s} Ú postc } íâ*
 ‹		(precâ1 ° dom(prec_calc(pâ1, postcâ1) ° (id STATE)))
 ∞
 We conjecture that the above is sound:
 πZ
 ‹ prec_calc_sound_cnj ?Ù prec_calc ç sound_prec_calc
+∞
+The following conjecture gives a useful property of our useful pre-condition
+calculator, which turns out to be a simple consequence of its soundness.
+πZ
+‹ prec_calc_dom_cnj ?Ù
+‹	µ prog: PROG; postc : POST_COND
+‹	∑	dom (prec_calc(prog, postc) ° (id STATE)) ° dom (semantics prog)
+‹			Ä dom postc
+∞
+
+We also conjecture that a program is ``upright'' in every state in the pre-condition
+produced by the above pre-condition calculator, i.e., no execution of
+the program can cause the pre-condition of any specification in the program
+to be violated in those states.
+πZ
+‹ prec_calc_upright_cnj ?Ù
+‹	µ prog: PROG; postc, postc' : POST_COND
+‹	|	postc = prec_calc(prog, postc')
+‹	∑	prog %bottom% ran postc
 ∞
 \newpage
 \appendix
@@ -397,19 +452,31 @@ We conjecture that the above is sound:
 =TEX
 \ftlinepenalty=999
 =SML
-set_goal([], ÒSTATE_TRANSFORMER = UÆ);
-a(rewrite_tac(map z_get_spec[ÒSTATEÆ, ÒSTATE_TRANSFORMERÆ, Ò(_™_)Æ]));
-val €state_transformer_u_thm› = save_pop_thm "state_transformer_u_thm";
-=TEX
-=SML
-val €state_u_thm› = save_thm("state_u_thm",
-	(z_get_spec ÒSTATEÆ));
-val €prog_u_thm› = save_thm("prog_u_thm",
-	(z_get_spec ÒPROGÆ));
-val €pred_u_thm› = save_thm("pred_u_thm",
-	rewrite_rule[state_u_thm] (z_get_spec ÒPREDÆ));
-val €spec_u_thm› = save_thm("spec_u_thm",
-	rewrite_rule[pred_u_thm, state_transformer_u_thm] (z_get_spec ÒSPECÆ));
+delete_pc"'refinement" handle Fail _ => ();
+new_pc "'refinement";
+
+set_goal([], Ò
+	STATE_TRANSFORMER = U
+±	STATE = U
+±	PRED = U
+±	PRE_COND = U
+±	POST_COND = U
+±	PROG = U
+±	SPEC = U
+±	(_ ™ _) = UÆ
+);
+a(rewrite_tac(map z_get_spec[
+	ÒSTATE_TRANSFORMERÆ,
+	ÒSTATEÆ,
+	ÒPREDÆ,
+	ÒPRE_CONDÆ,
+	ÒPOST_CONDÆ,
+	ÒPROGÆ,
+	ÒSPECÆ,
+	Ò(_ ™ _)Æ]));
+val €refinement_u_thm› = save_pop_thm "refinement_u_thm";
+set_u_simp_eqn_cxt (u_simp_eqn_cxt [refinement_u_thm]) "'refinement";
+set_merge_pcs["'refinement", "z_library1"];
 =TEX
 =SML
 set_goal([], Òµ sâ1, sâ2 : U∑
@@ -419,22 +486,24 @@ set_goal([], Òµ sâ1, sâ2 : U∑
 a(z_µ_tac);
 a(LEMMA_TÒsâ1 = (sâ1.1, sâ1.2) ± sâ2 = (sâ2.1, sâ2.2)Æ pure_once_rewrite_thm_tac
 	THEN1 PC_T1 "z_library_ext" REPEAT strip_tac);
-a(pure_rewrite_tac[rewrite_rule[state_transformer_u_thm, pred_u_thm] (z_get_spec Ò(_√_)Æ)]);
+a(pure_rewrite_tac[(z_get_spec Ò(_√_)Æ)]);
 a(rewrite_tac[]);
-val €refines_thm› = save_pop_thm "refines_thm";
+val €refines_def› = save_pop_thm "refines_def";
 =TEX
 =SML
 set_goal([], Òµ R : U; T : U∑
 	R íâ* T = { x : U; y : U | (x, y) ç R ± (µ z : U | (x, z) ç R ∑ z ç T) }Æ);
 a(REPEAT strip_tac);
-a(rewrite_tac[rewrite_rule[z_™_thm](z_gen_pred_elim[ÒU∫{dom R}Æ, ÒU∫{T}Æ](z_get_specÒ(_íâ*_)Æ))]);
+a(rewrite_tac[rewrite_rule[z_™_thm]
+	(z_gen_pred_elim[ÒU∫{dom R}Æ, ÒU∫{T}Æ](z_get_specÒ(_íâ*_)Æ))]);
 val €strong_rres_thm› = save_pop_thm "strong_rres_thm";
 =TEX
 =SML
 set_goal([], Òµ R : U; T : U∑
 	R Åâ* T = { x : U; y : U | (x, y) ç R ± (µ z : U | (x, z) ç R ∑ z é T) }Æ);
 a(REPEAT strip_tac);
-a(rewrite_tac[rewrite_rule[z_™_thm](z_gen_pred_elim[ÒU∫{dom R}Æ, ÒU∫{T}Æ](z_get_specÒ(_íâ*_)Æ))]);
+a(rewrite_tac[rewrite_rule[z_™_thm]
+	(z_gen_pred_elim[ÒU∫{dom R}Æ, ÒU∫{T}Æ](z_get_specÒ(_íâ*_)Æ))]);
 val €strong_rantires_thm› = save_pop_thm "strong_rantires_thm";
 =TEX
 =SML
@@ -444,9 +513,7 @@ set_goal([], Ò
 	|	µ prog : U; postc, postc' : U
 		| postc = pc (prog, postc')
 		∑ (dom postc, postc') √ (dom postc, postc ª semantics prog)}Æ);
-a(strip_asm_tac
-	(rewrite_rule[prog_u_thm, pred_u_thm, state_transformer_u_thm]
-		(z_get_specÒsound_prec_calcÆ)));
+a(strip_asm_tac(rewrite_rule[] (z_get_specÒsound_prec_calcÆ)));
 a(PC_T "z_library_ext" strip_tac THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(PC_T1 "z_library_ext" all_asm_fc_tac[]);
@@ -455,23 +522,24 @@ a(lemma_tac Òx1 ç PREC_CALCÆ THEN1 PC_T1 "z_library_ext" all_asm_fc_tac[]);
 a(all_asm_fc_tac[]);
 (* *** Goal "3" *** *)
 a(ASM_FC_T1 fc_§_canon rewrite_tac[]);
-a(POP_ASM_T accept_tac);
+a(rewrite_tac[refinement_u_thm] THEN POP_ASM_T accept_tac);
 val €sound_prec_calc_thm› = save_pop_thm "sound_prec_calc_thm";
 =TEX
 =SML
-val €correct_thm› = save_thm("correct_thm",
-	rewrite_rule[state_transformer_u_thm, spec_u_thm, state_u_thm, prog_u_thm, pred_u_thm]
-		(z_get_spec Ò(_%models%_)Æ));
+val €semantics_def› = save_thm("semantics_def",
+	rewrite_rule[refinement_u_thm](z_get_spec ÒsemanticsÆ));
 =TEX
 =SML
-val €semantics_thm› = save_thm("semantics_thm",
-	rewrite_rule[state_transformer_u_thm, spec_u_thm, state_u_thm, prog_u_thm, pred_u_thm]
-		(z_get_spec ÒsemanticsÆ));
+val €sat_def› = save_thm("sat_def",
+	rewrite_rule[refinement_u_thm] (z_get_spec Ò(_%models%_)Æ));
 =TEX
 =SML
-val €prec_calc_thm› = save_thm("prec_calc_thm",
-	rewrite_rule[state_transformer_u_thm, spec_u_thm, state_u_thm, prog_u_thm, pred_u_thm]
-		(z_get_spec Òprec_calcÆ));
+val €upright_def› = save_thm("upright_def",
+	rewrite_rule[refinement_u_thm] (z_get_spec Ò(_%bottom%_)Æ));
+=TEX
+=SML
+val €prec_calc_def› = save_thm("prec_calc_def",
+	rewrite_rule[refinement_u_thm] (z_get_spec Òprec_calcÆ));
 =TEX
 =SML
 set_goal([], ¨
@@ -487,7 +555,7 @@ a(REPEAT strip_tac);
 a(LEMMA_T Òµprg : U∑ ¨p prgÆÆ rewrite_thm_tac);
 let
 	val thms = (rev o strip_±_rule o
-		rewrite_rule[state_transformer_u_thm, pred_u_thm, prog_u_thm] o
+		rewrite_rule[refinement_u_thm] o
 		z_get_spec)ÒAtomÆ;
 in
 	a(bc_thm_tac ((pc_rule1 "z_library_ext" rewrite_rule[] o
@@ -497,13 +565,16 @@ end;
 a(PC_T1 "z_library_ext" REPEAT strip_tac THEN all_fc_tac[z_fun_app_clauses]
 	THEN all_var_elim_asm_tac1 THEN1 asm_rewrite_tac[]);
 (* *** Goal "1" *** *)
-a(LEMMA_T Òx = (x.1, x.2)Æ once_rewrite_thm_tac THEN1 PC_T1 "z_library_ext" rewrite_tac[]
+a(LEMMA_T Òx = (x.1, x.2)Æ once_rewrite_thm_tac
+	THEN1 PC_T1 "z_library_ext" rewrite_tac[]
 	THEN all_asm_fc_tac[]);
 (* *** Goal "2" *** *)
-a(LEMMA_T Òx = (x.1, x.2, x.3)Æ once_rewrite_thm_tac THEN1 PC_T1 "z_library_ext" rewrite_tac[]
+a(LEMMA_T Òx = (x.1, x.2, x.3)Æ once_rewrite_thm_tac
+	THEN1 PC_T1 "z_library_ext" rewrite_tac[]
 	THEN ALL_ASM_FC_T rewrite_tac[]);
 (* *** Goal "3" *** *)
-a(LEMMA_T Òx = (x.1, x.2)Æ once_rewrite_thm_tac THEN1 PC_T1 "z_library_ext" rewrite_tac[]
+a(LEMMA_T Òx = (x.1, x.2)Æ once_rewrite_thm_tac
+	THEN1 PC_T1 "z_library_ext" rewrite_tac[]
 	THEN ALL_ASM_FC_T rewrite_tac[]);
 (* *** Goal "4" *** *)
 a(LEMMA_T Òx = ((x.1.1, x.1.2), x.2)Æ once_rewrite_thm_tac
@@ -516,99 +587,97 @@ val €prog_induction_tac› = gen_induction_tac prog_induction_thm;
 =TEX
 =SML
 set_goal([], get_conjecture "-" "strip_specs_cnj");
-a(rewrite_tac[state_transformer_u_thm, prog_u_thm, pred_u_thm, spec_u_thm] THEN
-	REPEAT strip_tac);
-a(prog_induction_tacÒpÆ THEN asm_rewrite_tac[semantics_thm]);
+a(REPEAT strip_tac);
+a(prog_induction_tacÒpÆ THEN asm_rewrite_tac[semantics_def]);
 val strip_specs_thm = save_pop_thm "strip_specs_thm";
 =TEX
 =SML
 set_goal([], get_conjecture "-" "chaos_cnj");
-a(rewrite_tac[refines_thm] THEN PC_T1 "z_library_ext" prove_tac[]);
+a(rewrite_tac[refines_def] THEN PC_T1 "z_library_ext" prove_tac[]);
 val €chaos_thm›  = save_pop_thm"chaos_thm";
 =TEX
 =SML
-val €chaos_u_thm› = save_thm("chaos_u_thm",
-	rewrite_rule[state_transformer_u_thm, spec_u_thm] chaos_thm);
-=TEX
-=SML
 set_goal([], get_conjecture "-" "deadlock_cnj");
-a(rewrite_tac[refines_thm] THEN PC_T1 "z_library_ext" prove_tac[]);
+a(rewrite_tac[refines_def] THEN PC_T1 "z_library_ext" prove_tac[]);
 val €deadlock_thm›  = save_pop_thm"deadlock_thm";
 =TEX
 =SML
-set_goal([], get_conjecture "-" "empty_correct_cnj");
-a(rewrite_tac[prog_u_thm] THEN REPEAT strip_tac);
-a(prog_induction_tacÒprogÆ THEN_TRY rewrite_tac[correct_thm] THEN REPEAT strip_tac);
-a(asm_rewrite_tac[correct_thm, chaos_u_thm]);
-val €empty_correct_thm›  = save_pop_thm"empty_correct_thm";
-=TEX
-The following is a special case of the diamond theorem and may turn out not
-be needed.
-=SML
-set_goal([], Òµprecâ1, precâ2 : PRED; postc : STATE_TRANSFORMER; s : SPEC∑
-	(precâ2, postc) √ s ± precâ1 Ä precâ2 ¥ (precâ1, postc) √ sÆ);
-a(rewrite_tac[refines_thm] THEN PC_T1 "z_library_ext" prove_tac[]);
-val €refines_mono_thm›  = save_pop_thm"refines_mono_thm";
-val €refines_mono_u_thm›  = save_thm(
-	"refines_mono_u_thm",
-	rewrite_rule[pred_u_thm, state_transformer_u_thm, spec_u_thm] refines_mono_thm);
-=TEX
-=SML
 set_goal([], get_conjecture "-" "diamond_refines_cnj");
-a(rewrite_tac[refines_thm] THEN PC_T1 "z_library_ext" prove_tac[]);
+a(rewrite_tac[refines_def] THEN PC_T1 "z_library_ext" prove_tac[]);
 val €diamond_refines_thm›  = save_pop_thm"diamond_refines_thm";
-val €diamond_refines_u_thm›  = save_thm("diamond_refines_u_thm",
-	rewrite_rule[pred_u_thm, state_transformer_u_thm, spec_u_thm] diamond_refines_thm);
 =TEX
 =SML
-set_goal([], get_conjecture "-" "correct_mono_cnj");
-a(rewrite_tac[prog_u_thm, pred_u_thm] THEN REPEAT_UNTIL is_¥ strip_tac);
-a(z_intro_µ_tac Ò(c1¶câ1, c2¶câ2)Æ);
-a(prog_induction_tacÒprogÆ);
+set_goal([], get_conjecture "-" "upright_mono_cnj");
+a(REPEAT strip_tac THEN all_asm_ante_tac);
+a(z_intro_µ_tacÒ(c1¶câ1, c2¶câ2)Æ THEN prog_induction_tacÒprogÆ
+	THEN rewrite_tac[upright_def]);
 (* *** Goal "1" *** *)
-a(rewrite_tac[correct_thm]);
-(* *** Goal "2" *** *)
-a(rewrite_tac[correct_thm]);
 a(REPEAT strip_tac THEN1 all_asm_fc_tac[]);
-a(lemma_tacÒsemantics p1 ® c1 © Ä semantics p1 ® c2 ©Æ THEN1
-	PC_T1 "z_library_ext" asm_prove_tac[]);
-a(all_asm_fc_tac[]);
+a(lemma_tacÒsemantics p1 ®c2© Ä semantics p1 ®c1©Æ
+	THEN1 PC_T1 "z_library_ext" asm_prove_tac[]
+	THEN all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(lemma_tacÒc2 ° c Ä c1 ° cÆ
+	THEN1 PC_T1 "z_library_ext" asm_prove_tac[]
+	THEN all_asm_fc_tac[]);
+(* *** Goal "2.2" *** *)
+a(lemma_tacÒc2 \ c Ä c1 \ cÆ
+	THEN1 PC_T1 "z_library_ext" asm_prove_tac[]
+	THEN all_asm_fc_tac[]);
 (* *** Goal "3" *** *)
-a(rewrite_tac[correct_thm] THEN REPEAT_UNTIL is_± strip_tac);
-a(lemma_tacÒc1 ° c Ä c2 ° c ± c1 \ c  Ä c2 \ cÆ THEN1
-	PC_T1 "z_library_ext" asm_prove_tac[]);
-a(all_asm_fc_tac[] THEN REPEAT strip_tac);
+a(REPEAT strip_tac);
+a(lemma_tacÒc2 ° c Ä c1 ° cÆ
+	THEN1 PC_T1 "z_library_ext" asm_prove_tac[]
+	THEN all_asm_fc_tac[]);
 (* *** Goal "4" *** *)
-a(rewrite_tac[correct_thm] THEN REPEAT strip_tac);
-a(lemma_tacÒc1 ° c Ä c2 ° cÆ THEN1
-	PC_T1 "z_library_ext" asm_prove_tac[]);
-a(all_asm_fc_tac[]);
-(* *** Goal "5" *** *)
-a(rewrite_tac[correct_thm] THEN REPEAT strip_tac);
-(* *** Goal "5.1" *** *)
-a(lemma_tacÒc1 ° prec Ä c2 ° prec ± c1 ° prec Ä c1Æ THEN1
-	PC_T1 "z_library_ext" asm_prove_tac[]);
-a(all_fc_tac[diamond_refines_u_thm]);
-(* *** Goal "5.2" *** *)
-a(lemma_tacÒc1 ° prec Ä c2 ° precÆ THEN1
-	PC_T1 "z_library_ext" asm_prove_tac[]);
-a(all_asm_fc_tac[]);
-val €correct_mono_thm›  = save_pop_thm"correct_mono_thm";
+a(PC_T1 "z_sets_ext" asm_prove_tac[]);
+val €upright_mono_thm›  = save_pop_thm"upright_mono_thm";
 =TEX
 =SML
-val €correct_mono_u_thm› = save_thm("correct_mono_u_thm",
-	rewrite_rule[pred_u_thm, prog_u_thm] correct_mono_thm);
+set_goal([], get_conjecture "-" "upright_cup_cnj");
+a(REPEAT strip_tac THEN all_asm_ante_tac);
+a(z_intro_µ_tacÒ(c1¶câ1, c2¶câ2)Æ THEN prog_induction_tacÒprogÆ
+	THEN rewrite_tac[upright_def]);
+(* *** Goal "1" *** *)
+a(REPEAT strip_tac THEN1 all_asm_fc_tac[]);
+a(LEMMA_TÒsemantics p1 ®c1 ¿ c2© = semantics p1 ®c1© ¿ semantics p1 ®c2©Æ
+		rewrite_thm_tac
+	THEN1 PC_T1 "z_library_ext" prove_tac[]
+	THEN all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(LEMMA_TÒ(c1 ¿ c2) ° c = (c1 ° c) ¿ (c2 ° c)Æ rewrite_thm_tac
+	THEN1 PC_T1 "z_library_ext" asm_prove_tac[]
+	THEN all_asm_fc_tac[]);
+(* *** Goal "2.2" *** *)
+a(LEMMA_TÒ(c1 ¿ c2) \ c = (c1 \ c) ¿ (c2 \ c)Æ rewrite_thm_tac
+	THEN1 PC_T1 "z_library_ext" asm_prove_tac[]
+	THEN all_asm_fc_tac[]);
+(* *** Goal "3" *** *)
+a(REPEAT strip_tac);
+a(LEMMA_TÒ(c1 ¿ c2) ° c = (c1 ° c) ¿ (c2 ° c)Æ rewrite_thm_tac
+	THEN1 PC_T1 "z_library_ext" asm_prove_tac[]
+	THEN all_asm_fc_tac[]);
+(* *** Goal "4" *** *)
+a(PC_T1 "z_sets_ext" asm_prove_tac[]);
+val €upright_cup_thm›  = save_pop_thm"upright_cup_thm";
 =TEX
 =SML
-val €empty_correct_u_thm› = save_thm("empty_correct_u_thm",
-	rewrite_rule[prog_u_thm] empty_correct_thm);
-=TEX
-=SML
-set_goal([], get_conjecture "-" "trivial_prec_calc_sound_cnj");
-a(rewrite_tac[prog_u_thm, state_transformer_u_thm]);
-a(REPEAT strip_tac THEN asm_rewrite_tac[sound_prec_calc_thm]);
-a(REPEAT strip_tac THEN asm_rewrite_tac[chaos_u_thm, empty_correct_u_thm]);
-val €trivial_correct_prec_calc_thm›  = save_pop_thm"trivial_correct_prec_calc_thm";
+set_goal([], get_conjecture "-" "prec_calc_sat_cnj");
+a(rewrite_tac[sound_prec_calc_thm, sat_def, refines_def] THEN REPEAT strip_tac);
+a(z_spec_nth_asm_tac 3 Ò(
+	prog¶Spec ((s_prec, s_postc), p),
+	postc'¶s_postc,
+	postc ¶ pc (Spec ((s_prec, s_postc), p), s_postc))Æ
+	THEN all_var_elim_asm_tac1);
+a(POP_ASM_T ante_tac THEN rewrite_tac[semantics_def]);
+a(DROP_ASMS_T (ante_tac o hd) THEN PC_T1 "z_library_ext" REPEAT strip_tac);
+a(PC_T1 "z_library_ext" all_asm_fc_tac[] THEN all_var_elim_asm_tac);
+a(PC_T1 "z_library_ext" asm_prove_tac[]);
+val €prec_calc_sat_thm›  = save_pop_thm"prec_calc_sat_thm";
 =TEX
 =SML
 set_goal([], Ò
@@ -616,7 +685,8 @@ set_goal([], Ò
 	| (x, y) ç (c Ú R)Á*Í Å c
 	∑ y é c ± (y = x ≤ x ç c ± (∂z:U∑z ç c ± (z, y) ç R))
 Æ);
-a(rewrite_tac[z_reflex_trans_closure_thm] THEN PC_T1 "z_library_ext" REPEAT strip_tac);
+a(rewrite_tac[z_reflex_trans_closure_thm]
+	THEN PC_T1 "z_library_ext" REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(z_spec_nth_asm_tac 3 Ò{a, b : U | a = b ≤ a ç c}Æ
 	THEN PC_T1"z_library_ext" asm_prove_tac[]);
@@ -626,13 +696,19 @@ a(z_spec_nth_asm_tac 3 Ò{a, b, z : U | a = b ≤ z ç c ± (z, b) ç R∑(a, b)}Æ
 val €while_lemma›  = save_pop_thm"while_lemma";
 =TEX
 =SML
+set_goal([], get_conjecture "-" "trivial_prec_calc_sound_cnj");
+a(REPEAT strip_tac THEN asm_rewrite_tac[sound_prec_calc_thm]);
+a(REPEAT strip_tac THEN asm_rewrite_tac[rewrite_rule[]chaos_thm]);
+val €trivial_sound_prec_calc_thm›  = save_pop_thm"trivial_sound_prec_calc_thm";
+=TEX
+=SML
 set_goal([], get_conjecture "-" "prec_calc_sound_cnj");
-a(rewrite_tac[sound_prec_calc_thm, prec_calc_thm]);
+a(rewrite_tac[sound_prec_calc_thm, prec_calc_def]);
 a(REPEAT strip_tac THEN all_var_elim_asm_tac1);
 a(z_intro_µ_tacÒ(postc'¶postc')Æ);
 a(prog_induction_tac ÒprogÆ);
 (* *** Goal "1" *** *)
-a(PC_T1 "z_library_ext" rewrite_tac[prec_calc_thm, semantics_thm, refines_thm]);
+a(PC_T1 "z_library_ext" rewrite_tac[prec_calc_def, semantics_def, refines_def]);
 a(PC_T1 "z_library_ext" REPEAT strip_tac);
 a(z_spec_nth_asm_tac 2 Ò(x1'¶y, x2¶x2)Æ THEN_TRY all_var_elim_asm_tac);
 (* *** Goal "1.1" *** *)
@@ -640,13 +716,13 @@ a(z_spec_nth_asm_tac 3 Ò(x1'¶y', x2¶x2)Æ THEN all_var_elim_asm_tac);
 (* *** Goal "1.2" *** *)
 a(z_spec_nth_asm_tac 3 Ò(x1'¶y', x2¶x2)Æ THEN all_var_elim_asm_tac);
 (* *** Goal "2" *** *)
-a(all_asm_ante_tac THEN rewrite_tac[prec_calc_thm, semantics_thm, refines_thm]
+a(all_asm_ante_tac THEN rewrite_tac[prec_calc_def, semantics_def, refines_def]
 	THEN REPEAT strip_tac);
 a(z_spec_nth_asm_tac 2 Òprec_calc (p2, postc')Æ THEN POP_ASM_T ante_tac);
 a(z_spec_nth_asm_tac 1 Òpostc'Æ THEN DROP_ASMS_T (ante_tac o hd));
 a(PC_T1 "z_library_ext" prove_tac[]);
 (* *** Goal "3" *** *)
-a(all_asm_ante_tac THEN rewrite_tac[prec_calc_thm, semantics_thm, refines_thm]
+a(all_asm_ante_tac THEN rewrite_tac[prec_calc_def, semantics_def, refines_def]
 	THEN REPEAT strip_tac);
 a(z_spec_nth_asm_tac 2 Òpostc'Æ THEN POP_ASM_T ante_tac);
 a(z_spec_nth_asm_tac 1 Òpostc'Æ THEN DROP_ASMS_T (ante_tac o hd));
@@ -657,9 +733,9 @@ a(REPEAT strip_tac);
 a(lemma_tacÒ∂body_prec:U; body_postc:U∑ (body_prec, body_postc) = guess_spec p1Æ
 	THEN1 (z_∂_tacÒ(body_prec¶(guess_spec p1).1, body_postc¶(guess_spec p1).2)Æ
 		THEN PC_T1 "z_library_ext" REPEAT strip_tac));
-a(ALL_FC_T rewrite_tac[prec_calc_thm]);
+a(ALL_FC_T rewrite_tac[prec_calc_def]);
 a(POP_ASM_T discard_tac THEN POP_ASM_T (ante_tac o z_µ_elimÒbody_postcÆ));
-a(rewrite_tac[semantics_thm, refines_thm] THEN REPEAT strip_tac);
+a(rewrite_tac[semantics_def, refines_def] THEN REPEAT strip_tac);
 a(REPEAT_N 4 (PC_T1 "z_library_ext" once_rewrite_tac[]));
 a(REPEAT_UNTIL is_¥ z_strip_tac THEN rewrite_tac[]);
 a(bc_thm_tac(prove_rule[]¨µa b c∑(b ¥ c) ¥ (a ± b ¥ c)Æ));
@@ -686,20 +762,90 @@ a(LIST_GET_NTH_ASM_T [1, 6, 10, 14] (MAP_EVERY ante_tac) THEN
 (* *** Goal "5" *** *)
 a(REPEAT strip_tac);
 a(z_spec_nth_asm_tac 1 ÒpostcÆ THEN DROP_ASMS_T (ante_tac o hd));
-a(rewrite_tac[prec_calc_thm, semantics_thm, refines_thm]);
-a(PC_T1 "z_library_ext" REPEAT strip_tac THEN all_var_elim_asm_tac);
-a(lemma_tacÒ(y''', x2) ç postcÆ THEN1
-	(LIST_GET_NTH_ASM_T [1, 2, 8] (MAP_EVERY ante_tac) THEN
-	PC_T1 "z_library_ext" prove_tac[]));
-a(PC_T1 "z_library_ext" (z_spec_nth_asm_tac 5) Ò(x2¶y''', x3¶x2)Æ
-	THEN all_var_elim_asm_tac);
+a(PC_T1 "z_library_ext" rewrite_tac
+	[prec_calc_def, semantics_def, refines_def, strong_rres_thm]);
+a(PC_T1 "z_library_ext" REPEAT strip_tac);
+a(LIST_DROP_NTH_ASM_T [3] all_fc_tac THEN all_var_elim_asm_tac);
+a(LIST_DROP_NTH_ASM_T [8] all_fc_tac);
+a(LEMMA_T Òy'' = y''Æ asm_tac THEN1 strip_tac);
+a(LIST_DROP_NTH_ASM_T [8] all_fc_tac THEN all_var_elim_asm_tac);
 val €prec_calc_sound_thm›  = save_pop_thm"prec_calc_sound_thm";
+=TEX
+=SML
+set_goal([], get_conjecture "-" "prec_calc_dom_cnj");
+a(REPEAT strip_tac);
+a(ante_tac(z_µ_elimÒ(
+	prog¶prog,
+	postc'¶postc,
+	postc ¶ prec_calc (prog, postc))Æ
+	(±_right_elim(rewrite_rule[sound_prec_calc_thm]prec_calc_sound_thm))));
+a(rewrite_tac[refines_def] THEN PC_T1 "z_library_ext" REPEAT strip_tac);
+a(all_var_elim_asm_tac1);
+a(PC_T1 "z_library_ext" (z_spec_nth_asm_tac 3) Ò(x1¶y, x2¶y')Æ
+	THEN PC_T1 "z_library_ext" asm_prove_tac[]);
+val €prec_calc_dom_thm›  = save_pop_thm"prec_calc_dom_thm";
+=TEX
+=SML
+set_goal([],ÒµR1, R2: U∑
+	ran (R1 íâ* c ¿ R2 Åâ* c) ° c Ä ran R1
+±	ran (R1 íâ* c ¿ R2 Åâ* c) \ c Ä ran R2
+Æ);
+a(rewrite_tac[strong_rres_thm, strong_rantires_thm, refinement_u_thm]
+	THEN  PC_T1 "z_library_ext" asm_prove_tac[]);
+val €if_lemma› = pop_thm();
+=TEX
+=SML
+set_goal([], get_conjecture "-" "prec_calc_upright_cnj");
+a(REPEAT strip_tac THEN all_var_elim_asm_tac1);
+a(z_intro_µ_tacÒ(postc'¶postc')Æ);
+a(prog_induction_tac ÒprogÆ THEN rewrite_tac[upright_def, prec_calc_def]);
+(* *** Goal "1" *** *)
+a(REPEAT strip_tac THEN1 asm_rewrite_tac[]);
+a(strip_asm_tac (rewrite_rule[sound_prec_calc_thm] prec_calc_sound_thm));
+a(z_spec_nth_asm_tac 1 Ò(prog¶p1, postc'¶prec_calc(p2, postc'),
+	postc¶prec_calc(p1, prec_calc(p2, postc')))Æ);
+a(POP_ASM_T ante_tac THEN rewrite_tac[refines_def] THEN REPEAT strip_tac);
+a(bc_thm_tac(rewrite_rule[] (conv_rule z_µ_elim_conv upright_mono_thm)));
+a(∂_tacÒran(prec_calc(p2, postc'))Æ THEN asm_rewrite_tac[]);
+a(POP_ASM_T ante_tac THEN PC_T1 "z_library_ext" prove_tac[]);
+(* *** Goal "2" *** *)
+a(REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(bc_thm_tac(rewrite_rule[] (conv_rule z_µ_elim_conv upright_mono_thm)));
+a(∂_tac Òran (prec_calc (p1, postc'))Æ);
+a(asm_rewrite_tac[if_lemma]);
+(* *** Goal "2.2" *** *)
+a(bc_thm_tac(rewrite_rule[] (conv_rule z_µ_elim_conv upright_mono_thm)));
+a(∂_tac Òran (prec_calc (p2, postc'))Æ);
+a(asm_rewrite_tac[if_lemma]);
+(* *** Goal "3" *** *)
+a(REPEAT strip_tac);
+a(lemma_tacÒ∂body_prec:U; body_postc:U∑ (body_prec, body_postc) = guess_spec p1Æ
+	THEN1 (z_∂_tacÒ(body_prec¶(guess_spec p1).1, body_postc¶(guess_spec p1).2)Æ
+		THEN PC_T1 "z_library_ext" REPEAT strip_tac));
+a(ALL_FC_T rewrite_tac[prec_calc_def] THEN POP_ASM_T discard_tac);
+a(bc_thm_tac(rewrite_rule[] (conv_rule z_µ_elim_conv upright_mono_thm)));
+a(∂_tac Òran(prec_calc (p1, body_postc))Æ THEN asm_rewrite_tac[]);
+a(PC_T1 "z_library_ext" REPEAT strip_tac);
+a(all_asm_fc_tac[] THEN all_asm_fc_tac[]);
+a(TOP_ASM_T ante_tac THEN PC_T1 "z_library_ext" prove_tac[]);
+(* *** Goal "4" *** *)
+a(REPEAT strip_tac);
+(* *** Goal "4.1" *** *)
+a(rewrite_tac[strong_rres_thm] THEN PC_T1 "z_library_ext" prove_tac[]);
+(* *** Goal "4.2" *** *)
+a(bc_thm_tac(rewrite_rule[] (conv_rule z_µ_elim_conv upright_mono_thm)));
+a(∂_tac Òran (prec_calc (p1, postc))Æ THEN asm_rewrite_tac[strong_rres_thm]);
+a(PC_T1 "z_library_ext" prove_tac[]);
+a(all_asm_fc_tac[] THEN all_var_elim_asm_tac1
+	THEN contr_tac THEN all_asm_fc_tac[]);
+val €prec_calc_upright_thm›  = save_pop_thm"prec_calc_upright_thm";
 =TEX
 \section{Epilogue}
 =SML
 z_output_theory{out_file="refine.th.doc", theory="-"};
 =TEX
-{\HOLindexOff
+{\HOLindexOff\small
 \let\Section\section
 \def\section#1{\Section{#1}\label{THEORYLISTING}}
 \include{refine.th}}
