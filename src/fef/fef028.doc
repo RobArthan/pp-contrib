@@ -1,0 +1,689 @@
+=TEX
+% TQtemplate.tex
+\documentstyle[hol1,11pt,TQ]{article}
+\def\Hide#1{}
+\def\Bool{``$\it{:}bool\,$''}
+\makeindex
+\TPPproject{DRA FRONT END FILTER PROJECT}  %% Mandatory field
+%\TPPvolume{}
+%\TPPpart{}
+\TPPtitle{Specification of Query Transformations in HOL (I)}  %% Mandatory field
+\TPPref{DS/FMU/FEF/028}  %% Mandatory field
+\def\SCCSversion{$Revision$
+}
+\TPPissue{\SCCSversion}  %% Mandatory field
+\TPPdate{\FormatDate{$Date$
+}}  %% Mandatory field (with sensible default)
+\TPPstatus{Draft}			%% Mandatory field
+\TPPtype{Specification}
+\TPPkeywords{}
+\TPPauthor{G.~M.~Prout & WIN01}  %% Mandatory field
+%\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
+\TPPauthorisation{R.B.~Jones & HAT Manager}
+\TPPabstract{Preliminaries to a HOL specification of the SSQL Query Transformations  for the
+DRA front end filter project RSRE 1C/6130.}
+%\TPPabstractB{}
+%\TPPabstractC{}
+%\TPPabstractD{}
+%\TPPabstractE{}
+%\TPPabstractF{}
+\TPPdistribution{\parbox[t]{4.0in}{%
+	HAT FEF File \\
+	Simon Wiseman
+}}
+%\TPPclass{CLASSIFICATION}
+\newfont{\icllogo}{icllogo50}
+\def\TPPheadlhs{$\vcenter{\halign{##\cr\icllogo ICL\cr}}$}
+%\def\TPPheadlhs{}
+%\def\TPPheadcentre{}
+%def\TPPheadrhs{}
+%\def\TPPfootlhs{}
+%\def\TPPfootcentre{}
+%\def\TPPfootrhs{}
+
+\begin{document}
+\TPPsetsizes
+\makeTPPfrontpage
+
+\vfill
+\begin{centering}
+
+%\bf Copyright \copyright\ : International Computers Ltd \number\year
+
+\end{centering}
+
+\newpage
+\section {DOCUMENT CONTROL}
+\subsection{Contents List}
+\tableofcontents
+\subsection{Document Cross References}
+\bibliographystyle{fmu}
+\bibliography{fmu,fef}
+
+\subsection{Changes History}
+\begin{description}
+\item[Issue \SCCSversion ({\FormatDate{$Date$
+}})]  SSQL and TSQL specs separated from transformations.
+\end{description}
+
+\subsection{Changes Forecast}
+None.
+\section{GENERAL}
+\subsection{Scope}
+This document gives  specifications in HOL (\cite{milner90}, \cite{paulson91}) of the SSQL and TSQL abstract syntax  and preliminary specifications from \cite{trans} to support a formal specification in HOL of the SSQL query transformations of \cite{trans}. It is quite closely based on the Standard ML treatment of the
+same material in \cite{DS/FMU/FEF/019}.
+
+The document constitutes part of
+ deliverable D11 of work package 3, as given
+in the Proposal for Phase~2, \cite{DS/FMU/FEF/018}.
+
+\subsection{Introduction}
+We proposed in \cite{DS/FMU/FEF/018} to formalise the 
+SSQL query transformations of \cite{trans} in HOL. 
+Here we provide Standard ML specifications of the SSQL 
+and TSQL datatypes together with specifications of the transformation notation,  
+generic functions, primitive routines, transformation types 
+and symbol table from \cite{trans}. HOL specifications of the 
+transformations may be found in \cite{DS/FMU/FEF/TBA}.
+
+In order to avoid overloading of identifiers, 
+subscripts have been used 
+to distinguish between constructors of SSQL types and TSQL 
+types.
+
+\section{GETTING STARTED}
+=SML
+open_theory"fef014";
+new_theory"fef028";
+set_pc"hol";
+=TEX
+\section{UNIVERSAL TYPES} \label{UNI}
+We will use the HOL types $BOOL$, $ONE$, $LIST$ and $STRING$ where appropriate.
+
+The primitive types of \cite{trans} may mostly be borrowed from
+the SSQL semantics of \cite{DS/FMU/FEF/004}.
+However, $Enum$ is not given in \cite{DS/FMU/FEF/004} and $Integer$ is
+called $Int$ there.
+For the time being, we take $Enum$ and $Integer$ to be the same as $Int$.
+=SML
+declare_type_abbrev("Enum", [], ”Int®);
+declare_type_abbrev("Integer", [], ”Int®);
+
+=TEX
+The values of type $Op$ are taken from \cite{DS/FMU/FEF/004}..
+=TEX
+=TEX
+\section{SSQL ABSTRACT SYNTAX}
+See \cite{DS/FMU/FEF/014}.
+=TEX
+\section{TSQL ABSTRACT SYNTAX}
+For the time being this is being taken as the same as
+he SSQL abstract syntax. 
+=TEX
+\section{SSQL TRANSFORMATIONS}
+\subsection{Generic Functions and Primitive Functions}
+Many of the functions of \cite{DS/FMU/FEF/019} are handled directly
+by HOL library functions. For example,
+strings are just lists of characters in HOL and the list operators
+may be used to manipulate them.
+Many others are already defined in \cite{DS/FMU/FEF/014}.
+
+Functions which raise exceptions are modelled by functions which are
+loosely defined in the ``error'' cases. Thus, the functions which call
+them should not rely on them to report errors in any way.
+=TEX
+=TEX
+We will use the function $length$ for the length of a list, (\verb+#+ in \cite{trans}) and $fold$ to fold a list into a single value ($\sp{\&}$ in \cite{trans}).
+=TEX
+$fold$ with a lower case $f$ is different from the HOL library $Fold$
+(which has an extra parameter indicating what to do with an empty list
+and turns out to have a slightly more general type).
+=SML
+¹HOLCONST
+Ü	Ûfoldİ : ('a ¸ 'a ­ 'a) ­ 'a LIST ­ 'a
+÷üüüüüüüüüüüüüüüüü
+Ü	µf h t ·	fold f (Cons h t)
+Ü	=	if	t = []
+Ü		then	h
+Ü		else	f(h, fold f t)
+°
+=TEX
+The library function $Combine$ does for the  function $combine2$
+of \cite{DS/FMU/FEF/019}.
+=TEX
+Now the function $at2$ (and $at3$ and $at4$) ($@$ in \cite{trans}) 
+which turns a function taking a sequence of pairs (triples,..) into 
+one taking a pair (triple,..) of sequences.
+=SML
+¹HOLCONST
+Ü	Ûat2İ : (('a ¸ 'b) LIST ­ 'c) ­ ('a LIST ¸ 'b LIST) ­ 'c
+÷üüüüüüüüüüüüüüüüüü
+Ü	µf as bs· at2 f (as, bs) = f(Combine as bs)
+°
+=TEX
+=SML
+¹HOLCONST
+Ü	Ûat3İ : (('a ¸ 'b ¸ 'c) LIST ­ 'd) ­ ('a LIST ¸ 'b LIST ¸ 'c LIST) ­ 'd
+÷üüüüüüüüüüüüüüüüüü
+Ü	µf as bs cs· at3 f (as, bs, cs) = f(Combine as (Combine bs cs))
+°
+¹HOLCONST
+Ü	Ûat4İ : (('a ¸ 'b ¸ 'c ¸ 'd) LIST ­ 'e)
+Ü		­ ('a LIST ¸ 'b LIST ¸ 'c LIST ¸ 'd LIST) ­ 'e
+÷üüüüüüüüüüüüüüüüüü
+Ü	µf as bs cs ds·
+Ü		at4 f (as, bs, cs, ds)
+Ü	=	f(Combine as (Combine bs (Combine cs ds)))
+°
+=TEX
+The infix function $dom$ of \cite{DS/FMU/FEF/019} is just
+the same as the function $dominates$ of \cite{DS/FMU/FEF/003}.
+=SML
+declare_infix (150, "dom");
+¹HOLCONST
+Ü	$Ûdomİ : Class ­ Class ­ BOOL
+÷üüüüüüüüüüüüüüüüüü
+Ü	$dom = $dominates
+°
+
+=TEX
+For the function $invert$ we use a somewhat different formulation from \cite{DS/FMU/FEF/019}
+to make the definition more evidently primitive recursive.
+N.b. the case when the argument is an empty list is left loose (it is
+in an error case in the Standard ML version).
+¹HOLCONST
+Ü	Ûinvertİ : 'a LIST LIST ­ 'a LIST LIST
+÷üüüüüüüüüüüü
+Ü	µxs more·
+Ü		invert (Cons xs more)
+Ü	=	if	more = []
+Ü		then	Map (Ìx· Cons x []) xs
+Ü		else	Map (Ì(x, ys)· Cons x ys) (Combine xs (invert more))
+°
+=IGN
+val invert_conv = rewrite_conv(map get_spec[¬invert®, ¬Map®, ¬Combine®]);
+invert_conv ¬invert []®		(* no rewriting *);
+invert_conv ¬invert [[1;2;3]]®;
+invert_conv ¬invert [[1;2;3]; [4;5;6]]®;
+invert_conv ¬invert [[1; 4]; [2; 5]; [3; 6]]®;
+invert_conv ¬invert [[1; 4]; [2; 5]; [3; 6; 7]]®	(* ugly *);
+invert_conv ¬invert [[1]; [1]; [1]; [1]]®;
+=TEX
+¹HOLCONST
+Ü	Ûsplit3İ : ('a ¸ 'b ¸ 'c) LIST ­ 'a LIST ¸ 'b LIST ¸ 'c LIST
+÷üüüüüüüüüüüü
+Ü	µabcs·	split3 abcs = let (as, bcs) = Split abcs in (as, Split bcs)
+°
+¹HOLCONST
+Ü	Ûsplit4İ : ('a ¸ 'b ¸ 'c ¸ 'd) LIST ­
+Ü			'a LIST ¸ 'b LIST ¸ 'c LIST ¸ 'd LIST
+÷üüüüüüüüüüüü
+Ü	µabcds·	split4 abcds = let (as, bcds) = Split abcds in (as, split3 bcds)
+°
+¹HOLCONST
+Ü	Ûsplit5İ : ('a ¸ 'b ¸ 'c ¸ 'd ¸ 'e) LIST ­
+Ü			'a LIST ¸ 'b LIST ¸ 'c LIST ¸ 'd LIST ¸ 'e LIST
+÷üüüüüüüüüüüü
+Ü	µabcdes·	split5 abcdes = let (as, bcdes) = Split abcdes in (as, split4 bcdes)
+°
+\subsection{Transformation Notation}
+The primitive types are 
+discussed in section \ref{UNI}. We will use the HOL one-point type $ONE$ in place of $Null$.
+\subsection{Data Types and Definition by Cases}
+The HOL disjoint union type constructor $+$ will stand for the disjoint
+union symbol $\vert$ used in the type definitions of \cite{trans}.
+Both \cite{DS/FMU/FEF/020} and \cite{trans}  make frequent use of definition
+by cases over the alternatives for a disjoint union type. We mimic the form
+of these definitions using the following auxiliary definitions.
+
+=SML
+declare_type_abbrev(Û"OPT"İ, ["'a"], ”'a + ONE®);
+¹HOLCONST
+Ü	ÛCASEİ : 'a ­ ('a ­ 'b OPT) LIST ­ 'b
+÷üüüüüüüüüüüüüüüü
+Ü	µa f fs·	CASE a (Cons f fs) =  if IsL(f a) then OutL (f a) else CASE a fs
+°
+¹HOLCONST
+Ü	ÛOTHERSİ : 'b ­ ('a ­ 'b OPT)
+÷üüüüüüüüüüüüüüüü
+Ü	µb a·	OTHERS b a = InL b
+°
+=SML
+declare_type_abbrev(Û"MK_DEST"İ, ["'rep", "'abs"], ”('rep ­ 'abs) ¸ ('abs ­ 'rep)®);
+declare_type_abbrev(Û"WHEN"İ, ["'rep", "'abs", "'a"], ”('rep ­ 'a) ­ ('abs ­ 'a OPT)®);
+¹HOLCONST
+Ü	ÛLiftİ : ('rep, 'abs) MK_DEST ­ ('rep, 'abs, 'a) WHEN
+÷üüüüüüüüüüüüüüüü
+Ü	µ mk dest f a·
+Ü		Lift (mk, dest) f a
+Ü	=	if	mk(dest a) = a
+Ü		then	InL (f (dest a))
+Ü		else	InR One
+°
+¹HOLCONST
+Ü	ÛLiftConstantİ : 'abs ­ 'a ­ 'abs ­ 'a OPT
+÷üüüüüüüüüüüüüüüü
+Ü	µ con a abs·
+Ü		LiftConstant con a abs
+Ü	=	if	abs = con
+Ü		then	InL a
+Ü		else	InR One
+°
+=TEX
+The use of these will be illustrated and explained in subsequent sections.
+\subsection{Types}
+=TEX
+The definition of a (non-recursive) data type now follows a standard
+pattern. First of all we define the name of the data type to
+be an abbreviation for the underlying disjoint union type:
+=SML
+declare_type_abbrev(Û"TableSpecification"İ, [],
+	”(STRING LIST ¸ STRING) + (î ¸ STRING LIST ¸ STRING)®);
+=TEX
+Next, we define constructor and destructor functions for the
+data type:
+¹HOLCONST
+Ü	(Ûmk_absoluteİ, Ûdest_absoluteİ) :
+Ü		((STRING LIST ¸ STRING), TableSpecification) MK_DEST;
+Ü	(Ûmk_defaultİ, Ûdest_defaultİ) :
+Ü		((î ¸ STRING LIST ¸ STRING), TableSpecification) MK_DEST
+÷üüüüüü
+Ü	mk_absolute = InL
+Ü±	mk_default = InR
+Ü±	dest_absolute = OutL
+Ü±	dest_default = OutR
+°
+=TEX
+Finally, we use $Lift$ to define functions which act, in effect, as
+pattern-matching Ì-abstractions for the various alternatives of the
+data type.
+=SML
+declare_binder"WHEN_absolute";
+declare_binder"WHEN_default";
+¹HOLCONST
+Ü	$ÛWHEN_absoluteİ :
+Ü		(STRING LIST ¸ STRING, TableSpecification, 'b) WHEN;
+Ü	$ÛWHEN_defaultİ :
+Ü		(î ¸ STRING LIST ¸ STRING, TableSpecification, 'b) WHEN
+÷üüüüüü
+Ü	$WHEN_absolute = Lift (mk_absolute, dest_absolute)
+Ü±	$WHEN_default = Lift (mk_default, dest_default)
+°
+=TEX
+The declaration of the above functions with binder syntax allows
+operations on the type $TableSpecification$ to be defined in a style
+which is similar to the $CASE$ constructs of \cite{trans}. For example,
+the operation of extracting the directory part of a $TableSpecification$
+called $ts$ say may be written as:
+
+=GFT
+	CASE ts [
+		(WHEN_absolute (dir, tab) · dir)
+	;	(WHEN_default (up, dir, tab) · dir)
+	]
+=TEX
+The working of the $CASE$-construct may be seen in action using the
+rewriting capability of the proof tool, for example, by executing:
+=GFT ProofPower Input
+rewrite_conv
+(map get_spec [¬CASE®, ¬Lift®, ¬$WHEN_absolute®, ¬$mk_absolute®])
+¬CASE (mk_default(99, ["dir1"; "dir2"], "tab")) [
+	(WHEN_absolute (dir, tab) · dir);
+	(WHEN_default (up, dir, tab) · dir)
+]®;
+=TEX
+This returns the following theorem:
+=GFT ProofPower Output
+val it = ô CASE
+      (mk_default (99, ["dir1"; "dir2"], "tab"))
+      [WHEN_absolute (dir, tab)· dir; WHEN_default (up, dir, tab)· dir]
+    = ["dir1"; "dir2"] : THM
+=TEX
+We treat the other data types for the transformations in a similar fashion.
+In cases such as the following, involving constructors with no
+argument, we just define the constant value and use $LiftConstant$ to
+define the pattern-matching Ì-abstraction.
+=SML
+declare_type_abbrev(Û"SwordType"İ, [], ”
+	ONE				(* nullType *)
++	ONE				(* monoleanType *)
++	ONE 				(* booleanType *)
++	(Int ¸ Int)			(* stringType *)
++	(Int ¸ Int)			(* fixedType *)
++	(Int ¸ TableSpecification)	(* enumType *)
++	STRING				(* timeType *)
++	STRING				(* intervalType *)
++	ONE				(* classType *)
++	ONE				(* codeType *)
++	ONE				(* anyType *)
+®);
+=TEX
+¹HOLCONST
+Ü	Ûc_nullTypeİ  : SwordType;
+Ü	Ûc_monoleanTypeİ : SwordType;
+Ü	Ûc_booleanTypeİ : SwordType;
+Ü	(Ûmk_stringTypeİ , Ûdest_stringTypeİ) : (Int ¸ Int, SwordType) MK_DEST;
+Ü	(Ûmk_fixedTypeİ , Ûdest_fixedTypeİ) : (Int ¸ Int, SwordType) MK_DEST;
+Ü	(Ûmk_enumTypeİ , Ûdest_enumTypeİ) : (Int ¸ TableSpecification, SwordType) MK_DEST;
+Ü	(Ûmk_timeTypeİ , Ûdest_timeTypeİ) : (STRING, SwordType) MK_DEST;
+Ü	(Ûmk_intervalTypeİ , Ûdest_intervalTypeİ) : (STRING, SwordType) MK_DEST;
+Ü	Ûc_classTypeİ : SwordType;
+Ü	Ûc_codeTypeİ : SwordType;
+Ü	Ûc_anyTypeİ : SwordType
+÷üüüüüü
+Ü	c_nullType		= InL One
+Ü±	c_monoleanType		= (InR o InL) One
+Ü±	c_booleanType		= (InR o InR o InL) One
+Ü±	mk_stringType		= InR o InR o InR o InL
+Ü±	mk_fixedType		= InR o InR o InR o InR o InL
+Ü±	mk_enumType		= InR o InR o InR o InR o InR o InL
+Ü±	mk_timeType		= InR o InR o InR o InR o InR o InR o InL
+Ü±	mk_intervalType		= InR o InR o InR o InR o InR o InR o InR o InL
+Ü±	c_classType		= (InR o InR o InR o InR o InR o InR o InR o InR o InL) One
+Ü±	c_codeType		= (InR o InR o InR o InR o InR o InR o InR o InR o InR o InL) One
+Ü±	c_anyType			= (InR o InR o InR o InR o InR o InR o InR o InR o InR o InR) One
+Ü±
+Ü	dest_stringType		= OutL o OutR o OutR o OutR
+Ü±	dest_fixedType		= OutL o OutR o OutR o OutR o OutR
+Ü±	dest_enumType		= OutL o OutR o OutR o OutR o OutR o OutR
+Ü±	dest_timeType		= OutL o OutR o OutR o OutR o OutR o OutR o OutR
+Ü±	dest_intervalType	= OutL o OutR o OutR o OutR o OutR o OutR o OutR o OutR
+Ü
+°
+=TEX
+=SML
+declare_binder"WHEN_stringType";
+declare_binder"WHEN_fixedType";
+declare_binder"WHEN_enumType";
+declare_binder"WHEN_timeType";
+declare_binder"WHEN_intervalType";
+¹HOLCONST
+Ü	$ÛWHEN_nullTypeİ : 'a ­ SwordType ­ 'a OPT;
+Ü	$ÛWHEN_monoleanTypeİ : 'a ­ SwordType ­ 'a OPT;
+Ü	$ÛWHEN_booleanTypeİ : 'a ­ SwordType ­ 'a OPT;
+Ü	$ÛWHEN_stringTypeİ : (Int ¸ Int, SwordType, 'a) WHEN;
+Ü	$ÛWHEN_fixedTypeİ : (Int ¸ Int, SwordType, 'a) WHEN;
+Ü	$ÛWHEN_enumTypeİ : (Int ¸ TableSpecification, SwordType, 'a) WHEN;
+Ü	$ÛWHEN_timeTypeİ : (STRING, SwordType, 'a) WHEN;
+Ü	$ÛWHEN_intervalTypeİ : (STRING, SwordType, 'a) WHEN;
+Ü	$ÛWHEN_classTypeİ : 'a ­ SwordType ­ 'a OPT;
+Ü	$ÛWHEN_codeTypeİ : 'a ­ SwordType ­ 'a OPT;
+Ü	$ÛWHEN_anyTypeİ : 'a ­ SwordType ­ 'a OPT
+÷üüüüüü
+Ü	$WHEN_nullType = LiftConstant c_nullType
+Ü±	$WHEN_monoleanType = LiftConstant c_monoleanType
+Ü±	$WHEN_booleanType = LiftConstant c_booleanType
+Ü±	$WHEN_stringType = Lift (mk_stringType, dest_stringType)
+Ü±	$WHEN_fixedType = Lift (mk_fixedType, dest_fixedType)
+Ü±	$WHEN_enumType = Lift (mk_enumType, dest_enumType)
+Ü±	$WHEN_timeType = Lift (mk_timeType, dest_timeType)
+Ü±	$WHEN_intervalType = Lift (mk_intervalType, dest_intervalType)
+Ü±	$WHEN_classType = LiftConstant c_classType
+Ü±	$WHEN_codeType = LiftConstant c_codeType
+Ü±	$WHEN_anyType = LiftConstant c_anyType
+°
+=IGN
+rewrite_conv
+(map get_spec [¬CASE®, ¬Lift®, ¬LiftConstant®, ¬$WHEN_nullType®,¬$c_nullType®])
+¬CASE (c_codeType) [
+	(WHEN_stringType x · "string");
+	(WHEN_intervalType i · i);
+	(WHEN_codeType "code");
+	(OTHERS "others")
+]®;
+rewrite_conv
+(map get_spec [¬CASE®, ¬Lift®, ¬LiftConstant®, ¬$WHEN_nullType®,¬$c_nullType®])
+¬CASE (mk_intervalType "An Interval") [
+	(WHEN_stringType x · "string");
+	(WHEN_intervalType i · i);
+	(WHEN_codeType "code");
+	(OTHERS "others")
+]®;
+rewrite_conv
+(map get_spec [¬CASE®, ¬Lift®, ¬LiftConstant®, ¬OTHERS®, ¬$WHEN_nullType®,¬$c_nullType®])
+¬CASE (c_classType) [
+	(WHEN_stringType x · "string");
+	(WHEN_intervalType i · i);
+	(WHEN_codeType "code");
+	(OTHERS "others")
+]®;
+=TEX
+=SML
+declare_type_abbrev(Û"SsqlName"İ, [], ”
+	ONE			(* anon‰s *)
++	STRING			(* name‰s *)
+®);
+=TEX
+¹HOLCONST
+Ü	Ûc_anon‰sİ  : SsqlName;
+Ü	(Ûmk_name‰sİ , Ûdest_name‰sİ) : (STRING, SsqlName) MK_DEST
+÷üüüüüü
+Ü	c_anon‰s		= InL One
+Ü±	mk_name‰s		= InR
+Ü±	dest_name‰s		= OutR
+°
+=SML
+declare_binder"WHEN_name‰s";
+=TEX
+¹HOLCONST
+Ü	$ÛWHEN_anon‰sİ : 'a ­ SsqlName ­ 'a OPT;
+Ü	$ÛWHEN_name‰sİ : (STRING, SsqlName, 'a) WHEN
+÷üüüüüü
+Ü	$WHEN_anon‰s = LiftConstant c_anon‰s
+Ü±	$WHEN_name‰s = Lift (mk_name‰s, dest_name‰s)
+°
+=TEX
+=SML
+declare_type_abbrev(Û"TsqlName"İ, [], ”
+	ONE			(* none‰t *)
++	ONE			(* anon‰t *)
++	STRING			(* name‰t *)
+®);
+=TEX
+¹HOLCONST
+Ü	Ûc_none‰tİ  : TsqlName;
+Ü	Ûc_anon‰tİ  : TsqlName;
+Ü	(Ûmk_name‰tİ , Ûdest_name‰tİ) : (STRING, TsqlName) MK_DEST
+÷üüüüüü
+Ü	c_none‰t		= InL One
+Ü±	c_anon‰t		= (InR o InL) One
+Ü±	mk_name‰t		= InR o InR
+Ü±	dest_name‰t		= OutR o OutR
+°
+=SML
+declare_binder"WHEN_name‰t";
+=TEX
+¹HOLCONST
+Ü	$ÛWHEN_none‰tİ : 'a ­ TsqlName ­ 'a OPT;
+Ü	$ÛWHEN_anon‰tİ : 'a ­ TsqlName ­ 'a OPT;
+Ü	$ÛWHEN_name‰tİ : (STRING, TsqlName, 'a) WHEN
+÷üüüüüü
+Ü	$WHEN_none‰t = LiftConstant c_none‰t
+Ü±	$WHEN_anon‰t = LiftConstant c_anon‰t
+Ü±	$WHEN_name‰t = Lift (mk_name‰t, dest_name‰t)
+°
+=TEX
+=SML
+declare_type_abbrev(Û"ColType"İ, [], ”SwordType ¸ SwordType®);
+=TEX
+=SML
+declare_type_abbrev(Û"BoundInfo"İ, [], ”
+	Class			(* upb *)
++	Class			(* constant *)
+®);
+=TEX
+¹HOLCONST
+Ü	(Ûmk_upbİ , Ûdest_upbİ) : (Class, BoundInfo) MK_DEST;
+Ü	(Ûmk_constantİ , Ûdest_constantİ) : (Class, BoundInfo) MK_DEST
+÷üüüüüüüüüüüüüüüüü
+Ü	mk_upb		= InL
+Ü±	mk_constant	= InR
+Ü±	dest_upb	= OutL
+Ü±	dest_constant	= OutR
+°
+=SML
+declare_binder"WHEN_upb";
+declare_binder"WHEN_constant";
+=TEX
+¹HOLCONST
+Ü	$ÛWHEN_upbİ : (Class, BoundInfo, 'a) WHEN;
+Ü	$ÛWHEN_constantİ : (Class, BoundInfo, 'a) WHEN
+÷üüüüüüüüüüüüüüüüüü
+Ü	$WHEN_upb = Lift (mk_upb, dest_upb)
+Ü±	$WHEN_constant = Lift (mk_constant, dest_constant)
+°
+=TEX
+¹HOLLABPROD ÛSsqlColİüüüüüüüüüüüüüüüüüüü
+Ü	Ûsc_nameİ	:	SsqlName;
+Ü	Ûsc_type_fieldİ	:	ColType;
+Ü	Ûsc_col_existİ	:	Class;
+Ü	Ûsc_col_classİ	:	BoundInfo
+°üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+=TEX
+=SML
+declare_type_abbrev(Û"TsqlClassName"İ, [], ”
+	ONE			(* anon‰t‰c *)
++	STRING			(* name‰t‰c *)
++	Class			(* constant‰t‰c *)
+®);
+=TEX
+¹HOLCONST
+Ü	Ûc_anon‰t‰cİ : TsqlClassName;
+Ü	(Ûmk_name‰t‰c , Ûdest_name‰t‰cİ) : (STRING, TsqlClassName) MK_DEST;
+Ü	(Ûmk_constant‰t‰cİ , Ûdest_constant‰t‰cİ) : (Class, TsqlClassName) MK_DEST
+÷üüüüüüüüüüüüüüüüü
+Ü	c_anon‰t‰c		= InL One
+Ü±	mk_name‰t‰c		= InR o InL
+Ü±	mk_constant‰t‰c		= InR o InR
+Ü±	dest_name‰t‰c		= OutL o OutR
+Ü±	dest_constant‰t‰c	= OutR o OutR
+°
+=SML
+declare_binder"WHEN_name‰t‰c";
+declare_binder"WHEN_constant‰t‰c";
+=TEX
+¹HOLCONST
+Ü	$ÛWHEN_anon‰t‰cİ : 'a ­ TsqlClassName ­ 'a OPT;
+Ü	$ÛWHEN_name‰t‰cİ : (STRING, TsqlClassName, 'a) WHEN;
+Ü	$ÛWHEN_constant‰t‰cİ : (Class, TsqlClassName, 'a) WHEN
+÷üüüüüüüüüüüüüüüüüü
+Ü	$WHEN_anon‰t‰c = LiftConstant c_anon‰t‰c
+Ü±	$WHEN_name‰t‰c = Lift (mk_name‰t‰c, dest_name‰t‰c)
+Ü±	$WHEN_constant‰t‰c = Lift (mk_constant‰t‰c, dest_constant‰t‰c)
+°
+=TEX
+¹HOLLABPROD ÛTsqlColİüüüüüüüüüüüüüüüüüüü
+Ü	Ûtc_sterling_nameİ	:	TsqlName;
+Ü	Ûtc_dinary_nameİ	:	TsqlName;
+Ü	Ûtc_class_nameİ		:	TsqlClassName
+°üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+=TEX
+=SML
+¹HOLLABPROD ÛTableInfoİüüüüüüüüüüüüüüüüüüü
+Ü	Ûti_table_exist_classİ	:	Class;
+Ü	Ûti_table_classİ		:	Class;
+Ü	Ûti_row_classİ		:	BoundInfo
+°üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+=TEX
+¹HOLLABPROD ÛConstraintInfoİüüüüüüüüüüüüüüüüüüü
+Ü	Ûci_null_allowedİ	:	BOOL LIST;
+Ü	Ûci_lwbİ		:	Class LIST;
+Ü	Ûci_uniqueİ		:	î LIST LIST;
+Ü	Ûci_uniformİ		:	î LIST LIST;
+Ü	Ûci_indexİ		:	î LIST LIST
+°üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+=TEX
+=SML
+declare_type_abbrev(Û"ColumnSpecification"İ, [], ”
+	STRING					(* anonymous_column *)
++	(TableSpecification ¸ STRING)		(* specific *)
+®);
+=TEX
+¹HOLCONST
+Ü	(Ûmk_anonymous_column , Ûdest_anonymous_columnİ)
+Ü		: (STRING, ColumnSpecification) MK_DEST;
+Ü	(Ûmk_specificİ , Ûdest_specificİ)
+Ü		: (TableSpecification ¸ STRING, ColumnSpecification) MK_DEST
+÷üüüüüüüüüüüüüüüüü
+Ü	mk_anonymous_column	= InL
+Ü±	mk_specific		= InR
+Ü±	dest_anonymous_column	= OutL
+Ü±	dest_specific		= OutR
+°
+=SML
+declare_binder"WHEN_anonymous_column";
+declare_binder"WHEN_specific";
+=TEX
+¹HOLCONST
+Ü	$ÛWHEN_anonymous_columnİ : (STRING, ColumnSpecification, 'a) WHEN;
+Ü	$ÛWHEN_specificİ
+Ü		: (TableSpecification ¸ STRING, ColumnSpecification, 'a) WHEN
+÷üüüüüüüüüüüüüüüüüü
+Ü	$WHEN_anonymous_column = Lift (mk_anonymous_column, dest_anonymous_column)
+Ü±	$WHEN_specific = Lift (mk_specific, dest_specific)
+°
+=TEX
+=SML
+datatype ÛTsqlReprİ =	  local_identifier of string 
+				| column of string ¸ string
+				| constant_class of Class
+				| constant_null;
+=TEX
+=SML
+type ÛExpTypeİ = SwordType ¸ Worth;
+=TEX
+=SML
+datatype ÛExpClassİ =	  variable of Valueètsqlê  ¸ Class
+			| constantèecê of Class 
+=TEX
+=SML
+datatype ÛInternalExpClassİ =	  ands of Valueètsqlê  list ¸ ExpClass list
+					| ors of Valueètsqlê  list ¸ ExpClass list
+					| simple of ExpClass;
+=TEX
+We give a new type for use in entering details of tables to the symbol table.
+=SML
+datatype ÛTableNameİ =	  anonètnê
+				| nameètnê of TableSpecification;
+=TEX
+\subsection{The Symbol Table}
+=SML
+type ÛTableDetailİ =	{tableName : TableName,
+			corrName : SsqlName,
+			genCorr : string,
+			info : TableInfo,
+			columns : SsqlCol list,
+			rowClass : TsqlClassName,
+			implementation : TsqlCol list,
+			constraints : ConstraintInfo};
+=TEX
+=SML
+type ÛIdentDetailİ =	{identName : string,
+			info : ExpType,
+			lubèidê : Class,
+			vName : string,
+			cName : TsqlName};
+=TEX
+=SML
+type ÛScopeİ =	{tables : TableDetail list,
+		identifiers : IdentDetail list};
+=TEX
+=SML
+type ÛParamInfoİ =	{name : string,
+			val‰p : Constant_valueèssqlê,
+			clasf : Class};
+=TEX
+=SML
+val symbolTable = ref ([]:Scope list);
+val parameterTable = ref ([]:ParamInfo list);
+=TEX
+
+\newpage
+\twocolumn[\section{INDEX} \label{INDEX}]
+\small
+\printindex
+
+\end{document}
+
+
+
