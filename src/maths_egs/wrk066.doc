@@ -98,7 +98,7 @@ doctex wrk066 wrk066.th; texdvi -b wrk066; texdvi wrk066; texdvi wrk066
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2004/04/11 15:50:03 $%
+\date{\FormatDate{$Date: 2004/04/12 12:10:55 $%
 }}
 
 \begin{document}
@@ -118,13 +118,14 @@ logarithm and sine and cosine functions.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK066; issue $Revision: 1.76 $%
+Reference: LEMMA1/HOL/WRK066; issue $Revision: 1.77 $%
 
 
 \end{centering}
 \thispagestyle{empty}
 \end{titlepage}
 \newpage
+\addtocounter{page}{1}
 %\section{DOCUMENT CONTROL}
 %\subsection{Contents list}
 \tableofcontents
@@ -135,7 +136,7 @@ Reference: LEMMA1/HOL/WRK066; issue $Revision: 1.76 $%
 \begin{itemize}
 
 \item
-Make systematic use of open and closed interval functions in the statements
+Make systematic use of open and closed intervals in the statements
 of the basic theorems on limits etc. (A very small start has been made on this,
 recent results having been stated using intervals).
 
@@ -149,6 +150,7 @@ is the right notion for the transcendental functions.
 Consider adding a more detailed informal discussion of our extension of
 Mitchell's ``axiomatic'' approach to the trigonometric functions to give the results
 on periodicity.
+
 \end{itemize}
 
 
@@ -198,7 +200,7 @@ For example, we prefer to specify the transcendental functions using differentia
 In the same vein, Archimedes' constant, $\pi$, is characterised as the positive generator of the group of zeroes of the sine function.
 
 The work was begun late in 2001 originally just to exercise the real number theory in {\ProductHOL} on a purely mathematical application.
-That work had some success with polynomial, limits, continuity and derivatives and so on but foundered due to lack of time and a technical difficulty with the traditional textbook approach to the result on differentiating under the limit sign mentioned above.
+That work had some success with polynomials, limits, continuity and derivatives and so on but foundered due to lack of time and a technical difficulty with the traditional textbook approach to the result on differentiating under the limit sign mentioned above.
 This technical difficulty arises from the fact that, while, for simplicity, I deal only with two-sided limiting processes, the usual textbook proofs involve working with functions defined on a closed interval and make use of the derivatives at the ends of the interval where they are inherently one-sided limits.
 In fact, with hindsight, this turns out not to be a problem:
 essentially the same results can be formulated in equal generality using open intervals and two-sided limits.
@@ -282,11 +284,12 @@ Here and throughout this document, we use the {\Product} Z-like notation for int
 In this notation, one gives type ascriptions for the constant or constants being defined (in this case {\it PolyFunc} which is a set of real functions of a real variable) and then a predicate giving their defining property (in this case an equation giving the value of the constant).
 This maps onto a call of the primitive definitional principle {\it const\_spec}.
 This principle requires an existence proof for the constants being introduced.
-The {\ProductHOL} infrastructure includes a range of procedures for discharging the existence proofs and these will successfully discharge the proof obligations for most of the definitions in this document
+The {\ProductHOL} infrastructure includes a range of procedures for discharging the existence proofs and these will automatically discharge the proof obligations for most of the definitions in this document
 
 If the existence proof cannot be discharged automatically, the actual defining property used in the call to {\it const\_spec} is a property that can trivially be proved consistent and that is logically equivalent to the desired defining property if that is consistent.
 The existence proof can then be conducted under manual control at a later stage.
-This has been done for all of relevant constants in this document, and, indeed, most of the material in this document can be viewed as contributing to the consistency proofs for the definitions of the transcendental functions and $\pi$ in section~\ref{SomeSpecialFunctions} below.
+This has been done for all the constants in this document which are not handled automatically.
+Indeed, most of the material in this document can be viewed as contributing to the consistency proofs for the definitions of the transcendental functions and $\pi$ in section~\ref{SomeSpecialFunctions} below.
 
 %%%%
 %%%%
@@ -305,7 +308,7 @@ This has been done for all of relevant constants in this document, and, indeed, 
 We will show that every polynomial function can be represented as a (point-wise) sum, $\lambda x \bullet a_0 + a_1x + a_2 x^2 + \ldots a_n x^n$, for some list of coefficients $[a_0; a_1; a_2 \ldots; a_n]$.
 The following function maps such a list of coefficients into the polynomial function it represents.
 ¹HOLCONST
-Ü $ÛPolyEvalÝ : ¯ LIST ­ (¯ ­ ¯)
+Ü ÛPolyEvalÝ : ¯ LIST ­ (¯ ­ ¯)
 ÷üüüüüü
 Ü 	(µx· PolyEval [] x = î¯ 0)
 Ü±	(µc l x· PolyEval (Cons c l) x = c + x * PolyEval l x)
@@ -330,7 +333,7 @@ We now define the operations on lists of coefficients that correspond to additio
 Ü	PlusCoeffs (Cons (î¯ 0) (TimesCoeffs l1 l2)) (Map (Ìx·c * x) l2) )
 °
 =TEX
-The following is useful in forming polynomials whose list of coefficients is given by a function:
+The following is useful in forming a polynomial whose list of coefficients is given by a function:
 %%%%
 %%%%
 =SML
@@ -344,7 +347,7 @@ declare_infix(310, "To");
 
 After one or two technicalities, the main results on polynomials begins with a pattern which will appear often.
 We are interested in showing that every polynomial function has a certain property, in this case the property of  being represented by a list of coefficients.
-To prove this we investigate how the constant functions, the identity function, the sum of two function and the product functions respect the property.
+To prove this we investigate how the constant functions, the identity function, the pointwise sum of two functions and the pointwise product of two functions respect the property.
 In this case, they either enjoy the property or preserve it as appropriate and the resulting theorems,
 =INLINEFT
 const_eval_thm
@@ -375,7 +378,7 @@ The remaining theorems about polynomials build up to a proof that a polynomial f
 poly_roots_finite_thm
 =TEX
 ).
-{\it En route} we get useful facts about the interaction of polynomial evaluation with list operations and also a formula for the difference of two powers which will turn out, fortuitously, to be just what is needed to prove the convergence of geometric series much later on.
+{\it En route} we get useful facts about the interaction of polynomial evaluation with list operations and also a formula for the difference of two like powers which will turn out, fortuitously, to be just what is needed to prove the convergence of geometric series much later on.
 
 Development of algebraic theory is not a main concern so we stop at this theorem.
 The next step might be to develop the theory of  the degree of polynomials and of division, but that would probably be better done in general for polynomials over an arbitrary field.
@@ -630,7 +633,7 @@ cts_lim_seq_thm
 
 This approach makes the proofs of the continuity of functions formed from continuous functions
 by functional composition and by applying field-operations trivial applications of analogous results on sequences.
-I have not seen this useful observation made in any elementary textbook on the subject, the reason, I suspect being two-fold:
+I have not seen this useful observation made in any elementary textbook on the subject, the reasons, I suspect, being two-fold:
 {\em(i)} proving these results about continuity from the definitions is considered to be a good exercise
 for the student,
 and, {\em(ii)},
@@ -657,7 +660,7 @@ simple_cts_tac
 
 This heuristic for automatically proving continuity is very useful, but the implementation is very simple-minded (for example, it does not allow the user to extend the range of functions supported).
 Later on, we will give a more sophisticated analogue for calculating derivatives.
-We choose to defer a more sophisticated approach to automatic continuity proving to separate work on topology, since in any case, nearly all of the particular functions we are really interested in in this document turn out to be continuous by dint of being differentiable.
+We choose to defer a more sophisticated approach to automatic continuity proving to separate work on topology, since in any case, the particular functions we are interested in in this document turn out to be continuous by dint of being differentiable.
 
 Once the basic facts about continuity of algebraic combinations of continuous functions are in place, we prove a few theorems for later use, for example, in reasoning about compact sets.
 Compact sets are defined in terms of open coverings and so it is useful to have the characterisation of continuity in terms of open sets.
@@ -743,7 +746,7 @@ declare_infix(200, "Deriv");
 
 
 As usual, we will investigate the interaction of the field operations and functional composition with derivatives and use the results to say something about derivatives of polynomials.
-In order to state the result about polynomials, we need the following definitions, which gives the operation on lists of coefficients that corresponds to taking the derivative of a a polynomial function.
+In order to state the result about polynomials, we need the following definition, which gives the operation on lists of coefficients that corresponds to taking the derivative of a a polynomial function.
 ¹HOLCONST
 Ü ÛDerivCoeffsÝ : ¯ LIST ­ ¯ LIST
 ÷üüüüüü
@@ -790,6 +793,8 @@ deriv_lim_fun_thm
 deriv_unique_thm
 =TEX
 }
+
+Note: the statement of {\em deriv\_lim\_fun\_thm} uses the notion of the limit of a function value introduced in section~\ref{LimitsOfFunctionValues} below.
 
 \subsection{Some Classical Theorems}\label{SomeClassicalTheorems}
 %%%%
@@ -839,7 +844,8 @@ the fact that continuous functions are bounded and attain their bounds in closed
 the intermediate value theorem,
 the mean value theorem etc.
 
-By contrast with Harrison's approach, later on, when we need explicit numerical estimates, for example, in demonstrating the existence of $\pi$, we tend to use these theorems, rather than obtaining numerical estimates from power series.
+By contrast with Harrison's approach, later on, when we need explicit numerical estimates, for example, in demonstrating the existence of $\pi$, we tend to use theorems like the mean value theorem, rather than obtaining numerical estimates from power series.
+{\em deriv\_linear\_estimate\_thm} is an example of this knd of estimation.
 There would be little difficulty, however, in extending the results on the transcendental functions to give estimates for the error term in a polynomial approximation to a value of the power series.
 
 
@@ -868,6 +874,7 @@ deriv_0_thm1
 deriv_0_thm
 deriv_0_thm2
 deriv_0_less_thm
+deriv_linear_estimate_thm
 =TEX
 }
 
@@ -897,7 +904,7 @@ In this section we show that the set of open and closed sets as we have defined 
 We then provide a selection of additional examples of open and closed sets.
 More interestingly, we then prove that compact sets are closed and contain their maximum and minimum elements (if they are non-empty).
 The empty set is compact, but the whole real line is not.
-Closed subsets of compact sets are closed.
+Closed subsets of compact sets are compact.
 A set is compact iff. it is closed and bounded (the Heine-Borel theorem).
 Finally, ¯ is topologically connected, i.e., it cannot be represented as the union of two disjoint open sets.
 
@@ -1031,7 +1038,7 @@ However, it seems clearer not to do this (and some facts about sequences of valu
 We then show that (uniformly) convergent sequences of functions are Cauchy sequences and, more interestingly, that sequences of functions that are uniformly Cauchy are uniformly convergent.
 This is followed by our two big theorems on uniform convergence: the first of these is Rudin's 7.11, which is an interchange theorem relating our three notions of limit.
 This theorem says, in essence, that under suitable conditions, the derivative of a limit of
-a sequence of functions, exists and may be calculated as the limit of the derivatives of the
+a sequence of functions exists and may be calculated as the limit of the derivatives of the
 functions in the sequence.
 More precisely, our formulation says that if $u_m$ converges uniformly to $f$ on some set of the form $(a, b) \backslash \{x\}$ for $x$ in the open interval $(a, b)$ and if for each $m$ $u_m(y)$ converges to $s_m$ as $y$ tends to $x$, then $f(y)$ converges to some limit $c$ as $y$ tends to $x$ and $s_m$ converges to that same value $c$ as $m$ tends to $\infty$.
 Rudin states and proves this in greater generality, but we just do the case that is needed for the the second big theorem, namely Rudin's theorem 7.17, which (in our formulation) says that if, a sequence of functions $du_m$ converges uniformly to some function $df$ on an open interval $(a, b)$ and each $du_m$ is the derivative of some function $u_m$ throughout $(a, b)$, and if the sequence of values $u_m(x_0)$ is convergent for some $x_0$ in $(a, b)$, then the sequence of functions $u_m$ is uniformly convergent to a function $f$ in $(a, b)$ whose derivative is given by $df$ throughout $(a, b)$.
@@ -1039,8 +1046,8 @@ This is the key result that justifies ``differentiation under the summation sign
 
 Our formulation of the result on uniform convergence and derivatives differs from the standard one (as given in Rudin) in using open intervals rather than closed ones.
 It is traditional to state results about uniform convergence for closed intervals, or more general for compact sets.
-Unfortunately, to get this to work requires some special case treatment of the end-points of the interval (see Rudin's definition of 5.1 for the sort of things that go on).
-We prefer to stick with our single simple notion of a two-sided derivative.
+Unfortunately, to get this to work requires some special treatment of the end-points of the interval (see Rudin's definition 5.1 for the sort of things that go on).
+We prefer to stick with the single notion of a two-sided derivative.
 This does mean that some results might have to be stated as holding for all open intervals (or sets) contained in some closed interval (or compact set) rather than holding on the closed interval or compact set.
 However, this has not arisen in practice, and there is no real loss of generality:
 any function that is, say, differentiable, on a closed interval $[a, b]$ can be extended to a differentiable function on an open interval $(A, B)$ containing $[a, b]$ and our way of formulating the kind of results in question will then apply to $(A, B)$.
@@ -1140,7 +1147,8 @@ geometric_series_thm1
 \subsubsection{Convergence Tests}\label{PowerSeriesConvergenceTests}
 We now give the standard convergence tests for series and power series.
 The first two results are a good example of a case where our {\em idiot savant} has no need of spoon feeding:
-the Weierstrass test for uniform convergence of the sum of a series of functions has the comparison test for convergence of series of values as a special case, and there is no point in presenting the comparison test first (as is invariably done in the text books).
+the Weierstrass test for uniform convergence of the sum of a series of functions has the comparison test for convergence of series of values as an immediate corollary of the special case when the functions are constant.
+There is no point in presenting the comparison test first (as is invariably done in the text books).
 
 Our formulation of the root test for the convergence of a series is somewhat non-standard.
 This test is usually couched in terms of $\LimSup\sqrt[n]{\Abs{s_n}}$, but we have chosen not to introduce the theory of $n$-th roots at this point in the development, nor to define a constant for the notion of {\em limes superior}.
@@ -1149,7 +1157,7 @@ We just make that our condition:
 this appears to be entirely equivalent to the standard definition (and states the result in terms of what you generally have too prove to show the $\LimSup$ in question exists as required).
 With this formulation, the test will actually work up to a multiplicative constant, which can sometimes ease the burden of proof (see the statement of {\em root\_test\_thm}).
 
-We then give the ratio test, firstly  in its most general form which says that a series $s_n$ will converge if the ratios $\Abs{\frac{s_{n+1}}{s_n}}$ are bounded above by some $b < 1$ for all large enough $n$. 
+We then give the ratio test, firstly  in its most general form which says that a series $s_n$ of non-zero terms will converge if the ratios $\Abs{\frac{s_{n+1}}{s_n}}$ are bounded above by some $b < 1$ for all large enough $n$. 
 We then give the more commonly stated form which requires these ratios to converge to a limit less than $1$, which is strictly less general, but useful if you have to hand facts about the limits in question.
 
 \ThmsII{%
@@ -1244,7 +1252,7 @@ Assume we have a function $e$ satisfying the differential equations and initial 
 I.e., $e(0) = 1$, $e$ is everywhere differentiable, and the derivative $e'(x)$ is equal to $e(x)$ for all x.
 Then certainly $e$ is everywhere continuous, and so, since $e(0) = 1$, for some positive $b$, $e(x)$ is positive for any $x \in (-b, b)$.
 For $x \in (-b, b)$ and for any fixed $y$, consider $f(x) = \frac{e(x+y)}{e(x)}$;
-observing that $f(x) > 0$ and differentiating this using the usual rules and simplifying, we find that $f'(x) = 0$.
+observing that $e(x) > 0$ and differentiating this using the usual rules and simplifying, we find that $f'(x) = 0$.
 Thus $f(x)$ is constant for $x \in (-b, b)$, and putting $x = 0$, we
 must have $f(x) = \frac{e(x+y)}{e(x)} = f(0) = e(y)$.
 Thus for $x \in (-b, b)$ and for any $y$, $e(x+y) = e(x) e(y)$.
@@ -1291,7 +1299,7 @@ exp_power_series_thm
 }
 
 \subsubsection{The Natural Logarithm Function}\label{TheNaturalLogarithmFunction}
-The natural logarithm function, which we define as the left inverse of the exponential function:
+The natural logarithm function is defined as the left inverse of the exponential function.
 %%%%
 %%%%
 ¹HOLCONST
@@ -1407,20 +1415,19 @@ sin_eq_cos_sin_cos_twice_thm
 sum_squares_abs_bound_thm
 sum_squares_abs_bound_thm1
 abs_sin_abs_cos_¼_1_thm
-deriv_linear_estimate_thm
+cos_positive_estimate_thm
 =TEX
 }{%
 =GFT
-cos_positive_estimate_thm
 sin_positive_estimate_thm
 cos_greater_root_2_thm
 cos_squared_eq_half_thm
 sin_eq_cos_exists_thm
 sin_positive_zero_thm
+¯_discrete_subgroup_thm
 =TEX
 }{%
 =GFT
-¯_discrete_subgroup_thm
 pi_consistency_thm
 ArchimedesConstant_consistent
 Ð_def
@@ -1430,7 +1437,7 @@ ArchimedesConstant_consistent
 }
 
 \subsubsection{Periodicity of the Sine and Cosine Functions}\label{PeriodicityOfTheSineAndCosineFunctions}
-We conclude the axiomatic development of the properties of sine and cosine by proving their periodic behaviour and finally, with a view to later geometric applications, show that numbers $x$ and $y$ with $x^2 + y^2 = 1$ are equal to $\Cos{z}$ and $\Sin{z}$ respectively for some, unique, $z$ in the interval $[0, 2\pi)$.
+We conclude the axiomatic development of the properties of sine and cosine by proving their periodic behaviour and finally, with a view to later geometric applications, show that any numbers $x$ and $y$ with $x^2 + y^2 = 1$ are equal to $\Cos{z}$ and $\Sin{z}$ respectively for some, unique, $z$ in the interval $[0, 2\pi)$.
 
 \ThmsII{%
 =GFT
@@ -5384,6 +5391,34 @@ val Ûderiv_0_less_thmÝ = save_pop_thm"deriv_0_less_thm";
 =TEX
 %%%%
 %%%%
+The following general theorem is used to give bounds on the values of the trigonometric functions.
+%%%%
+%%%%
+=SML
+set_goal([], ¬
+	µf a b v w·
+	a < b ± f a = v ± f b = w
+±	(µx· a ¼ x ± x ¼ b ´ ¶c· (f Deriv c) x)
+±	(µx c· a < x ± x < b ±  (f Deriv c) x ´ Abs c ¼ î¯ 1)
+´	Abs(w - v) ¼ b - a
+®);
+a(REPEAT strip_tac THEN all_fc_tac[mean_value_thm1]);
+a(all_var_elim_asm_tac1 THEN POP_ASM_T ante_tac THEN asm_rewrite_tac[] THEN strip_tac);
+a(LEMMA_T ¬Abs(f b + ~(f a)) = Abs((b + ~a) * d)® ante_tac THEN1
+	 asm_rewrite_tac[] THEN rewrite_tac[¯_abs_times_thm]);
+a(lemma_tac ¬î¯ 0 ¼ b + ~a® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(strip_tac THEN LEMMA_T ¬b + ~a = Abs (b + ~a)® once_rewrite_thm_tac
+	THEN1 asm_rewrite_tac[¯_abs_def]);
+a(POP_ASM_T rewrite_thm_tac);
+a(conv_tac (RAND_C (pure_once_rewrite_conv[prove_rule[]¬µx·x = x * î¯ 1®])));
+a(bc_thm_tac ¯_¼_times_mono_thm);
+a(rewrite_tac[¯_0_¼_abs_thm]);
+a(DROP_NTH_ASM_T 6 bc_thm_tac THEN REPEAT strip_tac);
+a(¶_tac¬x® THEN REPEAT strip_tac);
+val Ûderiv_linear_estimate_thmÝ = save_pop_thm "deriv_linear_estimate_thm";
+=TEX
+%%%%
+%%%%
 %%%%
 %%%%
 =TEX
@@ -7848,7 +7883,7 @@ the ratios are eventually all bounded below 1. We formulate this as follows.
 %%%%
 =SML
 set_goal([], ¬
-	µs b n·
+	µs b·
 	(µm·³s m = î¯ 0)
 ±	î¯ 0 < b ± b < î¯ 1
 ±	(µn·m ¼ n ´ Abs(s (n+1) / s n) < b)
@@ -7900,7 +7935,7 @@ The ratio test  in terms of limits is often useful (and this is what we call the
 %%%%
 =SML
 set_goal([], ¬
-	µs b n·
+	µs b·
 	(µm·³s m = î¯ 0)
 ±	î¯ 0 ¼ b ± b < î¯ 1
 ±	(Ìn· Abs(s (n+1) / s n)) -> b
@@ -9698,34 +9733,8 @@ a(all_fc_tac[sum_squares_abs_bound_thm1] THEN REPEAT strip_tac);
 val Ûabs_sin_abs_cos_¼_1_thmÝ = save_pop_thm "abs_sin_abs_cos_¼_1_thm";
 =TEX
 We plan to make our estimates of the value of $\pi/2$ a little bit more accurate than
-the ones given by Mitchell. The following general theorem will give us a lower bound
-(it implies that the first zero of the cosine function is at least 1).
-%%%%
-%%%%
-=SML
-set_goal([], ¬
-	µf a b v w·
-	a < b ± f a = v ± f b = w
-±	(µx· a ¼ x ± x ¼ b ´ ¶c· (f Deriv c) x)
-±	(µx c· a < x ± x < b ±  (f Deriv c) x ´ Abs c ¼ î¯ 1)
-´	Abs(w - v) ¼ b - a
-®);
-a(REPEAT strip_tac THEN all_fc_tac[mean_value_thm1]);
-a(all_var_elim_asm_tac1 THEN POP_ASM_T ante_tac THEN asm_rewrite_tac[] THEN strip_tac);
-a(LEMMA_T ¬Abs(f b + ~(f a)) = Abs((b + ~a) * d)® ante_tac THEN1
-	 asm_rewrite_tac[] THEN rewrite_tac[¯_abs_times_thm]);
-a(lemma_tac ¬î¯ 0 ¼ b + ~a® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
-a(strip_tac THEN LEMMA_T ¬b + ~a = Abs (b + ~a)® once_rewrite_thm_tac
-	THEN1 asm_rewrite_tac[¯_abs_def]);
-a(POP_ASM_T rewrite_thm_tac);
-a(conv_tac (RAND_C (pure_once_rewrite_conv[prove_rule[]¬µx·x = x * î¯ 1®])));
-a(bc_thm_tac ¯_¼_times_mono_thm);
-a(rewrite_tac[¯_0_¼_abs_thm]);
-a(DROP_NTH_ASM_T 6 bc_thm_tac THEN REPEAT strip_tac);
-a(¶_tac¬x® THEN REPEAT strip_tac);
-val Ûderiv_linear_estimate_thmÝ = save_pop_thm "deriv_linear_estimate_thm";
-=TEX
-From the above estimate, $\Cos{x}$ is positive for $x$ in the open interval $(0, 1)$:
+the ones given by Mitchell.
+From the estimate given by {\em deriv\_linear\_estimate\_thm}, $\Cos{x}$ is positive for $x$ in the open interval $(0, 1)$:
 %%%%
 %%%%
 =SML
