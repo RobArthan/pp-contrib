@@ -399,7 +399,14 @@ and it may be helpful to summarise these here:
 The model given here effectively suppresses errors arising in the
 evaluation of queries. It is understood that such errors will actually
 be suppressed in the SWORD implementation since there are known security
-risks associated with them.
+risks associated with them. Where it is necessary to model error cases
+explicitly here, it is done by setting result data to an arbitrary but fixed
+value. This may be inaccurate in the case of the uniqueness
+checks made for the $single\_value$ and $evaluate$ forms (and in the
+auxiliary $CommonValue$ used to model part of the semantics of $HAVING$
+clauses). Elsewhere, this sanitising is only required in cases
+corresponding to compile/transformation-time errors which happen to be
+modelled here dynamically, and so is less likely to affect security.
 \item
 The type conversions ($convert$ value form) have not been dealt with explicitly
 in the formal treatment. The
@@ -433,16 +440,21 @@ and it was agreed at that time to leave these out.
 Remedying these deficiencies would probably be straightforward and introduce
 no significant new features as regards security.
 \item
-The $row\_existence$ and $joined\_row\_existence$ value forms have been omitted
-in the present draft. This is because both the classification and
-the value associated with them appears to be defined by the structure of the SSQL
-database, which is assumed to be fixed for the purposes of the present exercise.
+The $row\_existence$  value form is omitted from the present draft.
+It would appear that this form can always be eliminated in
+favour of an equivalent use of a $joined\_row\_existence$
+inside a nested $SELECT$ in the $From\_spec$ of a query (this is certainly
+true of the model of the language given here, even if syntactic restrictions
+prohibit it for SSQL proper). Inclusion of $row\_existence$ would
+require a slight complication of the semantic domains to allow the
+extra information it requires about the construction
+of the current row to be available.
 \item
 The $context$ and $parameter$ value forms are omitted, since it is assumed
 that the relevant information has already been bound into the query being
 processed.
 \item
-The $classify$ and $clasify\_default$ value forms, are treated in
+The $classify$ and $classify\_default$ value forms, are treated in
 \cite{trans} so as to allow a client to regrade a value arbitrarily.
 This is not secure. It is understood that the use of these forms is
 intended to be restricted to the generation of values for use in
@@ -875,28 +887,6 @@ computation taking into account row existence classes.
 ‹	in	(lubl cl, NatItem(Length rl))
 ∞
 
-We also require the following additional aggregate expression form
-which is not contained in SSQL. It is how we think of the expressions
-which appear in $HAVING$ clauses which take the contents of the columns
-which appear in the $GROUPBY$ clause. If the (item part of the) expression
-parameter gives the same value in each row then that value is returned
-classified with the l.u.b. of the classes returned for the rows; otherwise,
-a fixed arbitrary value is returned with the same classification
-(modelling a compile/transformation-time error). This effect may be
-achieved using the general set function $SetFuncAll$ as follows:
-
-πHOLCONST
-‹	€CommonValue›	: VALUE_COMP ≠ VALUE_COMP
-˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
-‹µe ∑	CommonValue e =
-‹	let	pick il =
-‹		if	Size (Elems il) = 1
-‹		then	Hd il
-‹		else	Arbitrary
-‹	in	SetFuncAll pick e
-∞
-
-
 \subsection{$AllBinOp$}\label{AllBinOp}
 See section \ref{OmissionsandAssumptions}.
 \subsection{$SomeBinOp$}\label{SomeBinOp}
@@ -985,6 +975,16 @@ $internal\_value\sb{class}$ from \cite{trans}.
 ∞
 \subsection{$RowExistence$}\label{RowExistence}
 See section \ref{OmissionsandAssumptions}.
+\subsection{$JoinedRowExistence$}\label{JoinedRowExistence}
+This just returns the row existence field of the current row.
+For simplicity, it uses the client clearance, passed as a parameter,
+as the result clearance. This is stronger than \cite{trans} in general.
+πHOLCONST
+‹	€JoinedRowExistence›	:Class ≠  VALUE_COMP
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹µcc∑	JoinedRowExistence cc =
+‹	Ãtl rl r∑ (cc, ClassItem(DTR_row r))
+∞
 \pagebreak
 \section{TABLE COMPUTATIONS}\label{TABLECOMPUTATIONS}
 To specify the $SELECT$ and related queries it is convenient to break them
@@ -1162,7 +1162,7 @@ the row to appear in the result if the row is wanted.
 
 \subsubsection{$GROUPBY$/$HAVING$}
 The $GROUPBY$ and $HAVING$ operations must be treated together.
-It is here that the classification produced by a $TABLE_COMP$ is
+It is here that the classification produced by a $TABLE\_COMP$ is
 computed in anger.
 
 Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
@@ -1170,6 +1170,12 @@ Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
 =TEX
 To define the grouping part of the operation, we need some list processing
 preliminaries. 
+The next two functions are parameterised by a function $gpby$ which
+is used to decide whether two rows are in the same group. The idea is
+that two rows, $x$ and $y$ are in the same group if $gpby\,x=gpby\,y$.
+Given a row and a partial list of groups, $PutInGroup$ adds the
+row to the appropriate group in the list (creating a new group with only
+one row, if necessary).
 πHOLCONST
 ‹	€PutInGroup› :  ('a ≠ 'b) ≠ 'a ≠ ('a LIST) LIST ≠ ('a LIST) LIST
 ˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
@@ -1180,7 +1186,8 @@ preliminaries.
 ‹	then	Cons (Cons x gp) gps
 ‹	else	Cons gp (PutInGroup gpby x gps)
 ∞
-
+$MakeGroups$ uses $PutInGroup$ to do the complete job of organising a list
+into groups according to a given $gpby$ function.
 πHOLCONST
 ‹	€MakeGroups›	: ('a ≠ 'b)
 ‹			 ≠ 'a LIST
@@ -1190,6 +1197,7 @@ preliminaries.
 ‹	MakeGroups gpby [] = []
 ‹±	MakeGroups gpby (Cons x xs) = PutInGroup gpby x (MakeGroups gpby xs)
 ∞
+
 The following function is used to supply the $gpby$ parameter to the above.
 It ensures that indices which are out of range are mapped to a fixed arbitrary
 value to handle securely an error condition which is detected at
@@ -1208,6 +1216,28 @@ invalid names).
 ‹	else	Arbitrary)
 ‹	(ListNth nl list)
 ∞
+
+The following is how we analyse the result of the expressions
+which appear in $HAVING$ clauses which take the contents of the columns
+which appear in the $GROUPBY$ clause. If the (item part of the) expression
+parameter gives the same value in each row then that value is returned
+classified with the l.u.b. of the classes returned for the rows; otherwise,
+a fixed arbitrary value is returned with the same classification
+(modelling a run-time error). This effect may be
+achieved using the general set function $SetFuncAll$ as follows:
+
+πHOLCONST
+‹	€CommonValue›	: VALUE_COMP ≠ VALUE_COMP
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹µe ∑	CommonValue e =
+‹	let	pick il =
+‹		if	Size (Elems il) = 1
+‹		then	Hd il
+‹		else	Arbitrary
+‹	in	SetFuncAll pick e
+∞
+
+
 The classification computation below is a suggestion/guess on the
 basis of current information. The class computed is the least upper
 bound of the classes in the columns required to do the grouping
@@ -1355,7 +1385,7 @@ the intersection of all the $b\sb{j})$.
 ∞
 Now we give the definition, which is long but straightforward in
 its derivation from the various semantic functions. Note that the
-last two clauses are commented out, since the semantic functions
+last two clauses are commented out, since the relevant semantic functions
 as currently formulated above are known not to be secure.
 \ftlinepenalty=9999
 πHOLCONST
@@ -1394,6 +1424,8 @@ as currently formulated above are known not to be secure.
 ‹
 ‹	±	(µcc te∑ te ç tes ¥ ExistsTuples cc te ç es)
 ‹	±	(µcc te∑ te ç tes ¥ SingleValue cc te ç es)
+‹
+‹	±	(µcc∑ JoinedRowExistence cc ç es)
 ‹
 ‹	±	(µi∑ TableContents i ç tes)
 ‹
@@ -1448,7 +1480,8 @@ relates appropriately to the classification computed by that table computations.
 ‹	µq c∑
 ‹	isError(stp(q, c)) ≤
 ‹	let	(dq, ocq, pars) = destVal(stp(q, c))
-‹	in	∂dte∑
+‹	in	is_select ocq
+‹	±	∂dte∑
 ‹		dte ç TableComputations c
 ‹	±	compile dq = (Ãtl∑(Snd(dte tl), []))
 ‹	±	µtl∑
