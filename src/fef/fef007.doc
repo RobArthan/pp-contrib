@@ -1,0 +1,412 @@
+=TEX
+% TQtemplate.tex
+\documentstyle[hol1,11pt,TQ]{article}
+\ftlinepenalty=9999
+\def\Hide#1{}
+\def\Bool{``$\it{:}bool\,$''}
+\makeindex
+\TPPproject{DRA FRONT END FILTER PROJECT}  %% Mandatory field
+%\TPPvolume{}
+%\TPPpart{}
+\TPPtitle{Proof Strategy}  %% Mandatory field
+\TPPref{DS/FMU/FEF/007}  %% Mandatory field
+\def\SCCSversion{$Revision$
+}
+\TPPissue{\SCCSversion}  %% Mandatory field
+\TPPdate{\FormatDate{$Date$
+}}  %% Mandatory field (with sensible default)
+\TPPstatus{Draft}			%% Mandatory field
+\TPPtype{Specification}
+\TPPkeywords{}
+\TPPauthor{G.~M.~Prout & WIN01}  %% Mandatory field
+%\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
+\TPPauthorisation{R.B.~Jones & HAT Manager}
+\TPPabstract{This document contains a proof strategy for proving
+the SSQL Abstract Machine security conjecture for the
+DRA front end filter project RSRE 1C/6130.}
+%\TPPabstractB{}
+%\TPPabstractC{}
+%\TPPabstractD{}
+%\TPPabstractE{}
+%\TPPabstractF{}
+\TPPdistribution{\parbox[t]{4.0in}{%
+	HAT FEF File \\
+	Simon Wiseman
+}}
+%\TPPclass{CLASSIFICATION}
+\newfont{\icllogo}{icllogo50}
+\def\TPPheadlhs{$\vcenter{\halign{##\cr\icllogo ICL\cr}}$}
+%\def\TPPheadlhs{}
+%\def\TPPheadcentre{}
+%def\TPPheadrhs{}
+%\def\TPPfootlhs{}
+%\def\TPPfootcentre{}
+%\def\TPPfootrhs{}
+
+\begin{document}
+\TPPsetsizes
+\makeTPPfrontpage
+
+\vfill
+\begin{centering}
+
+%\bf Copyright \copyright\ : International Computers Ltd \number\year
+
+\end{centering}
+
+\newpage
+\section {DOCUMENT CONTROL}
+\subsection{Contents List}
+\tableofcontents
+\subsection{Document Cross References}
+\bibliographystyle{fmu}
+\bibliography{fmu,fef}
+
+\subsection{Changes History}
+\begin{description}
+\item[1.1] First draft version.
+\end{description}
+
+\subsection{Changes Forecast}
+Changes  may be necessary  as a result of issues raised
+during  the transcription of the specification.
+\pagebreak
+\section{GENERAL}
+\subsection{Scope}
+
+\subsection{Introduction}
+
+
+\section{PRELIMINARIES}
+The following ICL HOL instructions set up the new theory $fef007$.
+
+=SML 
+open_theory "feflib1";
+new_theoryÛ"fef007"İ;
+push_merge_pcs["hol","fefhol","pair1"] ;
+=TEX
+
+\section{MAIN SECURITY CONJECTURE}\label{MAIN}
+
+We reiterate the  correctness conjecture for the SSQL Abstract Machine 
+given in \cite{DS/FMU/FEF/006}, i.e. 
+that its behaviour, as defined in \cite{DS/FMU/FEF/006}, is secure, as defined in 
+\cite{DS/FMU/FEF/003}.
+
+=GFT
+	?ô 	behaviours SSQLam  secure
+=TEX
+
+It is the intention to prove this result by proving two main lemmas:
+\begin{description}
+\item[Lemma1]
+
+A result about the critical requirements on the components $hide$ and $updateState$, formalised in section \ref{COMP}.
+\item[Lemma2]
+
+An unwinding result,  formalised in section \ref{UNWIND}.
+\end{description}
+
+\section{CRITICAL REQUIREMENTS ON COMPONENTS} 
+We formalise the critical requirements on the critical components $hide$
+and $updateState$ of the  SSQL abstract machine. In fact, the critical requirement on the component of $hide$ is that two states 
+are the `same' when viewed from a clearance $clear$ if we get the same result when we 
+view each one with respect to that clearance. By `two states being the same when 
+viewed from a clearance $clear$ ',we mean exactly that the resulting 
+states when each is hidden at $clear$ are the same. This requirement is expressed as 
+part of a requirement on the relationship between $hide$ and $updateState$. 
+
+The critical requirement on the relationship between $hide$ and $updateState$
+is that if we have
+two clearances $clear‰1$ and $clear‰2$ and we update
+ the database at $clear‰1$ and a change is visible when hiding w.r.t $clear‰2$, then
+$clear‰2$ must dominate $clear‰1$. This requirement concerns the security of the 
+state of the database. We also need to address the issue of security of 
+the outputs from the database to the user. If we perform an update on two states
+$s‰1$ and $s‰2$ that are the same when viewed at a clearance $clear$,
+then the outputs must be the same, and they must be at clearance $clear$.
+
+We define a property  $secureUpdate$ that captures these rquirements
+
+
+¹HOLCONST
+Ü	ÛsecureUpdateİ : Hide ª Ustate
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ h : Hide ;u : Ustate ·
+Ü		(h,u)  secureUpdate
+Ü		¤
+Ü		(µclear‰1 clear‰2 : Class; s : State; e:Effect ¸ Errors ·	
+Ü			let 	s' = Fst(u(clear‰1,e,s)) 
+Ü			in
+Ü				³(h(clear‰2,s) = h(clear‰2,s'))
+Ü				´ 	clear‰2 dominates clear‰1)	
+Ü		±
+Ü		µclear : Class; s‰1 s‰2: State; e:Effect ¸ Errors ·
+Ü			let	o‰1 = Snd(u(clear,e,s‰1))
+Ü			and 	o‰2 = Snd(u(clear,e,s‰2))
+Ü			in
+Ü				(h(clear,s‰1) = h(clear,s‰2)
+Ü				´	o‰1 = o‰2
+Ü				±	Fst o‰1 = clear)
+° 
+
+
+\subsection{Lemma1 : Component Correctness Conjecture} \label{COMP}
+
+We formalise the security conjecture that $hide$ and $updateState$ are secure.
+
+=GFT
+	?ô 	(hide,updateState)  secureUpdate
+=TEX
+
+¹HOLCONST
+Ü	ÛLemma1İ : BOOL
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü	Lemma1 = (hide,updateState)  secureUpdate
+° 
+
+
+\section{UNWINDING RESULT} \label{UNWIND}
+\subsection{Lemma2}
+The main unwinding result  of the proof of security of the SSQL abstract machine states that if 
+we build an SSQL abstract machine
+as prescribed in \cite{DS/FMU/FEF/006} from an $SSQLtf$ and an initial state $isstate$, and $hide$
+and $updateState$ satisfy  $secureUpdate$, the security property
+on components, then the 
+`behaviour' of the 
+SSQL abstract machine is $secure$, as defined in \cite{DS/FMU/FEF/003}.
+This is formalised as $Lemma2$.
+=GFT
+	?ô 	(hide,updateState)  secureUpdate 
+		´ 
+		behaviours SSQLam  secure
+=TEX
+
+¹HOLCONST
+Ü	ÛLemma2İ : BOOL
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü	Lemma2 = 
+Ü		((hide,updateState)  secureUpdate 
+Ü		´ 
+Ü		behaviours SSQLam  secure)
+° 
+
+\subsection{Transition Function Property}
+The critical requirement on $hide$ and $updateState$ is essentially a requirement 
+on the relationship between $hide$ and $updateState$. We require a security 
+property on iterated transition
+functions in order to prove that the behaviour of the SSQL abstract machine
+is secure.  In turn, we require a security property on transition
+functions. Hence, in order to prove $Lemma2$, 
+we will prove $Lemma3$, formalised in section \ref{TF}, and $Lemma4$, formalised 
+in section \ref{ITF}, together with $Lemma5$, formalised in section \ref{L5}, which
+is a result relating the iterated  SSQL transition
+function to the bahaviour of the SSQL abstract machine. 
+First, a security property on 
+transition functions. 
+
+
+¹HOLCONST
+Ü	ÛsecureStfİ : Stf ğ
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ stf : Stf ·
+Ü		stf  secureStf
+Ü		¤
+Ü		µs‰1 s‰2: State;i‰1 i‰2 : Query ¸ Class; c : Class ·	
+Ü			(hide(c,s‰1) = hide(c,s‰2)
+Ü			±
+Ü			([i‰1],[i‰2])  same_ins c)
+Ü			´
+Ü			let 	(s‰1',o‰1) = stf(i‰1,s‰1)
+Ü			and	(s‰2',o‰2) = stf(i‰2,s‰2) 
+Ü			in
+Ü			(hide(c,s‰1') = hide(c,s‰2')
+Ü			±
+Ü			([o‰1],[o‰2])  same_outs c)
+° 
+
+We define  a constant SSQLtf, the SSQL abstract machine
+transition function.
+
+¹HOLCONST
+Ü	ÛSSQLtfİ : Stf 
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü	SSQLtf = mkTf hide processQuery updateState
+° 
+
+\subsubsection{Lemma3} \label{TF}
+We now formalise a proposition that states that if $hide$ and $updateState$
+satisfy their critical requirements, then $SSQLtf$ satisfies $secureStf$, the security property
+on transition functions. 
+
+=GFT
+	?ô 	(hide,updateState)  secureUpdate 
+		´
+		SSQLtf  secureStf 
+=TEX
+
+¹HOLCONST
+Ü	ÛLemma3İ : BOOL
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü	Lemma3 = 
+Ü		((hide,updateState)  secureUpdate 
+Ü		´
+Ü		SSQLtf  secureStf)
+° 
+
+
+\subsection{Iterated Transition Function Property} 
+We now state a property on 
+iterated transition functions. 
+
+First an abbreviation definition for the type of iterated state transition functions, $Itf$.
+
+=SML
+declare_type_abbrev(Û"Itf"İ,[],” (Query ¸ Class)LIST ¸ State 
+					­ State ¸ (Class ¸ (Data LIST LIST ¸ Errors))LIST®);
+=TEX
+
+¹HOLCONST
+Ü	ÛsecureItfİ : Itf ğ
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ itf : Itf ·
+Ü		itf  secureItf
+Ü		¤
+Ü		µs‰1 s‰2: State;si‰1 si‰2 : (Query ¸ Class)LIST; c : Class ·	
+Ü			(hide(c,s‰1) = hide(c,s‰2)
+Ü			±
+Ü			(si‰1,si‰2)  same_ins c)
+Ü			´
+Ü			let 	(s‰1',so‰1) = itf(si‰1,s‰1)
+Ü			and	(s‰2',so‰2) = itf(si‰2,s‰2) 
+Ü			in
+Ü			(hide(c,s‰1') = hide(c,s‰2')
+Ü			±
+Ü			(so‰1,so‰2)  same_outs c)
+° 
+\subsubsection{Lemma4} \label{ITF}
+We now formalise the proposition that if an $SSQLtf$ satisfies $secureStf$, then an iterated
+$SSQLtf$ satisfies $secureItf$, the security property
+on iterated transition functions. 
+
+=GFT
+	?ô 	SSQLtf  secureStf 
+		´ 
+		(iterate SSQLtf)  secureItf 
+=TEX
+
+¹HOLCONST
+Ü	ÛLemma4İ : BOOL
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü	Lemma4 = 
+Ü		(SSQLtf  secureStf 
+Ü		´ 
+Ü		(iterate SSQLtf)  secureItf)
+° 
+
+\subsubsection{Lemma5} \label{L5}
+This propostion states that if the iterated
+$SSQLtf$ satisfies $secureItf$, the security property
+on iterated transition functions, then the behaviour of the SSQL abstract machine is secure.
+
+=GFT
+	?ô 	(iterate SSQLtf)  secureItf 
+		´ 
+		behaviours SSQLam  secure
+=TEX
+
+¹HOLCONST
+Ü	ÛLemma5İ : BOOL
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü	Lemma5 = 
+Ü		((iterate SSQLtf)  secureItf 
+Ü		´ 
+Ü		behaviours SSQLam  secure)
+° 
+
+\subsection{Proof of Lemma2, the  Unwinding Result}
+The proof of the unwinding result, $Lemma2$, follows from the 
+proofs of $Lemma3$, $Lemma4$ and  $Lemma5$.
+
+We first retrieve the definitions of the lemmas:
+=SML
+val Lemma1 = get_spec¬Lemma1®;
+val Lemma2 = get_spec¬Lemma2®;
+val Lemma3 = get_spec¬Lemma3®;
+val Lemma4 = get_spec¬Lemma4®;
+val Lemma5 = get_spec¬Lemma5®;
+=TEX
+
+Then prove  $lemma2\_thm$ which states that if we can prove $Lemma3$, $Lemma4$ and  $Lemma5$, then
+ we can prove $Lemma2$. 
+
+=SML
+val Ûlemma2_thmİ = save_thm("lemma2_thm",(prove_rule[Lemma2,Lemma3,Lemma4,Lemma5]
+	¬Lemma3 ± Lemma4 ± Lemma5 ´ Lemma2®));
+=TEX
+
+=GFT
+lemma2_thm = ô Lemma3 ± Lemma4 ± Lemma5 ´ Lemma2
+=TEX
+
+\section{MAIN PROOF OF SECURITY}
+
+The main proof conjecture, given in section \ref{MAIN}, that:
+=GFT
+	?ô 	behaviours SSQLam  secure
+=TEX
+
+follows from the proofs of $Lemma1$:
+
+=GFT
+	?ô 	(hide,updateState)  secureUpdate
+=TEX
+
+and $Lemma2$:
+
+=GFT
+	?ô 	(hide,updateState)  secureUpdate 
+		´ 
+		behaviours SSQLam  secure
+=TEX
+
+We prove  $lemma1\_2\_thm$ which states that if we can prove $Lemma1$ and $Lemma2$  then
+ we can prove that the behaviour of the SSQL abstract machine is secure. 
+
+=SML
+val Ûlemma1_2_thmİ = save_thm("lemma1_2_thm",(prove_rule[Lemma1,Lemma2]
+	¬Lemma1 ´ Lemma2 ´ behaviours SSQLam  secure®));
+=TEX
+
+=GFT
+lemma1_2_thm = ô Lemma1 ´ Lemma2 ´ behaviours SSQLam  secure
+=TEX
+
+Finally, we prove the $main\_thm$ that states thatif we can prove $Lemma1$, $Lemma3$, $Lemma4$ and $Lemma5$ then the behaviour of the SSQL abstract machine is secure.
+
+=SML
+push_goal([],¬Lemma1 ± Lemma3 ± Lemma4 ± Lemma5 ´ behaviours SSQLam  secure®);
+a(REPEAT strip_tac THEN MAP_EVERY strip_asm_tac [lemma2_thm,lemma1_2_thm]);
+val Ûmain_thmİ = save_pop_thm"main_thm";
+=TEX
+
+=GFT
+main_thm = ô  Lemma1 ± Lemma3 ± Lemma4 ± Lemma5 ´ behaviours SSQLam  secure
+=TEX
+\section{CLOSING DOWN}
+=IGN
+output_theory{theory = "fef007",out_file = "fef007th.doc"};
+=TEX
+The following ICL HOL instruction restores the previous proof context.
+=SML
+pop_pc();
+=TEX
+
+\newpage
+\input{fef007th.tex}
+\newpage
+\twocolumn[\section{INDEX} \label{INDEX}]
+\small
+\printindex
+
+\end{document}
