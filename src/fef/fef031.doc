@@ -14,14 +14,14 @@
 \TPPissue{\SCCSversion}  %% Mandatory field
 \TPPdate{\FormatDate{$Date$
 }}  %% Mandatory field (with sensible default)
-\TPPstatus{Approved}			%% Mandatory field
+\TPPstatus{Draft}			%% Mandatory field
 \TPPtype{Specification}
 \TPPkeywords{}
-\TPPauthor{R.B.~Jones & WIN01}  %% Mandatory field
+\TPPauthor{R.~D.~Arthan & WIN01}  %% Mandatory field
 %\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
 \TPPauthorisation{R.B.~Jones & HAT Manager}
 \TPPabstract{This document contains the formal proofs relating to 
-DS/FMU/FEF/026; it forms part of the Phase II proofs for the
+DS/FMU/FEF/026;  it forms part of the Phase II proofs for the
 DRA front end filter project RSRE 1C/6130.}
 %\TPPabstractB{}
 %\TPPabstractC{}
@@ -64,7 +64,7 @@ DRA front end filter project RSRE 1C/6130.}
 \subsection{Changes History}
 \begin{description}
 \item[Issue \SCCSversion(\FormatDate{$Date$
-})] Removed obsolete material.
+})] $ConditionE\_Lemma$ now $EM\_SecureE$; new boolean constants introduced.
 \end{description}
 
 \subsection{Changes Forecast}
@@ -72,25 +72,31 @@ None.
 \pagebreak
 \section{GENERAL}
 \subsection{Scope}
-This document provides a formal proof relating
+This document provides a formal partial proof relating
 to the specifications in ``An Execution Model for SWORD'' \cite{DS/FMU/FEF/026}.
 It constitutes part of deliverable D13 of work package 3, as given
 in section 3 of the Proposal for Phase 2, \cite{DS/FMU/FEF/018}.
 
 
-(The current version is a rough draft of proofs of some of the propositions
-produced as pilot work during the third stage of phase 2.)
 
 \subsection{Introduction}
-This document provides a formal proof of the  conjecture
-$EM\_SecureE_1$ from the proof strategy document, \cite{DS/FMU/FEF/034}, which states
-that $Viewât\_secureE$ and $outputFilter\_secureE$ imply
-$EM\_SecureE$.
+This document provides a formal partial proof of the  conjecture
+$EM\_SecureE$ from the proof strategy document, \cite{DS/FMU/FEF/034}, which states
+that if a compiler and associated database update operation
+satisfy the $Correct\_Compile$ correctness criterion of \cite{DS/FMU/FEF/026}, 
+and if the SSQL Query
+Transformation Processor lies in the set $STP\_secure\_E$  (defined in \cite{DS/FMU/FEF/026})
+determined by
+the compiler, then the system components satisfy property E of
+\cite{DS/FMU/FEF/022} with respect to the representation.
+
 \section{PRELIMINARIES}
 The following \Product{} instructions set up a new theory $fef031$
 to hold the theorems to be proved and set up a proof context in which
 to carry out the proofs. Some theorems are required from the theory
 $fef010$ defined in \cite{DS/FMU/FEF/010} and so this is made a parent of
+the theory $fef031$. The conjecture $EM\_SecureE$ is defined in 
+theory $fef034$ from \cite{DS/FMU/FEF/034} and so this is also made a parent of
 the theory $fef031$.
 
 =SML 
@@ -161,6 +167,25 @@ a(LEMMA_T¨y1 = DTR_where (MkDerTableRow x1 x2 x3)
 a(rewrite_tac[get_spec¨MkDerTableRowÆ]);
 val €MkDerTableRow_lemma› = save_pop_thm"MkDerTableRow_lemma";
 =TEX
+=SML
+push_goal([], ¨µupd; qdes∑ 
+	Actât upd qdes
+ =	let (query, (dt, errs), st) = qdes
+	in
+	if	≥errs = []
+	then	(st, ([], errs))
+	else if	is_select query
+	then	(st, (GiveData dt, errs))
+	else	(upd (query, (dt, errs), st), ([], []))
+Æ);
+a(REPEAT strip_tac);
+a(lemma_tac¨∂q d e s∑qdes = (q, (d, e), s)Æ 
+	THEN_LIST[id_tac, asm_rewrite_tac[get_spec¨ActâtÆ, let_def]]);
+a(MAP_EVERY ∂_tac [¨Fst qdesÆ, ¨Fst(Fst(Snd qdes))Æ,
+	¨Snd(Fst(Snd qdes))Æ, ¨Snd(Snd qdes)Æ]
+	THEN rewrite_tac[]);
+val €Actât_lemma› = save_pop_thm"Actât_lemma";
+=TEX
 \section{CONSISTENCY PROOFS}
 =SML
 push_consistency_goal¨isErrorÆ;
@@ -173,17 +198,51 @@ a(∂_tac¨OutL veÆ THEN asm_rewrite_tac[]);
 a(∂_tac¨OutR veÆ THEN asm_rewrite_tac[]);
 val €isError_consistency_thm› = save_consistency_thm ¨isErrorÆ (pop_thm());
 =TEX
-\section{$EM\_SecureE$}
+\section{EXECUTION MODEL PARTIAL PROOF}
+We introduce two new conjectures that we believe would be 
+expected of the implementation. The first is  an information flow property 
+stating that if two $SSQL$ states  hide the same then their
+representations as $TSQL$ states when viewed as lists of derived tables
+also hide the same.
 
+πHOLCONST
+‹	€Viewât_secureE› : BOOL
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	Viewât_secureE § 
+‹	µc : Class; s1 s2 : State∑
+‹		hide (c, s1) = hide (c, s2)
+‹		¥	Map (HideDerTable c) (Viewât(reprState s1))
+‹		=	Map (HideDerTable c) (Viewât(reprState s2))
+∞
+
+The second is an information flow property
+on the output filter.
+
+πHOLCONST
+‹	€outputFilter_secureE› : BOOL
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	outputFilter_secureE § 
+‹	µq : Query; c : Class; t1 t2 : DerTable;
+‹		dq : Query; ocq: Query + ONE; fps : FILTER_PARS∑
+‹		≥isError (STP (q, c))
+‹	±	destVal (STP (q, c)) = (dq, ocq, fps)
+‹	±	HideDerTable c t1 = HideDerTable c t2
+‹	¥		outputFilter(c, (GiveData t1, []), fps)
+‹		=	outputFilter(c, (GiveData t2, []), fps)
+∞
+
+We aim to prove that these two conjectures imply $EM\_SecureE$. 
+\subsection{Subsidiary Conjectures and Lemmas}
+The proof
+is simplified by the introduction of the following conjectures.
 =SML
 val €conj100› = ¨Correct_Compile_STP_secure_E ¥ Subsys_SecureEÆ;
 val €conj101› = ¨µ compile upd∑
 	STP ç STP_secure_E compile
 	¥ (EMâ1 compile upd, STP, outputFilter) ç subsys_secureE reprStateÆ;
-val €conj102› = ¨Viewât_secureEÆ;
-val €conj103› = ¨outputFilter_secureEÆ;
-val €conj104› = ¨µt : DerTable ∑ GiveData t = [] § DT_rows t = []Æ;
+val €conj102› = ¨µt : DerTable ∑ GiveData t = [] § DT_rows t = []Æ;
 =TEX
+Next, lemmas about these conjectures.
 =SML
 set_goal([conj101], conj100);
 a(rewrite_tac(map get_spec[¨Correct_Compile_STP_secure_EÆ,
@@ -193,28 +252,7 @@ a(asm_fc_tac[] THEN asm_rewrite_tac[]);
 val €EM_SecureE_Lemma1› = save_pop_thm"EM_SecureE_Lemma1";
 =TEX
 =SML
-push_goal([], ¨
-µupd; qdes∑ 
-	Actât upd qdes
- =	let (query, (dt, errs), st) = qdes
-	in
-	if	≥errs = []
-	then	(st, ([], errs))
-	else if	is_select query
-	then	(st, (GiveData dt, errs))
-	else	(upd (query, (dt, errs), st), ([], []))
-Æ
-);
-a(REPEAT strip_tac);
-a(lemma_tac¨∂q d e s∑qdes = (q, (d, e), s)Æ 
-	THEN_LIST[id_tac, asm_rewrite_tac[get_spec¨ActâtÆ, let_def]]);
-a(MAP_EVERY ∂_tac [¨Fst qdesÆ, ¨Fst(Fst(Snd qdes))Æ,
-	¨Snd(Fst(Snd qdes))Æ, ¨Snd(Snd qdes)Æ]
-	THEN rewrite_tac[]);
-val €Actât_lemma› = save_pop_thm"Actât_lemma";
-=TEX
-=SML
-set_goal([conj102, conj103, conj104], conj101);
+set_goal([¨Viewât_secureEÆ,¨outputFilter_secureEÆ, conj102], conj101);
 a(rewrite_tac(map get_spec[¨subsys_secureEÆ, ¨LetÆ,
 	¨STP_secure_EÆ, ¨ConditionEÆ]));
 a(REPEAT strip_tac);
@@ -256,7 +294,8 @@ a(DROP_NTH_ASM_T 12 ante_tac THEN asm_rewrite_tac[]);
 (* *** Goal "2.1.3" *** *)
 a(contr_tac);
 a(DROP_NTH_ASM_T 12 ante_tac THEN asm_rewrite_tac[]);
-a(DROP_ASM_T¨outputFilter_secureEÆ (strip_asm_tac o rewrite_rule[get_spec¨outputFilter_secureEÆ]));
+a(DROP_ASM_T¨outputFilter_secureEÆ 
+	(strip_asm_tac o rewrite_rule[get_spec¨outputFilter_secureEÆ]));
 a(ALL_ASM_FC_T rewrite_tac []);
 (* *** Goal "2.1.4" *** *)
 a(contr_tac);
@@ -276,15 +315,19 @@ a(asm_rewrite_tac(Actât_lemma::map get_spec[¨EMâ1Æ, ¨EMÆ, ¨LetÆ]));
 val €EM_SecureE_Lemma2› = save_pop_thm"EM_SecureE_Lemma2";
 =TEX
 =SML
-set_goal([], conj104);
+set_goal([], conj102);
 a(rewrite_tac(map get_spec [¨GiveDataÆ, ¨LetÆ]));
 a(REPEAT strip_tac THEN_TRY asm_rewrite_tac[get_spec¨MapÆ]);
 a(all_asm_ante_tac THEN strip_asm_tac(µ_elim ¨DT_rows tÆ list_cases_thm)
 	THEN asm_rewrite_tac[get_spec¨MapÆ]);
 val €EM_SecureE_Lemma3› = save_pop_thm"EM_SecureE_Lemma3";
 =TEX
+\subsection{Partial Proof of $EM\_SecureE$}
+
+Finally, we prove that $Viewât\_secureE$ and $outputFilter\_secureE$ imply $EM\_SecureE$,
+ the main result about the Execution Model.
 =SML
-set_goal([],¨EM_SecureEÆ);
+set_goal([¨Viewât_secureEÆ,¨outputFilter_secureEÆ],¨EM_SecureEÆ);
 a(rewrite_tac[get_spec¨EM_SecureEÆ]);
 a(REPEAT strip_tac);
 a(strip_asm_tac EM_SecureE_Lemma3);
