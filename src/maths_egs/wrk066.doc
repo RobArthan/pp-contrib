@@ -68,14 +68,10 @@ new_parent"fin_set";
 %%%%
 %%%%
 %%%%
+\subsection{Polynomials}
 We define the polynomial functions on the real numbers to be the smallest set
 of functions containing the constant functions and the identity function
 and closed under (point-wise) addition and multiplication.
-%%%%
-%%%%
-%%%%
-%%%%
-\subsection{Polynomials}
 %%%%
 %%%%
 %%%%
@@ -135,6 +131,31 @@ declare_infix(310, "To");
 Ü±	(µf n· f To (n+1) = f To n @ [f n])
 °
 
+\subsection{Series and Power Series}
+The {\em series} defined by a sequence of real terms is, to all intents and
+purposes, the sequence of partial sums of the sequence:
+%%%%
+%%%%
+%%%%
+%%%%
+¹HOLCONST
+Ü ÛSeriesÝ : (î ­ ¯) ­ (î ­ ¯)
+÷üüüüüü
+Ü	(µs· Series s 0 = î¯ 0)
+Ü ±	(µs n· Series s (n+1) = Series s n + s n)
+°
+The {\em power series} defined by a sequence of real coefficients is, in a similar vein,
+the sequence of polynomial functions whose coefficients are given by leading
+subsequences of the sequence:
+%%%%
+%%%%
+%%%%
+%%%%
+¹HOLCONST
+Ü ÛPowerSeriesÝ : (î ­ ¯) ­ (î ­ ¯ ­ ¯)
+÷üüüüüü
+Ü µs n· PowerSeries s n = PolyEval (s To n)
+°
 
 %%%%
 %%%%
@@ -348,6 +369,8 @@ val _ = save_consistency_thm ¬PlusCoeffs® (pop_thm());
 val Ûplus_coeffs_defÝ = get_spec¬PlusCoeffs®;
 val Ûtimes_coeffs_defÝ = get_spec¬TimesCoeffs®;
 val Ûto_defÝ = get_spec¬$To®;
+val Ûseries_defÝ = get_spec¬Series®;
+val Ûpower_series_defÝ = get_spec¬PowerSeries®;
 val Ûlim_seq_defÝ = get_spec¬$->®;
 val Ûlim_fun_defÝ = get_spec¬$-->®;
 val Ûunif_lim_seq_defÝ = get_spec¬$--->®;
@@ -5064,6 +5087,49 @@ a(bc_thm_tac lim_fun_local_thm);
 a(MAP_EVERY ¶_tac[¬B®, ¬A®, ¬g®] THEN REPEAT strip_tac);
 a(LIST_DROP_NTH_ASM_T [4] (ALL_FC_T rewrite_tac));
 val Ûunif_lim_seq_deriv_thmÝ = save_pop_thm "unif_lim_seq_deriv_thm";
+=TEX
+%%%%
+%%%%
+%%%%
+%%%%
+\subsection{Series and Power Series}
+%%%%
+%%%%
+%%%%
+%%%%
+We now prove some basic facts about series and power series.
+
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬µs n x· PowerSeries s n x = Series (Ìm· s m*x^m) n®);
+a(REPEAT strip_tac);
+a(rewrite_tac[power_series_def]);
+a(induction_tac¬n®);
+(* *** Goal "1" *** *)
+a(rewrite_tac[to_def, series_def, poly_eval_def]);
+(* *** Goal "2" *** *)
+a(asm_rewrite_tac[to_def, series_def, poly_eval_def, poly_eval_append_thm,
+	length_to_thm]);
+a(PC_T1 "¯_lin_arith" prove_tac[]);
+val Ûpower_series_series_thmÝ = save_pop_thm "power_series_series_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬µs n· Series s n = PowerSeries s n (î¯ 1)®);
+a(REPEAT strip_tac THEN rewrite_tac[power_series_def]);
+a(induction_tac¬n®);
+(* *** Goal "1" *** *)
+a(rewrite_tac[to_def, series_def, poly_eval_def]);
+(* *** Goal "2" *** *)
+a(asm_rewrite_tac[to_def, series_def, poly_eval_def, poly_eval_append_thm,
+	length_to_thm]);
+a(LEMMA_T ¬µm·î¯ 1^m = î¯ 1® rewrite_thm_tac);
+a(REPEAT strip_tac);
+a(induction_tac ¬m® THEN asm_rewrite_tac[¯_î_exp_def]);
+val Ûseries_power_series_thmÝ = save_pop_thm "series_power_series_thm";
 =TEX
 \subsection{Epilogue}
 =TEX
