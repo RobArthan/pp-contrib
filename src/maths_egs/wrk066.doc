@@ -68,6 +68,8 @@ TO DO:
 to make it trivial to show that a function defined by a differential equation
 satisfied by some power series is the limit of that power series).
 
+4) Prove that log is continuous and differentiable.
+
 %%%%
 %%%%
 =SML
@@ -2464,7 +2466,7 @@ val €lim_seq_open_Ø_thm› = save_pop_thm "lim_seq_open_Ø_thm";
 =TEX
 We now prove the usual topological characterisation of continuity in
 terms of open sets. To avoid complications with relative topologies for now
-we just do the case where the function is continuous on the whole line.
+we just do the cases where the function is continuous on the whole line or on an open set:
 =TEX
 %%%%
 %%%%
@@ -2474,8 +2476,8 @@ set_goal([], ¨µf∑
 §	(µA∑ A ç OpenâR ¥ {x | f x ç A} ç OpenâR)
 Æ);
 a(REPEAT_N 3 strip_tac);
-(* *** Goal "1" *** *)
 a(rewrite_tac[cts_at_def, open_Ø_delta_thm] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
 a(all_asm_fc_tac[]);
 a(list_spec_nth_asm_tac 5 [¨tÆ, ¨dÆ]);
 a(∂_tac¨d'Æ THEN REPEAT strip_tac);
@@ -6993,11 +6995,18 @@ The exponential function is monotonic increasing:
 %%%%
 
 =SML
-set_goal([], ¨µx y∑  x < y ¥ Exp x < Exp yÆ);
+set_goal([], ¨µx y∑  x < y § Exp x < Exp yÆ);
+a(lemma_tac¨µx y∑  x < y ¥ Exp x < Exp yÆ);
+(* *** Goal "1" *** *)
 a(REPEAT strip_tac);
 a(bc_thm_tac deriv_0_less_thm);
 a(asm_rewrite_tac[exp_cts_thm]);
 a(REPEAT strip_tac THEN ∂_tac¨Exp x'Æ THEN rewrite_tac[exp_def, exp_0_less_thm]);
+(* *** Goal "2" *** *)
+a(REPEAT strip_tac THEN1 all_asm_fc_tac[]);
+a(cases_tac¨x = yÆ THEN1 all_var_elim_asm_tac1);
+a(contr_tac THEN lemma_tac¨y < xÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]
+	THEN all_asm_fc_tac[] THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 val €exp_less_mono_thm› = save_pop_thm "exp_less_mono_thm";
 =TEX
 
@@ -7020,6 +7029,117 @@ a(∂_tac¨fÆ THEN REPEAT strip_tac);
 a(POP_ASM_T bc_thm_tac THEN REPEAT strip_tac);
 val _ = save_consistency_thm ¨LogÆ (pop_thm());
 val €log_def› = get_spec¨LogÆ;
+=TEX
+
+The exponential function is one-to-one:
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨OneOne ExpÆ);
+a(rewrite_tac[one_one_def] THEN contr_tac);
+a(lemma_tac¨x1 < x2 ≤ x2 < x1Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]
+	THEN all_fc_tac[exp_less_mono_thm] THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+val €exp_one_one_thm› = save_pop_thm "exp_one_one_thm";
+=TEX
+
+The exponential function maps natural number multiples to powers:
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µm x∑ Exp (ÓØ m *x) = Exp x ^ mÆ);
+a(REPEAT strip_tac THEN induction_tac¨m:ÓÆ THEN
+	asm_rewrite_tac[Ø_Ó_exp_def, exp_def, ÓØ_plus_homomorphism_thm,
+		Ø_times_plus_distrib_thm, exp_plus_thm]);
+a(PC_T1 "Ø_lin_arith" prove_tac[]);
+val €exp_Ø_Ó_exp_thm› = save_pop_thm "exp_Ø_Ó_exp_thm";
+=TEX
+
+The exponential function maps the real line onto the positive reals:
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µx∑  ÓØ 0 < x ¥ ∂y∑x = Exp yÆ);
+a(REPEAT strip_tac);
+a(lemma_tac¨(∂b∑ x < Exp b) ± (∂a∑Exp a < x)Æ THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(lemma_tac¨∂d∑ ÓØ 1 < Exp dÆ THEN1
+	(∂_tac¨ÓØ 2Æ THEN rewrite_tac[eq_sym_rule(±_left_elim exp_def)] THEN
+		bc_thm_tac exp_less_mono_thm THEN REPEAT strip_tac));
+a(all_fc_tac[Ø_Ó_exp_tends_to_infinity_thm]);
+a(POP_ASM_T (strip_asm_tac o µ_elim¨xÆ));
+a(∂_tac¨ÓØ m * dÆ THEN asm_rewrite_tac[exp_Ø_Ó_exp_thm]);
+(* *** Goal "2" *** *)
+a(lemma_tac¨∂d∑ ÓØ 0 < Exp d ± Exp d < ÓØ 1Æ THEN1
+	(∂_tac¨~(ÓØ 2)Æ THEN
+		rewrite_tac[eq_sym_rule(±_left_elim exp_def), exp_0_less_thm] THEN
+			bc_thm_tac exp_less_mono_thm THEN REPEAT strip_tac));
+a(all_fc_tac[Ø_Ó_exp_tends_to_0_thm]);
+a(∂_tac¨ÓØ m'* dÆ THEN asm_rewrite_tac[exp_Ø_Ó_exp_thm]);
+(* *** Goal "3" *** *)
+a(lemma_tac¨a < bÆ THEN1 contr_tac);
+(* *** Goal "3.1" *** *)
+a(lemma_tac ¨Exp a < Exp bÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(cases_tac¨a = bÆ THEN1 all_var_elim_asm_tac1);
+a(lemma_tac ¨b < aÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(lemma_tac ¨Exp b <  Exp aÆ THEN1 all_fc_tac[exp_less_mono_thm]);
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "3.2" *** *)
+a(ante_tac (list_µ_elim[¨ExpÆ, ¨aÆ, ¨bÆ] intermediate_value_thm));
+a(asm_rewrite_tac[exp_cts_thm]);
+a(REPEAT strip_tac THEN all_asm_fc_tac[]);
+a(∂_tac¨x'Æ THEN asm_rewrite_tac[]);
+val €exp_0_less_onto_thm› = save_pop_thm "exp_0_less_onto_thm";
+=TEX
+
+The exponential function is a left inverse for the natural logarithm function on the
+positive reals:
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µx∑  ÓØ 0 < x ¥ Exp(Log x) = xÆ);
+a(REPEAT strip_tac);
+a(all_fc_tac[exp_0_less_onto_thm] THEN all_var_elim_asm_tac1);
+a(rewrite_tac[log_def]);
+val €exp_log_thm› = save_pop_thm "exp_log_thm";
+=TEX
+
+The natural logarithm function is strictly monotonic on the positive reals:
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µx y∑  ÓØ 0 < x ± x < y ¥ Log x < Log yÆ);
+a(REPEAT strip_tac);
+a(all_fc_tac[Ø_less_trans_thm]);
+a(once_rewrite_tac[exp_less_mono_thm]);
+a(ALL_FC_T asm_rewrite_tac[exp_log_thm]);
+val €log_less_mono_thm› = save_pop_thm "log_less_mono_thm";
+=TEX
+
+The natural logarithm function is continuous on the positive reals:
+%%%%
+%%%%
+
+=SML
+(* TBD
+set_goal([], ¨µx∑  ÓØ 0 < x ¥  Log CtsAt xÆ);
+a(rewrite_tac[cts_at_def] THEN REPEAT strip_tac);
+a(lemma_tac¨ÓØ 0 < Exp(Log x + e) ± ÓØ 0 < Exp (Log x + ~e)Æ
+	THEN1 rewrite_tac[exp_0_less_thm]);
+
+a(strip_asm_tac (list_µ_elim[¨xÆ, ¨Exp (Log x + e)Æ, ¨Exp (Log x + ~e)Æ] Ø_bound_below_3_thm));
+a(∂_tac ¨dÆ THEN REPEAT strip_tac);
+a(POP_ASM_T ante_tac THEN	
+	ALL_FC_T1 fc_§_canon rewrite_tac[Ø_abs_diff_bounded_thm]);
+a(REPEAT strip_tac);
+
+val €log_cts_thm› = save_pop_thm "log_cts_thm";
+*)
+=TEX
 =TEX
 %%%%
 %%%%
