@@ -1,0 +1,149 @@
+=TEX
+% TQtemplate.tex
+\documentstyle[hol1,11pt,TQ]{article}
+\def\Hide#1{}
+\def\Bool{``$\it{:}bool\,$''}
+\makeindex
+\TPPproject{DRA FRONT END FILTER PROJECT}  %% Mandatory field
+%\TPPvolume{}
+%\TPPpart{}
+\TPPtitle{A Standard ML Specification of the Output Filter}  %% Mandatory field
+\TPPref{DS/FMU/FEF/023}  %% Mandatory field
+\def\SCCSversion{$Revision$
+}
+\TPPissue{\SCCSversion}  %% Mandatory field
+\TPPdate{\FormatDate{$Date$
+}}  %% Mandatory field (with sensible default)
+\TPPstatus{Draft}			%% Mandatory field
+\TPPtype{Specification}
+\TPPkeywords{}
+\TPPauthor{G.~M.~Prout & WIN01}  %% Mandatory field
+%\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
+\TPPauthorisation{R.B.~Jones & HAT Manager}
+\TPPabstract{A specification of the output filter in Standard ML for the
+DRA front end filter project RSRE 1C/6130.}
+%\TPPabstractB{}
+%\TPPabstractC{}
+%\TPPabstractD{}
+%\TPPabstractE{}
+%\TPPabstractF{}
+\TPPdistribution{\parbox[t]{4.0in}{%
+	HAT FEF File \\
+	Simon Wiseman
+}}
+%\TPPclass{CLASSIFICATION}
+\newfont{\icllogo}{icllogo50}
+\def\TPPheadlhs{$\vcenter{\halign{##\cr\icllogo ICL\cr}}$}
+%\def\TPPheadlhs{}
+%\def\TPPheadcentre{}
+%def\TPPheadrhs{}
+%\def\TPPfootlhs{}
+%\def\TPPfootcentre{}
+%\def\TPPfootrhs{}
+
+\begin{document}
+\TPPsetsizes
+\makeTPPfrontpage
+
+\vfill
+\begin{centering}
+
+%\bf Copyright \copyright\ : International Computers Ltd \number\year
+
+\end{centering}
+
+\newpage
+\section {DOCUMENT CONTROL}
+\subsection{Contents List}
+\tableofcontents
+\subsection{Document Cross References}
+\bibliographystyle{fmu}
+\bibliography{fmu,fef}
+
+\subsection{Changes History}
+\begin{description}
+\item[Issue \SCCSversion ({\FormatDate{$Date$
+}})]  First issue.
+\end{description}
+
+\subsection{Changes Forecast}
+None.
+\pagebreak
+\section{GENERAL}
+\subsection{Scope}
+This document gives a formal specification in Standard ML of the SWORD front end filter of \cite{output}.
+
+\subsection{Introduction}
+\section{FILTER FUNCTIONS FOR SELECT QUERIES}
+=SML
+exception internalError;
+=TEX
+The type of the data is left as generic. The function 
+$class‰v$ returns the classification of a piece of data that is to
+ be treated as a classification.
+=SML
+fun 	(Ûclass‰vÝ: 'v  -> Class) v  = raise notDefined "class‰v";
+=TEX
+The user's clearance is supplied as parameter to the following functions.
+
+
+The function $filter\_where\_row$ takes a data list whose 
+ first element is the classification 
+of the where clause, removes the classification 
+of the where clause from the head of the list and also 
+returns a boolean which is $true$ if the user is not cleared to see the where clause. 
+=SML
+fun 	(Ûfilter_where_rowÝ : 'v list * Class -> 'v list * bool) 
+				([],uc) = raise internalError
+|	filter_where_row 	(v::vs,uc) =  (vs, not (uc dom (class‰v v)));
+=TEX
+The function $filter\_where$ discards rows  where the user is not cleared to see the where clause and also returns a boolean $true$ if any rows have been discarded.
+=SML
+fun 	(Ûfilter_whereÝ : 'v list list * Class -> 'v list list * bool) 
+			([],uc) = ([],false)
+|	filter_where 	((vs::vss),uc) = 	let 	val(fds,msg) = filter_where_row(vs,uc)
+							val(fdss,msgs) = filter_where(vss,uc)
+						in 	if msg then (fdss,true)
+							else (fds::fdss,msgs)
+						end;
+=TEX
+If the user is not cleared to see the data in a particular field, the string $not\_cleared$ is returned.
+=SML
+fun 	(Ûfilter_colsÝ : Class * ('v list * bool list)  -> ('v,string)Sum list ) 
+			(uc,([],[])) = []
+|	filter_cols	(uc,(v::c::vs,true::bs)) = 	
+			let 	val fv = 	if uc dom class‰v c
+						then Inl v
+						else Inr  "not_cleared"
+			in fv :: filter_cols(uc,(vs,bs))
+			end
+|	filter_cols	(uc,(v::vs,false::bs)) = Inl v :: filter_cols(uc,(vs,bs))
+|	filter_cols 	other = raise internalError;	
+=TEX
+The boolean parameter to the function $filter\_select$ 
+ is $true$ 
+if the lists of data contain the class of the where clause 
+as first elements. The boolean list parameter provides 
+information as to whether it is necessary to check if the 
+user's clearance dominates the classification of the data
+selected. $filter\_select$ returns the filtered data 
+together with a boolean which determine whether or not the 
+$mayNotBeComplete$ 
+message should be issued.
+
+=SML
+fun 	(Ûfilter_selectÝ : bool * bool list  * 'v list list * Class -> ('v,string)Sum list list * bool) 
+			(true,cls,vss,uc) = 	let val (fvss,nc) = filter_where(vss,uc)
+						in ((at2 (map(curry filter_cols uc))
+							(fvss,seq(length fvss,cls))),nc)
+						end
+|	filter_select	(false,cls,vss,uc) = 	((at2 (map(curry filter_cols uc))
+							(vss,seq(length vss,cls))),false);	
+=TEX
+\newpage
+\twocolumn[\section{INDEX} \label{INDEX}]
+\small
+\printindex
+
+\end{document}
+
