@@ -161,8 +161,8 @@ Modifications on 28/2/92 version are marked by sidelines.
 \section{FURTHER ISSUES}
 There is a problem if a user tries to access a table whose classification is not dominated by his clearance;
 suggest an $accessDenied$ error message.
-\section{PHASE TWO ERRORS}
-Many errors reported in the transformation specs of 06/01/93 (see file of replaced specs).
+\section{PHASE TWO SPECIFICATION PROBLEMS}
+Many minor errors reported in the transformation specs of 06/01/93 (see file of replaced specs).
 
 The following  give rise to possible security violations: 
 \subsection{Output Filter}
@@ -214,34 +214,115 @@ the g.l.b is bottom. Replaced by l.u.b.s. Similar problem (and solution) for
 $simplify\sb{ors}$.
 
 
-\section{ADJUSTMENTS MADE TO TSQL EXECUTION MODEL}
+\section{PROBLEMS DETECTED DURING PHASE 2 PROOFS}
 During the Phase 2 proof stage it was discovered necessary to
 make minor amendments to the $HideDerTableData$ operation
- and the table computation specifications.
+in version 1.16 of \cite{DS/FMU/FEF/026}  and the value and table computation
+specifications in version 1.13 of \cite{DS/FMU/FEF/032}.  (The versions
+mentioned are those of the drafts delivered to DRA just before the phase 2
+proof work was begun in anger.)
 
-Originally, $HideDerTableData$ threw away not only rows about whose existence
-the user is not cleared to know but also rows where the class
-of the $Where$ clause is not dominated by the clearance
-of the user. This was intended to model not only the computations
-on the table, but also the action of the output filter. However,
- the $Where$ operation only throws away rows whose existence
-the user is not cleared to know (in order to determine whether
-or not a $MayNotBeComplete$ message is appropriate). $HideDerTableData$
-strengthened accordingly.
+\subsection{$HideDerTableData$}
 
-The specification of $Where$ was changed to ensure
-that only those rows about whose existence the user
-is cleared to know were involved in the value computation.
+Originally, $HideDerTableData$ in \cite{DS/FMU/FEF/026} threw away not
+only rows whose existence the client is not cleared to know but also
+rows where the class of the $Where$ clause is not dominated by the
+clearance of the user. This was intended to model not only the phase 1
+hiding operation on the table, but also,  mistakenly, the action of the
+output filter.  However, the $Where$ operation only throws away rows
+whose existence the client is not cleared to know (so that the output
+filter can determine whether or not a $MayNotBeComplete$ message is
+appropriate).  $HideDerTableData$ has been modified to retain rows for
+which the user is not cleared to evaluate the $WHERE$ clause. This
+gives stronger inductive hypotheses for the proofs about the value and
+table computations of \cite{DS/FMU/FEF/032}, from which the desired
+facts about the results of the output filtering still follow.
 
-Amendments to  the table computation specifications were 
-made to ensure
-that the classification label associated with output 
-is not itself a covert channel (in particular $Group$ and $AllTuples$). 
+This change is essentially concerned with the internal details of
+the formalisation and has no direct impact for the security of the
+system.
+
+\subsection{$Where$}
+
+The specification of $Where$ in \cite{DS/FMU/FEF/032} was changed (a)
+so that rows for which the client is not cleared to evaluate the
+$WHERE$ clause are retained and (b) so that rows whose existence the
+user is not cleared to know are removed at the outset.
+(a) was just an oversight in transcribing the effect of
+$tuple\_list\sb{make\_outer}$. (b) was found necessary to ensure that
+aggregate functions such as $COUNT(*)$ inside the $WHERE$ clause itself
+are not a source of covert channels. E.g. the output produced by a query such as:
+
+=GFT SSQL query
+SELECT * FROM X WHERE COUNT(*) = 1
+=TEX
+
+should only depend on rows whose existence the client is cleared to know.
+
+\subsection{$Group$}
+
+The specification of $Group$ in \cite{DS/FMU/FEF/032} was changed
+so that the clearance returned does not depend on the result of the
+grouping if the client is not cleared to know the information required
+to partition the table into groups. If this is not done then the clearance
+is itself a possible covert channel. This covert channel would not arise in
+practice in an implementation which signals possible insecurity in inner selects
+by raising exceptions. 
+
+\subsection{$Alltuples$}
+
+The specification of $Alltuples$ in \cite{DS/FMU/FEF/032} was changed
+so that the clearance returned does not depend on the result of
+$Group$ function if the client is not cleared to compute
+the operands of the $Alltuples$ operation.
+
+
+As with the change to $Group$, if this is not done then the clearance
+is itself a possible covert channel; moreover, the covert channel would
+not arise in practice in an implementation which signals possible
+insecurity in inner selects by raising exceptions.
+
+\subsection{$ExistsTuples$/$SingleValue$}
+
+As formalised in version 1.13 of \cite{DS/FMU/FEF/032}, the clearance
+returned by these value forms would itself be a possible covert channel.
+They have been modified to model more closely an implementation which
+detects immediately the situation where the client is not cleared to evaluate
+the operand table.
+
+\subsection{$SetFuncAllAnd$/$SetFuncAllOr$/$BinOpAnd$/$BinOpOr$}
+
+In version 1.13 of \cite{DS/FMU/FEF/032}, the logical operators were
+formulated so that $AND$, for example, would return the l.u.b. of
+the clearances associated with $false$ operands if there were any such operands.
+This make the clearance returned a possible covert channel. The $AND$ operation
+is now defined to return the l.u.b. of the clearances associated with the
+$false$ operands which the client is cleared to see (if there are any). This
+is secure and permits the desired use of forms such as:
+
+=GFT SSQL Example
+	my_clearance DOM CLASS OF x AND x > 0
+=TEX
+
+(In fact, the current formulation would still be secure, no matter
+what fixed means of combining the clearances were used instead of l.u.b.,
+since only clearances associated with $false$ value the client is cleared
+to know are combined.)
 
 \section{PHASE 2 ISSUES}
-What about ordering of retrieval in selects. Appears to be 
-implicit sorting by virtue of indexing. One solution - with 
-a uniqueness constraint (e.g. primary key column) everything at same class.
+
+\subsection{Ordering of Tables}
+
+The formulation of \cite{DS/FMU/FEF/034} uses an ordering on the tables
+computed which is independent of the values held in the columns of the
+tables and so the ordering is not a potential covert channel. If in the
+actual implementation data-dependent ordering criteria are used then
+the system will be insecure unless steps are taken to ensure that the client
+is cleared to know the information required to order the table.
+
+\subsection{Modelling Issues}
+See section 3.5 of \cite{DS/FMU/FEF/034} for a discussion of modelling
+assumptions made in the phase 2 formal treatment.
 
 \end{document}
 
