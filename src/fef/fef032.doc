@@ -113,27 +113,41 @@ open_theory "fef026";
 new_theory€"fef032"›;
 push_pc "hol";
 =TEX
+\pagebreak
 \section{DISCUSSION}
+\subsection{Objectives}
 The objective of this document is to define a set of operations on the
 derived tables of \cite{DS/FMU/FEF/026} in terms
 of which it is possible to characterise the allowable results of
-compiling the queries produced by the SSQL Transformation processor.
+compiling the queries produced by the SSQL Transformation Processor.
 This is intended to give some insight into the intuitions about operations
-on tables which motivate the transformations.
+on tables which motivate the transformations. It is also intended to
+allow formal reasoning about a reasonably accurate formal model of
+the transformations.
+
+\subsection{Formal Approach}
 
 The idea is to identify the primitive operations on tables and on the
 security information in them which underlie the semantics of SSQL and
 its implementation via the transformations. This amounts to something like
-an SSQL analogue of the relational algebra in which clearances are
-computed along with the required data operations.
+an SSQL analogue of the relational algebra in which security classifcations are
+computed along with the data operations. The critical properties
+of \cite{DS/FMU/FEF/026} may then be rephrased to say something like
+``provided the SSQL Transformation Processor always produces TSQL qeury
+sequences which could equally well have been computed by this SSQL
+relational algebra, then the security policy will be enforced''.
+Since the computation of security classifications can be formalised
+in a way which reflects the syntactic formulation of the transformations
+in \cite{trans}, the proviso here is amenable to informal checking, and as
+the semantic framework in which these computations are formalised is
+much simpler than the syntactic one, their information flow properties
+is amenable to formal reasoning.
 
-The clearance computations are, at least informally, fairly directly
-related to the clearance computations which are implicit in the
-transformations of \cite{trans}.  The definitions are formally related to the
+The definitions of the computations are formally related to the
 security policy by using them to characterise a class of table
-computations for which the risk inputs are either empty or have a known
-form. This is then used to give a sufficient condition for the truth
-of the assertion
+computations for which the risk inputs, as defined in \cite{DS/FMU/FEF/026},
+are either empty or have a known form. This is then used to give a sufficient
+condition for the truth of the assertion
 =INLINEFT
 STP ç STP_secure_E compile
 =TEX
@@ -142,33 +156,292 @@ This sufficient condition can be seen to relate more closely, at least informall
 to the internal details of the transformations than the definition
 of $STP\_secure$ itself.
 
-It turns out to be convenient to organise the SSQL constructs into
-three levels.
+\pagebreak
+\subsection{Example}
 
-To handle nested selects, we need to pass around a list of derived
-tables to be selected from.
-The simpler forms of expression are therefore covered by the following
-type abbreviation:
-=SML
-declare_type_abbrev(€"VALUE_COMP"›, [],
-	î(DerTable LIST ≠ DerTableRow LIST≠ DerTableRow ≠ (Class ∏ Item))Æ);
+We formulate the SSQL analogue of the relational algebra in a style which
+amounts to a ``semantic embedding'', e.g. see\cite{Gordon88},
+of the relevant aspects of the SSQL language. It may be helpful to
+give a tiny example of this type of approach. For completeness,
+the example includes two short proofs, but understanding of these
+should not be necessary to use the example to motivate the specifications
+in the rest of the document.
+
+We consider a language of expressions
+formed from constants, $K$, variables, $V$ and addition:
+=GFT Example Syntax
+	E = K | V | E, +, E
 =TEX
-We use the term {\em table expression} for the various building blocks of the
-$SELECT$ query and the following type abbreviation reflects this:
+If the variables are to range over the natural numbers, a semantic
+embedding for this little language might go as follows.
+
+First of all, we identify the domain over which the semantic values
+of expressions range. In this case, the domain is the set of
+functions on the natural numbers taking natural number valules;
+after some preliminary red tape, we capture this in a type abbreviation
+
+=SML
+open_theory"fin_set";
+new_theory"eg";
+=TEX
+=SML
+declare_type_abbrev("E", [], î Ó ≠ Ó Æ);
+=TEX
+
+We now define the semantic functions for the three constructors
+for expressions, arranging to do this so that they compose in a way
+which corresponds closely to the abstract structure of the syntax:
+
+πHOLCONST
+‹	K : Ó ≠ E;
+‹	V : E;
+‹	P : E ≠ E ≠ E
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	(µn∑ K n = Ãi∑ n)
+‹±	(V = Ãi∑ i)
+‹±	(µeâ1 eâ2∑ P eâ1 eâ2 = Ãi∑ eâ1 i + eâ2 i)
+∞
+
+We now wish to define the totality of all functions which arise
+as the semantics of expressions in the little language; we do
+this by forming the smallest set of functions which contains all the
+``ground'' functions $K\,i$ and $V$ and is closed under the constructor $P$:
+
+πHOLCONST
+‹	A : E 
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	A = •{B | (µi∑K i ç B) ± V ç B ± (µfâ1 fâ2∑ fâ1 ç B ± fâ2 ç B ¥ P fâ1 fâ2 ç B)}
+∞
+
+Now we can derive an induction principle for the set $A$. Note that
+the induction principle gives a means of reasoning by ``induction over
+the syntax of the language'' without our having to define the syntax!
+=SML
+set_pc"hol2";
+set_goal([], ¨
+	µp:E ≠ BOOL∑
+		(µi∑ p(K i))
+	±	p V
+	±	(µfâ1 fâ2∑ fâ1 ç A ± p fâ1 ± fâ2 ç A ± p fâ2 ¥ p(P fâ1 fâ2))
+	¥	(µf∑f ç A ¥ p f)
+Æ);
+=TEX
+The proof of this is an essentially mechanical reformulation in terms
+of properties of the definition of $A$, which used sets.
+=SML 
+a(rewrite_tac[get_spec¨AÆ] THEN REPEAT strip_tac);
+a(POP_ASM_T (strip_asm_tac o rewrite_rule[get_spec¨AÆ]
+		o µ_elim¨{g | g ç A ± p g}Æ)
+	THEN all_asm_fc_tac[]THEN all_asm_fc_tac[]);
+val A_induction_thm = save_pop_thm"A_induction_thm";
+=TEX
+The induction principle (expressed as a HOL theorem) may readily
+be turned into a tactic using a standard \Product\ tactic-generating
+function:
+=SML
+val A_induction_tac = gen_induction_tac1 A_induction_thm;
+=TEX
+This tactic may now be used to reason about the functions in $A$.
+For example, we can prove that all of the functions in the set $A$ have
+can be written in a simple normal form:
+=SML
+set_goal([], ¨
+	µf∑ f ç A ¥ ∂n k∑f = Ãi∑n*i + k
+Æ);
+=TEX
+After applying the induction tactic, this goal reduces to three cases
+as one might expect, and the proofs in each case are straightforward:
+=SML
+a(strip_tac THEN A_induction_tac);
+(* *** Goal "1" *** *)
+a(∂_tac¨0Æ THEN ∂_tac¨iÆ THEN rewrite_tac[get_spec¨KÆ]);
+(* *** Goal "2" *** *)
+a(∂_tac¨1Æ THEN ∂_tac¨0Æ THEN rewrite_tac[get_spec¨VÆ]);
+(* *** Goal "3" *** *)
+a(∂_tac¨n + n'Æ THEN ∂_tac¨k + k'Æ THEN asm_rewrite_tac[get_spec¨PÆ]
+	THEN PC_T1 "lin_arith" prove_tac[]);
+val A_normalisation_thm = save_pop_thm"A_normalisation_thm";
+=TEX
+Now we tidy up by removing the theory in which the example was produced.
+=SML
+open_theory"fef032";
+delete_theory"eg";
+=TEX
+
+\pagebreak
+\subsection{Overview}
+
+The plan of what follows is similar in broad outline to the example
+of the previous section. However, because we are dealing with a significant
+fragment of a real language, the details are quite a lot more complex.
+
+First we must identify the relevant semantic domains.  As in
+\cite{DS/FMU/FEF/026}, we wish to simplify matters by ignoring naming
+issues. Thus, the rather elaborate means provided by SSQL to name
+objects are modelled here by numerical indices of columns in tables or
+of tables within a list of same.  We will also ignore type distinctions
+in the syntax, although we will try to point out informally places
+where type information may be relevant to security. Of course, the
+underlying data we work with is the typed data of the SSQL
+specification as formalised in \cite{DS/FMU/FEF/004}, so to that extent
+the treatment does reflect the type system of SSQL.  Furthermore, we
+are only concerned with the $SELECT$ query, and some of the syntactic
+sorts of SSQL are not part of the data manipulation language and are
+not treated here.  After these simplifications, there are really only
+two semantically distinct syntactic sorts left, namely {\em values},
+denoting the sort of things which appear in the fields of a database
+row and, {\em tables} denoting whole tables.  The correspondences
+between this simplified view of sorts and that of the SSQL
+specification of \cite{specssql} is shown in the following table:
+
+\begin{center}
+\begin{tabular}{|l|l|p{4.0in}|}\hline
+SSQL & Simplified & Remarks \\
+Sort & Sort & \\\hline\hline
+$Type$ & n/a & see above \\\hline
+$Clause$ & n/a & not part of the DML \\\hline
+$Constant\_value$ & VALUE & distinction from $Value$ not relevant here \\\hline
+$Value$ & VALUE & --- \\\hline
+$Col\_spec$ & n/a & numeric index used instead \\\hline
+$Table\_spec$ & n/a & numeric index used instead \\\hline
+$Col\_name$ & n/a & numeric index used instead \\\hline
+$From\_spec$ & TABLE & distinction from $Tuple\_list$ not relevant here \\\hline
+$Target\_spec$ & n/a & not part of the $SELECT$ query \\\hline
+$Set\_clause$ & n/a & not part of the $SELECT$ query \\\hline
+$Tuple\_list$ & TABLE & distinction from $From\_spec$ not relevant here \\\hline
+$Select\_value$ & TABLE & distinction from $Value$ not relevant here \\\hline
+$Select\_list$ & TABLE & just a list of $Select\_value$s \\\hline
+$Query$ & TABLE & only dealing with $SELECT$ here \\\hline
+$BoundQuery$ & n/a & distinction from $Query$ not relevant here \\\hline
+\end{tabular}
+\end{center}
+
+The type we use for computations of sort $TABLE$ is closely
+related to type used to model the TSQL compiler in \cite{DS/FMU/FEF/026}:
+in that document the compiler is thought of as a function which
+given a query produces a function on lists of derived tables; the result
+returned by the function representing a compiled query is a pair comprising
+a new derived table and a list of error indicators. Here, on
+the one hand, for simplicity, we assume that error detection in the TSQL
+database is disabled (as, indeed, we understand it is likely to be in
+the SWORD implementation); on the other hand, we need some additional
+information to keep track of a security-relevant issue which is
+not currently addressed in \cite{trans}, namely, a classification to
+be used when a table computatation appears within some other computation,
+i.e., a nested $SELECT$. This classification represents the clearance
+required to evaluate the $GROUPBY$ and $HAVING$ clauses in the nested
+$SELECT$. We arrive at the type given in the following type abbreviation
+for the semantics of table computations.
+
 =SML
 declare_type_abbrev(€"TABLE_COMP"›, [],
 	îDerTable LIST ≠ (Class ∏ DerTable)Æ);
 =TEX
+
+The type used for computations of sort $VALUE$, which we will often
+refer to as {\em expressions}, is a little bit more
+complicated and is forced on us by the SSQL semantics. The simplest
+expressions just read some fields in a table row and produce a class
+and a data item. The set functions operate on a list of rows determined
+by the $GROUPBY$ clause in the surrounding table computation.
+The $exists\_tuples$ and $single\_value$ expressions operate
+on a nested $SELECT$ and so require access to the list of derived tables
+which was the operand of the surrounding table computation. We arrive
+at the type of functions with three arguments given in the
+following type abbreviation for the semantics of value computations:
+
+=SML
+declare_type_abbrev(€"VALUE_COMP"›, [],
+	î(DerTable LIST ≠ DerTableRow LIST≠ DerTableRow ≠ (Class ∏ Item))Æ);
+=TEX
+
+The semantic functions for the value and table  computations
+are defined in sections \ref{VALUECOMPUTATIONS} and \ref{TABLECOMPUTATIONS}
+respectively. Section \ref{CLOSUREOPERATION} brings
+these definitions together to define the algebra of relational operations
+which we will claim has the relevant security properties.
+Section \ref{CRITICALPROPERTIES} defines some notions relating
+the earlier material to the critical properties identified
+in \cite{DS/FMU/FEF/026}.
+
+\pagebreak
+\subsection{Omissions and Assumptions}
+The present version of this document omits certain features of
+the transformations of \cite{trans} and relies on various simplifying
+assumptions. These shortcomings arise from several practical difficulties,
+and it may be helpful to summarise these here:
+
+\begin{enumerate}
+\item
+The representation of SSQL data items is borrowed from the Phase 1 work on the
+semantics in \cite{DS/FMU/FEF/004}; this uses a different treatment of sterling
+and dinary data from \cite{trans} and the more recent issues of \cite{specssql}.
+For present purposes, where the syntax has separate options for selecting
+or defining data as sterling or dinary, we have just modelled the default
+(sterling) case. It seems unlikely that amending the present specification
+to handle the more recent syntax would significantly affect the relevant
+security issues.
+\item
+The $all\_bin\_op$, $some\_bin\_op$ 
+value forms and their $\_list$ variants are not catered for.
+This is because there were some small problems with the treatment
+of these which were remarked upon when \cite{DS/FMU/FEF/020} was being written,
+and it was agreed at that time to leave these out.
+Remedying these deficiencies would probably be straightforward and introduce
+no significant new features as regards security.
+\item
+The $row\_existence$ and $joined\_row\_existence$ value forms have been omitted
+in the present draft. This is because both the classification and
+the value associated with them appears to be defined by the structure of the SSQL
+database, which is assumed to be fixed for the purposes of the present exercise.
+\item
+The $context$ and $parameter$ value forms are omitted, since it is assumed
+that the relevant information has already been bound into the query being
+processed.
+\item
+The model given here effectively suppresses errors arising in the
+evaluation of queries. It is understood that such errors will actually
+be suppressed in the SWORD implementation since there are known security
+risks associated with them.
+\item
+The $classify$ and $clasify\_default$ value forms, are treated in
+\cite{trans} so as to allow a client to regrade a value arbitrarily.
+This is not secure. It is understood that the use of these forms is
+intended to be restricted to the generation of values for use in
+update and insert operations, in circumstances where it has already been
+checked whether the client is cleared to know the value in question.
+These forms are therefore not properly part of the $SELECT$ query and
+have been omitted.
+\item
+The transformations of \cite{trans} are understood to be too lax with
+nested $SELECT$s. The approach taken here is to associate an overall
+class with the derived table produced by a nested $SELECT$ and
+to let this propagate up into the surrounding expression so that it
+can be checked against the client clearance when the computation is complete.
+It is believed that this approach cannot be implemented with available TSQL
+implementations --- it would most naturally correspond to the transformed
+query generating some form of exception if the client was not cleared to
+know the result of the nested table computation, but this cannot be achieved.
+The approach taken here can be viewed as compatible with a treatment
+of nested $SELECT$s in which the transformations effectively attempt to evaluate
+the check statically and refuse to allow the query if this static check
+fails or if it cannot be evaluated at transformation-time.
+\item
+The semantics of the $SELECT\,DISTINCT$ query require duplicate rows
+to be eliminated from the result table; the semantics
+of the $EVALUATE$ query require an error to be signalled if the expression
+being evaluated is not single-valued on each group determined by the
+$GROUPBY$ clause. The transformations of \cite{trans} do not, however,
+introduce any checks that the client is cleared to have the necessary
+calculations performed. This point has not yet been addressed here,
+and, while semantic functions for these queries are given following
+\cite{trans}, they
+are commented out of the construction in section \ref{CLOSUREOPERATION},
+since they are known not to be secure
+\end{enumerate}
+
+\pagebreak
 \section{VALUE COMPUTATIONS}\label{VALUECOMPUTATIONS}
-We view the semantics of most value, (i.e. expression)
-forms as functions from table
-rows to class-item pairs.  E.g., if a table includes columns called $a$
-and $b$, the semantics of $a + b$ will be the function which given a
-row in which the values of $a$ and $b$ are $\alpha$ and $\beta$ say,
-and the classifications of $a$ and $b$ are $c$ and $d$ say, returns
-$(c\,\hbox{lub}\,d, \alpha + \beta)$.
-
-
 
 The particular expression forms which model those of TSQL
 are given in sections \ref{DenoteConstant} to \ref{Contents} below.
@@ -250,7 +523,7 @@ $false$.
 ‹	let	cvl = Map (Ãe∑e tl rl r) el
 ‹	in let	v = ListAnd(Map (ItemBool o Snd) cvl)
 ‹	in let	makecase(c, u) = if  ItemBool u  then  lattice_top  else  c
-‹	in	((if  v  then  lubl(Map Fst cvl)  else	glbl(Map makecase cvl)),
+‹	in	((if  v  then  lubl(Map Fst cvl)  else  glbl(Map makecase cvl)),
 ‹		 BoolItem v)
 ∞
 Now $BinOpOr$ which embodies the algorithm of $simplify\sb{ors}$.
@@ -560,17 +833,18 @@ which appear in the $GROUPBY$ clause. If the (item part of the) expression
 parameter gives the same value in each row then that value is returned
 classified with the l.u.b. of the classes returned for the rows; otherwise,
 a fixed arbitrary value is returned with the same classification
-(modelling a compile/transformation-time error). 
+(modelling a compile/transformation-time error). This effect may be
+achieved using the general set function $SetFuncAll$ as follows:
 
 πHOLCONST
 ‹	€CommonValue›	: VALUE_COMP ≠ VALUE_COMP
 ˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
 ‹µe ∑	CommonValue e =
-‹	Ãtl rl r∑
-‹	let	(cl, il) = Split (Map (e tl rl) rl)
-‹	in	if	Size (Elems il) = 1
-‹		then	(lubl cl, Hd il)
-‹		else	(lubl cl, Arbitrary)
+‹	let	pick il =
+‹		if	Size (Elems il) = 1
+‹		then	Hd il
+‹		else	Arbitrary
+‹	in	SetFuncAll pick e
 ∞
 
 
@@ -654,16 +928,14 @@ $internal\_value\sb{class}$ from \cite{trans}.
 ∞
 \subsection{$RowExistence$ Etc.}\label{RowExistence}
 TBA
-\section{SELECT QUERY}\label{SELECT}
-To specify the $SELECT$ query we need to break it
-down into more primitive operations. In this section,
-we give the top-level building blocks.
-These are parameterised by the lower-level constructs (values and the like)
-which are discussed in section \ref{VALUECOMPUTATIONS}.
-=TEX
 
-In each case, we identify the origin in the specification of
-the transformations of the computation of the relevant classifications.
+\pagebreak
+\section{TABLE COMPUTATIONS}\label{TABLECOMPUTATIONS}
+To specify the $SELECT$ and related queries it is convenient to break them
+down into more primitive operations: {\em join}, {\em projection} etc.
+In this section, we give these top-level building blocks and then combine them in
+various ways to describe the $SELECT$ query and its variants.
+
 
 \subsection{Auxiliary Functions}
 \subsubsection{Join}
@@ -1003,7 +1275,8 @@ Like $DistinctTuples$ this is very similar to $AllTuples$
 ‹	in let	(cl, gps) = Group tl tab2 gbsterling gbclass having
 ‹	in	(cl lub lubl cll, EvalProject ts tl sellist gps)
 ∞
-\section{CLOSURE OPERATION}
+\pagebreak
+\section{CLOSURE OPERATION}\label{CLOSUREOPERATION}
 
 We would now like to form a large set of allowable table computations,
 namely, the set of all computations which can be performed by composing
@@ -1018,6 +1291,10 @@ the intersection of all the $b\sb{j})$.
 ˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
 ‹	µu∑ •â2 u = (•{a | ∂ b∑(a, b) ç u}, •{b | ∂ a∑(a, b) ç u})
 ∞
+Now we give the definition, which is long but straightforward in
+its derivation from the various semantic functions. Note that the
+last gtwo clauses are commented out, since the semantic functions
+as currently formulated are known not to be secure.
 \ftlinepenalty=9999
 πHOLCONST
 ‹	€TableComputations› : Class ≠ TABLE_COMP SET;
@@ -1061,16 +1338,17 @@ the intersection of all the $b\sb{j})$.
 ‹	±	(µesl tel e1 ml nl e2∑	Elems(Map Fst esl) Ä es
 ‹			± Elems tel Ä tes ± e1 ç es ± e2 ç es
 ‹				¥ AllTuples cc esl tel e1 ml nl e2 ç tes)
-‹	±	(µesl tel e1 ml nl e2∑	Elems(Map Fst esl) Ä es
+‹(*	±	(µesl tel e1 ml nl e2∑	Elems(Map Fst esl) Ä es
 ‹			± Elems tel Ä tes ± e1 ç es ± e2 ç es
 ‹				¥ DistinctTuples cc esl tel e1 ml nl e2 ç tes)
 ‹	±	(µesl tel e1 ml nl e2∑	Elems(Map Fst esl) Ä es
 ‹			± Elems tel Ä tes ± e1 ç es ± e2 ç es
-‹				¥ Evaluate cc esl tel e1 ml nl e2 ç tes)
+‹				¥ Evaluate cc esl tel e1 ml nl e2 ç tes) *)
 ‹	}
 ∞
+\pagebreak
 
-\section{CRITICAL PROPERTIES}
+\section{CRITICAL PROPERTIES}\label{CRITICALPROPERTIES}
 We now wish to relate the above with the critical properties defined
 in \cite{DS/FMU/FEF/026} and in particular with the notion of a ``risk input''.
 Each table computation as defined in the previous section is a function, $te$ say,
@@ -1078,7 +1356,7 @@ which computes from a list of derived tables, $tl$ say, a pair comprising
 a classification, $c$, and a new derived table, $t$.
 Restricting attention to the second component of the pair (and tacking
 on an empty list of errors) gives us a function to which the
-defintion of a risk input in \cite{DS/FMU/FEF/026} applies. The intention
+definition of a risk input in \cite{DS/FMU/FEF/026} applies. The intention
 is that $tl$ will be a risk input only in cases where the client clearance
 does not dominate $c$. This is captured formally by the following
 property of table computations.
@@ -1095,7 +1373,8 @@ property of table computations.
 
 We now say that an SSQL Query Transformation Processor is OK with
 respect to a given compiler if the queries it produces compile to
-functions which may be assumed to arise from appropriate table computations.
+functions which may be could be computed by an element
+of the set of table computations defined in the previous section.
 πHOLCONST
 ‹	€OkSTP›	: (Query ≠ (DerTable LIST ≠ (DerTable ∏ Errors)))
 ‹		≠ (Query, 'PARS) STP_TYPE 
@@ -1106,12 +1385,50 @@ functions which may be assumed to arise from appropriate table computations.
 ‹	isError(stp(q, c)) ≤
 ‹	let	(dq, ocq, pars) = destVal(stp(q, c))
 ‹	in	∂dte∑
-‹		dte ç OkTableComputation c
+‹		dte ç TableComputations c
 ‹	±	compile dq = (Ãtl∑(Snd(dte tl), []))
 ‹	±	µtl∑
 ‹		≥c dominates (Fst (dte tl)) ¥
 ‹		IsL ocq ± ≥DT_rows(Fst(compile (OutL ocq) tl)) = []
 ∞
+The above says that each output of $stp$ must either indicate
+a transformation-time error, or must generate a data query, $dq$, which
+could equally well be computed by the table computation $dte$. 
+Moreover, in the latter case, if there is any list of derived tables, $tl$,
+for which $dte$ would return a class which is not dominated by the
+client clearance, then $stp$ must generate a check query and the resulting
+check must fail on $tl$. (For simplicity, and because that is the line
+taken in \cite{trans}, we actually insist that the check query fail
+by producing some rows rather than by causing an error to be signalled.)
+
+We now define two assertions which we conjecture to be true
+of the above. The first of these conjectures asserts that the
+condition $OkSTP$ is sufficient to ensure the condition $STP\_Secure\_E$
+of \cite{DS/FMU/FEF/026}; the second conjecture asserts that the
+table computations defined in the previous section do have
+the $OkTableComputation$ property.
+
+πHOLCONST
+‹	OkSTP_Secure_E_Lemma : BOOL
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	OkSTP_Secure_E_Lemma §
+‹	µcompile∑
+‹		(OkSTP compile: (Query, FILTER_PARS)STP_TYPE ) Ä
+‹		STP_secure_E compile
+∞
+In the above, the type constraint is required, since
+for technical reasons connected with the primitive definitional
+mechanisms of \Product, it is necessary to constrain the assertion to the
+particular type of SSQL Transformation Processors with which we are concerned
+rather than leaving the set as a polymorphic one. 
+πHOLCONST
+‹	TableComputationsOk_Lemma
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	TableComputationsOk_Lemma §
+‹	µcc∑ TableComputations cc Ä OkTableComputation cc
+∞
+
+
 \section{CLOSING DOWN}
 The following \Product{} instruction restores the previous proof context.
 =SML
@@ -1125,6 +1442,7 @@ output_theory{theory = "fef032",out_file = "fef032th.doc"};
 \newpage
 \HOLindexOff
 \ftlinepenalty=9999
+\footnotesize
 \input{fef032th.tex}
 \HOLindexOn
 \newpage
@@ -1202,91 +1520,3 @@ reveals information which should not be visible at class $c$.
  ‹			in	≥i = iâ0
  ‹			±	≥(c dominates cc ± câ0 dom cc)}
  ∞
-
-
-=IGN
-
-val conv = PC_C1 "hol2" rewrite_conv(map get_spec[¨$˘Æ, ¨RemoveDuplicatesÆ]);
-
-
-conv ¨RemoveDuplicates []Æ;
-conv ¨RemoveDuplicates [x]Æ;
-conv ¨RemoveDuplicates [1;2;1;2;1]Æ;
-conv ¨RemoveDuplicates [1;3;2;1;2;3;1]Æ;
-push_consistency_goal¨TableComputationsÆ;
-a(prove_∂_tac);
-a(strip_tac THEN rewrite_tac[tac_proof(([], ¨µx∑∂z y∑ (y, z) = xÆ),
-		strip_tac THEN ∂_tac¨Snd xÆ THEN ∂_tac¨Fst xÆ THEN rewrite_tac[])]);
-save_consistency_thm¨TableComputationsÆ (pop_thm());
-=TEX
-The following theorem takes a minute or so to compute so we give
-a name to it here (to make the proof of the induction theorem easier
-to modify, e.g. if the definitions change).
-=SML
-set_pc"hol";
-val table_computation_rw_thm =
-	rewrite_rule[get_spec¨•â2Æ] (get_spec¨TableComputationsÆ);
-set_pc"hol2";
-set_goal([], ¨µq : TABLE_COMP ≠ BOOL; p : VALUE_COMP ≠ BOOL∑ µcc : Class ∑
-		(µci∑ p(DenoteConstant ci))
-	±	(µi∑ p(Contents i))
-	±	(µi∑ p(Classification i))
-	±	p CountAll
-
-	±	(µf e∑ p e ¥ p(MonOp f e))
-	±	(µf e1 e2∑ p e1 ± p e2 ¥ p(BinOp f e1 e2))
-	±	(µf e1 e2 e3∑ p e1 ± p e2 ± p e3 ¥ p(TriOp f e1 e2 e3))
-	±	(µel∑ (µe∑e ç Elems el ¥ p e) ¥ p(BinOpAnd el))
-	±	(µel∑ (µe∑e ç Elems el ¥ p e) ¥ p(BinOpOr el))
-
-	±	(µcc te cel ee∑ p te ± (µe∑e ç Elems(Map Fst cel) ¥ p e) ±
-				(µe∑ e ç Elems(Map Snd cel) ¥ p e) ± p ee ¥
-					p(CaseVal cc te cel ee))
-	±	(µcc cel ee∑ (µe∑e ç Elems(Map Fst cel) ¥ p e) ±
-				(µe∑ e ç Elems(Map Snd cel) ¥ p e) ± p ee  ¥
-					p(Case cc cel ee))
-
-	±	(µe∑ p e ¥ p(SetFuncAllAnd e))
-	±	(µe∑ p e ¥ p(SetFuncAllOr e))
-	±	(µe∑ p e ¥ p(CountNonNull e))
-	±	(µe∑ p e ¥ p(CountDistinct e))
-	±	(µe∑ p e ¥ p(CommonValue e))
-
-	±	(µf e∑ p e ¥ p(SetFuncAll f e))
-	±	(µf e∑ p e ¥ p(SetFuncDistinct f e))
-
-	±	(µte∑ q te ¥ p(ExistsTuples te))
-	±	(µte∑ q te ¥ p(SingleValue te))
-
-	±	(µi∑ q(TableContents i))
-
-	±	(µesl tel e1 ml nl e2∑ (µe∑e ç Elems(Map Fst esl) ¥ p e)
-			± (µte∑te ç Elems tel ¥ q te) ± p e1 ± p e2
-				¥ q(AllTuples cc esl tel e1 ml nl e2))
-	±	(µesl tel e1 ml nl e2∑ (µe∑e ç Elems(Map Fst esl) ¥ p e)
-			± (µte∑te ç Elems tel ¥ q te) ± p e1 ± p e2
-				¥ q(DistinctTuples cc esl tel e1 ml nl e2))
-	±	(µesl tel e1 ml nl e2∑ (µe∑e ç Elems(Map Fst esl) ¥ p e)
-			± (µte∑te ç Elems tel ¥ q te) ± p e1 ± p e2
-				¥ q(Evaluate cc esl tel e1 ml nl e2))
-	¥	(µte∑ te ç TableComputations cc ¥ q te)
-	±	(µe∑ e ç ValueComputations cc ¥ p e)
-Æ);
-a(REPEAT strip_tac);
-(* *** Goal "1" *** *)
-a(swap_asm_concl_tac ¨te ç TableComputations ccÆ
-	THEN rewrite_tac[table_computation_rw_thm]
-	THEN strip_tac
-	THEN ∂_tac¨{te | q te}Æ
-	THEN POP_ASM_T rewrite_thm_tac
-	THEN ∂_tac¨{e | p e}Æ THEN asm_rewrite_tac[]);
-(* *** Goal "2" *** *)
-a(swap_asm_concl_tac ¨e ç ValueComputations ccÆ
-	THEN rewrite_tac[table_computation_rw_thm]
-	THEN strip_tac
-	THEN ∂_tac¨{e | p e}Æ
-	THEN POP_ASM_T rewrite_thm_tac
-	THEN ∂_tac¨{te | q te}Æ THEN asm_rewrite_tac[]);
-val table_computation_induction_thm =
-	save_pop_thm"table_computation_induction_thm";
-
