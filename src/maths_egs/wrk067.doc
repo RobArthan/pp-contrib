@@ -1,6 +1,6 @@
 pp_make_database -f -p hol topology
-docsml topology
-xpp -file topology.doc -com pp -d topology -i topology &
+docsml topology analysis
+xpp -file topology.doc -com pp -d topology -i analysis,topology &
 doctex topology topology.th; texdvi topology
 =TEX
 \documentclass[10pt,a4paper]{article}
@@ -14,7 +14,7 @@ doctex topology topology.th; texdvi topology
 \def\R{\mathbb{R}}
 \def\Z{\mathbb{Z}}
 \def\Q{\mathbb{Q}}
-\title{Mathematical Case Studies \\ --- \\ Some Abstract Topology}
+\title{Mathematical Case Studies: \\ --- \\ Some Abstract Topology}
 \author{Rob Arthan}
 \makeindex
 \begin{document}
@@ -44,8 +44,8 @@ connectedness resp. compactness of products of connected resp. compact spaces.
 %%%%
 =SML
 force_delete_theory"topology" handle Fail _ => ();
-open_theory"Ø";
-set_merge_pcs["basic_hol1", "'sets_alg", "'˙", "'Ø"];
+open_theory"bin_rel";
+set_merge_pcs["basic_hol1", "'sets_alg"];
 new_theory"topology";
 new_parent"fin_set";
 =TEX
@@ -1202,7 +1202,7 @@ a(∂_tac¨BÆ THEN  asm_rewrite_tac[]);
 a(all_fc_tac[pc_rule1 "sets_ext1" prove_rule[] ¨µX∑ C Ä X ± B ° X = {} ¥ B ° C = {}Æ]);
 val €compact_closed_thm› = save_pop_thm "compact_closed_thm";
 =TEX
-\subsection{Connectdness}
+\subsection{Connectedness}
 %%%%
 %%%%
 =SML
@@ -1413,6 +1413,95 @@ a(∂_tac¨H ¿ VÆ THEN REPEAT strip_tac);
 a(bc_thm_tac ¿_connected_thm);
 a(REPEAT strip_tac THEN PC_T "sets_ext1" contr_tac THEN all_asm_fc_tac[]);
 val €product_connected_thm› = save_pop_thm "product_connected_thm";
+=TEX
+\subsection{Example: the real numbers}
+%%%%
+%%%%
+=SML
+=SML
+force_delete_theory"topologyâR" handle Fail _ => ();
+open_theory"topology";
+new_theory"topologyâR";
+new_parent"analysis";
+set_merge_pcs["basic_hol1", "'sets_alg", "'˙", "'Ø"];
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨OpenâR ç TopologyÆ);
+a(rewrite_tac[topology_def] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_fc_tac[ﬁ_open_Ø_thm]);
+(* *** Goal "2" *** *)
+a(all_fc_tac[°_open_Ø_thm]);
+val €open_Ø_topology_thm› = save_pop_thm "open_Ø_topology_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨Space OpenâR = UniverseÆ);
+a(PC_T1 "sets_ext" REPEAT strip_tac);
+a(bc_thm_tac ç_space_thm);
+a(∂_tac¨UniverseÆ THEN rewrite_tac[open_Ø_topology_thm, empty_universe_open_closed_thm]);
+val €space_Ø_thm› = save_pop_thm "space_Ø_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨OpenâR Closed = ClosedâRÆ);
+a(rewrite_tac[closed_def, closed_Ø_def, space_Ø_thm] THEN REPEAT strip_tac);
+a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(asm_rewrite_tac[pc_rule1"sets_ext1" prove_rule[complement_clauses]¨µa:'a SET∑~(~a) = aÆ]);
+(* *** Goal "2" *** *)
+a(∂_tac¨~xÆ THEN
+	asm_rewrite_tac[pc_rule1"sets_ext1" prove_rule[complement_clauses]¨µa:'a SET∑~(~a) = aÆ]);
+val €closed_closed_Ø_thm› = save_pop_thm "closed_closed_Ø_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨OpenâR Compact = CompactâRÆ);
+a(rewrite_tac[compact_def, compact_Ø_def, space_Ø_thm] THEN REPEAT strip_tac);
+val €compact_compact_Ø_thm› = save_pop_thm "compact_compact_Ø_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µf∑ f ç (OpenâR, OpenâR) Continuous § µx∑f CtsAt xÆ);
+a(rewrite_tac[continuous_def, cts_open_Ø_thm, space_Ø_thm] THEN REPEAT strip_tac);
+val €continuous_cts_at_Ø_thm› = save_pop_thm "continuous_cts_at_Ø_thm";
+=TEX
+%%%%
+%%%%
+=SML
+(*
+set_goal([], ¨µX∑
+		X ç OpenâR Connected
+	§	µx y∑x ç X ± y ç X ± x < y ¥ ∂z∑z ç X ± x < z ± z < yÆ
+);
+a(rewrite_tac[connected_def, space_Ø_thm] THEN REPEAT strip_tac);
+a(contr_tac THEN all_fc_tac[Ø_less_dense_thm]);
+a(strip_asm_tac (µ_elim¨zÆ half_infinite_intervals_open_thm));
+a(lemma_tac¨X Ä {t|t < z} ¿ {t | z < t}Æ THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "1.1" *** *)
+a(spec_nth_asm_tac 7 ¨x'Æ THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "1.2" *** *)
+a(lemma_tac¨X ° {t|t < z} ° {t | z < t} = {}Æ THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "1.2.2" *** *)
+a(lemma_tac¨≥X Ä {t|t < z}Æ THEN PC_T "sets_ext1" contr_tac);
+(* *** Goal "1.2.2.1" *** *)
+a(spec_nth_asm_tac 1 ¨yÆ THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "1.2.2.2" *** *)
+a(lemma_tac¨≥X Ä {t|z < t}Æ THEN PC_T "sets_ext1" contr_tac);
+a(spec_nth_asm_tac 1 ¨xÆ THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "1.2.2.2.2" *** *)
+a(all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(contr_tac);
+val €continuous_cts_at_Ø_thm› = save_pop_thm "continuous_cts_at_Ø_thm";
+*)
 =TEX
 \subsection{Epilogue}
 =TEX
