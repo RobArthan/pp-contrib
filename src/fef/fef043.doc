@@ -16,7 +16,7 @@
 \TPPissue{\SCCSversion}  %% Mandatory field
 \TPPdate{\FormatDate{$Date$
 }}  %% Mandatory field (with sensible default)
-\TPPstatus{Draft}			%% Mandatory field
+\TPPstatus{Approved}			%% Mandatory field
 \TPPtype{Specification}
 \TPPkeywords{}
 \TPPauthor{R.~D.~Arthan & WIN01}  %% Mandatory field
@@ -245,12 +245,12 @@ A factorisation is {\it levelled} if the factors each have appropriate levels:
 ¹HOLCONST
 Ü	Ûlevelled_factorisationİ : ('State Factorisation)ğ
 ÷üüüüüüüüüüüüüüüüüüü
-Ü	µfactors :'State Factorisation ·
-Ü	factors  levelled_factorisation ¤
-Ü		factor0 factors  factor_level 0
-Ü	±	factor1 factors  factor_level 1
-Ü	±	factor2 factors  factor_level 2
-Ü	±	factor3 factors  factor_level 3
+Ü	µfacts :'State Factorisation ·
+Ü	facts  levelled_factorisation ¤
+Ü		factor0 facts  factor_level 0
+Ü	±	factor1 facts  factor_level 1
+Ü	±	factor2 facts  factor_level 2
+Ü	±	factor3 facts  factor_level 3
 °
 
 For a factorisation to be correct it must also fail to pre-evaluate levels in the query, however, this detail can only be specified by reference to the form of a query in greater detail than is considered appropriate here.
@@ -398,11 +398,64 @@ The simplest consistency proof is obtained by using a constant function as follo
 
 =SML
 set_goal([],¬
-	machine simplest_witness = MkMachine (Ì sr · Arbitrary) (Ì sr ·  Arbitrary) Arbitrary
- ±	factors simplest_witness = MkFactorisation (Ì c ob s · Arbitrary) (Ì c ob s · Arbitrary) (Ì c ob s · Arbitrary) (Ì c ob s · Arbitrary)
+	machine simplest_witness =
+		MkMachine (Ì sr ·  Arbitrary) (Ì sr ·  Arbitrary) Arbitrary
+ ±	factors simplest_witness =
+		MkFactorisation (Ì c ob s · Arbitrary) (Ì c ob s · Arbitrary)
+		(Ì c ob s · Arbitrary) (Ì c ob s · Arbitrary)
  ®);
 a (rewrite_tac (let_def::(map get_spec [¬simplest_witness®,¬machine®])));
 val lemma_043_1 = save_pop_thm "lemma_043_1";
+=TEX
+set_labelled_goal "2";
+
+=SML
+set_goal([],¬µc x· (x, x)  identicalObj c®);
+=TEX
+=SML
+set_pc "hol2";
+set_goal([],¬LiftRel sameRequests  IndexedEquiv®);
+a (lemma_tac ¬µ c· sameRequests c  Equivalence®);
+(* *** Goal "1" *** *)
+a (rewrite_tac (map get_spec [¬sameRequests®, ¬Equivalence®]));
+a (REPEAT strip_tac);
+(* *** Goal "1.1" *** *)
+a (rewrite_tac [
+	get_spec ¬Reflexive®,
+	get_spec ¬sameRequest®,
+	get_spec ¬Elems®,
+	let_def,
+	sets_ext_clauses]);
+a (REPEAT strip_tac);
+a (lemma_tac ¬µy:Req LIST· (x1, x2)  Elems (Combine y y) ´ x1 = x2®);
+(* *** Goal "1.1.1" *** *)
+a strip_tac;
+a (list_induction_tac ¬y® THEN asm_rewrite_tac (map get_spec [
+	¬Combine®,¬$ù®,
+	¬Elems®]));
+a (REPEAT strip_tac THEN asm_rewrite_tac[]);
+(* *** Goal "1.1.2" *** *)
+a (ALL_ASM_FC_T rewrite_tac []);
+=GFT
+(* *** Goal "1.1.2" *** *)
+
+(*  2 *)  ¬(x1, x2)  Elems (Combine (x ù VisibleReq c) (x ù VisibleReq c))®
+(*  1 *)  ¬µ y· (x1, x2)  Elems (Combine y y) ´ x1 = x2®
+
+(* ?ô *)  ¬(reqSsql x2, reqSsql x2)  identicalObj c®
+
+=SML
+(* *** Goal "2" *** *)
+a (fc_tac [lift_rel_indexed_equiv_thm]);
+=TEX
+=SML
+set_goal([],¬LiftRel (same_at_c_below_level 1)  IndexedEquiv®);
+=TEX
+=SML
+set_goal([],¬LiftRel (same_at_c_below_level 2)  IndexedEquiv®);
+=TEX
+=SML
+set_goal([],¬LiftRel (same_at_c_below_level 3)  IndexedEquiv®);
 =SML
 set_goal([],¬simplest_witness  label_secure®);
 a (rewrite_tac ((map get_spec [
@@ -410,71 +463,35 @@ a (rewrite_tac ((map get_spec [
 	])@[let_def, lemma_043_1]));
 a (rewrite_tac ([let_def]@(map get_spec [
 	¬ml_secure®,¬x_ml_secure®,¬special_machine®,¬machine®,¬Next®,¬$»‰f®])));
-a (REPEAT strip_tac);
+=GFT
+(* *** Goal "" *** *)
+
+(* ?ô *)  ¬(LiftRel sameRequests  IndexedEquiv
+               ± LiftRel (same_at_c_below_level 1)  IndexedEquiv
+               ± (µ c i‰1 i‰2
+               · (i‰1, i‰2)  LiftRel sameRequests (c %downarrow%)
+                   ´ (Arbitrary, Arbitrary)
+                      LiftRel (same_at_c_below_level 1) (c %downarrow%)))
+             ± (LiftRel sameRequests  IndexedEquiv
+               ± LiftRel (same_at_c_below_level 2)  IndexedEquiv
+               ± (µ c i‰1 i‰2
+               · (i‰1, i‰2)  LiftRel sameRequests (c %downarrow%)
+                   ´ (Arbitrary, Arbitrary)
+                      LiftRel (same_at_c_below_level 2) (c %downarrow%)))
+             ± LiftRel sameRequests  IndexedEquiv
+             ± LiftRel (same_at_c_below_level 3)  IndexedEquiv
+             ± (µ c i‰1 i‰2
+             · (i‰1, i‰2)  LiftRel sameRequests (c %downarrow%)
+                 ´ (Arbitrary, Arbitrary)
+                    LiftRel (same_at_c_below_level 3) (c %downarrow%))®
+=SML
 (* *** Goal "1" *** *)
-(* a (rewrite_tac [let_def]);
+(* a (REPEAT strip_tac);
+a (rewrite_tac [let_def]);
 a (rewrite_tac (map get_spec [¬LiftRel®]));
 a (rewrite_tac (map get_spec [¬lift_machine®]));
 *)
 =TEX
-\Hide{
-\section{INPUT SIMILARITY}
-
-For the purposes of the labelling property we wish to impose more stringent conditions of similarity on the sequence of requests submitted to the machine.
-The motivation for this is to avoid comparing the effects of different sequences of inputs which cause the structure of the output to the query under consideration to be different, and thereby prevent a coherent notion of `same substructure' of the output to apply.
-
- ¹HOLCONST
-Ü	ÛsameStructureObjİ : (Obj ¸ Obj)ğ
-÷üüüüüüüüüüüüüüüüüüü
-Ü µobj1 obj2 :Obj ·
-Ü	sameStructureObj
-Ü	=	{	(obj1, obj2)
-Ü		|	let 	obj1_refs = (objectRefers obj1)
-Ü			and	obj2_refs = (objectRefers obj2)
-Ü			in	Length obj1_refs = Length obj2_refs
-Ü			   ±	Elems (Combine obj1_refs obj2_refs) € sameStructureObj
-Ü		}
-°
-
- ¹HOLCONST
-Ü	ÛsameStructureObjlİ : (Obj LIST ¸ Obj LIST)ğ
-÷üüüüüüüüüüüüüüüüüüü
-Ü µobjl1 objl2 :Obj LIST·
-Ü	sameStructureObjl
-Ü	=	{	(objl1, objl2)
-Ü		|	Length objl1 = Length objl2
-Ü		  ±	Elems (Combine objl1 objl2) € sameStructureObj
-Ü		}
-°
-
- ¹HOLCONST
-Ü	ÛsameStructureReqlİ : (Req LIST ª Req LIST)
-÷üüüüüüüüüüüüüüüüüüü
-Ü µreql1 reql2 :Req LIST ·
-Ü	sameStructureReql
-Ü	=	{	(reql1, reql2)
-Ü		|	Length reql1 = Length reql2
-Ü		   ±	(Map reqSsql reql1, Map reqSsql reql2)  sameStructureObjl
-Ü		}
-°
-
- ¹HOLCONST
-Ü	ÛsameStrucReqsİ : Class ­ (Req LIST ª Req LIST)
-÷üüüüüüüüüüüüüüüüüüü
-Ü µc : Class ·
-Ü	sameStrucReqs c = (sameRequests c) ¡ sameStructureReql
-°
-
-\section{OUTPUT SIMILARITY}
-
-We want to talk about the information flows arising in each factor of the query processing.
-%To achieve this we need to be able to ignore the classifications in the object produced as a result of the query above a certain level.
-%Otherwise, a high classification on the outer levels will appear to legitimise information flows to inner levels even though those levels are marked with lower class marks.
-
-
-To express the additional constraints on the labels relative to some factorisation of the query semantics we must separately asses the security of the information flow arising in each stage in the evaluation of the query results.
-
-}%\Hide
 
 \section{CLOSING DOWN}
 
