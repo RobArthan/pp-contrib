@@ -214,6 +214,23 @@ Now we define the Hausdorff condition:
 ‹	¥	∂A B∑A ç ‘ ± B ç ‘ ± x ç A ± y ç B ± A ° B = {}}
 ∞
 =TEX
+Homeomorphisms:
+%%%%
+%%%%
+
+=SML
+declare_postfix(300, "Homeomorphism");
+πHOLCONST
+‹ €$Homeomorphism› : ('a SET SET ∏ 'b SET SET) ≠ ('a ≠ 'b) SET
+˜¸¸¸¸¸¸
+‹ µ” ‘∑	(”, ‘) Homeomorphism =
+‹	{f
+‹	|	f ç (”, ‘) Continuous
+‹	±	∂g∑ 	g ç (‘, ”) Continuous
+‹		±	(µx∑x ç Space ” ¥ g(f x) = x)
+‹		±	(µy∑y ç Space ‘ ¥ f( g y) = y)}
+∞
+=TEX
 \section{METRIC SPACES --- DEFINITIONS}
 =SML
 force_delete_theory"metric_spaces" handle Fail _ => ();
@@ -532,6 +549,7 @@ val €compact_def› = get_spec¨$CompactÆ;
 val €subspace_topology_def› = get_spec¨$ÚâTÆ;
 val €product_topology_def› = get_spec¨$∏âTÆ;
 val €hausdorff_def› = get_spec¨HausdorffÆ;
+val €homeomorphism_def› = get_spec¨$HomeomorphismÆ;
 =TEX
 \subsection{ProofPower Generalisation and Instantiation}
 =SML
@@ -1923,7 +1941,236 @@ a(∂_tac¨H ¿ VÆ THEN REPEAT strip_tac);
 a(bc_thm_tac ¿_connected_thm);
 a(REPEAT strip_tac THEN PC_T "sets_ext1" contr_tac THEN all_asm_fc_tac[]);
 val €product_connected_thm› = save_pop_thm "product_connected_thm";
+=TEX
+\subsection{Homeomorphisms}
+%%%%
+%%%%
+The identity function is a homeomorphism.
+=SML
+set_goal([], ¨µ‘∑ 
+	‘ ç Topology
+¥	(Ãx∑ x) ç (‘, ‘) HomeomorphismÆ);
+a(rewrite_tac [homeomorphism_def] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(ALL_FC_T rewrite_tac[id_continuous_thm]);
+(* *** Goal "2" *** *)
+a(∂_tac¨Ãy∑ yÆ);
+a(ALL_FC_T rewrite_tac[id_continuous_thm]);
+val €id_homomorphism_thm› = save_pop_thm "id_homeomorphism_thm";
+=TEX
+%%%%
+%%%%
+The composite of two homeomorphisms is a homeomorphism:
+=SML
+set_goal([], ¨µf g “ ” ‘∑ 
+	f ç (“, ”) Homeomorphism
+±	g ç (”, ‘) Homeomorphism
+±	“ ç Topology
+±	” ç Topology
+±	‘ ç Topology
+¥	(Ãx∑ g(f x)) ç (“, ‘) Homeomorphism
+Æ);
+a(rewrite_tac [homeomorphism_def] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(ALL_FC_T rewrite_tac [comp_continuous_thm]);
+(* *** Goal "2" *** *)
+a(∂_tac¨Ãy∑ g'(g'' y)Æ);
+a(ALL_FC_T rewrite_tac [arb_gen comp_continuous_thm]);
+a(all_asm_ante_tac THEN rewrite_tac[continuous_def] THEN REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(all_asm_fc_tac[] THEN ALL_ASM_FC_T rewrite_tac[]);
+(* *** Goal "2.2" *** *)
+a(all_asm_fc_tac[] THEN ALL_ASM_FC_T rewrite_tac[]);
+val €comp_homeomorphism_thm› = save_pop_thm "comp_homeomorphism_thm";
+=TEX
+%%%%
+%%%%
+The cartesian product of two homeomoprhisms is a homeomorphism:
+=SML
+set_goal([], ¨µ f : 'a ≠ 'b; g : 'c ≠ 'd; “ : 'a SET SET; ” : 'b SET SET; ‘ : 'c SET SET; ’ : 'd SET SET∑ 
+	f ç (“, ”) Homeomorphism
+±	g ç (‘, ’) Homeomorphism
+±	“ ç Topology
+±	” ç Topology
+±	‘ ç Topology
+±	’ ç Topology
+¥	(Ã(x, y)∑(f x, g y)) ç ((“ ∏âT ‘), (” ∏âT ’)) Homeomorphism
+Æ);
+a(rewrite_tac [homeomorphism_def] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(LEMMA_T ¨
+	(Ã (x, y)∑ (f x, g y)) = (Ãz∑( (Ãz∑f((Ã(x, y)∑ x) z)) z, (Ãz∑g((Ã(x, y)∑ y) z)) z))Æ
+	pure_rewrite_thm_tac THEN1 rewrite_tac[]);
+a(bc_thm_tac (arb_gen product_continuous_thm));
+a(ALL_FC_T pure_asm_rewrite_tac[arb_gen product_topology_thm]);
+a(REPEAT strip_tac THEN bc_thm_tac (arb_gen comp_continuous_thm));
+(* *** Goal "1.1" *** *)
+a(∂_tac¨“Æ THEN REPEAT strip_tac
+	THEN ALL_FC_T rewrite_tac(map arb_gen [left_proj_continuous_thm, right_proj_continuous_thm,
+		product_topology_thm]));
+(* *** Goal "1.2" *** *)
+a(∂_tac¨‘Æ THEN REPEAT strip_tac
+	THEN ALL_FC_T rewrite_tac (map arb_gen [left_proj_continuous_thm, right_proj_continuous_thm,
+		product_topology_thm]));
+(* *** Goal "2" *** *)
+a(∂_tac¨Ã(x, y)∑ (g' x, g'' y)Æ);
+a(ALL_FC_T pure_rewrite_tac[arb_gen product_topology_space_thm] THEN REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(LEMMA_T ¨
+	(Ã (x, y)∑ (g' x, g'' y)) = (Ãz∑( (Ãz∑g'((Ã(x, y)∑ x) z)) z, (Ãz∑g''((Ã(x, y)∑ y) z)) z))Æ
+	pure_rewrite_thm_tac THEN1 rewrite_tac[]);
+a(bc_thm_tac (arb_gen product_continuous_thm));
+a(ALL_FC_T pure_asm_rewrite_tac[arb_gen product_topology_thm]);
+a(REPEAT strip_tac THEN bc_thm_tac (arb_gen comp_continuous_thm));
+(* *** Goal "2.1.1" *** *)
+a(∂_tac¨”Æ THEN REPEAT strip_tac
+	THEN ALL_FC_T rewrite_tac (map arb_gen [left_proj_continuous_thm, right_proj_continuous_thm,
+		product_topology_thm]));
+(* *** Goal "2.1.2" *** *)
+a(∂_tac¨’Æ THEN REPEAT strip_tac
+	THEN ALL_FC_T rewrite_tac(map arb_gen [left_proj_continuous_thm, right_proj_continuous_thm,
+		product_topology_thm]));
+(* *** Goal "2.2" *** *)
+a(POP_ASM_T ante_tac THEN rewrite_tac[∏_def]);
+a(REPEAT strip_tac THEN ALL_ASM_FC_T rewrite_tac[]);
+(* *** Goal "2.3" *** *)
+a(POP_ASM_T ante_tac THEN rewrite_tac[∏_def]);
+a(REPEAT strip_tac THEN ALL_ASM_FC_T rewrite_tac[]);
+(* *** Goal "2.4" *** *)
+a(POP_ASM_T ante_tac THEN rewrite_tac[∏_def]);
+a(REPEAT strip_tac THEN ALL_ASM_FC_T rewrite_tac[]);
+val €product_homeomorphism_thm› = save_pop_thm "product_homeomorphism_thm";
+=TEX
+%%%%
+%%%%
+A homeomorphism is an open mapping (i.e., it maps open sets to open sets):
+=SML
+set_goal([], ¨µf ” ‘ A∑ 
+	f ç (”, ‘) Homeomorphism
+±	A ç ”
+±	” ç Topology
+±	‘ ç Topology
+¥	{y | ∂x∑ x ç A ± y = f x} ç ‘
+Æ);
+a(rewrite_tac [homeomorphism_def, continuous_def] THEN REPEAT strip_tac);
+a(LIST_GET_NTH_ASM_T [6] all_fc_tac);
+a(LEMMA_T ¨ {y|∂ x∑ x ç A ± y = f x} = {x|x ç Space ‘ ± g x ç A}Æ asm_rewrite_thm_tac);
+a(PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_var_elim_asm_tac1);
+a(GET_NTH_ASM_T 11 bc_thm_tac);
+a(ALL_FC_T rewrite_tac[arb_gen ç_space_thm]);
+(* *** Goal "2" *** *)
+a(all_var_elim_asm_tac1);
+a(all_fc_tac[arb_gen ç_space_thm]);
+a(ALL_ASM_FC_T asm_rewrite_tac[]);
+(* *** Goal "3" *** *)
+a(∂_tac¨g xÆ THEN REPEAT strip_tac);
+a(ALL_ASM_FC_T asm_rewrite_tac[]);
+val €homeomorphism_open_mapping_thm› = save_pop_thm "homeomorphism_open_mapping_thm";
+=TEX
+%%%%
+%%%%
+A homeomorphism is one-to-one on the space of its domain:
+=SML
+set_goal([], ¨µf ” ‘∑ 
+	f ç (”, ‘) Homeomorphism
+±	” ç Topology
+±	‘ ç Topology
+¥	µx y∑ x ç Space ” ± y ç Space ” ± f x = f y ¥ x = y
+Æ);
+a(rewrite_tac [homeomorphism_def] THEN REPEAT strip_tac);
+a(LEMMA_T ¨g(f x) = g(f y)Æ ante_tac THEN1 asm_rewrite_tac[]);
+a(ALL_ASM_FC_T rewrite_tac[]);
+val €homeomorphism_one_one_thm› = save_pop_thm "homeomorphism_one_one_thm";
+=TEX
+%%%%
+%%%%
+A homeomorphism is onto on the space of its range:
+=SML
+set_goal([], ¨µf ” ‘ y∑ 
+	f ç (”, ‘) Homeomorphism
+±	” ç Topology
+±	‘ ç Topology
+±	y ç Space ‘
+¥	∂x∑x ç Space ” ± y = f x
+Æ);
+a(rewrite_tac [homeomorphism_def, continuous_def] THEN REPEAT strip_tac);
+a(LIST_GET_NTH_ASM_T[7] all_fc_tac);
+a(∂_tac¨g yÆ THEN REPEAT strip_tac);
+a(ALL_ASM_FC_T rewrite_tac[]);
+val €homeomorphism_onto_thm› = save_pop_thm "homeomorphism_onto_thm";
+=TEX
+%%%%
+%%%%
+A function is homomorphism iff. it is one-to-one (on the space of its domain), onto (the space of tis range),
+continuous and open:
+=SML
+set_goal([], ¨µf ” ‘∑
+	” ç Topology
+±	‘ ç Topology
+¥	(	f ç (”, ‘) Homeomorphism
+	§	(µx y∑ x ç Space ” ± y ç Space ” ± f x = f y ¥ x = y)
+	±	(µy∑ y ç Space ‘ ¥ ∂x∑x ç Space ” ± y = f x)
+	±	f ç (”, ‘) Continuous
+	±	(µA∑A ç ” ¥ {y | ∂x∑ x ç A ± y = f x} ç ‘))
+Æ);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_fc_tac[homeomorphism_one_one_thm]);
+(* *** Goal "2" *** *)
+a(bc_thm_tac homeomorphism_onto_thm);
+a(∂_tac¨‘Æ THEN REPEAT strip_tac);
+(* *** Goal "3" *** *)
+a(POP_ASM_T ante_tac THEN rewrite_tac [homeomorphism_def] THEN REPEAT strip_tac);
+(* *** Goal "4" *** *)
+a(all_fc_tac[homeomorphism_open_mapping_thm]);
+(* *** Goal "5" *** *)
+a(rewrite_tac[homeomorphism_def] THEN REPEAT strip_tac);
+a(lemma_tac¨∂g∑µy∑y ç Space ‘ ¥ g y ç Space ” ± y = f(g y)Æ THEN1 prove_∂_tac);
+(* *** Goal "5.1" *** *)
+a(REPEAT strip_tac THEN cases_tac ¨y' ç Space ‘Æ THEN asm_rewrite_tac[]);
+a(GET_NTH_ASM_T 4 bc_thm_tac THEN REPEAT strip_tac);
+(* *** Goal "5.2" *** *)
+a(∂_tac¨gÆ THEN rewrite_tac[continuous_def] THEN REPEAT strip_tac);
+(* *** Goal "5.2.1" *** *)
+a(ALL_ASM_FC_T rewrite_tac[]);
+(* *** Goal "5.2.2" *** *)
+a(LIST_GET_NTH_ASM_T [3] all_fc_tac);
+a(LEMMA_T¨{x|x ç Space ‘ ± g x ç A} = {y|∂ x∑ x ç A ± y = f x}Æ asm_rewrite_thm_tac);
+a(PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "5.2.2.1" *** *)
+a(∂_tac¨g xÆ THEN REPEAT strip_tac);
+a(all_asm_fc_tac[]);
+(* *** Goal "5.2.2.2" *** *)
+a(all_var_elim_asm_tac1);
+a(all_fc_tac[arb_gen ç_space_thm]);
+a(GET_NTH_ASM_T 7 ante_tac THEN rewrite_tac[continuous_def] THEN REPEAT strip_tac);
+a(all_asm_fc_tac[]);
+(* *** Goal "5.2.2.3" *** *)
+a(all_var_elim_asm_tac1);
+a(all_fc_tac[arb_gen ç_space_thm]);
+a(LEMMA_T¨g(f x') = x'Æ asm_rewrite_thm_tac);
+a(GET_NTH_ASM_T 7 ante_tac THEN rewrite_tac[continuous_def] THEN REPEAT strip_tac);
+a(LIST_DROP_NTH_ASM_T [2] all_fc_tac);
+a(LIST_DROP_NTH_ASM_T [7] all_fc_tac);
+a(LIST_DROP_NTH_ASM_T [12] all_fc_tac);
+a(conv_tac eq_sym_conv THEN REPEAT strip_tac);
+(* *** Goal "5.2.3" *** *)
+a(GET_NTH_ASM_T 4 ante_tac THEN rewrite_tac[continuous_def] THEN REPEAT strip_tac);
+a(LIST_DROP_NTH_ASM_T [2] all_fc_tac);
+a(LIST_DROP_NTH_ASM_T [4] all_fc_tac);
+a(LIST_DROP_NTH_ASM_T [9] all_fc_tac);
+a(conv_tac eq_sym_conv THEN REPEAT strip_tac);
+(* *** Goal "5.2.4" *** *)
+a(LIST_DROP_NTH_ASM_T [5] all_fc_tac);
+a(all_var_elim_asm_tac1);
+a(LEMMA_T¨g(f x) = xÆ asm_rewrite_thm_tac);
+a(LIST_DROP_NTH_ASM_T [3] all_fc_tac);
+a(LIST_DROP_NTH_ASM_T [7] all_fc_tac);
+a(conv_tac eq_sym_conv THEN REPEAT strip_tac);
 
+val €homeomorphism_one_one_open_mapping_thm› = save_pop_thm "homeomorphism_one_one_open_mapping_thm";
 =TEX
 \section{METRIC SPACES --- THEOREMS}
 =SML
@@ -2046,7 +2293,7 @@ val €lebesgue_number_thm› = save_pop_thm "lebesgue_number_thm";
 %%%%
 
 =TEX
-\subsection{THE REAL LINE AND THE PLANE --- THEOREMS}
+\section{THE REAL LINE AND THE PLANE --- THEOREMS}
 =SML
 open_theory"topology_Ø";
 set_merge_pcs["basic_hol1", "'sets_alg", "'˙", "'Ø"];
