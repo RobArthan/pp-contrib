@@ -3141,6 +3141,23 @@ a(rewrite_tac[µ_elim¬f b + ~(f a)® ¯_times_order_thm]);
 a(ALL_FC_T rewrite_tac[¯_recip_clauses]);
 val Ûmean_value_thmÝ = save_pop_thm"mean_value_thm";
 =TEX
+In practice the subtleties about not requiring differentiability at the end points of
+the interval etc. just adds complication in many uses of the mean value theorem.
+%%%%
+%%%%
+=SML
+set_goal([], ¬µf a b·
+	a < b
+±	(µx·a ¼ x ± x ¼ b ´ ¶c· (f HasDeriv c) x)
+´	(¶x d·a < x ± x <  b ± (f HasDeriv d) x ± f(b) - f(a) = (b - a)*d)®);
+a(REPEAT strip_tac THEN bc_thm_tac mean_value_thm THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(bc_thm_tac  has_deriv_cts_thm);
+a(contr_tac THEN all_asm_fc_tac[] THEN all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(DROP_NTH_ASM_T 3 bc_thm_tac THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
+val Ûmean_value_thm1Ý = save_pop_thm"mean_value_thm1";
+=TEX
 %%%%
 %%%%
 =SML
@@ -4633,13 +4650,50 @@ The following is theorem 7.17 from Rudin (p. 152).
 (*
 set_goal([], ¬µdu df x0 y0 a b u ·
 	(du ---> df) (a, b)
-±	(µm y· a ¼ y ± y ¼ b ´ (u m HasDeriv du m x) x)
+±	(µm y· a ¼ y ± y ¼ b ´ (u m HasDeriv du m y) y)
 ±	a < x0 ± x0 < b
 ±	((Ìm· u m x0) ->  y0)
-´	¶f· (u ---> f) (a, b) ± µy· a ¼ y ± y ¼ b ´ (f HasDeriv df x) x
+´	¶f· (u ---> f) (a, b) ± µy· a ¼ y ± y ¼ b ´ (f HasDeriv df y) y
 ®);
-a(rewrite_tac[caratheodory_deriv_thm] THEN REPEAT strip_tac);
-a(POP_ASM_T (strip_asm_tac o conv_rule simple_µ_¶_conv));
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(lemma_tac ¬
+	µe· î¯ 0 < e ´ ¶N· µn m· N ¼ n ± N ¼ m ´ µx t· a < x ± x < t ± t < b ´
+		Abs(u n t + ~ (u m t) + ~(u n x) + u m x) ¼ (t - x)*e
+®);
+(* *** Goal "1.1" *** *)
+a(REPEAT strip_tac THEN all_fc_tac[unif_lim_seq_cauchy_seq_thm]);
+a(¶_tac¬n® THEN REPEAT strip_tac);
+a(LEMMA_T¬¶ z d·
+	x < z ± z < t ± ((Ìw·u n' w + ~(u m w)) HasDeriv d) z
+	± (Ìw·u n' w + ~(u m w)) t - (Ìw·u n' w + ~(u m w)) x = (t - x) * d
+® (strip_asm_tac o rewrite_rule[]) THEN1 bc_thm_tac mean_value_thm1);
+(* *** Goal "1.1" *** *)
+a(REPEAT strip_tac);
+a(¶_tac ¬du n' x' + ~(du m x')®);
+a(pure_once_rewrite_tac[prove_rule[]¬~(u m w) = (Ìw· ~(u m w)) w®] THEN1 bc_thm_tac plus_deriv_thm);
+a(REPEAT strip_tac THEN_TRY bc_thm_tac minus_comp_deriv_thm THEN 
+	(GET_NTH_ASM_T 13 bc_thm_tac THEN PC_T1 "¯_lin_arith" asm_prove_tac[]));
+(* *** Goal "1.2" *** *)
+a(POP_ASM_T (rewrite_thm_tac o rewrite_rule[¯_plus_assoc_thm]));
+a(LEMMA_T ¬d = du n' z + ~ (du m z)® rewrite_thm_tac THEN1 bc_thm_tac deriv_unique_thm);
+(* *** Goal "1.2.1" *** *)
+a(¶_tac¬z® THEN ¶_tac ¬Ì w· u n' w + ~ (u m w)® THEN REPEAT strip_tac);
+a(pure_once_rewrite_tac[prove_rule[]¬~(u m w) = (Ìw· ~(u m w)) w®] THEN1 bc_thm_tac plus_deriv_thm);
+a(REPEAT strip_tac THEN_TRY bc_thm_tac minus_comp_deriv_thm THEN 
+	(GET_NTH_ASM_T 14 bc_thm_tac THEN PC_T1 "¯_lin_arith" asm_prove_tac[]));
+(* *** Goal "1.2.2" *** *)
+a(LEMMA_T¬î¯ 0 ¼ t + ~ x® (fn th => rewrite_tac[¯_abs_times_thm, th, µ_elim¬t + ~x® ¯_abs_def])
+	THEN1  PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(once_rewrite_tac[¯_¼_0_¼_thm]);
+a(rewrite_tac[pc_rule1"¯_lin_arith" prove_rule[]¬µa b c:¯·a*b + ~(a*c) = a* (b + ~c)®]);
+a(bc_thm_tac ¯_0_¼_0_¼_times_thm THEN strip_tac THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(LEMMA_T¬Abs (du n' z + ~ (du m z)) < e ®
+	(fn th => ante_tac th  THEN  PC_T1 "¯_lin_arith"  prove_tac[]));
+a(lemma_tac ¬a ¼ z ± z ¼ b® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(LIST_GET_NTH_ASM_T [11] (all_fc_tac o map (rewrite_rule[])));
+(* *** Goal "2" *** *)
+
 
 val Ûunif_lim_seq_deriv_thmÝ = save_pop_thm "unif_lim_seq_deriv_thm";
 *)
