@@ -7,7 +7,7 @@
 \TPPproject{DRA FRONT END FILTER PROJECT}  %% Mandatory field
 %\TPPvolume{}
 %\TPPpart{}
-\TPPtitle{A HOL Specification of the Output Filter}  %% Mandatory field
+\TPPtitle{A HOL Specification of the SWORD Output Filter}  %% Mandatory field
 \TPPref{DS/FMU/FEF/024}  %% Mandatory field
 \def\SCCSversion{$Revision$
 }
@@ -63,7 +63,7 @@ DRA front end filter project RSRE 1C/6130.}
 \subsection{Changes History}
 \begin{description}
 \item[Issue \SCCSversion ({\FormatDate{$Date$
-}})]  Assumed `internalError' cannot happen.
+}})]  Filter separated into two parts.
 \end{description}
 
 \subsection{Changes Forecast}
@@ -71,100 +71,224 @@ None.
 \pagebreak
 \section{GENERAL}
 \subsection{Scope}
-This document gives a formal specification in \ProductHOL{} of the SWORD front end output filter of \cite{output}.
+This document gives a formal specification in \ProductHOL{} of the SWORD front end output filter.
 
 \subsection{Introduction}
+In \cite{DS/FMU/FEF/022} a description of the SWORD 
+architectural model is given. This includes a transition 
+function which has an output filter as one of its subsystems.
+ The output filter removes data that the client is
+ not allowed to see from the output of the TSQL DBMS and 
+decides whether the data may not be complete. This output
+ filter is informally partially specified for select 
+queries in \cite{filter}. We give a formal specification in 
+\ProductHOL{} of the  output filter for select queries.
+
+
+
 \section{PRELIMINARIES}
+The following \Product{} instructions set the context 
+for the proof tools and set up the new theory $fef024$, 
+with parent theory $fef014$, in which the specification 
+of SSQL (and hence TSQL) is given.
+
 =SML
-open_theory"fef015";
+open_theory"fef014";
 new_theory"fef024";
+push_pc"hol";
 =TEX
 
 
 \section{FILTER FUNCTIONS FOR SELECT QUERIES}
-The type of values is left as generic. The function 
-$class\_of\_value$ returns the classification of a  value that is to
- be treated as a classification.
+
+We choose to model the filter in two parts. The first part 
+essentially `undoes' the optimisations carried out in 
+TSQL and the second part filters the data according to 
+the user's clearance.
+
+When an SSQL select query is transformed into a TSQL select 
+query, as well as a table of data, additional information is returned about 
+checks that may be required:
+\begin{itemize}
+\item
+a boolean is returned which determines whether the class 
+of the where clause has been selected
+\item
+an optional class is returned, the constant row existence class, 
+with an indicator if in fact the row existence class  has been selected
+\item
+a list of booleans is returned which determines whether the
+field classifications need checking
+\end{itemize}
+
+The first part of the filter operation fills in 
+classification columns that have been optimised away and 
+also returns the class of the where clause and the row existence class for each row. The `filled in' classes are set at
+the user's clearance as is the class of the where clause if
+it has not been selected.
+
+The filter is modelled as if all inputs are correct in the
+sense that the data  lists are in the form as expected
+by the checks. For example,  the length of a data list (after the class of the where clause
+ and the row existence class have been removed) is 
+equal to
+the number of $false$s plus twice the number of $true$s in the list of booleans that determines whether the
+field classifications need checking.
+
+\subsection{Filling in Selected Rows}
+
+A function to retrieve the classification from 
+an item which is to be treated as a classification. 
+
 ¹HOLCONST
-Ü	Ûclass_of_valueİ: 'Value  ­ Class
+Ü	class_of_item: Item  ­ Class
 ÷üüüüüüüüüüüüüü
-Ü	T
+Ü	µ i · class_of_item i = destClassVal(VI_val(destValuedItem i))
 °
 
-The user's clearance is supplied as parameter to the following functions.
+Next, we want to put back classifications that have 
+been optimised away. 
 
-
-The function $filter\_where\_row$ takes a non-empty  list of values whose 
- first element is the classification 
-of the where clause, removes the classification 
-of the where clause from the head of the list and also 
-returns a boolean which is $true$ if the user is not cleared to see the where clause. 
-
-We have chosen to model the filter in such a way that it only receives `possible' inputs i.e.
- an $internalError$ cannot be raised.
-
-¹HOLCONST
-Ü	Ûfilter_where_rowİ: 'Value LIST ¸ Class  ­ 'Value LIST  ¸ BOOL
-÷üüüüüüüüüüüüüü
-Ü	µ v vs uc ·
-Ü	filter_where_row 	(Cons v vs,uc) = (vs, ³(uc dominates (class_of_value v)))
-°
-The function $filter\_where$ discards rows  where the user is not cleared to see the where clause and also returns a boolean $true$ if any rows have been discarded. 
+The data list is viewed as a value followed by its 
+classification, except in the case where the classification
+has been optimised away and only the value is present.
+This is determined by the corresponding list of booleans.
+The function $fill\_cols$ takes the user's clearance, 
+the data list and the boolean check list and returns a 
+list of pairs of item and classification with the classification 
+set at the user's clearance if it
+did not appear in the input list.
 
 ¹HOLCONST
-Ü	Ûfilter_whereİ: 'Value LIST LIST ¸ Class  
-Ü					­ 'Value LIST LIST ¸ BOOL
+Ü	Ûfill_colsİ: Class ­ Data LIST ¸ BOOL LIST  ­ (Item ¸ Class) LIST 
 ÷üüüüüüüüüüüüüü
-Ü	µ vs vss uc ·
-Ü	filter_where ([],uc) = ([],F)
-Ü±	filter_where 	(Cons vs vss,uc) = 	
-Ü		let (fvs,msg) = filter_where_row(vs,uc)
-Ü		in 
-Ü		let (fvss,msgs) = filter_where(vss,uc)
-Ü		in 	if msg then (fvss,T)
-Ü			else (Cons fvs fvss,msgs)
-°
-If the user is not cleared to see the value in a particular field, the string $not\_cleared$ is returned. We have modelled $filter\_cols$ on the assumption that  the input lists of value and `class' pair and boolean 
-are the same length.
-¹HOLCONST
-Ü	Ûfilter_colsİ: Class ­ (('Value ¸ 'Value) LIST ¸ BOOL LIST)  
-Ü					­ ('Value + STRING) LIST
-÷üüüüüüüüüüüüüü
-Ü	µ vc b vcs bs uc ·
-Ü	filter_cols uc ([],[]) = []
-Ü±	(filter_cols uc (Cons vc vcs,Cons b bs) = 
+Ü	µ d ds b bs clear ·
+Ü	fill_cols clear ([],[]) = []
+Ü±	fill_cols clear (Cons d ds,Cons b bs) = 
 Ü		if  b then 
-Ü			(let fv = 	if uc dominates class_of_value (Snd vc)
-Ü					then giveVal (Fst vc)
-Ü					else giveError"not_cleared"
-Ü			in 	Cons fv (filter_cols uc (vcs,bs)))
-Ü		else	Cons(giveVal (Fst vc))(filter_cols uc (vcs,bs)))
+Ü			let c = class_of_item(Dat_item (Hd ds))
+Ü			in
+Ü			Cons(Dat_item d,c)(fill_cols clear (Tl ds,bs))
+Ü		else	Cons(Dat_item d,clear)(fill_cols clear (ds,bs))
 °
 
-The boolean parameter to the function $filter\_select$ 
- is $true$ 
-if the lists of values contain the class of the where clause 
-as first elements. The boolean list parameter provides 
-information as to whether it is necessary to check if the 
-user's clearance dominates the classification of the value
-selected. $filter\_select$ returns the filtered value 
-together with a boolean which determine whether or not the 
-$mayNotBeComplete$ 
-message should be issued.
+Now we check whether the class of the where clause and 
+the row existence class appear as values in the data list.
+The function $fill\_row$ removes these classes from the
+list if they are there, fills in the column classifications
+and also returns the class of the where clause and the row 
+existence class. If the class of the where clause does 
+not appear in the data list, then it is returned as the 
+user's clearance.
+
 ¹HOLCONST
-Ü	Ûfilter_selectİ: (BOOL ¸ BOOL LIST ¸ ('Value  ¸ 'Value) LIST LIST ¸ Class)
-Ü			  ­ ('Value + STRING) LIST LIST ¸ BOOL
+Ü	Ûfill_rowİ:  BOOL ¸ (Class + ONE) ¸ BOOL LIST ¸ Class ­ Data LIST 
+				­ Class ¸ Class ¸ (Item ¸ Class)LIST   
 ÷üüüüüüüüüüüüüü
-Ü	µ b cls vcss uc ·
-Ü	filter_select (b,cls ,vcss ,uc) = 
-Ü	if b then
-Ü		let (fvcss,nc) =  filter_where(vcss,uc)
-Ü		in 
-Ü		(Map (filter_cols uc)(Combine fvcss (seq (# fvcss) cls)),nc)
-Ü	else  
-Ü		(Map (filter_cols uc)(Combine vcss (seq (# vcss) cls)),F)
+Ü	µ check_where check_rc check_cols clear dl ·
+Ü	fill_row (check_where,check_rc,check_cols,clear) dl =
+Ü		let (where_c,rest‰1) =	
+Ü			if check_where
+Ü			then (class_of_item(Dat_item (Hd dl)),Tl dl)
+Ü			else (clear,dl)
+Ü		in
+Ü		let (rc,rest‰2) =	
+Ü		if IsR check_rc
+Ü			then (class_of_item(Dat_item (Hd rest‰1)),Tl rest‰1)
+Ü			else (OutL check_rc,rest‰1)
+Ü		in (where_c,rc,fill_cols clear(rest‰2,check_cols))
 °
 
+Finally, $fill\_table$ fills in all the missing 
+classifications.
+
+¹HOLCONST
+Ü	Ûfill_tableİ: BOOL ¸ (Class + ONE) ¸ BOOL LIST ¸ Class ¸ Data LIST LIST  ­ 
+			(Class ¸ Class ¸ (Item ¸ Class)LIST)LIST 
+÷üüüüüüüüüüüüüü
+Ü	µ check_where check_rc check_cols clear dll ·
+Ü		fill_table (check_where,check_rc,check_cols,clear,dll) =
+Ü		Map (fill_row(check_where,check_rc,check_cols,clear)) dll		 
+°
+
+\subsection{Filtering the Selected Data}
+
+The filter takes the `filled' in data and  returns the filtered data plus a boolean which is true if the $mayNotBeComplete$ message applies.
+
+First check whether the user's clearance dominates the class of the where clause.
+
+¹HOLCONST
+Ü	Ûfilter_where_rowİ: Class ¸ Class ¸ (Item ¸ Class)LIST 
+							­ (Item ¸ Class)LIST  ¸ BOOL
+÷üüüüüüüüüüüüüü
+Ü	µ clear where_c icl ·
+Ü	filter_where_row (clear,where_c,icl) = (icl,³(clear dominates where_c))
+°
+
+Throw away any rows  about whose existence the user is not 
+cleared to know. In addition, throw away any rows if the where clause
+ is not dominated by the user's clearance. Flag if this has
+happened so that a $mayNotBeComplete$ message can 
+be issued.
+
+¹HOLCONST
+Ü	Ûfilter_tableİ: (Class ¸ Class ¸ (Item ¸ Class)LIST)LIST ¸ Class 
+Ü					­ (Item ¸ Class)LIST LIST ¸ BOOL
+÷üüüüüüüüüüüüüü
+Ü	µ h rest clear·
+Ü	filter_table ([],clear) = ([],F)
+Ü±	filter_table(Cons h rest,clear)= 
+Ü		let (where_c,rc,ics) = h
+Ü		in
+Ü		if ³(clear dominates rc)
+Ü		then filter_table(rest,clear)
+Ü		else	let (fics,msg) = filter_where_row(clear,where_c,ics)
+Ü			in 
+Ü			let (frest,msgs) = filter_table(rest,clear)
+Ü			in 	if msg then (frest,T)
+Ü				else (Cons fics frest,msgs)
+°
+Check whether the user is cleared to see the
+ data in a field. 
+
+¹HOLCONST
+Ü	Ûfilter_colsİ: Class ­ (Item ¸ Class)LIST  
+Ü					­ ((Item + STRING) ¸ Class) LIST
+÷üüüüüüüüüüüüüü
+Ü	µ clear ic ics ·
+Ü	filter_cols clear [] = []
+Ü±	filter_cols clear (Cons ic ics) =
+Ü		let (i,c) = ic
+Ü		in 
+Ü		if clear dominates c 
+Ü		then Cons (giveVal i,c)(filter_cols clear ics)
+Ü		else Cons (giveError "notCleared",c)(filter_cols clear ics)
+°
+
+Finally, filter the whole table of selected data. A 
+$mayNotBeComplete$ message should be issued if the
+boolean $true$ is returned.
+
+¹HOLCONST
+Ü	Ûfilter_selectİ: (Class ¸ Class ¸ (Item ¸ Class)LIST)LIST ¸ Class
+Ü			  ­ ((Item + STRING) ¸ Class) LIST LIST ¸ BOOL
+÷üüüüüüüüüüüüüü
+Ü	µ table clear ·
+Ü	filter_select (table,clear) = 
+Ü		let (ftable,check) =  filter_table(table,clear)
+Ü		in 
+Ü		(Map (filter_cols clear) ftable,check)
+°
+
+\section{CLOSING DOWN}
+The following \Product{} instruction restores the previous proof context.
+=SML
+pop_pc();
+=TEX
+
+=IGN
+output_theory{theory = "fef024",out_file = "fef024th.doc"};
+=TEX
 
 \newpage
 \twocolumn[\section{INDEX} \label{INDEX}]
