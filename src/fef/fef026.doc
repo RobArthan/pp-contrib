@@ -642,13 +642,17 @@ to state the information flow constraints which apply to computations on them.
 Ü			(Map hc (DTR_cols r))
 °
 ¹HOLCONST
+Ü	ÛHideDerTableDataÝ : Class ­ DerTableRow LIST ­ DerTableRow LIST
+÷üüüüüüüüüüüüüü
+Ü	µcc rs·	HideDerTableData cc rs
+Ü	=	let	okr = {r|cc dominates (DTR_row r lub DTR_where r)}
+Ü		in 	Map (HideDerTableRow cc) (rs ù okr)
+°
+¹HOLCONST
 Ü	ÛHideDerTableÝ : Class ­ DerTable ­ DerTable
 ÷üüüüüüüüüüüüüü
 Ü	µcc t·	HideDerTable cc t
-Ü	=	let	rs = DT_rows t
-Ü		in let	ss = DT_spec t
-Ü		in let	okr = {r|cc dominates (DTR_row r lub DTR_where r)}
-Ü		in 	MkDerTable ss (Map (HideDerTableRow cc) (rs ù okr))
+Ü	=	MkDerTable (DT_spec t) (HideDerTableData cc (DT_rows t))
 °
 Given a function, $f$, on lists of derived tables, let us say that the {\em risk
 inputs} of $f$ at a given class, $c$ are those inputs for which
@@ -852,6 +856,18 @@ Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
 Ü	in	MkDerTableSpec n mr csl
 °
 ¹HOLCONST
+Ü	ÛJoinRowsÝ : DerTableRow ­ DerTableRow LIST ­ DerTableRow LIST
+÷üüüüüüüüüüüüüüüüüü
+Ü	µr rs·
+Ü	JoinRows r rs =
+Ü	let	join2 rr = (
+Ü			MkDerTableRow
+Ü			(DTR_where r lub DTR_where rr)
+Ü			(DTR_row r lub DTR_row rr)
+Ü			(DTR_cols r ë DTR_cols rr))
+Ü	in	Map join2 rs
+°
+¹HOLCONST
 Ü	ÛJoinDataÝ : DerTableRow LIST LIST ­ DerTableRow LIST
 ÷üüüüüüüüüüüüüüüüüü
 Ü	JoinData [] = []
@@ -860,13 +876,8 @@ Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
 Ü	if	rest = []
 Ü	then	tab
 Ü	else	let	jrest = JoinData rest
-Ü		in let	join2 r‰1 r‰2 = (
-Ü				MkDerTableRow
-Ü				(DTR_where r‰1 lub DTR_where r‰2)
-Ü				(DTR_row r‰1 lub DTR_row r‰2)
-Ü				(DTR_cols r‰1 ë DTR_cols r‰2))
-Ü		in let	blks = Map (Ìr‰1· Map (join2 r‰1) jrest) tab
-Ü		in	Flat blks
+Ü		in let	join_blk r = JoinRows r jrest
+Ü		in	Flat (Map join_blk tab)
 °
 ¹HOLCONST
 Ü	ÛJoinÝ : DerTable LIST ­ DerTable
@@ -982,7 +993,8 @@ output_theory{theory = "fef026",out_file = "fef026th.doc"};
 =TEX
 \end{document}
 =IGN
-rewrite_conv[get_spec¬JoinData®, let_def, map_def, flat_def, get_spec¬$ë®, get_spec¬$MkDerTableRow®]
+rewrite_conv[get_spec¬JoinData®, get_spec¬JoinRows®, let_def, map_def,
+	flat_def, get_spec¬$ë®, get_spec¬$MkDerTableRow®]
 ¬
 JoinData
 [
@@ -995,10 +1007,9 @@ JoinData
 	MkDerTableRow w7 r7 [(c, z)] ]
 ]
 ®;
-
-
-
-rewrite_conv[get_spec¬JoinData®, let_def, map_def, flat_def, get_spec¬$ë®, get_spec¬$MkDerTableRow®]
+=IGN
+rewrite_conv[get_spec¬JoinData®, get_spec¬JoinRows®, let_def, map_def,
+	flat_def, get_spec¬$ë®, get_spec¬$MkDerTableRow®]
 ¬
 JoinData
 [
@@ -1010,112 +1021,17 @@ JoinData
 	MkDerTableRow w7 r7 [(c, z)] ]
 ]
 ®;
-rewrite_conv[get_spec¬JoinData®, let_def, map_def, flat_def, get_spec¬$ë®, get_spec¬$MkDerTableRow®]
+rewrite_conv[get_spec¬JoinData®, get_spec¬JoinRows®, let_def, map_def,
+	flat_def, get_spec¬$ë®, get_spec¬$MkDerTableRow®]
 ¬
 JoinData
 [
 [	MkDerTableRow w1 r1 [(c, A); (c, FALSE)];
 	MkDerTableRow w2 r2 [(c, B); (c, TRUE)] ];
-[	 [] ];
+[	MkDerTableRow w4 r3 [] ];
 [	MkDerTableRow w5 r5 [(c, x)];
 	MkDerTableRow w6 r6 [(c, y)];
 	MkDerTableRow w7 r7 [(c, z)] ]
 ]
 ®;
 
-
-declare_type_abbrev("WHERE_PAR", [],
-	”DerTableRow ­ Class ¸ BOOL®);
-
-new_parentÛ"fef010"Ý;
-
-set_pc"hol";
-set_goal([], ¬µc·c lub c = c ± lubl[c] = c®);
-a(strip_tac THEN rewrite_tac(map get_spec[¬Map®, ¬lubl®, ¬Fold®, ¬Head®]));
-a(lemma_tac¬c dominates c ± c lub c dominates c® THEN1 prove_tac[get_spec¬$lub®]);
-a(all_fc_tac[get_spec¬$lub®]);
-a(all_fc_tac[get_spec¬$lub®]);
-val lub_lemma = save_pop_thm"lub_lemma";
-
-set_pc"hol";
-set_goal([], ¬µx1 x2 y1 y2·MkDerTable x1 x2 = MkDerTable y1 y2 ¤ x1 = y1 ± x2 = y2®);
-a(REPEAT_UNTIL is_¤ strip_tac THEN ¤_tac THEN_TRY asm_rewrite_tac[]);
-a(LEMMA_T¬y1 = DT_spec (MkDerTable x1 x2) ± y2 = DT_rows (MkDerTable x1 x2)®
-	rewrite_thm_tac
-	THEN1 (asm_rewrite_tac[]THEN rewrite_tac[get_spec¬MkDerTable®]));
-a(rewrite_tac[get_spec¬MkDerTable®]);
-val MkDerTable_lemma = save_pop_thm"MkDerTable_lemma";
-
-
-set_pc"hol";
-set_goal([], ¬RiskInputs c (Ìdtl· (Join dtl, [])) = {}®);
-
-a(rewrite_tac[get_spec¬RiskInputs®]);
-
-a(PC_T "sets_ext" contr_tac);
-
-a(all_asm_ante_tac THEN rewrite_tac[]);
-
-a(intro_µ_tac(¬x®, ¬ts:DerTable LIST®) THEN list_induction_tac¬ts‰0®);
-
-(* *** Goal "1" *** *)
-
-a(rewrite_tac(map get_spec[¬Map®]) THEN strip_tac);
-
-a(strip_asm_tac(µ_elim¬ts® list_cases_thm) THEN asm_rewrite_tac[get_spec¬Map®]);
-
-(* *** Goal "2" *** *)
-
-a(rewrite_tac(map get_spec[¬Map®]) THEN strip_tac THEN strip_tac);
-
-a(strip_asm_tac(µ_elim¬ts® list_cases_thm) THEN asm_rewrite_tac[get_spec¬Map®]);
-
-a(REPEAT strip_tac);
-
-a(all_asm_fc_tac[]);
-
-a(rewrite_tac(MkDerTable_lemma ::
-	map get_spec[¬Join®, ¬Map®, ¬HideDerTable®, ¬Let®,
-		¬JoinSpecs®, ¬JoinData®, ¬MkDerTable®]));
-
-
-
-
-
-
-a(strip_asm_tac(µ_elim¬ts‰0® list_cases_thm) THEN asm_rewrite_tac[get_spec¬Map®]);
-
-
-(* *** Goal "2.1" *** *)
-
-a(lemma_tac¬list2 = []®);
-
-(* *** Goal "2.1.1" *** *)
-
-a(swap_asm_concl_tac¬Map (HideDerTable c) ts‰0 = Map (HideDerTable c) list2®);
-
-a(strip_asm_tac(µ_elim¬list2® list_cases_thm) THEN asm_rewrite_tac[get_spec¬Map®]);
-
-(* *** Goal "2.1.2" *** *)
-
-
-a(asm_rewrite_tac(lub_lemma :: map get_spec[¬Map®]));
-
-a(GET_NTH_ASM_T 5 ante_tac THEN
-	rewrite_tac(map get_spec[¬HideDerTable®, ¬Let®, ¬Flat®]));
-
-a(rewrite_tac[MkDerTable_lemma] THEN REPEAT strip_tac);
-
-(* *** Goal "2.1.2.1" *** *)
-
-a(asm_rewrite_tac[get_spec¬DT_spec®]);
-
-(* *** Goal "2.1.2.2" *** *)
-
-a(asm_rewrite_tac[get_spec¬DT_rows®]);
-
-
-(* *** Goal "2.2" *** *)
-
-
-a(asm_rewrite_tac(map get_spec[¬DT_spec®, ¬Let®, ¬Flat®]));
