@@ -17,6 +17,10 @@ doctex analysis analysis.th; texdvi analysis
 \def\Lim{\mbox{{\sf lim}}}
 \def\LimInf{\mbox{{\sf lim inf}}}
 \def\LimSup{\mbox{{\sf lim sup}}}
+\def\Exp#1{\mbox{{\sf exp}(#1)}}
+\def\Log#1{\mbox{{\sf log}(#1)}}
+\def\Sin#1{\mbox{{\sf sin}(#1)}}
+\def\Cos#1{\mbox{{\sf cos}(#1)}}
 \def\Abs#1{|#1|}
 
 \title{Mathematical Case Studies: \\ --- \\ Basic Analysis}
@@ -389,6 +393,18 @@ the exponential function:
 Ü 	ÛLogÝ : ¯ ­ ¯
 ÷üüüüüü
 Ü	µx· Log (Exp x) = x
+°
+The sine and cosine functions defined by a differential equation:
+%%%%
+%%%%
+=SML
+¹HOLCONST
+Ü 	ÛSinÝ ÛCosÝ : ¯ ­ ¯
+÷üüüüüü
+Ü	Sin(î¯ 0) = î¯ 0
+Ü ±	Cos(î¯ 0) = î¯ 1
+Ü ±	(µx· (Sin HasDeriv Cos x) x)
+Ü ±	(µx· (Cos HasDeriv ~(Sin x)) x)
 °
 =TEX
 %%%%
@@ -6575,7 +6591,7 @@ a(LEMMA_T ¬µm s·PowerSeries s m c = (B ›-›1 * B) * PowerSeries s m c® once_rewri
 a(rewrite_tac[¯_times_assoc_thm, ¯_abs_times_thm]);
 a(conv_tac (LEFT_C (Ì_un_Â_rands_conv)));
 a(bc_thm_tac times_lim_seq_thm THEN asm_rewrite_tac[const_lim_seq_thm]);
-val Ûpower_series_deriv_lemma3Ý = save_pop_thm "power_series_deriv_lemma3";
+val Ûpower_series_deriv_lim_seq_convergence_thmÝ = save_pop_thm "power_series_deriv_lim_seq_convergence_thm";
 =TEX
 Uniform convergence of power series:
 %%%%
@@ -6590,7 +6606,7 @@ set_goal([], ¬
 a(REPEAT strip_tac);
 a(lemma_tac ¬¶B1· î¯ 0 < B1 ± b < B1 ± B1 <  B® THEN1
 	(¶_tac¬(1/2)*(B + b) ® THEN PC_T1 "¯_lin_arith" asm_prove_tac[]));
-a(DROP_NTH_ASM_T 5 discard_tac THEN all_fc_tac[power_series_deriv_lemma3]);
+a(DROP_NTH_ASM_T 5 discard_tac THEN all_fc_tac[power_series_deriv_lim_seq_convergence_thm]);
 a(POP_ASM_T ante_tac);
 a(pure_once_rewrite_tac[ prove_rule[]¬
 	(Ì m· Abs(î¯ (m + 1) * s (m + 1))) =(Ì m· Abs((Ìm· î¯ (m + 1) * s (m + 1))m))
@@ -6728,6 +6744,46 @@ a(strip_asm_tac (µ_elim¬s® power_series_limit_0_thm));
 a(all_fc_tac[lim_seq_unique_thm]);
 val Ûpower_series_main_thm2Ý = save_pop_thm "power_series_main_thm2";
 =TEX
+The third consequence of the main theorem gives information about pointwise convergence
+and the first and second derivatives as needed for the sine and cosine function:
+%%%%
+%%%%
+=SML
+set_goal([], ¬
+	µs·
+	(µx· î¯ 0 < x ´ ¶c· (Ìm· PowerSeries (Ìm·Abs(s m)) m x) ->  c)
+´	¶f d1f d2f·
+	(µx· (Ìm·PowerSeries s m x) ->  f x)
+±	(µx· (Ìm·PowerSeries (Ìm·î¯ (m+1) *s(m+1)) m x) ->  d1f x) 
+±	(µx· (Ìm·PowerSeries (Ìm·î¯(m+1) * î¯ (m+2)*s(m+2)) m x) ->  d2f x) 
+±	(µx· (f HasDeriv d1f x) x)
+±	(µx· (d1f HasDeriv d2f x) x)
+±	f (î¯ 0) = s 0
+±	d1f (î¯ 0) = s 1
+®);
+a(REPEAT strip_tac);
+a(lemma_tac (
+	subst [(¬(Ìm·(î¯ (m+1))*s(m+1))®, ¬s®)]
+		 ¬µx· î¯ 0 < x ´ ¶c· (Ìm· PowerSeries (Ìm·Abs(s m)) m x) ->  c®));
+(* *** Goal "1" *** *)
+a(rewrite_tac[] THEN REPEAT strip_tac);
+a(bc_thm_tac power_series_deriv_lim_seq_convergence_thm);
+a(lemma_tac¬î¯ 0 < x + î¯ 1® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(DROP_NTH_ASM_T 2 rewrite_thm_tac THEN all_asm_fc_tac[] THEN REPEAT strip_tac);
+a(¶_tac¬c® THEN ¶_tac¬x + î¯ 1® THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(all_fc_tac[power_series_main_thm2]);
+a(LIST_DROP_NTH_ASM_T [9, 10] discard_tac);
+a(DROP_NTH_ASM_T 5 (strip_asm_tac o rewrite_rule[])
+	THEN rename_tac[(¬f®, "d1f"), (¬f'®, "f"), (¬df®, "d2f")]);
+a(DROP_NTH_ASM_T 7 (strip_asm_tac o rewrite_rule[plus_assoc_thm]));
+a(¶_tac¬f® THEN ¶_tac¬d1f® THEN ¶_tac¬d2f® THEN asm_rewrite_tac[]);
+a(LEMMA_T ¬d1f = df' ® asm_rewrite_thm_tac THEN REPEAT strip_tac);
+a(spec_nth_asm_tac 5 ¬x®);
+a(spec_nth_asm_tac 9 ¬x®);
+a(all_fc_tac[lim_seq_unique_thm]);
+val Ûpower_series_main_thm3Ý = save_pop_thm "power_series_main_thm3";
+=TEX
 %%%%
 %%%%
 %%%%
@@ -6770,7 +6826,7 @@ a(REPEAT strip_tac THEN bc_thm_tac ¯_less_¼_trans_thm
 	THEN REPEAT strip_tac);
 val Ûfactorial_0_less_thmÝ = save_pop_thm "factorial_0_less_thm";
 =TEX
-Finally the following lemma is the one that will show that the exponential function
+The following lemma is the one that will show that the exponential function
 is its own derivative:
 %%%%
 %%%%
@@ -7359,6 +7415,184 @@ a(all_fc_tac[exp_0_less_onto_thm] THEN all_var_elim_asm_tac1);
 a(rewrite_tac[conv_rule(ONCE_MAP_C eq_sym_conv) exp_plus_thm, log_def]);
 val Ûlog_clausesÝ = save_pop_thm "log_clauses";
 =TEX
+=TEX
+To simpliify the treatment of signs, our treatment of sine will actually work with the
+series for $\Sin{-x}$ rather than $\Sin{x}$. We can easily show that this is convergent
+by comparison with the series for $\Exp{x}$
+
+
+%%%%
+%%%%
+=SML
+set_goal([], ¬µx·
+	î¯ 0 < x
+´	¶c· (Ìm· PowerSeries (Ìm· Abs(if m Mod 2 = 0 then î¯ 0 else m ! ›-›1)) m x) -> c
+®);
+a(REPEAT strip_tac);
+a(ante_tac (µ_elim¬x® exp_series_convergence_thm));
+a(rewrite_tac [power_series_series_thm] THEN REPEAT strip_tac);
+a(conv_tac(BINDER_C (rewrite_conv[È_axiom]))
+	THEN POP_ASM_T (strip_asm_tac o rewrite_rule[È_axiom]));
+a(bc_thm_tac comparison_test_thm);
+a(¶_tac¬c® THEN ¶_tac¬ (Ì m· Abs (m ! ›-›1) * x ^ m)® THEN REPEAT strip_tac);
+a(rewrite_tac[]);
+a(cases_tac¬m Mod 2 = 0® THEN asm_rewrite_tac[]);
+(* *** Goal "1" *** *)
+a(LEMMA_T ¬Abs (m ! ›-›1) * x ^ m = Abs ((m ! ›-›1) * x ^ m)® 
+	(fn th => rewrite_tac[th, ¯_0_¼_abs_thm]));
+a(rewrite_tac[¯_abs_times_thm]);
+a(lemma_tac¬î¯ 0 < x ^ m ® THEN1 ALL_FC_T rewrite_tac[¯_î_exp_0_less_thm]);
+a(lemma_tac¬î¯ 0 ¼ x ^ m ® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(asm_rewrite_tac[¯_abs_def]);
+(* *** Goal "2" *** *)
+a(LEMMA_T ¬Abs (m ! ›-›1) * x ^ m = Abs ((m ! ›-›1) * x ^ m)® 
+	(fn th => rewrite_tac[th, ¯_abs_abs_thm]));
+a(rewrite_tac[¯_abs_times_thm]);
+a(lemma_tac¬î¯ 0 < x ^ m ® THEN1 ALL_FC_T rewrite_tac[¯_î_exp_0_less_thm]);
+a(lemma_tac¬î¯ 0 ¼ x ^ m ® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(asm_rewrite_tac[¯_abs_def]);
+val Ûsin_series_convergence_thmÝ = save_pop_thm "sin_series_convergence_thm";
+=TEX
+
+%%%%
+%%%%
+=SML
+set_goal([], ¬µm· ¶n· m = 2 * n ² m = 2 * n + 1®);
+a(REPEAT strip_tac THEN induction_tac¬m:î®);
+(* *** Goal "1" *** *)
+a(¶_tac¬0® THEN rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(¶_tac¬n® THEN asm_rewrite_tac[]);
+(* *** Goal "3" *** *)
+a(¶_tac¬n+1® THEN all_var_elim_asm_tac1 THEN PC_T1 "lin_arith" asm_prove_tac[]);
+val Ûeven_odd_thmÝ = save_pop_thm "even_odd_thm";
+=TEX
+
+%%%%
+%%%%
+=SML
+set_goal([], ¬µn· (2 * n) Mod 2 = 0 ± (2 * n + 1) Mod 2 = 1®);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(ante_tac (list_µ_elim[¬2*n®, ¬2®, ¬n®, ¬0®] div_mod_unique_thm) THEN 
+	PC_T1 "lin_arith" prove_tac[]);
+(* *** Goal "2" *** *)
+a(ante_tac (list_µ_elim[¬2*n + 1®, ¬2®, ¬n®, ¬1®] div_mod_unique_thm) THEN 
+	PC_T1 "lin_arith" prove_tac[]);
+val Ûmod_2_thmÝ = save_pop_thm "mod_2_thm";
+=TEX
+
+%%%%
+%%%%
+=SML
+set_goal([], ¬µm·
+	î¯ (m + 1) * î¯ (m+2) * (if (m + 2) Mod 2 = 0 then î¯ 0 else (m + 2) ! ›-›1)
+=	if m Mod 2 = 0 then î¯ 0 else m ! ›-›1®);
+a(REPEAT strip_tac);
+a(strip_asm_tac (µ_elim¬m® even_odd_thm) THEN all_var_elim_asm_tac1);
+(* *** Goal "1" *** *)
+a(LEMMA_T¬2*n+2 = 2*(n+1)® rewrite_thm_tac THEN1 PC_T1 "lin_arith" prove_tac[]);
+a(rewrite_tac[mod_2_thm]);
+(* *** Goal "2" *** *)
+a(rewrite_tac[plus_assoc_thm] THEN induction_tac¬n® THEN1 rewrite_tac[]);
+(* *** Goal "2.1" *** *)
+a(pure_once_rewrite_tac[prove_rule[]¬1 = 0 + 1 ± 3 = ((0 + 1) + 1) + 1®]);
+a(pure_rewrite_tac[factorial_def] THEN rewrite_tac[]);
+(* *** Goal "2.2" *** *)
+a(LEMMA_T¬µn·2*n+3 = 2*(n+1)+1® rewrite_thm_tac THEN1 PC_T1 "lin_arith" prove_tac[]);
+a(rewrite_tac[mod_2_thm, plus_assoc_thm]);
+a(rewrite_tac[exp_deriv_coeffs_thm]);
+a(LEMMA_T¬2*(n+1) + 2 = (2*(n+1) + 1) + 1 ± 2*(n+2) = (2*(n+1) + 1) + 1®
+	rewrite_thm_tac THEN1 PC_T1 "lin_arith" prove_tac[]);
+a(rewrite_tac[exp_deriv_coeffs_thm]);
+val Ûsin_deriv_coeffs_thmÝ = save_pop_thm "sin_deriv_coeffs_thm";
+=TEX
+The main theorem justifying the consistency of the definition by the differential equation
+of the sine and cosine functions. Note that $s(x) = \Sin{-1}$ and $c(x) = -\Cos{-x}$ here,
+hence there all the signs in the differential equations are positive:
+%%%%
+%%%%
+=SML
+set_goal([], ¬
+	¶s c·
+	(µy· (s HasDeriv c y) y)
+±	(µy· (c HasDeriv  s y) y)
+±	s (î¯ 0) = î¯ 0
+±	c (î¯ 0) = î¯ 1
+®);
+a(ante_tac sin_series_convergence_thm);
+a(pure_once_rewrite_tac[prove_rule[]¬µm·
+ (if m Mod 2 = 0 then î¯ 0 else m ! ›-›1) = (Ìm· (if m Mod 2 = 0 then î¯ 0 else m ! ›-›1)) m®]);
+a(strip_tac THEN all_fc_tac[power_series_main_thm3]);
+a(DROP_NTH_ASM_T 2(strip_asm_tac o rewrite_rule[factorial_def]));
+a(DROP_NTH_ASM_T 2 ante_tac);
+a(rewrite_tac[] THEN pure_once_rewrite_tac[prove_rule[]¬1 = 0 + 1® ]
+	THEN pure_rewrite_tac[factorial_def] THEN rewrite_tac[]);
+a(REPEAT strip_tac);
+a(DROP_NTH_ASM_T 5 (strip_asm_tac o rewrite_rule[sin_deriv_coeffs_thm]));
+a(¶_tac¬f®  THEN ¶_tac¬d1f® );
+a(LEMMA_T ¬f = d2f® asm_rewrite_thm_tac THEN REPEAT strip_tac);
+a(spec_nth_asm_tac 7 ¬x®);
+a(spec_nth_asm_tac 2 ¬x®);
+a(all_fc_tac[lim_seq_unique_thm]);
+val Ûsin_cos_consistency_thmÝ = save_pop_thm "sin_cos_consistency_thm";
+=TEX
+Et, voil\'a (after a little tinkering with signs):
+%%%%
+%%%%
+=TEX
+=SML
+(*
+repeat drop_main_goal;
+push_consistency_goal¬Sin®;
+a(strip_asm_tac sin_cos_consistency_thm);
+a(¶_tac ¬((Ìx·s(~x)), (Ìx·(c (~x))))® THEN asm_rewrite_tac[]);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(pure_once_rewrite_tac[prove_rule[]¬µt·s (~t) = s((Ìt·~t)t)®,
+	pc_rule1 "¯_lin_arith" prove_rule[]¬~(c(~x)) = c(~x)  * ~(î¯ 1)®]);
+a(bc_thm_tac comp_deriv_thm THEN asm_rewrite_tac[minus_deriv_thm, È_axiom]);
+
+a(lemma_tac¬µx· ((Ìt·c(t) + c(~t))  HasDeriv î¯ 0) x® THEN1 strip_tac);
+(* *** Goal "2.1" *** *)
+a(pure_once_rewrite_tac[pc_rule1 "¯_lin_arith" prove_rule[]¬î¯ 0 = s(~x) + ~(s(~ x))®,
+	prove_rule[]¬µt·c (~t) = (Ìt·c(~t))t®]);
+a(bc_thm_tac  plus_deriv_thm THEN asm_rewrite_tac[]);
+
+
+a(¶_tac ¬(s, (Ìx·(c (~x))))® THEN asm_rewrite_tac[]);
+a(lemma_tac¬µx· ((Ìt·c(~t))  HasDeriv ~(s(~ x))) x® THEN1 strip_tac);
+(* *** Goal "1" *** *)
+a(pure_once_rewrite_tac[prove_rule[]¬µt·c (~t) = c((Ìt·~t)t)®,
+	pc_rule1 "¯_lin_arith" prove_rule[]¬~(s(~x)) = s(~x)  * ~(î¯ 1)®]);
+a(bc_thm_tac comp_deriv_thm THEN asm_rewrite_tac[minus_deriv_thm, È_axiom]);
+(* *** Goal "2" *** *)
+a(lemma_tac¬µx· ((Ìt·s(~t))  HasDeriv ~(c(~ x))) x® THEN1 strip_tac);
+(* *** Goal "2.1" *** *)
+a(pure_once_rewrite_tac[prove_rule[]¬µt·s (~t) = s((Ìt·~t)t)®,
+	pc_rule1 "¯_lin_arith" prove_rule[]¬~(c(~x)) = c(~x)  * ~(î¯ 1)®]);
+a(bc_thm_tac comp_deriv_thm THEN asm_rewrite_tac[minus_deriv_thm, È_axiom]);
+(* *** Goal "2.2" *** *)a(¶_tac¬Ìt·~(s (~t)® THEN ¶_tac¬Ìt·c(~t)®);
+
+a(lemma_tac¬µx· ((Ìt·c(t) + c(~t))  HasDeriv î¯ 0) x® THEN1 strip_tac);
+(* *** Goal "2.1" *** *)
+a(pure_once_rewrite_tac[pc_rule1 "¯_lin_arith" prove_rule[]¬î¯ 0 = s(~x) + ~(s(~ x))®,
+	prove_rule[]¬µt·c (~t) = (Ìt·c(~t))t®]);
+a(bc_thm_tac  plus_deriv_thm THEN asm_rewrite_tac[]);
+
+
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(pure_once_rewrite_tac[pc_rule1 "¯_lin_arith" prove_rule[]¬c (~ x) = ~(c(~ x)) * ~(î¯ 1)®]);
+a(bc_thm_tac comp_deriv_thm THEN asm_rewrite_tac[minus_deriv_thm]);
+
+comp_deriv_thm;
+
+val _ = save_consistency_thm ¬Exp® (pop_thm());
+val Ûexp_defÝ = get_spec¬Exp®;
+*)
+=TEX
+
 =TEX
 %%%%
 %%%%
