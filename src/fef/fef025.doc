@@ -64,7 +64,7 @@ DRA front end filter project RSRE 1C/6130.}
 \subsection{Changes History}
 \begin{description}
 \item[Issue \SCCSversion ({\FormatDate{$Date$
-}}) ] First version.
+}}) ] First issue.
 \end{description}
 
 \subsection{Changes Forecast}
@@ -95,14 +95,15 @@ the TSQL state which represents it.
 In \cite{DS/FMU/FEF/021} we defined the semantics of TSQL as a subset of SSQL
  with all classes in the state, except those that are 
 actually stored as data, set at the lowest 
-possible classification, $lattice\_bottom$. Given an 
+possible classification, $lattice\_bottom$, and all worths set
+ at $sterling$. Given an 
 SSQL state with $n$ columns, this will be represented as 
 a TSQL state with between $n$ and $3n\ +\ 1$ columns. The first column in
 the TSQL state
 will contain a value corresponding to the row existence 
 class in the SSQL state, unless this is constant(i.e. when
 the maximum row existence class is the same as the table
-class. Then for each SSQL 
+class). Then for each SSQL 
 column there  will be one, two or three TSQL columns. There 
 will always be a column corresponding to the sterling value of 
 the SSQL value. The second  column corresponds to 
@@ -172,6 +173,8 @@ dinary value and the class value.
 ‹		then (MkNullDataât,MkDataât (VI_val v),MkClassVal c)
 ‹		else  (MkNullDataât,MkNullDataât,MkClassVal c)
 ∞
+
+
 All column existence classes in the state will be at bottom.
 
 πHOLCONST
@@ -269,14 +272,16 @@ needed for a particular SSQL column by checking the relevant
 ‹	µ t n ∑ ColNeeds  t n = 
 ‹		if IsL (fâ1 t n) then 
 ‹			let c = OutL (fâ1 t n)
-‹			in let ans = 	if CS_dinaryType c = monoleanType
-‹					then 	if CS_min c = CS_max c
-‹						then 1
-‹						else 2
-‹					else 3
+‹			in let n' = 	if CS_dinaryType c = monoleanType
+‹					then 1
+‹					else 2
+‹			in let ans =	if CS_min c = CS_max c
+‹					then n'
+‹					else n' + 1
 ‹			in InL ans
 ‹		else InR(OutR(fâ1 t n))
 ∞
+
 Given an SSQL column position we need the first column position 
 for the TSQL columns representing it.
 
@@ -312,7 +317,7 @@ classifications,
 ‹				monoleanType
 ‹				(CS_sterlingType cs)
 ‹				(CS_nullType cs)
-‹				(CS_default cs)
+‹				(Fst(repr_data(CS_default cs)))
 ‹				(rc + CS_consGroup cs)
 ‹				lattice_bottom
 ‹				lattice_bottom
@@ -325,7 +330,7 @@ classifications,
 ‹				monoleanType
 ‹				(CS_dinaryType cs)
 ‹				(CS_nullType cs)
-‹				(CS_default cs)
+‹				(Fst(Snd(repr_data(CS_default cs))))
 ‹				(rc + CS_consGroup cs)
 ‹				lattice_bottom
 ‹				lattice_bottom],next + 2)
@@ -337,7 +342,7 @@ classifications,
 ‹				monoleanType
 ‹				classType
 ‹				(CS_nullType cs)
-‹				(CS_default cs)
+‹				(Snd(Snd(repr_data(CS_default cs))))
 ‹				(rc + CS_consGroup cs)
 ‹				lattice_bottom
 ‹				lattice_bottom]
@@ -399,6 +404,7 @@ Represent a table of SSQL data as a row of TSQL data.
 ‹			(Map (repr_row t) (TS_rows t))	
 ∞
 
+Represent an SSQL directory data as a TSQL directory.
 
 πHOLCONST
 ‹	€repr_dir› 		: Directory ≠  Directory 
