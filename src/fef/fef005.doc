@@ -63,15 +63,9 @@ DRA front end filter project RSRE 1C/6130.}
 \subsection{Changes History}
 \begin{description}
 \item[Issue \SCCSversion ({\FormatDate{$Date$
-}}) ]  New proof context. Changes made because of changes to HOL library theories. 
-$Flatten$ now $Flat$.The
-composition operator $»$ only works with two functions, or two sets of pairs. In the 
-case where it is required to compose a set of pairs with a function, $Graph$  is first
-applied to the function part to give a set of pairs. $InverseRelation$ now the symbol
-=INLINEFT
-ç~ê
-=TEX
-.
+}}) ]  Changes made because of new type $State$. $validTable$ replaced by $tabExists$,
+which is parameterised by a classification. Check on table classification
+moved from $insertQuery$ to $updateState$.
 \end{description}
 
 \subsection{Changes Forecast}
@@ -96,8 +90,24 @@ for the proof tools.
 =SML 
 open_theory "fef004";
 new_theoryÛ"fef005"İ;
-push_pc "hol1";
+push_pc "hol";
 =TEX
+\subsection{Representation and Abstraction Functions for $State$}
+
+We define the representation function, $repState$, and abstraction function, $absState$, for the type $State$.
+
+¹HOLCONST
+Ü	ÛrepStateİ : State ­ StateR;
+Ü	ÛabsStateİ : StateR ­ State
+÷üüüüüüüüüüüüüü
+Ü	(µ a · absState (repState a) = a)
+Ü±	(µr · isState r ´ repState (absState r) = r)
+Ü±	(µ a‰1 a‰2 · repState a‰1 = repState a‰2 ¤ a‰1 = a‰2)
+Ü±	(µ r‰1 r‰2 ·  (isState r‰1 ± isState r‰2) ´ 
+Ü		(absState r‰1 = absState r‰2 ¤ r‰1 = r‰2))
+Ü±	(µs · isState (repState s))
+°
+
 
 \section{THE FUNCTION $hide$}
 
@@ -141,6 +151,8 @@ directory in place of that table. We define a classification $stubClass$ for suc
 Ü	stubTable = MkTableSpec stubClass stubClass{}{}[]
 °
 
+
+
 All other tables are cleaned in the following way
 \begin{itemize}
 \item
@@ -169,7 +181,7 @@ existence is dominated by the clearance,  and the corresponding set of columns.
 
 
 ¹HOLCONST
-Ü	ÛcleanColConsİ : Class ­ TableSpec ­ (ColCons ¸ ColSpec ğ)
+Ü	ÛcleanColConsİ : Class ­ TableSpec ­ ((Num ª ColCon) ¸ ColSpec ğ)
 ÷üüüüüüüüüüüüüü
 Ü	µ clear : Class; ts: TableSpec
 Ü	· 	cleanColCons clear ts 
@@ -311,16 +323,26 @@ directory will either be hidden or modified by $cleanTable$.
 \subsection{Cleaning a State} \label{CLEANSTATE}
 Finally, any directories about whose existence the user is 
 not cleared to know can be removed from the state. All remaining directories will be
-cleaned by $cleanDirectory$.
+cleaned by $cleanDirectory$. First, we define $hideR$ on the representation state.
+
+¹HOLCONST
+Ü	ÛhideRİ : Class ¸ StateR ­ StateR
+÷üüüüüüüüüüüüüü
+Ü	µ clear : Class; s : StateR
+Ü	· 	hideR(clear,s) 
+Ü		= 
+Ü		(s ’ {dir | clear dominates (Dir_exist dir)}) » Graph(cleanDirectory clear)
+°
+
+Now the function $hide$ on $State$.
 
 ¹HOLCONST
 Ü	Ûhideİ : Class ¸ State ­ State
 ÷üüüüüüüüüüüüüü
 Ü	µ clear : Class; s : State
-Ü	· 	hide(clear,s) 
-Ü		= 
-Ü		(s ’ {dir | clear dominates (Dir_exist dir)}) » Graph(cleanDirectory clear)
+Ü	· 	hide(clear,s) = absState(hideR(clear, repState s))
 °
+
 
 
 \section{THE FUNCTION $updateState$}
@@ -350,10 +372,7 @@ hidden row position.
 Ü		Squash(Id(Dom((ListRel(TS_rows ts)) ’ visiblerows))) 
 °
 
-We provide the auxiliary functions $replaceRows$ and $changeSpec$ from Annex 2 {\em SSQL Abstract Machine} of the ITT \cite{ittdra}. A separate function $validTable$ is given that determines whether 
-or not a table name
-exists in a particular state.
-
+We provide the auxiliary functions $replaceRows$ and $changeSpec$ from Annex 2 {\em SSQL Abstract Machine} of the ITT \cite{ittdra}. 
 
 ¹HOLCONST
 Ü	ÛreplaceRowsİ : TableSpec ­ Row LIST ­ TableSpec
@@ -364,31 +383,20 @@ exists in a particular state.
 Ü		MkTableSpec(TS_class ts)(TS_maxRow ts)(TS_colspecs ts)(TS_cons ts) rs
 °
 
-¹HOLCONST
-Ü	ÛvalidTableİ : Tab ­ State ­ Bool
-÷üüüüüüüüüüüüüü
-Ü	µ i : Tab; s:State
-Ü	· 	validTable i s 
-Ü		=
-Ü		¶‰1 dir · (Front i,dir)  s ± Last i  Dom(Dir_tables dir)
-°
-
 The  operator $@$ is the partial function application operator.
 
 ¹HOLCONST
-Ü	ÛchangeSpecİ : Tab ­ TableSpec ­ State ­ State
+Ü	ÛchangeSpecİ : Tab ­ TableSpec ­ StateR ­ StateR
 ÷üüüüüüüüüüüüüü
-Ü	µ i : Tab; ts : TableSpec; s : State
+Ü	µ i : Tab; ts : TableSpec; s : StateR
 Ü	· 	changeSpec i ts s	
 Ü		= 
-Ü		if	validTable i s 
-Ü		then	let	dir = s @ Front i 
-Ü			in
-Ü			let	dir' = MkDirectory(Dir_tables dir « {(Last i,ts)}) 
-Ü								(Dir_exist dir)(Dir_class dir)
-Ü			in	
-Ü			s « {(Front i,dir')}
-Ü		else	s
+Ü		let	dir = s @ Front i 
+Ü		in
+Ü		let	dir' = MkDirectory(Dir_tables dir « {(Last i,ts)}) 
+Ü							(Dir_exist dir)(Dir_class dir)
+Ü		in	
+Ü		s « {(Front i,dir')}
 °
 
 A function that returns the visible columns of a table.
@@ -402,6 +410,37 @@ A function that returns the visible columns of a table.
 Ü		Snd(cleanColCons clear ts)
 °
 
+A function $tabExists$ is given that determines whether 
+or not a table name
+exists at a particular clearance in a particular state.
+
+¹HOLCONST
+Ü	ÛtabExistsİ : Class ­ Tab ­ StateR ­ Bool
+÷üüüüüüüüüüüüüü
+Ü	µ c : Class; i : Tab; s:StateR
+Ü	· 	tabExists c i s 
+Ü		¤
+Ü		Front i  Dom s 
+Ü		±
+Ü		c dominates Dir_exist (s @ Front i)
+Ü		±
+Ü		c dominates Dir_class (s @ Front i)
+Ü		±
+Ü		Last i  Dom (Dir_tables (s @ Front i))
+°
+
+The function $getTable$ returns a table given its full table name. 
+This will only be applied in the case where the table
+name exists.  
+
+¹HOLCONST
+Ü	ÛgetTableİ : Tab ­ StateR ­ TableSpec
+÷üüüüüüüüüüüüüü
+Ü	µ i : Tab; s:StateR
+Ü	· 	
+Ü	getTable i s = (Dir_tables(s @ (Front i))) @ (Last i)
+°
+
 
 \subsection{Insert}
 
@@ -412,7 +451,7 @@ default values are obtained from the table information.
 
 
 ¹HOLCONST
-Ü	ÛcolDefaultsİ :  Class ­ TableSpec ­ (Num ª Data) ­  (Num ª Data)
+Ü	ÛcolDefaultsİ :  Class ­ TableSpec ­ (Num ª Data) ­  (Numª Data)
 ÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
 Ü	µ  clear : Class; ts : TableSpec; ds : Num ª Data
 Ü	·	colDefaults clear ts ds
@@ -423,20 +462,17 @@ default values are obtained from the table information.
 °
 
 
-An insert query will fail if the user is not permitted to access the table.
 
 
 ¹HOLCONST
-Ü	ÛinsertQueryİ :  (Class ¸ Insert ¸ State ¸ TableSpec) ­ State ¸ Errors
+Ü	ÛinsertQueryİ :  (Class ¸ Insert ¸ StateR ¸ TableSpec) ­ StateR ¸ Errors
 ÷üüüüüüüüüüüüüü
-Ü	µ clear:Class; i:Tab; ds : (Num ª Data) LIST; s:State; ts : TableSpec
+Ü	µ clear:Class; i:Tab; ds : (Num ª Data) LIST; s:StateR; ts : TableSpec
 Ü	·	insertQuery (clear,(i,ds),s,ts)
 Ü		=
-Ü		if 	³(clear dominates  (TS_class ts))
-Ü		then 	(s,[accessDenied])
-Ü		else	let rl = Map ((MkRow clear) o (colDefaults clear ts)) ds 
-Ü			in	
-Ü			(changeSpec i (replaceRows ts ((TS_rows ts) ë rl)) s,[])	
+Ü		let rl = Map ((MkRow clear) o (colDefaults clear ts)) ds 
+Ü		in	
+Ü		(changeSpec i (replaceRows ts ((TS_rows ts) ë rl)) s,[])	
 °
 
 \subsection{Delete}
@@ -451,9 +487,9 @@ then the structure of the table would have been hidden from him and therefore th
 
 
 ¹HOLCONST
-Ü	ÛdeleteQueryİ :  (Class ¸ Delete ¸ State ¸ TableSpec) ­  State
+Ü	ÛdeleteQueryİ :  (Class ¸ Delete ¸ StateR ¸ TableSpec) ­  StateR
 ÷üüüüüüüüüüüüüü
-Ü	µ clear:Class; i:Tab; ns : Num ğ; e:Errors; s:State; ts:TableSpec
+Ü	µ clear:Class; i:Tab; ns : Num ğ; e:Errors; s:StateR; ts:TableSpec
 Ü	·	deleteQuery(clear,(i,ns),s,ts)
 Ü		=
 Ü		let	rs = Extract (Ran(ns á (revealRow clear ts)))(TS_rows ts) 
@@ -518,9 +554,9 @@ Now the effect of an update on a row.  A new row is only returned if all updates
 Finally, the $updateQuery$ function. A check is made to prevent access to hidden columns. 
 
 ¹HOLCONST
-Ü	ÛupdateQueryİ :  (Class ¸ UpDate ¸ State ¸ TableSpec)  ­ State ¸ Errors
+Ü	ÛupdateQueryİ :  (Class ¸ UpDate ¸ StateR ¸ TableSpec)  ­ StateR ¸ Errors
 ÷üüüüüüüüüüüüüü
-Ü	µ clear:Class; i:Tab; us : Num ª (Num ª Update); s:State; ts : TableSpec
+Ü	µ clear:Class; i:Tab; us : Num ª (Num ª Update); s:StateR; ts : TableSpec
 Ü	·	updateQuery (clear,(i,us),s,ts)
 Ü		=
 Ü		let colnums = {n | ¶ c · c  visibleCols clear ts ± CS_posn c = n}
@@ -543,32 +579,21 @@ Finally, the $updateQuery$ function. A check is made to prevent access to hidden
 
 \subsection{Specification of $updateState$}
 
-We first provide a function that given a full table name returns a table. 
-This will only be applied in the case where the table
-name is valid.  
-
-¹HOLCONST
-Ü	ÛgetTableİ : Tab ­ State ­ TableSpec
-÷üüüüüüüüüüüüüü
-Ü	µ i : Tab; s:State
-Ü	· 	
-Ü	getTable i  s = (Dir_tables(s @ (Front i))) @ (Last i)
-°
-
 The function $updateState$ operates on the output from the function $processQuery$, 
 defined in \cite{DS/FMU/FEF/004}. This output is a pair consisting of the
 effect of the update query, which depends on whether the query was a select, 
 insert, delete or update, and a sequence of errors messages.
 For a select query, data is returned to the user, together with any error messages. The
 state of the database remains unchanged.
-For an insert, delete or update query, if an invalid table name is returned
-by $processQuery$, then
+For an insert, delete or update query, if a table name is returned  by $processQuery$
+that does not exist, then
  the state of the database remains unchanged and an appropriate error message is returned.
 If errors were generated by $processQuery$
 then
  the state of the database remains unchanged and the errors are returned.  
 If a valid table name and no errors are returned
-by $processQuery$ then the appropriate update to the state of the database, given by
+by $processQuery$, then if the clearance of the user does not
+dominate the classification of the table, again the state of the database remains unchanged and an appropriate error message is returned. Otherwise, the appropriate update to the state of the database, given by
 $insertQuery$, $deleteQuery$ and $updateQuery$, is carried out after the security 
 checks have been made. In the case of an insert or update query, if the security checks
 identified that the output
@@ -576,13 +601,14 @@ identified that the output
  then the state of the database remains unchanged and error messages
 generated by the security checks are returned to the user. 
 
+First, we define $updateStateR$ on the representation state.
 
 ¹HOLCONST
-Ü	ÛupdateStateİ : Class ¸ (Effect ¸ Errors) ¸ State ­ 
-Ü				State ¸ (Class ¸ (Data LIST LIST ¸ Errors))
+Ü	ÛupdateStateRİ : Class ¸ (Effect ¸ Errors) ¸ StateR ­ 
+Ü				StateR ¸ (Class ¸ (Data LIST LIST ¸ Errors))
 ÷üüüüüüüüüüüüüü
-Ü	µ clear:Class;ef : Effect; es : Errors; s : State
-Ü	·	updateState(clear,(ef,es),s)
+Ü	µ clear:Class;ef : Effect; es : Errors; s : StateR
+Ü	·	updateStateR(clear,(ef,es),s)
 Ü		=	
 Ü		if	isSelect ef
 Ü		then	(s,(clear,(destSelect ef,es)))
@@ -590,9 +616,12 @@ generated by the security checks are returned to the user.
 Ü		then	(s,(clear,([],es)))
 Ü		else	let	i = tabFromEffect ef
 Ü			in	
-Ü			if	validTable i s
+Ü			if	tabExists clear i s
 Ü			then	let ts = getTable i s 
 Ü				in
+Ü				if 	³ (clear dominates TS_class ts)
+Ü				then	(s,(clear,([],[accessDenied])))
+Ü				else	
 Ü				let	(s',es') 
 Ü					=	
 Ü					if 	isInsert ef
@@ -605,6 +634,20 @@ generated by the security checks are returned to the user.
 Ü			else	(s,(clear,([],[noSuchTable])))  (* Invalid table name *)
 °
 
+Now the function $updateState$ on $State$.
+
+¹HOLCONST
+Ü	ÛupdateStateİ : Class ¸ (Effect ¸ Errors) ¸ State ­ 
+Ü				State ¸ (Class ¸ (Data LIST LIST ¸ Errors))
+÷üüüüüüüüüüüüüü
+Ü	µ clear:Class;ef : Effect; es : Errors; s : State
+Ü	·	updateState(clear,(ef,es),s) 
+Ü		=
+Ü		let 	(s‰r,out) = updateStateR(clear,(ef,es),repState s)
+Ü		in	(absState s‰r,out)
+°
+
+
 \section{CLOSING DOWN}
 The following ICL HOL instruction restores the previous proof context.
 =SML
@@ -612,11 +655,11 @@ pop_pc();
 =TEX
 
 \section{APPROVAL OF THE SECURITY RELATED SPECIFICATIONS} 
-Comments on this document by DRA to be made  by 23rd June 1992.
+Comments on this document by DRA to be made  by 31st July 1992.
 
 
 =IGN
-output_theory{theory = "fef005",outfile = "fef005th.doc"};
+output_theory{theory = "fef005",out_file = "fef005th.doc"};
 =TEX
 
 \newpage
