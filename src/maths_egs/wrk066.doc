@@ -7485,6 +7485,81 @@ val Ûmod_2_thmÝ = save_pop_thm "mod_2_thm";
 %%%%
 %%%%
 =SML
+set_goal([], ¬µm· m Mod 2 = 0 ² m Mod 2 = 1®);
+a(strip_tac THEN lemma_tac¬m Mod 2 < 2® THEN1 
+	(bc_thm_tac mod_less_thm THEN REPEAT strip_tac));
+a(PC_T1 "lin_arith" asm_prove_tac[]);
+val Ûmod_2_cases_thmÝ = save_pop_thm "mod_2_cases_thm";
+=TEX
+
+%%%%
+%%%%
+=SML
+set_goal([], ¬µm; x : ¯· m Mod 2 = 0 ´ (~x) ^ m = x ^ m®);
+a(REPEAT strip_tac);
+a(strip_asm_tac (µ_elim¬m® even_odd_thm) THEN all_var_elim_asm_tac1);
+(* *** Goal "1" *** *)
+a(POP_ASM_T discard_tac THEN induction_tac ¬n® THEN1 rewrite_tac[¯_î_exp_def]);
+a(pure_once_rewrite_tac[pc_rule1 "lin_arith" prove_rule[]¬2*(n+1) = (2*n+1)+1®]);
+a(pure_rewrite_tac[¯_î_exp_def] THEN asm_rewrite_tac[]);
+a(PC_T1 "¯_lin_arith" prove_tac[]);
+(* *** Goal "2" *** *)
+a(POP_ASM_T ante_tac THEN rewrite_tac[mod_2_thm]);
+val Ûmod_2_0_¯_î_exp_thmÝ = save_pop_thm "mod_2_0_¯_î_exp_thm";
+=TEX
+
+%%%%
+%%%%
+=SML
+set_goal([], ¬µm; x : ¯· m Mod 2 = 1 ´ (~x) ^ m = ~(x ^ m)®);
+a(REPEAT strip_tac);
+a(strip_asm_tac (µ_elim¬m® even_odd_thm) THEN all_var_elim_asm_tac1);
+(* *** Goal "1" *** *)
+a(POP_ASM_T ante_tac THEN rewrite_tac[mod_2_thm]);
+(* *** Goal "2" *** *)
+a(POP_ASM_T discard_tac THEN induction_tac ¬n® THEN1 rewrite_tac[¯_î_exp_def]);
+a(pure_once_rewrite_tac[pc_rule1 "lin_arith" prove_rule[]¬2*(n+1) = (1+2*n)+1®]);
+a(pure_rewrite_tac[¯_î_exp_def]);
+a(asm_rewrite_tac[prove_rule[]¬1+2*n = 2*n+1®]);
+a(PC_T1 "¯_lin_arith" prove_tac[]);
+val Ûmod_2_1_¯_î_exp_thmÝ = save_pop_thm "mod_2_1_¯_î_exp_thm";
+=TEX
+
+%%%%
+%%%%
+=SML
+set_goal([], ¬µs n x· (µm· m Mod 2 = 1 ´ s m = î¯ 0)
+	´ PowerSeries s n (~x) = PowerSeries s n x®);
+a(rewrite_tac[power_series_series_thm] THEN REPEAT strip_tac);
+a(induction_tac¬n® THEN asm_rewrite_tac[series_def]);
+a(strip_asm_tac(µ_elim¬n® mod_2_cases_thm));
+ (* *** Goal "1" *** *)
+a(ALL_FC_T rewrite_tac[mod_2_0_¯_î_exp_thm]);
+ (* *** Goal "2" *** *)
+a(LEMMA_T ¬s n = î¯ 0® rewrite_thm_tac);
+a(DROP_NTH_ASM_T 3 bc_thm_tac THEN asm_rewrite_tac[]);
+val Ûpower_series_even_thmÝ = save_pop_thm "power_series_even_thm";
+=TEX
+
+%%%%
+%%%%
+=SML
+set_goal([], ¬µs n x· (µm· m Mod 2 = 0 ´ s m = î¯ 0)
+	´ PowerSeries s n (~x) = ~(PowerSeries s n x)®);
+a(rewrite_tac[power_series_series_thm] THEN REPEAT strip_tac);
+a(induction_tac¬n® THEN asm_rewrite_tac[series_def]);
+a(strip_asm_tac(µ_elim¬n® mod_2_cases_thm));
+ (* *** Goal "1" *** *)
+a(LEMMA_T ¬s n = î¯ 0® rewrite_thm_tac);
+a(DROP_NTH_ASM_T 3 bc_thm_tac THEN asm_rewrite_tac[]);
+ (* *** Goal "2" *** *)
+a(ALL_FC_T rewrite_tac[mod_2_1_¯_î_exp_thm]);
+a(PC_T1 "¯_lin_arith" prove_tac[]);
+val Ûpower_series_odd_thmÝ = save_pop_thm "power_series_odd_thm";
+=TEX
+%%%%
+%%%%
+=SML
 set_goal([], ¬µm·
 	î¯ (m + 1) * î¯ (m+2) * (if (m + 2) Mod 2 = 0 then î¯ 0 else (m + 2) ! ›-›1)
 =	if m Mod 2 = 0 then î¯ 0 else m ! ›-›1®);
@@ -7509,7 +7584,11 @@ val Ûsin_deriv_coeffs_thmÝ = save_pop_thm "sin_deriv_coeffs_thm";
 =TEX
 The main theorem justifying the consistency of the definition by the differential equation
 of the sine and cosine functions. Note that $s(x) = \Sin{-1}$ and $c(x) = -\Cos{-x}$ here,
-hence there all the signs in the differential equations are positive:
+hence there all the signs in the differential equations are positive.
+The facts that $c$ is an even function  and that $s$ is an odd
+function can actually be derived from the differential equations
+but the proof would involve a number of not entirely trivial properties of $s$ and $c$ which
+we do not wish to prove at this stage.
 %%%%
 %%%%
 =SML
@@ -7517,6 +7596,8 @@ set_goal([], ¬
 	¶s c·
 	(µy· (s HasDeriv c y) y)
 ±	(µy· (c HasDeriv  s y) y)
+±	(µy· s(~y) = ~(s(y)))
+±	(µy· c(~y) = c(y))
 ±	s (î¯ 0) = î¯ 0
 ±	c (î¯ 0) = î¯ 1
 ®);
@@ -7532,9 +7613,53 @@ a(REPEAT strip_tac);
 a(DROP_NTH_ASM_T 5 (strip_asm_tac o rewrite_rule[sin_deriv_coeffs_thm]));
 a(¶_tac¬f®  THEN ¶_tac¬d1f® );
 a(LEMMA_T ¬f = d2f® asm_rewrite_thm_tac THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
 a(spec_nth_asm_tac 7 ¬x®);
 a(spec_nth_asm_tac 2 ¬x®);
 a(all_fc_tac[lim_seq_unique_thm]);
+(* *** Goal "2" *** *)
+a(spec_nth_asm_tac 1 ¬y®);
+a(spec_nth_asm_tac 2 ¬~y®);
+a(LIST_DROP_NTH_ASM_T (interval 3 10) discard_tac);
+a(POP_ASM_T ante_tac THEN LEMMA_T ¬µy·
+	(Ì m · PowerSeries
+		(Ì m· if m Mod 2 = 0 then î¯ 0 else m ! ›-›1) m (~y))
+=	(Ì m · ~(PowerSeries
+		(Ì m· if m Mod 2 = 0 then î¯ 0 else m ! ›-›1) m y))®
+	rewrite_thm_tac);
+(* *** Goal "2.1" *** *)
+a(REPEAT strip_tac THEN rewrite_tac[]);
+a(bc_thm_tac power_series_odd_thm THEN rewrite_tac[] THEN REPEAT strip_tac);
+a(asm_rewrite_tac[]);
+(* *** Goal "2.2" *** *)
+a(lemma_tac¬(Ì m· ~ (PowerSeries (Ì m· if m Mod 2 = 0 then î¯ 0 else m ! ›-›1) m y))
+               -> ~ (d2f y)®);
+(* *** Goal "2.2.1" *** *)
+a(conv_tac(LEFT_C Ì_un_Â_rands_conv));
+a(bc_thm_tac minus_lim_seq_thm THEN REPEAT strip_tac);
+(* *** Goal "2.2.2" *** *)
+a(REPEAT strip_tac THEN  all_fc_tac [lim_seq_unique_thm]);
+(* *** Goal "3" *** *)
+a(spec_nth_asm_tac 6 ¬y®);
+a(spec_nth_asm_tac 7 ¬~y®);
+a(LIST_DROP_NTH_ASM_T (interval 3 10) discard_tac);
+a(all_asm_ante_tac THEN rewrite_tac[]);
+a(LEMMA_T ¬µy·
+	(Ì m · PowerSeries
+		(Ì m· î¯ (m + 1) * (if (m + 1) Mod 2 = 0 then î¯ 0 else (m + 1) ! ›-›1)) m (~y))
+=	(Ì m · PowerSeries
+		(Ì m· î¯ (m + 1) * (if (m + 1) Mod 2 = 0 then î¯ 0 else (m + 1) ! ›-›1))m y)®
+	rewrite_thm_tac);
+(* *** Goal "3.1" *** *)
+a(DROP_ASMS_T discard_tac THEN REPEAT strip_tac THEN rewrite_tac[]);
+a(bc_thm_tac power_series_even_thm THEN rewrite_tac[] THEN REPEAT strip_tac);
+a(strip_asm_tac(µ_elim¬m+1® mod_2_cases_thm) THEN1 asm_rewrite_tac[]);
+a(i_contr_tac THEN strip_asm_tac (µ_elim¬m® even_odd_thm) THEN all_var_elim_asm_tac1
+	THEN all_asm_ante_tac THEN rewrite_tac[mod_2_thm]);
+a(LEMMA_T¬(2*n+1) + 1 = 2*(n+1)® (fn th => rewrite_tac[th, mod_2_thm])
+	THEN PC_T1 "lin_arith" prove_tac[]);
+(* *** Goal "3.2" *** *)
+a(REPEAT strip_tac THEN all_fc_tac [lim_seq_unique_thm]);
 val Ûsin_cos_consistency_thmÝ = save_pop_thm "sin_cos_consistency_thm";
 =TEX
 Et, voil\'a (after a little tinkering with signs):
@@ -7546,11 +7671,28 @@ Et, voil\'a (after a little tinkering with signs):
 repeat drop_main_goal;
 push_consistency_goal¬Sin®;
 a(strip_asm_tac sin_cos_consistency_thm);
-a(¶_tac ¬((Ìx·s(~x)), (Ìx·(c (~x))))® THEN asm_rewrite_tac[]);
+a(¶_tac ¬((Ìx·~(s(~x))), c)® THEN asm_rewrite_tac[]);
 a(REPEAT strip_tac);
 (* *** Goal "1" *** *)
-a(pure_once_rewrite_tac[prove_rule[]¬µt·s (~t) = s((Ìt·~t)t)®,
-	pc_rule1 "¯_lin_arith" prove_rule[]¬~(c(~x)) = c(~x)  * ~(î¯ 1)®]);
+a(asm_rewrite_tac[È_axiom]);
+(* *** Goal "2" *** *)
+a(LEMMA_T¬s x = ~(s(~x))®  rewrite_thm_tac THEN1 asm_rewrite_tac[]);
+a(pure_once_rewrite_tac[pc_rule1 "¯_lin_arith" prove_rule[]¬s(~x) = (s (~x)) * ~(î¯ 1)®,
+	prove_rule[]¬µt:¯· ~t = (Ìt·~t)t®]);
+a(LEMMA_T¬s x = ~(s(~x))®  once_rewrite_thm_tac THEN1 asm_rewrite_tac[]);
+a(bc_thm_tac comp_deriv_thm);
+a(rewrite_tac[minus_deriv_thm, È_axiom]);
+
+
+a(DROP_NTH_ASM_T 3 ante_tac);
+a(LEMMA_T ¬~(s x) = s (~x)® rewrite_thm_tac THEN1 asm_rewrite_tac[]);
+a(REPEAT strip_tac);
+a(pure_once_rewrite_tac[prove_rule[]¬µt·c (~t) = c((Ìt·~t)t)®,
+	pc_rule1 "¯_lin_arith" prove_rule[] ¬s(~x) = ~(s(~x))  * ~(î¯ 1)®]);
+a(bc_thm_tac comp_deriv_thm THEN rewrite_tac[minus_deriv_thm, È_axiom]);
+a(lemma_tac¬(c HasDeriv s(~x)) (~x)®  THEN1 asm_rewrite_tac[È_axiom]);
+
+a(pure_once_rewrite_tac[pc_rule1 "¯_lin_arith" prove_rule[]¬~(s x) =(s x) * ~ (î¯ 1)®]);
 a(bc_thm_tac comp_deriv_thm THEN asm_rewrite_tac[minus_deriv_thm, È_axiom]);
 
 a(lemma_tac¬µx· ((Ìt·c(t) + c(~t))  HasDeriv î¯ 0) x® THEN1 strip_tac);
