@@ -99,17 +99,32 @@ SMLFILES =	fef003.sml \
 		fef013.sml \
 		fef015.sml
 
-ALLSMLS = wrk044.sml wrk046.sml wrk049.sml $(SMLFILES)
+MINSMLFILES =	fef003.sml \
+		fef004.sml \
+		fef005.sml \
+		fef014.sml \
+		fef006.sml 
 
-DOCFILES = $(ALLSMLS:.sml=.doc)  fef001.doc 
-TEXFILES = $(SMLFILES:.sml=.tex)  fef001.tex 
-DVIFILES = $(SMLFILES:.sml=.dvi)  fef001.dvi 
+PHASE2FILES =	fef022.sml \
+		fef024.sml \
+		fef021.sml \
+		fef025.sml \
+		fef026.sml
+
+ALLSMLS = wrk044.sml wrk046.sml wrk049.sml $(SMLFILES)
+MINSMLS = wrk044.sml wrk046.sml wrk049.sml $(MINSMLFILES)
+PHASE2SMLS = $(MINSMLS) $(PHASE2FILES)
+
+DOCFILES = $(ALLSMLS:.sml=.doc) $(PHASE2FILES:.sml=.doc) fef001.doc 
+TEXFILES = $(SMLFILES:.sml=.tex) $(PHASE2FILES:.sml=.tex) fef001.tex 
+DVIFILES = $(SMLFILES:.sml=.dvi) $(PHASE2FILES:.sml=.dvi) fef001.dvi 
 
 #######################################
 
 ARCH:sh = echo `arch`
 HOLDB = $(ARCH)hol.db
 FEFDB = $(ARCH)fef.db
+PH2FEFDB = $(ARCH)ph2fef.db
 DIR	= /hat/projects/fef
 SDIR	= $(DIR)/SCCS
 SCCSGET	= sccs -d $(DIR) get
@@ -160,6 +175,9 @@ $(DOCFILES) : $(DIR)/SCCS/s.$$@
 
 €fef.db› : $(FEFDB)
 
+#	fef database without security proofs
+
+€ph2fef.db› : $(PH2FEFDB)
 
 
 #	Run LaTeX on all the documents, but do not actually print them.
@@ -202,6 +220,16 @@ $(FEFDB) : $(ALLSMLS) makefef.sh
 	- chmod u+w $(FEFDB)
 	makefef.sh -d $(FEFDB) -s "Built by makefile"  \
 		$(ALLSMLS)
+
+#	Form the fef database  without proofs from the source files
+
+$(PH2FEFDB) : $(PHASE2SMLS) makefef.sh
+	- chmod u+w $(HOLDB)
+	rm -f $(PH2FEFDB)
+	hol_make_database -f -p hol#fin_set ph2fef#cache_thms
+	- chmod u+w $(PH2FEFDB)
+	makefef.sh -d $(PH2FEFDB) -s "Built by makefile"  \
+		$(PHASE2SMLS)
 
 =TEX
 \section{TIDYING UP THE FILE STORE}
