@@ -142,267 +142,49 @@ This sufficient condition can be seen to relate more closely, at least informall
 to the internal details of the transformations than the definition
 of $STP\_secure$ itself.
 
-\section{SELECT QUERY}
-To simplify matters, we will consider the $SELECT$ query to be broken
-down into more primitive operations. In this section,
-we to construct the top-level building blocks.
-These are parameterised by lower-level constructs (values and the like)
-which are discussed in sections \ref{SIMPLEEXPRESSIONS} and
-\ref{AGGREGATEEXPRESSIONS} below.
+It turns out to be convenient to organise the SSQL constructs into
+three levels.
 
-In each case, we identify the origin in the specification of
-the transformations of the computation of the relevant clearances.
-\subsection{Join}
-The TSQL join operation is just cartesian product. The row class
-and where clause class in each tuple in the product is the least upper
-bound of the corresponding classes in each component tuple which contributes to
-that tuple. The joined table has no name and the maximum
-row class is the least upper bound of those in the component tables.
-
-
-Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
-¹HOLCONST
-Ü	ÛJoinSpecsİ : DerTableSpec LIST ­ DerTableSpec
-÷üüüüüüüüüüüüüüüüüü
-Ü	µsl·
-Ü	JoinSpecs sl =
-Ü	let	n = []
-Ü	and	mr = lubl (Map DTS_maxRow sl)
-Ü	and	csl = Flat (Map DTS_colSpecs sl)
-Ü	in	MkDerTableSpec n mr csl
-°
-¹HOLCONST
-Ü	ÛJoinRowsİ : DerTableRow ­ DerTableRow LIST ­ DerTableRow LIST
-÷üüüüüüüüüüüüüüüüüü
-Ü	µr rs·
-Ü	JoinRows r rs =
-Ü	let	join2 rr = (
-Ü			MkDerTableRow
-Ü			(DTR_where r lub DTR_where rr)
-Ü			(DTR_row r lub DTR_row rr)
-Ü			(DTR_cols r ë DTR_cols rr))
-Ü	in	Map join2 rs
-°
-¹HOLCONST
-Ü	ÛJoinDataİ : DerTableRow LIST LIST ­ DerTableRow LIST
-÷üüüüüüüüüüüüüüüüüü
-Ü	JoinData [] = []
-Ü±	µtab rest·
-Ü	JoinData (Cons tab rest) =
-Ü	if	rest = []
-Ü	then	tab
-Ü	else	let	jrest = JoinData rest
-Ü		in let	join_blk r = JoinRows r jrest
-Ü		in	Flat (Map join_blk tab)
-°
-¹HOLCONST
-Ü	ÛJoinİ : DerTable LIST ­ DerTable
-÷üüüüüüüüüüüüüüüüüü
-Ü	µtl·	Join tl
-Ü	=	MkDerTable
-Ü		(JoinSpecs (Map DT_spec tl))
-Ü		(JoinData (Map DT_rows tl))
-°
-\subsection{Projection}
-The projection operation is parameterised by a list
-of functions which compute class-item pairs from a row of a table,
-together with column specifications to use for the computed fields.
-(Note this is a more general than projection of a single field to form
-a one-column table but includes that as a special case).
-
-The operation acts on the first table in the argument list. 
-The argument functions are expected to assign appropriate classifications
-to the resulting fields. The computed table is anonymous.
-
-Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
-
-=SML
-declare_type_abbrev("PROJ_PAR", [],
-	”((DerTableRow ­ Class ¸ Item) ¸ DerColSpec) LIST®);
-=TEX
-¹HOLCONST
-Ü	ÛProjectSpecsİ	: PROJ_PAR
-Ü			 ­ DerTableSpec LIST
-Ü			 ­ DerTableSpec
-÷üüüüüüüüüüüüüüüüüü
-Ü	µps s ign·
-Ü	ProjectSpecs ps [] = MkDerTableSpec [] lattice_bottom []
-Ü	±
-Ü	ProjectSpecs ps (Cons s ign) =
-Ü	MkDerTableSpec [] (DTS_maxRow s) (Map Snd ps)
-°
-¹HOLCONST
-Ü	ÛProjectDataİ	: PROJ_PAR
-Ü			 ­ DerTableRow LIST LIST
-Ü			 ­ DerTableRow LIST
-÷üüüüüüüüüüüüüüüüüü
-Ü	µps tab ign·
-Ü	ProjectData ps [] = []
-Ü±	ProjectData ps (Cons tab ign) =
-Ü	let	fs = (Map Fst ps)
-Ü	in let	h r = MkDerTableRow (DTR_where r) (DTR_row r) (Map (Ìf·f r) fs)
-Ü	in	Map h tab
-°
-¹HOLCONST
-Ü	ÛProjectİ : PROJ_PAR ­ DerTable LIST ­ DerTable
-÷üüüüüüüüüüüüüüüüüü
-Ü	µps tl·	Project ps tl
-Ü	=	MkDerTable
-Ü		(ProjectSpecs ps (Map DT_spec tl))
-Ü		(ProjectData ps (Map DT_rows tl))
-°
-\subsection{$WHERE$}
-The $WHERE$ operation is parameterised by a
-function to compute a class and a truth value from a row of a table.
-The operation acts on the first table in the argument list. 
-The argument function is expected to give an appropriate classification
-for the where clause class. The specification of the computed table is
-the same as the original.
-
-Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
-
-=SML
-declare_type_abbrev(Û"WHERE_PAR"İ, [],
-	”DerTableRow ­ Class ¸ BOOL®);
-=TEX
-¹HOLCONST
-Ü	ÛWhereDataİ	: WHERE_PAR
-Ü			 ­ DerTableRow LIST LIST
-Ü			 ­ DerTableRow LIST
-÷üüüüüüüüüüüüüüüüüü
-Ü	µp tab ign·
-Ü	WhereData p [] = []
-Ü±	WhereData p (Cons tab ign) =
-Ü	let	w r = (DTR_where r lub Fst (p r))
-Ü	in let	h r = (Snd (p r), MkDerTableRow (w r) (DTR_row r) (DTR_cols r))
-Ü	in	Map Snd (Map h tab ù {(t, r) | t})
-°
-¹HOLCONST
-Ü	ÛWhereİ : WHERE_PAR ­ DerTable LIST ­ DerTable
-÷üüüüüüüüüüüüüüüüüü
-Ü	µp tl·	Where p tl
-Ü	=	MkDerTable
-Ü		(Hd (Map DT_spec tl))
-Ü		(WhereData p (Map DT_rows tl))
-°
-
-\subsection{$GROUPBY$/$HAVING$}
-The $GROUPBY$ and $HAVING$ operations are most naturally treated together.
-The combined operation is parameterised by four things:
-{\em (i)}, a function, $gpby$; to compute a comparison value from a row
-{\em (ii)}, a function, $eval$, to compute a row from a list of rows;
-{\em (iii)}, a function, $hasit$, to compute a truth value from a list of rows;
-and, {\em (iv)}, a table specification, $ts$.
-$gpby$ is used to decide whether two rows are in the
-same group;  $eval$ is the function which computes the row to be returned
-for a group;
-and $hasit$ is used to decide whether a group meets the
-$HAVING$ condition; $ts$ is the table specification for the result table.
-
-Since, in practice, $gpby$ is just projection onto 1 or more of the columns
-of the table, we take it that $gpby$ returns a table row as the value
-to be compared.
-
-Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
-
-=SML
-declare_type_abbrev(Û"GROUPBY_PAR"İ, [],
-	”	(DerTableRow ­ DerTableRow)
-	¸	(DerTableRow LIST ­ DerTableRow)
-	¸	(DerTableRow LIST ­ BOOL)
-	¸	DerTableSpec®);
-=TEX
-To define the grouping part of the operation, we need some list processing
-preliminaries:
-¹HOLCONST
-Ü	ÛPutInGroupİ :  ('a ­ 'b) ­ 'a ­ ('a LIST) LIST ­ ('a LIST) LIST
-÷üüüüüüüüüüüüüüüüüü
-Üµgpby x gp gps·
-Ü	PutInGroup gpby x [] = [[x]]
-Ü±	PutInGroup gpby x (Cons gp gps) =
-Ü	if	gpby x = gpby (Hd gp)
-Ü	then	Cons (Cons x gp) gps
-Ü	else	Cons gp (PutInGroup gpby x gps)
-°
-
-¹HOLCONST
-Ü	ÛMakeGroupsİ	: ('a ­ 'b)
-Ü			 ­ 'a LIST
-Ü			 ­ ('a LIST) LIST
-÷üüüüüüüüüüüüüüüüüü
-Üµgpby x xs·
-Ü	MakeGroups gpby [] = []
-Ü±	MakeGroups gpby (Cons x xs) = PutInGroup gpby x (MakeGroups gpby xs)
-°
-
-¹HOLCONST
-Ü	ÛGroupByDataİ	: GROUPBY_PAR
-Ü			 ­ DerTableRow LIST LIST
-Ü			 ­ DerTableRow LIST
-÷üüüüüüüüüüüüüüüüüü
-Üµgpby eval hasit ts tab ign·
-Ü	GroupByData (gpby, eval, hasit, ts) [] = []
-Ü±	GroupByData (gpby, eval, hasit, ts) (Cons tab ign) =
-Ü	let	gps = MakeGroups gpby tab
-Ü	in	Map eval (gps ù {r | hasit r})
-°
-
-¹HOLCONST
-Ü	ÛGroupByİ : GROUPBY_PAR ­ DerTable LIST ­ DerTable
-÷üüüüüüüüüüüüüüüüüü
-Üµgpby eval hasit ts tl·
-Ü		GroupBy (gpby, eval, hasit, ts) tl
-Ü	=	MkDerTable
-Ü		ts
-Ü		(GroupByData (gpby, eval, hasit, ts) (Map DT_rows tl))
-°
-
-\section{SIMPLE EXPRESSIONS}\label{SIMPLEEXPRESSIONS}
-We view the semantics of most expression forms
-as functions from table rows
-to class-item pairs.  E.g., if a table includes columns called $a$ and
-$b$, the semantics of $a + b$ will be the function which given a row
-in which the values of $a$ and $b$ are $\alpha$ and $\beta$ say,
-and the classifications of $a$ and $b$ are $c$ and $d$ say, returns
-$(c\,\hbox{lub}\,d, \alpha + \beta)$.
-
-
-
-
+To handle nested selects, we need to pass around a list of derived
+tables to be selected from.
 The simpler forms of expression are therefore covered by the following
 type abbreviation:
 =SML
 declare_type_abbrev(Û"EXPR"İ, [],
-	”	(DerTableRow ­ (Class ¸ Item))®);
+	”	(DerTable LIST ­ DerTableRow ­ (Class ¸ Item))®);
 =TEX
+We use the following type abbreviation for aggregate expressions.
 
-We can now define the particular expression forms which model those of TSQL.
+=SML
+declare_type_abbrev(Û"AGGREG_EXPR"İ, [],
+	”	(DerTable LIST ­ DerTableRow LIST ­ (Class ¸ Item))®);
+=TEX
+We use the term {\em table expression} for the various building blocks of the
+$SELECT$ query and the following type abbreviation reflects this:
+=SML
+declare_type_abbrev(Û"TABLE_EXPR"İ, [],
+	”	DerTable LIST ­ DerTable®);
+=TEX
+\section{SIMPLE EXPRESSIONS}\label{SIMPLEEXPRESSIONS}
+We view the semantics of most expression forms as functions from table
+rows to class-item pairs.  E.g., if a table includes columns called $a$
+and $b$, the semantics of $a + b$ will be the function which given a
+row in which the values of $a$ and $b$ are $\alpha$ and $\beta$ say,
+and the classifications of $a$ and $b$ are $c$ and $d$ say, returns
+$(c\,\hbox{lub}\,d, \alpha + \beta)$.
+
+Certain operations such as the set functions take
+on a list of rows as their operand.
+These are covered in section \ref{AGGREGATEEXPRESSIONS} below.
+
+
+The particular expression forms which model those of TSQL
+are given in sections \ref{DenoteConstant} to \ref{Contents} below.
 The classifications follow those assigned in \cite{trans}.
 The classification information is taken from $internal\_value\sb{class}$
 in \cite{trans} unless otherwise noted below.
 The order of the treatment is also taken from $internal\_value\sb{class}$.
-Certain operations such as the set functions and nested selects operate
-on what is in effect a complete derived table as their operand.
-These are covered in section \ref{AGGREGATEEXPRESSIONS} below.
 
-
-
-As with operations on tables, we define the {\em risk inputs} of
-an expression $e$ at a class $c$ to be the set inputs for which $e$
-reveals information which should not be visible at class $c$.
-
-¹HOLCONST
-Ü	ÛExpRiskInputsİ	: Class ­ EXPR ­ DerTableRow ğ
-÷üüüüüüüüüüüüüüüüüü
-Üµcc e ·	ExpRiskInputs cc e
-Ü	=	{	r
-Ü		|	¶r‰0 ·
-Ü			HideDerTableRow cc r‰0 = HideDerTableRow cc r
-Ü		±	let	(c, i) = e r
-Ü			in let	(c‰0, i‰0) = e r‰0
-Ü			in	³i = i‰0
-Ü			±	³(c dominates cc ± c‰0 dom cc)}
-°
 
 =TEX
 
@@ -412,7 +194,7 @@ of the constant.
 ¹HOLCONST
 Ü	ÛDenoteConstantİ	: (Class ¸ Item) ­ EXPR
 ÷üüüüüüüüüüüüüüüüüü
-Üµci ·	DenoteConstant ci = Ìr· ci
+Üµci ·	DenoteConstant ci = Ìtl r· ci
 °
 
 \subsection{Monadic}\label{MonOp}
@@ -422,7 +204,7 @@ to perform and the expression which computes the operand.
 ¹HOLCONST
 Ü	ÛMonOpİ	: (Item ­ Item) ­ EXPR ­ EXPR
 ÷üüüüüüüüüüüüüüüüüü
-Üµf e·	MonOp f e = Ìr· let (c, v) = e r in (c, f v)
+Üµf e·	MonOp f e = Ìtl r· let (c, v) = e tl r in (c, f v)
 °
 \subsection{Binary}\label{BinOp}
 The logical binary operators are treated specially. In particular, iterated
@@ -469,7 +251,7 @@ $false$.
 Ü	ÛBinOpAndİ	: EXPR LIST ­ EXPR
 ÷üüüüüüüüüüüüüüüüüü
 Üµel·	BinOpAnd el =
-Ü		Ìr·	let	cvl = Map (Ìe·e r) el
+Ü		Ìtl r·	let	cvl = Map (Ìe·e tl r) el
 Ü			in let	v = ListAnd(Map (ItemBool o Snd) cvl)
 Ü			in let	makecase(c, u) =
 Ü				if ItemBool u then lattice_top else c
@@ -489,7 +271,7 @@ $true$.
 Ü	ÛBinOpOrİ	: EXPR LIST ­ EXPR
 ÷üüüüüüüüüüüüüüüüüü
 Üµel·	BinOpOr el =
-Ü		Ìr·	let	cvl = Map (Ìe·e r) el
+Ü		Ìtl r·	let	cvl = Map (Ìe·e tl r) el
 Ü			in let	v = ListAnd(Map (ItemBool o Snd) cvl)
 Ü			in let	makecase(c, u) =
 Ü				if ItemBool u then c else lattice_top
@@ -509,9 +291,9 @@ to perform and three expressions giving the operands.
 Ü	ÛTriOpİ	: (Item ­ Item ­ Item ­ Item) ­ EXPR ­ EXPR ­ EXPR ­ EXPR
 ÷üüüüüüüüüüüüüüüüüü
 Üµf e1 e2 e3 ·	TriOp f e1 e2 e3 =
-Ü		Ìr·	let	(c1, v1) = e1 r
-Ü			in let	(c2, v2) = e2 r
-Ü			in let	(c3, v3) = e3 r
+Ü		Ìtl r·	let	(c1, v1) = e1 tl r
+Ü			in let	(c2, v2) = e2 tl r
+Ü			in let	(c3, v3) = e3 tl r
 Ü			in	(c1 lub (c2 lub c3), f v1 v2 v3)
 °
 \subsection{Conversions}\label{Convert}
@@ -596,10 +378,10 @@ of case expression.
 ÷üüüüüüüüüüüüüüüüüü
 Üµcc tst casevals elseval ·
 Ü	CaseVal cc tst casevals elseval =
-Ü	Ìr·
-Ü	let	(tc, ti) = tst r
-Ü	in let	cvs = Map (Ì(c, v)· (c r, v r)) casevals
-Ü	in let	(ec, ei) = elseval r
+Ü	Ìtl r·
+Ü	let	(tc, ti) = tst tl r
+Ü	in let	cvs = Map (Ì(c, v)· (c tl r, v tl r)) casevals
+Ü	in let	(ec, ei) = elseval tl r
 Ü	in let	c = CheckTest cc (tc, ti) cvs ec
 Ü	in let	v = CaseValValue ti cvs ei
 Ü	in	(c, v)
@@ -647,40 +429,94 @@ of case expression.
 ÷üüüüüüüüüüüüüüüüüü
 Üµcc casevals elseval ·
 Ü	Case cc casevals elseval =
-Ü	Ìr·
-Ü	let	cvs = Map (Ì(c, v)· (c r, v r)) casevals
-Ü	in let	(ec, ei) = elseval r
+Ü	Ìtl r·
+Ü	let	cvs = Map (Ì(c, v)· (c tl r, v tl r)) casevals
+Ü	in let	(ec, ei) = elseval tl r
 Ü	in let	c = CaseC cc cvs ec
 Ü	in let	v = CaseValue cvs ei
 Ü	in	(c, v)
 °
+\subsection{$AllBinOp$}\label{AllBinOp}
+TBA
+\subsection{$SomeBinOp$}\label{SomeBinOp}
+TBA
+\subsection{$ExistsTuples$}\label{ExistsTuples}
+This construct is parameterised by a table expression to compute
+the operand. The classification below is intended to be in the spirit
+of $tuple\_list\sb{max\_row\_class}$ from \cite{trans}.
+¹HOLCONST
+Ü	ÛExistsTuplesİ	: TABLE_EXPR ­ EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµte ·	ExistsTuples te =
+Ü	Ìtl r·
+Ü	let	rl = DT_rows (te tl)
+Ü	in	(lubl (Map DTR_row rl), BoolItem (³rl = []))
+°
+\subsection{$SingleValue$}\label{SingleValue}
+This construct is parameterised by a table expression to compute
+the operand. The classification below is probably more generous than that in
+$internal\_value\sb{class}$ from \cite{trans}.
+
+¹HOLCONST
+Ü	ÛSingleValueİ	: TABLE_EXPR ­ EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµte ·	SingleValue te =
+Ü	Ìtl r·
+Ü	let	rl = DT_rows (te tl)
+Ü	in let	cil = DTR_cols (Hd rl)
+Ü	in	if	Length rl = 1 ± Length cil = 1
+Ü		then	Hd cil
+Ü		else	Arbitrary
+°
+
 \subsection{Contents}\label{Contents}
+Since we have not upgraded to the new SSQL specification we only supply
+one contents operator rather than separate sterling and dinary ones.
+
 The contents operator is parameterised by a number telling us which
-column to select. We must return a fixed value if this is out of
-range (a situation which never arises in the actual SWORD implementation
+column to select. We must return a fixed value if this is out of range
+(a situation which never arises in the actual SWORD implementation
 since the column is identified by name rather than number and it is
-known at compile/transformation time whether or not the name is valid).
+known at compile/transformation time whether or not the name is
+valid).
 
 ¹HOLCONST
 Ü	ÛContentsİ	: î ­ EXPR
 ÷üüüüüüüüüüüüüüüüüü
 Üµi ·	Contents i =
-Ü	Ìr·
+Ü	Ìtl r·
 Ü	if	i < Length (DTR_cols r)
 Ü	then	Nth (DTR_cols r) i
 Ü	else	Arbitrary
 °
+\subsection{$Classification$}\label{Classification}
+This construct is parameterised by a number telling
+us which classification column. The classification below is as in
+$internal\_value\sb{class}$ from \cite{trans}.
 
-\section{AGGREGATE EXPRESSIONS}\label{AGGREGATE EXPRESSIONS}
+¹HOLCONST
+Ü	ÛClassItemİ	: Class ­ Item
+÷üüüüüüüüüüüüüüüüüü
+Üµv·	ClassItem v = ValuedItemItem(MkValuedItem sterling (ClassVal v))
+°
+
+¹HOLCONST
+Ü	ÛClassificationİ	: î ­ EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµi ·	Classification i =
+Ü	Ìtl r·
+Ü	if	i < Length (DTR_cols r)
+Ü	then	(DTR_row r, ClassItem(Fst (Nth (DTR_cols r) i)))
+Ü	else	Arbitrary
+°
+\subsection{$RowExistence$ Etc.}\label{RowExistence}
+TBA
+\section{AGGREGATE EXPRESSIONS}\label{AGGREGATEEXPRESSIONS}
 The aggregate expressions such as the set functions
 have a list of rows as one of their operands. This list will either
 be the complete contents of a table or a group of rows selected from
-a table. We use the following type abbreviation for these aggregate expressions.
-
-=SML
-declare_type_abbrev(Û"AGGREG_EXPR"İ, [],
-	”	(DerTableRow LIST ­ (Class ¸ Item))®);
-=TEX
+a table. As with simple expressions we must pass in the list of derived
+tables for use in nested selects.
 
 \subsection{Set Functions}\label{SetFunctions}
 The logical set functions are treated in a similar fashion to
@@ -690,8 +526,8 @@ the logical binary operators.
 Ü	ÛSetFuncAllAndİ		: EXPR ­ AGGREG_EXPR
 ÷üüüüüüüüüüüüüüüüüü
 Üµe ·	SetFuncAllAnd e =
-Ü	Ìrl·
-Ü	let	cil = Map e rl
+Ü	Ìtl rl·
+Ü	let	cil = Map (e tl) rl
 Ü	in let	(cl, il) = Split cil
 Ü	in let	ri = ListAnd (Map ItemBool il)
 Ü	in let	makecase (c, u) = if ItemBool u then lattice_top else c
@@ -704,8 +540,8 @@ the logical binary operators.
 Ü	ÛSetFuncAllOrİ		: EXPR ­ AGGREG_EXPR
 ÷üüüüüüüüüüüüüüüüüü
 Üµe ·	SetFuncAllOr e =
-Ü	Ìrl·
-Ü	let	cil = Map e rl
+Ü	Ìtl rl·
+Ü	let	cil = Map (e tl) rl
 Ü	in let	(cl, il) = Split cil
 Ü	in let	ri = ListOr (Map ItemBool il)
 Ü	in let	makecase (c, u) = if ItemBool u then c else lattice_top
@@ -722,16 +558,16 @@ be computed for each row.
 Ü	ÛSetFuncAllİ		: (Item LIST ­ Item) ­ EXPR ­ AGGREG_EXPR
 ÷üüüüüüüüüüüüüüüüüü
 Üµf e ·	SetFuncAll f e =
-Ü	Ìrl·
-Ü	let	(cl, il) = Split (Map e rl)
+Ü	Ìtl rl·
+Ü	let	(cl, il) = Split (Map (e tl) rl)
 Ü	in	(lubl cl, f il)
 °
 ¹HOLCONST
 Ü	ÛSetFuncDistinctİ	: (Item SET ­ Item) ­ EXPR ­ AGGREG_EXPR
 ÷üüüüüüüüüüüüüüüüüü
 Üµf e ·	SetFuncDistinct f e =
-Ü	Ìrl·
-Ü	let	(cl, il) = Split (Map e rl)
+Ü	Ìtl rl·
+Ü	let	(cl, il) = Split (Map (e tl) rl)
 Ü	in	(lubl cl, f (Elems il))
 °
 
@@ -778,10 +614,327 @@ computation taking into account row existence classes.
 Ü	ÛCountAllİ	: AGGREG_EXPR
 ÷üüüüüüüüüüüüüüüüüü
 Ü	CountAll =
-Ü	Ìrl·
+Ü	Ìtl rl·
 Ü	let	cl = Map DTR_row rl
 Ü	in	(lubl cl, NatItem(Length rl))
 °
+
+We also require the following additional aggregate expression form
+which is not contained in SSQL. It is how we think of the expressions
+which appear in $HAVING$ clauses which take the contents of the columns
+which appear in the $GROUPBY$ clause. If the (item part of the) expression
+parameter gives the same value in each row then that value is returned
+classified with the l.u.b. of the classes returned for the rows; otherwise,
+a fixed arbitrary value is returned (modelling a compile/transformation-time error). 
+
+¹HOLCONST
+Ü	ÛCommonValueİ	: EXPR ­ AGGREG_EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµe ·	CommonValue e =
+Ü	Ìtl rl·
+Ü	let	(cl, il) = Split (Map (e tl) rl)
+Ü	in	if	Size (Elems il) = 1
+Ü		then	(lubl cl, Hd il)
+Ü		else	Arbitrary
+°
+
+\section{SELECT QUERY}\label{SELECT}
+To simplify matters, we will consider the $SELECT$ query to be broken
+down into more primitive operations. In this section,
+we give the top-level building blocks.
+These are parameterised by the lower-level constructs (values and the like)
+which are discussed in sections \ref{SIMPLEEXPRESSIONS} and
+\ref{AGGREGATEEXPRESSIONS} below.
+=TEX
+
+In each case, we identify the origin in the specification of
+the transformations of the computation of the relevant classifications.
+
+\subsection{Join}
+The TSQL join operation is just cartesian product. The row class
+and where clause class in each tuple in the product is the least upper
+bound of the corresponding classes in each component tuple which contributes to
+that tuple. The joined table has no name and the maximum
+row class is the least upper bound of those in the component tables.
+
+
+Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
+
+
+¹HOLCONST
+Ü	ÛJoinSpecsİ : DerTableSpec LIST ­ DerTableSpec
+÷üüüüüüüüüüüüüüüüüü
+Ü	µsl·
+Ü	JoinSpecs sl =
+Ü	let	n = []
+Ü	and	mr = lubl (Map DTS_maxRow sl)
+Ü	and	csl = Flat (Map DTS_colSpecs sl)
+Ü	in	MkDerTableSpec n mr csl
+°
+¹HOLCONST
+Ü	ÛJoinRowsİ : DerTableRow ­ DerTableRow LIST ­ DerTableRow LIST
+÷üüüüüüüüüüüüüüüüüü
+Ü	µr rs·
+Ü	JoinRows r rs =
+Ü	let	join2 rr = (
+Ü			MkDerTableRow
+Ü			(DTR_where r lub DTR_where rr)
+Ü			(DTR_row r lub DTR_row rr)
+Ü			(DTR_cols r ë DTR_cols rr))
+Ü	in	Map join2 rs
+°
+¹HOLCONST
+Ü	ÛJoinDataİ : DerTableRow LIST LIST ­ DerTableRow LIST
+÷üüüüüüüüüüüüüüüüüü
+Ü	JoinData [] = []
+Ü±	µtab rest·
+Ü	JoinData (Cons tab rest) =
+Ü	if	rest = []
+Ü	then	tab
+Ü	else	let	jrest = JoinData rest
+Ü		in let	join_blk r = JoinRows r jrest
+Ü		in	Flat (Map join_blk tab)
+°
+The join operation itself is parameterised by the table expressions
+which compute the tables to be joined.
+¹HOLCONST
+Ü	ÛJoinİ : TABLE_EXPR LIST ­ TABLE_EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµtel·	Join tel =
+Ü	Ìtl·
+Ü	let	jl = Map (Ìte· te tl) tel
+Ü	in	MkDerTable
+Ü		(JoinSpecs (Map DT_spec jl))
+Ü		(JoinData (Map DT_rows jl))
+°
+\subsection{Projection}
+The projection operation is parameterised by a list
+of functions which compute class-item pairs from a row of a table,
+together with column specifications to use for the computed fields.
+(Note this is a more general than projection of a single field to form
+a one-column table but includes that as a special case).
+
+In the SWORD implementation the column specifications are effectively
+computed during the transformations as required. In the formalisation
+here, the column specifications are not in fact significant, but have been
+left in to allow for possible further development to model some of
+the optimisations performed by the transformations.
+
+The operation acts on a table computed by a table expression given as
+a parameter. The parameter expressions are expected to assign
+appropriate classifications to the resulting fields.
+The computed table is anonymous.
+
+Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
+
+¹HOLCONST
+Ü	ÛProjectSpecİ	: DerColSpec LIST
+Ü			 ­ DerTableSpec
+Ü			 ­ DerTableSpec
+÷üüüüüüüüüüüüüüüüüü
+Üµsl s·	ProjectSpec sl s =
+Ü	MkDerTableSpec [] (DTS_maxRow s) sl
+°
+¹HOLCONST
+Ü	ÛProjectDataİ	: EXPR LIST
+Ü			 ­ DerTable LIST
+Ü			 ­ DerTableRow LIST
+Ü			 ­ DerTableRow LIST
+÷üüüüüüüüüüüüüüüüüü
+Ü	µel tl rl·
+Ü	ProjectData el tl rl =
+Ü	let	h r = MkDerTableRow (DTR_where r) (DTR_row r) (Map (Ìe·e tl r) el)
+Ü	in	Map h rl
+°
+¹HOLCONST
+Ü	ÛProjectİ : (EXPR  ¸ DerColSpec) LIST ­ TABLE_EXPR ­ TABLE_EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµesl te·
+Ü	Project esl te =
+Ü	Ìtl·
+Ü	let	p = te tl
+Ü	in	MkDerTable
+Ü		(ProjectSpec (Map Snd esl) (DT_spec p))
+Ü		(ProjectData (Map Fst esl) tl (DT_rows p))
+°
+\subsection{$WHERE$}
+The $WHERE$ operation is parameterised by a
+function to compute a class and a truth value from a row of a table.
+The operation acts on the first table in the argument list. 
+The argument expression is expected to give an appropriate classification
+for the where clause class. The specification of the computed table is
+the same as the original.
+
+Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
+
+=TEX
+¹HOLCONST
+Ü	ÛWhereDataİ	: EXPR
+Ü			 ­ DerTable LIST
+Ü			 ­ DerTableRow LIST
+Ü			 ­ DerTableRow LIST
+÷üüüüüüüüüüüüüüüüüü
+Ü	µe tl rl·
+Ü	WhereData e tl rl =
+Ü	let	w r = (DTR_where r lub Fst (e tl r))
+Ü	in let	h r = (ItemBool(Snd (e tl r)),
+Ü				MkDerTableRow (w r) (DTR_row r) (DTR_cols r))
+Ü	in	Map Snd (Map h rl ù {(t, r) | t})
+°
+¹HOLCONST
+Ü	ÛWhereİ : EXPR ­ TABLE_EXPR ­ TABLE_EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµe te·
+Ü	Where e te =
+Ü	Ìtl·
+Ü	let	tab = te tl
+Ü	in	MkDerTable
+Ü		(DT_spec tab)
+Ü		(WhereData e tl (DT_rows tab))
+°
+
+\subsection{$GROUPBY$/$HAVING$}
+The $GROUPBY$ and $HAVING$ operations are most naturally treated together.
+The combined operation is parameterised by four things in addition
+to the parameter giving the table to be grouped:
+{\em (i)}, a list of aggregate expressions, $eval$, used to compute a row
+in the result table from each group;
+{\em (ii)}, a list of numbers, $inds$, giving the column indices by which
+the table is to be grouped;
+{\em (iii)}, an aggregate expression, $hasit$,
+to compute a truth value (the $HAVING$ condition) from a list of rows;
+and, {\em (iv)}, a table specification, $ts$,
+the table specification for the result table.
+
+
+Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
+
+=SML
+declare_type_abbrev(Û"GROUPBY_PAR"İ, [],
+	”	(DerTableRow ­ DerTableRow)
+	¸	(DerTableRow LIST ­ DerTableRow)
+	¸	(DerTableRow LIST ­ BOOL)
+	¸	DerTableSpec®);
+=TEX
+To define the grouping part of the operation, we need some list processing
+preliminaries. 
+¹HOLCONST
+Ü	ÛPutInGroupİ :  ('a ­ 'b) ­ 'a ­ ('a LIST) LIST ­ ('a LIST) LIST
+÷üüüüüüüüüüüüüüüüüü
+Üµgpby x gp gps·
+Ü	PutInGroup gpby x [] = [[x]]
+Ü±	PutInGroup gpby x (Cons gp gps) =
+Ü	if	gpby x = gpby (Hd gp)
+Ü	then	Cons (Cons x gp) gps
+Ü	else	Cons gp (PutInGroup gpby x gps)
+°
+
+¹HOLCONST
+Ü	ÛMakeGroupsİ	: ('a ­ 'b)
+Ü			 ­ 'a LIST
+Ü			 ­ ('a LIST) LIST
+÷üüüüüüüüüüüüüüüüüü
+Üµgpby x xs·
+Ü	MakeGroups gpby [] = []
+Ü±	MakeGroups gpby (Cons x xs) = PutInGroup gpby x (MakeGroups gpby xs)
+°
+The following function is used to supply the $gpby$ parameter to the above.
+It ensures that indices which are out of range are mapped to a fixed arbitrary
+value to handle securely an error condition which is detected at
+compile/transformation time in the SWORD implementation (where names
+rather than numbers are used for the columns and the scope rules detect
+invalid names).
+¹HOLCONST
+Ü	ÛListNthİ	: î LIST ­ 'a LIST ­ 'a LIST
+÷üüüüüüüüüüüüüüüüüü
+Üµn nl list·
+Ü	ListNth [] list = []
+Ü±	ListNth (Cons n nl) list =
+Ü	Cons
+Ü	(if	n < Length list
+Ü	then	Nth list n
+Ü	else	Arbitrary)
+Ü	(ListNth nl list)
+°
+The classification computations below are suggestions/guesses on the
+basis of current information.
+¹HOLCONST
+Ü	ÛGroupByDataİ	: DerTable LIST
+Ü			 ­ AGGREG_EXPR LIST
+Ü			 ­ î LIST
+Ü			 ­ AGGREG_EXPR
+Ü			 ­ DerTableRow LIST
+Ü			 ­ DerTableRow LIST
+÷üüüüüüüüüüüüüüüüüü
+Üµtl eval inds hasit rl·
+Ü	GroupByData tl eval inds hasit rl =
+Ü	let	gpby = (ListNth inds o DTR_cols)
+Ü	in let	gps = MakeGroups gpby rl
+Ü	in let	where_class gp = lubl (Map DTR_where gp)
+Ü	in let	row_class gp = lubl (Map DTR_row gp)
+Ü	in let	col_data gp  = Map (Ìae·ae tl gp) eval
+Ü	in	Map
+Ü		(Ìgp·MkDerTableRow (where_class gp) (row_class gp) (col_data gp))
+Ü		(gps ù {r | ItemBool(Snd (hasit tl r))})
+°
+
+¹HOLCONST
+Ü	ÛGroupByİ	: AGGREG_EXPR LIST
+Ü			 ­ î LIST
+Ü			 ­ AGGREG_EXPR
+Ü			 ­ DerTableSpec
+Ü			 ­ TABLE_EXPR
+Ü			 ­ TABLE_EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµeval inds hasit ts te·
+Ü	GroupBy eval inds hasit ts te =
+Ü	Ìtl·
+Ü	let	tab = te tl
+Ü	in let	newrl = GroupByData tl eval inds hasit (DT_rows tab)
+Ü	in	MkDerTable ts newrl
+°
+
+\subsection{$TableContents$}\label{TableContents}
+This is parameterised by a number giving the index into the list of tables:
+
+¹HOLCONST
+Ü	ÛTableContentsİ	: î ­ TABLE_EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµi·
+Ü	TableContents i =
+Ü	Ìtl·
+Ü	if	i < Length tl
+Ü	then	Nth tl i
+Ü	else	Arbitrary
+°
+
+\subsection{$DistinctTuples$}\label{DistinctTuples}
+This is parameterised by a table expression giving the table whose duplicate
+rows are to be removed. We need a list processing auxiliary:
+
+
+
+¹HOLCONST
+Ü	ÛRemoveDuplicatesİ	: 'a LIST ­ 'a LIST
+÷üüüüüüüüüüüüüüüüüü
+Üµx xs·
+Ü	RemoveDuplicates [] = []
+Ü±	RemoveDuplicates (Cons x xs)
+Ü	= Cons x (RemoveDuplicates xs ù {y | ³y = x})
+°
+
+¹HOLCONST
+Ü	ÛDistinctTuplesİ	: TABLE_EXPR ­ TABLE_EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµte·
+Ü	DistinctTuples te =
+Ü	Ìtl·
+Ü	let	tab = te tl
+Ü	in let	ts = DT_spec tab
+Ü	in let	rl = RemoveDuplicates (DT_rows tab)
+Ü	in	MkDerTable ts rl
+°
+
 
 
 \section{CLOSING DOWN}
@@ -857,3 +1010,32 @@ PC_C1 "hol1" rewrite_conv(map get_spec[¬Map®, ¬Nth®, ¬Let®])
 in let	comp tl = h (Map (Nth(irl tl)) [3; 1; 1; 2])
 in	comp®;
 =TEX
+
+
+As with operations on tables, we define the {\em risk inputs} of
+an expression $e$ at a class $c$ to be the set inputs for which $e$
+reveals information which should not be visible at class $c$.
+
+ ¹HOLCONST
+ Ü	ÛExpRiskInputsİ	: Class ­ EXPR ­ DerTableRow ğ
+ ÷üüüüüüüüüüüüüüüüüü
+ Üµcc e ·	ExpRiskInputs cc e
+ Ü	=	{	r
+ Ü		|	¶r‰0 ·
+ Ü			HideDerTableRow cc r‰0 = HideDerTableRow cc r
+ Ü		±	let	(c, i) = e r
+ Ü			in let	(c‰0, i‰0) = e r‰0
+ Ü			in	³i = i‰0
+ Ü			±	³(c dominates cc ± c‰0 dom cc)}
+ °
+
+
+=IGN
+
+val conv = PC_C1 "hol2" rewrite_conv(map get_spec[¬$ù®, ¬RemoveDuplicates®]);
+
+
+conv ¬RemoveDuplicates []®;
+conv ¬RemoveDuplicates [x]®;
+conv ¬RemoveDuplicates [1;2;1;2;1]®;
+conv ¬RemoveDuplicates [1;3;2;1;2;3;1]®;
