@@ -9,10 +9,10 @@
 %\TPPpart{}
 \TPPtitle{An Execution Model for SWORD}  %% Mandatory field
 \TPPref{DS/FMU/FEF/026}  %% Mandatory field
-\def\SCCSversion{$Revision$
+\def\SCCSversion{1.4
 }
 \TPPissue{\SCCSversion}  %% Mandatory field
-\TPPdate{\FormatDate{$Date$
+\TPPdate{\FormatDate{93/04/01
 }}  %% Mandatory field (with sensible default)
 \TPPstatus{Draft}			%% Mandatory field
 \TPPtype{Specification}
@@ -56,7 +56,6 @@ implementation of SWORD for the DRA front end filter project RSRE 1C/6130.}
 \section {DOCUMENT CONTROL}
 \subsection{Contents List}
 \tableofcontents
-\newpage
 
 \subsection{Document Cross References}
 \bibliographystyle{fmu}
@@ -64,8 +63,10 @@ implementation of SWORD for the DRA front end filter project RSRE 1C/6130.}
 
 \subsection{Changes History}
 \begin{description}
-\item[Issue \SCCSversion ({\FormatDate{$Date$%
-}}) ] Typos corrected.
+\item[Issue 1.2 (23 February 1993)]
+First draft for discussion.
+\item[Issue \SCCSversion ({\FormatDate{93/04/01%
+}}) ] Rework and further clarifications in the light of comments received.
 \end{description}
 
 \subsection{Changes Forecast}
@@ -101,8 +102,7 @@ new_theoryÛ"fef026"İ;
 push_pc "hol";
 =TEX
 
-\section{CONSTRUCTING THE SUBSYSTEMS}
-\subsection{Introduction}
+\section{REPRESENTATION OF DERIVED TABLES}
 The abstract formulation of the critical requirements on
 the subsystems of $FE\_SWORD$ given in \cite{DS/FMU/FEF/022}  give little
 insight into {\em how} the subsystems are to be constructed. Further detail
@@ -162,26 +162,26 @@ and the list of rows comprising the table data proper.
 We will take a conceptual, unoptimised, view of derived tables
 and so use the following data types for them:
 
-¹HOLLABPROD DerColSpecüüüüüüüüüüüüüüüüüüü
-Ü	DCS_name	: Ide LIST LIST;
-Ü	DCS_min	: Class;
-Ü	DCS_max	: Class;
-Ü	DCS_exists	: Class
+¹HOLLABPROD ÛDerColSpecİüüüüüüüüüüüüüüüüüüü
+Ü	ÛDCS_nameİ	: Ide LIST LIST;
+Ü	ÛDCS_minİ	: Class;
+Ü	ÛDCS_maxİ	: Class;
+Ü	ÛDCS_existsİ	: Class
 °üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
-¹HOLLABPROD DerTableSpecüüüüüüüüüüüüüüüüüü
-Ü	DTS_name	: Ide LIST LIST;
-Ü	DTS_class	: Class;
-Ü	DTS_maxRow	: Class;
-Ü	DTS_colSpecs	: DerColSpec LIST
+¹HOLLABPROD ÛDerTableSpecİüüüüüüüüüüüüüüüüüü
+Ü	ÛDTS_nameİ	: Ide LIST LIST;
+Ü	ÛDTS_classİ	: Class;
+Ü	ÛDTS_maxRowİ	: Class;
+Ü	ÛDTS_colSpecsİ	: DerColSpec LIST
 °üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
-¹HOLLABPROD DerTableRowüüüüüüüüüüüüüüüüüü
-Ü	DTR_where	: Class;
-Ü	DTR_row	: Class;
-Ü	DTR_cols	: (Class ¸ Item) LIST
+¹HOLLABPROD ÛDerTableRowİüüüüüüüüüüüüüüüüüü
+Ü	ÛDTR_whereİ	: Class;
+Ü	ÛDTR_rowİ	: Class;
+Ü	ÛDTR_colsİ	: (Class ¸ Item) LIST
 °üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
-¹HOLLABPROD DerTableüüüüüüüüüüüüüüüüüüüü
-Ü	DT_spec		: DerTableSpec;
-Ü	DT_rows		: DerTableRow LIST
+¹HOLLABPROD ÛDerTableİüüüüüüüüüüüüüüüüüüüü
+Ü	ÛDT_specİ		: DerTableSpec;
+Ü	ÛDT_rowsİ		: DerTableRow LIST
 °üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
 
 The information in the above is intended to be extracted from information
@@ -223,6 +223,8 @@ The classication and data for each field in this row
 (taken from the SSQL state initially)  \\\hline
 \end{tabular}
 \end{centering}
+
+\section{EXAMPLES}
 
 Before discussing the use of the above representation of a derived
 table within the formal framework, it may be helpful to consider some
@@ -375,6 +377,7 @@ The handling of nested $SELECT$ queries and the management of the
 scope of the name spaces within them.
 \end{enumerate}
 
+\section{EXECUTION MODEL (PART 1)}\label{EXECUTIONMODELI}
 In order to simplify the handling both of nested $SELECT$s and
 of name space management, it is proposed to use a model of the
 TSQL execution mechanism in which the essence of the $SELECT$
@@ -410,6 +413,52 @@ In particular, by bounding the class of computations permitted in this
 step, we can formalise the intuitions behind the clearances which are
 assigned by the transformations to the fields of derived tables.
 
+The three-stage model of TSQL execution may be viewed
+as an alternative description of the function $TSQLtf$ of
+\cite{DS/FMU/FEF/021}, which reveals the semantic
+issues but ignores syntactic ones. It may be formalised as follows:
+
+¹HOLCONST
+Ü	ÛEMİ :	(State‰t ­ DerTable LIST)
+Ü		­ (Query ­ (DerTable LIST ­ DerTable ¸ Errors))
+Ü		­ (Query ¸ (DerTable ¸ Errors) ¸ State‰t ­ State‰t ¸ ANSWER)
+Ü		­ (Query,  State‰t) DBMS_TYPE
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Üµ view; compile; act; query; st·
+Ü	EM view compile act (query, st)
+Ü=	let 	compute = compile query
+Ü	in let	viewed = view st
+Ü	in let	computed = compute viewed
+Ü	in	act (query, computed, st)
+°
+
+Here the components, $view$, $compile$ and $act$ of the model represent
+the three stages as follows:
+
+\begin{enumerate}
+\item
+$view$ represents the state of the database as a list of derived tables;
+\item
+$compile$ compiles a query to give the derived-table-forming function it
+computes;
+\item
+$act$ either updates the state or delivers an answer according to the
+type of $query$ and the derived table computed by the compiled query.
+\end{enumerate}
+
+\section{SYSTEM CONSTRUCTION}
+It is necessary to relate the three-stage model of TSQL execution
+to the generic system construction of \cite{DS/FMU/FEF/022}. To do
+this we first instantiate that construction to the particular
+representation function, TSQL transition function and filter
+of \cite{DS/FMU/FEF/025,DS/FMU/FEF/021,DS/FMU/FEF/024}.
+The following function does this:
+¹HOLCONST
+Ü	ÛFE_SWORD‰1İ : (Query, FILTER_PARS) STP_TYPE
+Ü		­ (Query, ANSWER) BEHAVIOURS
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µstp· FE_SWORD‰1 stp = FE_SWORD repr TSQLtf stp filter
+°
 
 \section{REPRESENTING SSQL AND TSQL STATES AS DERIVED TABLES}
 
@@ -547,7 +596,9 @@ and the representation function of \cite{DS/FMU/FEF/025}.
 Note that the consistency of the above implicit definition requires
 that any two SSQL states which are identified by $repr$ must be the
 same when viewed as lists of derived tables.
-\section{EXECUTION MODEL CONSTRUCTION}\label{EXECUTIONMODEL}
+
+\section{ACTION FUNCTION}
+
 A derived table is flattened into a list of data tuples using
 the following function:
 ¹HOLCONST
@@ -566,54 +617,31 @@ the following function:
 Ü	in	Map row_data(DT_rows dt)
 °
 The following, which is intended to determine whether or not a query
-is a $SELECT$ query should be in an earlier document, I think:
+is a $SELECT$ query might be moved to an earlier document, I think:
 ¹HOLCONST
 Ü	Ûis_selectİ	:	Query ­ BOOL
 ÷üüüüüüüüüüüüüüüü
 Ü	µq· is_select q ¤ ¶ t·q = select t
 °
-
-We do not wish to specify the post-processing for the queries which
-modify the database yet, and so we make a function to model database
-modifications a parameter of the execution model. Similarly,
-we defer the specification of the class of derived table computations
-which are permitted.
+We do not yet have a specification of any of the database update operations
+and so the that aspect must be supplied as a parameter here:
 ¹HOLCONST
-Ü	ÛEMİ		:	(DerTable ¸ State‰t ­ State‰t ¸ Errors)
-Ü			­	(DerTable LIST ­ DerTable ¸ Errors) ğ
-Ü			­	(Query, State‰t) DBMS_TYPE
-÷üüüüüüüüüüüüüü
-Ü	µ upd cmps· 
-Ü	let	m = EM upd cmps
-Ü	in	µq· ¶cmp· µst·
-Ü		let	(st', (res, errs)) = m (q, st)
-Ü		in	let v = View‰t st
-Ü		in	cmp  cmps ±
-Ü			let	(dt, e) = cmp v
-Ü			in	if	is_select q
-Ü				then	(res, errs) = (GiveData dt, e) ± st' = st
-Ü				else	(st', e) = upd (dt, st)
-°
-In order to define the security properties required of the derived
-table computations, it is more convenient to turn the above definition
-inside out. We say that the {\em support} of a query is the set of computations
-on derived tables which could be used to implement it:
-¹HOLCONST
-Ü	ÛSupportİ	:	(DerTable ¸ State‰t ­ State‰t ¸ Errors)
-Ü			­	(DerTable LIST ­ DerTable ¸ Errors) ğ
-Ü			­	Query
-Ü			­	(DerTable LIST ­ DerTable ¸ Errors) ğ
-÷üüüüüüüüüüüüüü
-Ü	µ upd cmps q· 
-Ü	Support upd cmps q =
-Ü	¥	{	fs
-Ü		|	fs € cmps ± µst· EM upd fs (q, st) = EM upd cmps (q, st)}
+Ü	ÛAct‰tİ	:	(Query ¸ (DerTable ¸ Errors) ¸ State‰t ­ State‰t)
+Ü		­	Query ¸ (DerTable ¸ Errors) ¸ State‰t ­ State‰t ¸ ANSWER
+÷üüüüüüüüüüüüüüüü
+Üµupd; query; dt; errs; st· 
+Ü	Act‰t upd (query, (dt, errs), st)
+Ü=	if	³errs = []
+Ü	then	(st, ([], errs))
+Ü	else if	is_select query
+Ü	then	(st, (GiveData dt, errs))
+Ü	else	(upd (query, (dt, errs), st), ([], []))
 °
 
 \section{CRITICAL PROPERTIES}
 We can now attempt to state critical requirements on the main subsystems
-of the architectural model of \cite{DS/FMU/FEF/022} using the $Support$
-function to bound the allowable combinations of queries. First of all,
+of the architectural model of \cite{DS/FMU/FEF/022} by attempting
+to bound the allowable untrusted queries which are executed. First of all,
 we need to specify an analogue of $hide$ for derived tables in order
 to state the information flow constraints which apply to computations on them.
 ¹HOLCONST
@@ -663,44 +691,88 @@ transformations using the following auxiliary:
 
 ¹HOLCONST
 Ü	ÛConditionEİ	:	(DerTable ¸ State‰t ­ State‰t ¸ Errors)
-Ü			­	(DerTable LIST ­ DerTable ¸ Errors) ğ
+Ü			­	(Query ­ (DerTable LIST ­ DerTable ¸ Errors))
 Ü			­	Class
 Ü			­	(Query ¸ (Query + ONE) ¸ 'PARS) ğ
 ÷üüüüüüüüüüüüüü
-Ü	µupd cmps cc·
-Ü	ConditionE upd cmps cc
+Ü	µupd compile cc·
+Ü	ConditionE upd compile cc
 Ü	=	
 Ü	{	(dq, ocq, pars)
-Ü	|	µf ri·	f  Support upd cmps dq ± ri  RiskInputs cc f
-Ü		´	IsL ocq
-Ü		±	µg·	g  Support upd cmps (OutL ocq)
-Ü			´	³DT_rows(Fst (g ri)) = [] ² ³Snd (g ri) = []}
+Ü	|	let	dcomp = compile dq
+Ü		in	µri·	ri  RiskInputs cc dcomp
+Ü			´	IsL ocq
+Ü			±	let	ccomp = compile (OutL ocq)
+Ü				in	³DT_rows(Fst (ccomp ri)) = []
+Ü				²	³Snd (ccomp ri) = []}
 °
 ¹HOLCONST
 Ü	ÛSTP_secure_Eİ	:	(DerTable ¸ State‰t ­ State‰t ¸ Errors)
-Ü				­	(DerTable LIST ­ DerTable ¸ Errors) ğ
+Ü			­	(Query ­ (DerTable LIST ­ DerTable ¸ Errors))
 Ü				­	(Query, 'PARS) STP_TYPE ğ
 ÷üüüüüüüüüüüüüü
-Ü	µupd cmps·
-Ü	STP_secure_E upd cmps
+Ü	µupd compile·
+Ü	STP_secure_E upd compile
 Ü	=	
 Ü	{	stp
-Ü	|	µ q c· stp(q, c)  ConditionE upd cmps c}
+Ü	|	µ q c· stp(q, c)  ConditionE upd compile c}
 °
 (and similarly, presumably for the other 4 conditions from
-\cite{DS/FMU/FEF/022}, although something may need to be said about the
+\cite{DS/FMU/FEF/022}, although something would need to be said about the
 details of $upd$).
+
+
+\section{EXECUTION MODEL (PART 2)}\label{EXECUTIONMODELII}
+
+We can now instantiate the generic formulation of the execution
+model to the particular view and action functions of the previous sections.
+¹HOLCONST
+Ü	ÛEM‰1İ		:	(Query ­ (DerTable LIST ­ DerTable ¸ Errors))
+Ü			­	(Query ¸ (DerTable ¸ Errors) ¸ State‰t ­ State‰t)
+Ü			­	(Query, State‰t) DBMS_TYPE
+÷üüüüüüüüüüüüüü
+Ü	µ compile upd· 
+Ü	EM‰1 compile upd
+Ü=	EM View‰t compile (Act‰t upd)
+°
+
+A compiler and associated database update operation are correct with
+respect to the TSQL semantics if the above construction agrees
+implements the TSQL semantics as specified by $TSQLtf$ in
+\cite{DS/FMU/FEF/021}.
+
+¹HOLCONST
+Ü	ÛCorrect_Compileİ	:	((Query ­ (DerTable LIST ­ DerTable ¸ Errors))
+Ü				¸	(Query ¸ (DerTable ¸ Errors) ¸ State‰t ­ State‰t)) ğ
+÷üüüüüüüüüüüüüü
+Ü	Correct_Compile  = {(compile, upd) | EM‰1 compile upd = TSQLtf}
+°
+
+We might now conjecture that if a compiler and associated database
+operation satisfy the above correctness criterion, and if the SSQL Query
+Transformation processor lies in the set determined by $STP\_secure\_E$
+determined by them, then the constructed system satisfies property
+E of \cite{DS/FMU/FEF/022}.
+(Not formalised yet).
+
 =TEX
 \section{TABLE COMPUTATIONS}
-The set of computations on tables which appears as a parameter
-in the execution model of section \ref{EXECUTIONMODEL} will be
-constructed by taking the closure under composition
+The idea now is to define a set of operations on tables in terms
+of which it is possible to characterise the allowable results of
+compiling the queries produced by the Query Transformation processor.
+This is intended to give some insight into the intuitions about operations
+on tables which motivate the transformations.
+
+The set of computations on tables which are allowed to be produced
+when queries generatd by the SQL Transformation Processor are
+compiled will (probably) be defined (more or less)
+by taking the closure under composition
 of a finite set of particular
 operations adequate to represent the primitive constructs of TSQL.
 The closure is formed using the following function:
 
 ¹HOLCONST
-Ü	CompClosure	:	(DerTableSpec LIST ­ DerTableSpec) SET
+Ü	ÛCompClosureİ	:	(DerTableSpec LIST ­ DerTableSpec) SET
 Ü			­	(DerTableSpec LIST ­ DerTableSpec) SET
 ÷üüüüüüüüüüüüüüüüüü
 Ü	µfs·	CompClosure fs
@@ -752,7 +824,7 @@ row class are the least upper bounds of those in the component tables.
 
 Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
 ¹HOLCONST
-Ü	JoinSpecs : DerTableSpec LIST ­ DerTableSpec
+Ü	ÛJoinSpecsİ : DerTableSpec LIST ­ DerTableSpec
 ÷üüüüüüüüüüüüüüüüüü
 Ü	µsl·
 Ü	JoinSpecs sl =
@@ -763,7 +835,7 @@ Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
 Ü	in	MkDerTableSpec n cl mr csl
 °
 ¹HOLCONST
-Ü	JoinRows : DerTableRow LIST LIST ­ DerTableRow LIST
+Ü	ÛJoinRowsİ : DerTableRow LIST LIST ­ DerTableRow LIST
 ÷üüüüüüüüüüüüüüüüüü
 Ü	JoinRows [] = []
 Ü±	µtab rest·
@@ -780,7 +852,7 @@ Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
 Ü		in	Flat blks
 °
 ¹HOLCONST
-Ü	Join : DerTable LIST ­ DerTable
+Ü	ÛJoinİ : DerTable LIST ­ DerTable
 ÷üüüüüüüüüüüüüüüüüü
 Ü	µtl·	Join tl
 Ü	=	MkDerTable
@@ -802,7 +874,7 @@ declare_type_abbrev("PROJ_PAR", [],
 	”((DerTableRow ­ Class ¸ Item) ¸ DerColSpec) LIST®);
 =TEX
 ¹HOLCONST
-Ü	ProjectSpecs	: PROJ_PAR
+Ü	ÛProjectSpecsİ	: PROJ_PAR
 Ü			 ­ DerTableSpec LIST
 Ü			 ­ DerTableSpec
 ÷üüüüüüüüüüüüüüüüüü
@@ -813,7 +885,7 @@ declare_type_abbrev("PROJ_PAR", [],
 Ü	MkDerTableSpec [] (DTS_class s) (DTS_maxRow s) (Map Snd ps)
 °
 ¹HOLCONST
-Ü	ProjectData	: PROJ_PAR
+Ü	ÛProjectDataİ	: PROJ_PAR
 Ü			 ­ DerTableRow LIST LIST
 Ü			 ­ DerTableRow LIST
 ÷üüüüüüüüüüüüüüüüüü
@@ -825,7 +897,7 @@ declare_type_abbrev("PROJ_PAR", [],
 Ü	in	Map h tab
 °
 ¹HOLCONST
-Ü	Project : PROJ_PAR ­ DerTable LIST ­ DerTable
+Ü	ÛProjectİ : PROJ_PAR ­ DerTable LIST ­ DerTable
 ÷üüüüüüüüüüüüüüüüüü
 Ü	µps tl·	Project ps tl
 Ü	=	MkDerTable
@@ -843,11 +915,11 @@ the same as the original.
 Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
 
 =SML
-declare_type_abbrev("WHERE_PAR", [],
+declare_type_abbrev(Û"WHERE_PAR"İ, [],
 	”DerTableRow ­ Class ¸ BOOL®);
 =TEX
 ¹HOLCONST
-Ü	WhereData	: WHERE_PAR
+Ü	ÛWhereDataİ	: WHERE_PAR
 Ü			 ­ DerTableRow LIST LIST
 Ü			 ­ DerTableRow LIST
 ÷üüüüüüüüüüüüüüüüüü
@@ -859,7 +931,7 @@ declare_type_abbrev("WHERE_PAR", [],
 Ü	in	Map Snd (Map h tab ù {(t, r) | t})
 °
 ¹HOLCONST
-Ü	Where : WHERE_PAR ­ DerTable LIST ­ DerTable
+Ü	ÛWhereİ : WHERE_PAR ­ DerTable LIST ­ DerTable
 ÷üüüüüüüüüüüüüüüüüü
 Ü	µp tl·	Where p tl
 Ü	=	MkDerTable
@@ -868,6 +940,7 @@ declare_type_abbrev("WHERE_PAR", [],
 °
 
 {\huge ETC. $GROUP\,BY$, $\ldots$}
+{\huge Also need look at the expression layer.}
 \section{CLOSING DOWN}
 The following \Product{} instruction restores the previous proof context.
 =SML
@@ -933,3 +1006,28 @@ JoinRows
 
 declare_type_abbrev("WHERE_PAR", [],
 	”DerTableRow ­ Class ¸ BOOL®);
+
+set_pc"hol";
+set_goal([], ¬RiskInputs c (Ìdtl· (Join dtl, [])) = {}®);
+
+a(rewrite_tac[get_spec¬RiskInputs®]);
+
+a(PC_T "sets_ext" contr_tac);
+
+a(all_asm_ante_tac THEN rewrite_tac[]);
+
+a(rewrite_tac(map get_spec[¬Join®, ¬HideDerTable®, ¬JoinSpecs®, ¬JoinRows®]));
+
+a(rewrite_tac[let_def]);
+
+a(rewrite_tac(map get_spec[¬MkDerTable®]));
+
+a strip_tac;
+
+val lemma = tac_proof(([], ¬µf g x y·f = g ± x = y ´ f x = g y®),
+		REPEAT strip_tac THEN asm_rewrite_tac[]);
+
+a(bc_tac[lemma]);
+
+a(strip_tac THEN bc_tac[prove_rule[]¬µf g x y·f = g ± x = y ´ f x = g y®]);
+
