@@ -74,8 +74,8 @@ None.
 \section{GENERAL}
 \subsection{Scope}
 Phases 1 and 2 of the FEF project dealt exclusively with the formulation of the security policy defined in \cite{DS/FMU/FEF/003}.
-In that formulation SSQL queries are treated as containing information at a single security clearance.
-In phase 3, the intention is to generalise the policy to cater for queries which are structured objects containing components which may be at several different clearances.
+In that formulation SSQL queries are treated as containing information at a single security classification.
+In phase 3, the intention is to generalise the policy to cater for queries which are structured objects containing components which may be at several different classifications.
 This document gives an attempt to give an architectural model in HOL similar to the one in \cite{securityprops} but abstracting and/or simplifying away some of the detail.
 
 It constitutes part of deliverable D17 of work package 7c, as described
@@ -94,7 +94,7 @@ The following differences from \cite[section 3]{securityprops} are also noted:
 \item
 For compatibity with the single-level policy treatment of \cite{DS/FMU/FEF/003} and its generalisation in \cite{DS/FMU/FEF/040}, we do not use the ``events'' of \cite{securityprops} here.
 \item
-We associate with each output of the system a clearance indicating whether or not the output is visible to a client.
+We associate with each output of the system a classification indicating whether or not the output is visible to a client.
 This accords with the discussion in \cite[section 2.3]{securityprops} if not with the formalisation in Z.
 \item
 There is a remark in \cite{securityprops} saying that ``if a client can observe an object which contains a reference to a second object then the classification of the second object can [always] be observed''.
@@ -120,7 +120,7 @@ push_pc"hol";
 
 It seems most convenient to view the treatment of SWORD in \cite{securityprops} in terms of a security policy on the DBMS as seen by the trusted clients.
 This is like the view taken in the single-level formulation of the policy given in \cite{DS/FMU/FEF/003}.
-Thus SWORD receives an input stream comprising clearance-query pairs and generates an output stream of multi-level objects.
+Thus SWORD receives an input stream comprising classification-query pairs and generates an output stream of multi-level objects.
 
 Internally, SWORD is constructed of an Abstract Machine like that described in section 3 of \cite{securityprops} composed with a filter which sanitises the output from the Abstract Machine.
 In order to consider properties like the result-labelling property, we need to be able to see this far inside the covers; however, that is not necessary in stating the policy.
@@ -182,19 +182,31 @@ declare_type_abbrev("Obj", [], ”(Class ¸ Text) TREE®);
 °
 
 \subsection{Requests}\label{Requests}
-A request is a pair comprising a clearance and an object representing an SSQL query.
+A request is a pair comprising a classification and an object representing an SSQL query.
 
 ¹HOLLABPROD ÛReqİüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
-Ü	ÛreqClearanceİ	: Class;
+Ü	ÛreqClearanceİ		: Class;
 Ü	ÛreqSsqlİ		: Obj
 °üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
 
 \subsection{Coloured Spectacles}\label{spectacles}
-We will presently require two versions of the ``coloured spectacles'' which we use to view an object at a given class.
+
+We will eventually require several versions of the ``coloured spectacles'' which we use to view an object at a given class.
 The first version is like that of \cite[section 3]{securityprops}.
 It is appropriate to the input queries (and later to the data passed from the Abstract Machine and the Filter).
+
 As in \cite{securityprops}
-``\ldots two objects will appear identical if they have the same classification and either: 1. the clearance does not dominate this; or 2. the clearance does dominate this, the contents of the objects are identical, and any objects referred to appear identical.''
+``\ldots two objects will appear identical if they have the same classification and either:
+
+\begin{enumerate}
+\item
+the clearance does not dominate this
+
+or
+
+\item
+the clearance does dominate this, the contents of the objects are identical, and any objects referred to appear identical.''
+\end{enumerate}
 
 ¹HOLCONST
 Ü	ÛidenticalObjİ : Class ­ (Obj ª Obj)
@@ -211,8 +223,10 @@ As in \cite{securityprops}
 Ü		±	Elems (Combine os‰1 os‰2)
 Ü		€	identicalObj c)}
 °
+
 Here, the library function $Elems$ maps a list into the set of its members (in this case pairs of objects) and $Combine$ makes a list of pairs (of objects) out of a pair of lists.
 Thus we are requiring in the last clause on the right-hand side of the implication that corresponding children of the two objects bear the identical object relation to one another at the given class, $c$.
+
 We use the same idiom in the lifting of $identicalObj$ to lists of objects and histories:
 
 ¹HOLCONST
@@ -315,32 +329,34 @@ We do not want to settle on the representation of states here, so we use a type 
 Ü	ÛInitİ		: 'State
 °üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
 
-
 \subsubsection{Histories}\label{Histories}
-Given, a list of requests, we can compute the list of output objects resulting from executing the requests on a given machine starting in a given state.
+
+The following definition gives a function which transforms a state machine which takes single {\it Req}s and yields single {\it Obj}s into one which takes a list of {\it Req}s and yields a list of {\it Obj}s.
 
 ¹HOLCONST
-Ü	Ûoutput_seqİ : 'State Machine ­ 'State ¸ Req LIST ­ Obj LIST
+Ü	Ûlift_machineİ : 'State Machine ­ 'State ¸ Req LIST ­ Obj LIST ¸ 'State
 ÷üüüüüüüüüüüüüüüüüüüüüü
-Üµmch s r rs·
-Ü	output_seq mch (s, []) = []
-Ü±	output_seq mch (s, Cons r rs) =
-Ü	Cons
-Ü	(Output mch (s, r))
-Ü	(output_seq mch (Next mch (s, r), rs))
+Üµmch s r rl·
+Ü	lift_machine mch (s, []) = ([], s)
+Ü±	lift_machine mch (s, Cons r rl) =
+Ü	let out	= Output mch (s, r)
+Ü	and s'	= Next mch (s, r)
+Ü	in	let	(outl, final_state) = lift_machine mch (s', rl)
+Ü		in	(Cons out outl, final_state)
 °
 
 The behavioural model of the machine is then given by:
+
 ¹HOLCONST
 Ü	ÛBehavioursİ : 'State Machine ­ Req LIST ­ Obj LIST
 ÷üüüüüüüüüüüüüüüüüüüüüü
 Üµmch rs·
-Ü	Behaviours mch rs = output_seq mch (Init mch, rs)
+Ü	Behaviours mch rs = Fst (lift_machine mch (Init mch, rs))
 °
 
-
 \subsubsection{Filter}\label{Filter}
-The filter takes an object and a clearance and sanitises the object for a client at that clearance.
+The filter takes an object and a classification and sanitises the object for a client at that clearance.
+
 ¹HOLCONST
 Ü	ÛFilterObjİ : Class ­ Obj ­ Obj
 ÷üüüüüüüüüüüüüüüüüüüüüüüü
