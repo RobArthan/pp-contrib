@@ -74,7 +74,7 @@ doctex wrk068 wrk068.th; texdvi -b wrk068; texdvi wrk068; texdvi wrk068
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2004/04/12 12:10:55 $%
+\date{\FormatDate{$Date: 2004/04/12 14:39:52 $%
 }}
 
 \begin{document}
@@ -89,7 +89,7 @@ group theory.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK068; issue $Revision: 1.77 $%
+Reference: LEMMA1/HOL/WRK068; issue $Revision: 1.1 $%
 
 
 \end{centering}
@@ -136,7 +136,7 @@ This document gives specifications and proofs relating to group theory.
 \subsection{Technical Prelude}
 
 First of all, we must give the the ML commands to  introduce the new theory ``equiv\_rel'' as a child of the theory ``orders'' of ordered sets (whence comes our definition of transitivity,
-see \cite{LEMMA1/HOL/DTD114}).
+see \cite{LEMMA1/HOL/DTD115}).
 
 
 =SML
@@ -154,32 +154,35 @@ new_theory"equiv_rel";
 %%%%
 %%%%
 %%%%
+\subsubsection{The Definitions}
+=SML
+declare_infix(210, "¦");
 ¹HOLCONST
 Ü ÛReflÝ : ('a SET ¸ ('a ­ 'a ­ BOOL)) ­ BOOL
 ÷üüüüüü
-Ü µ X $<<·
-Ü	Refl(X, $<<)
-Ü ¤	µx·x  X ´ x <<  x
+Ü µ X $¦·
+Ü	Refl(X, $¦)
+Ü ¤	µx·x  X ´ x ¦  x
 °
 ¹HOLCONST
 Ü ÛSymÝ : ('a SET ¸ ('a ­ 'a ­ BOOL)) ­ BOOL
 ÷üüüüüü
-Ü µ X $<<·
-Ü	Sym(X, $<<)
-Ü ¤	µx y·x  X ± y  X ± x <<  y ´ y << x
+Ü µ X $¦·
+Ü	Sym(X, $¦)
+Ü ¤	µx y·x  X ± y  X ± x ¦  y ´ y ¦ x
 °
 ¹HOLCONST
 Ü ÛEquivÝ : ('a SET ¸ ('a ­ 'a ­ BOOL)) ­ BOOL
 ÷üüüüüü
-Ü µ X $<<·
-Ü	Equiv(X, $<<)
-Ü ¤	Refl(X, $<<) ± Sym(X, $<<) ± Trans(X, $<<)
+Ü µ X $¦·
+Ü	Equiv(X, $¦)
+Ü ¤	Refl(X, $¦) ± Sym(X, $¦) ± Trans(X, $¦)
 °
 ¹HOLCONST
 Ü ÛEquivClassÝ : ('a SET ¸ ('a ­ 'a ­ BOOL)) ­ 'a ­ 'a SET
 ÷üüüüüü
-Ü µ X $<< x·
-Ü	EquivClass(X, $<<) x = {y | y  X ± x << y}
+Ü µ X $¦ x·
+Ü	EquivClass(X, $¦) x = {y | y  X ± x ¦ y}
 °
 =SML
 declare_infix(300, "//");
@@ -187,8 +190,8 @@ declare_infix(300, "//");
 ¹HOLCONST
 Ü Û$//Ý : 'a SET ­ ('a ­ 'a ­ BOOL) ­ 'a SET SET
 ÷üüüüüü
-Ü µ X $<<·
-Ü	X // ($<<) = {A | ¶x· x  X ± A = EquivClass(X, $<<) x}
+Ü µ X $¦·
+Ü	X // ($¦) = {A | ¶x· x  X ± A = EquivClass(X, $¦) x}
 °
 =SML
 declare_infix(200, "Respects");
@@ -196,8 +199,8 @@ declare_infix(200, "Respects");
 ¹HOLCONST
 Ü Û$RespectsÝ : ('a ­ 'b) ­ ('a ­ 'a ­ BOOL) ­ 'a SET ­ BOOL
 ÷üüüüüü
-Ü µ f $<< X·
-Ü	(f Respects $<<) X ¤ µx y·x  X ± y  X ± x << y ´ f x = f y
+Ü µ f $¦ X·
+Ü	(f Respects $¦) X ¤ µx y·x  X ± y  X ± x ¦ y ´ f x = f y
 °
 ¹HOLCONST
 Ü Û$ContentsÝ : 'a SET ­ 'a
@@ -205,6 +208,52 @@ declare_infix(200, "Respects");
 Ü µ x· Contents {x} = x
 °
 
+=SML
+declare_postfix(330, "ç-ê");
+
+¹HOLCONST
+Ü Û$ç-êÝ : ('a ­ 'b) ­ 'a  SET ­ 'b
+÷üüüüüü
+Ü µ f A· (f ç-ê) A = Contents{y | ¶x·  x  A ± y = f x}
+°
+\subsection{Groups}
+
+\subsection{Technical Prelude}
+
+First of all, we must give the the ML commands to  introduce the new theory ``groups'' as a child of the theory ``equiv\_rel'' of equivalence relations.
+
+=SML
+force_delete_theory"groups" handle Fail _ => ();
+open_theory"equiv_rel";
+new_theory"groups";
+new_parent"ú";
+set_merge_pcs["basic_hol1", "'sets_alg", "'ú"];
+=TEX
+%%%%
+%%%%
+%%%%
+%%%%
+
+%%%%
+%%%%
+%%%%
+%%%%
+\subsubsection{The Definitions}
+=SML
+declare_infix(310, "><");
+declare_infix(310, ">><<");
+
+¹HOLCONST
+Ü ÛGroupÝ : ('a SET ¸ ('a ­ 'a ­ 'a) ¸ ('a ­ 'a) ¸ 'a) SET
+÷üüüüüü
+Ü µ G $>< -- e·
+Ü	(G, $><, --, e)  Group
+Ü ¤	(µx y z·x  G ± y  G ± z  G ´ (x >< y) >< z = x >< y >< z)
+Ü ±	e  G
+Ü ±	(µx· x  G ´ x >< e = x ± e >< x = x)
+Ü ±	(µx· x  G ´ x >< -- x = e ± -- x >< x = e)
+Ü
+°
 
 \newpage
 
@@ -215,6 +264,7 @@ declare_infix(200, "Respects");
 {\let\Section\section
 \def\section#1{\Section{#1}}
 \include{wrk0681.th}
+\include{wrk0682.th}
 }  %\let
 
 \twocolumn[\section{INDEX}\label{INDEX}]
@@ -249,12 +299,15 @@ fun arb_gen (thm : THM) : THM = (
 %%%%
 %%%%
 =SML
+open_theory"equiv_rel";
+set_merge_pcs["basic_hol1", "'sets_alg"];
 val Ûrefl_defÝ = get_spec¬Refl®;
 val Ûsym_defÝ = get_spec¬Sym®;
 val Ûequiv_defÝ = get_spec¬Equiv®;
 val Ûequiv_class_defÝ = get_spec¬EquivClass®;
 val Ûquotient_defÝ = get_spec¬$//®;
 val Ûrespects_defÝ = get_spec¬$Respects®;
+val Ûinduced_defÝ = get_spec¬$ç-ê®;
 =SML
 push_consistency_goal ¬Contents®;
 a(¶_tac¬ÌA·Åx·A = {x}® THEN REPEAT strip_tac THEN rewrite_tac[]);
@@ -276,16 +329,11 @@ val Ûcontents_defÝ = save_thm("contents_def", get_spec¬$Contents®);
 %%%%
 %%%%
 %%%%
-\subsection{Lemmas about Lists and Sets}
-=TEX
-We also need a few general lemmas about lists:
-%%%%
-%%%%
 =SML
 set_goal([], ¬
-	µX; $<<; x y·
-	Equiv(X, $<<) ± x  X ± y  X ´
-	(EquivClass(X, $<<)  x = EquivClass(X, $<<) y ¤ x << y)
+	µX; $¦; x y·
+	Equiv(X, $¦) ± x  X ± y  X ´
+	(EquivClass(X, $¦)  x = EquivClass(X, $¦) y ¤ x ¦ y)
 ®);
 a(PC_T1 "sets_ext1" rewrite_tac[equiv_class_def, equiv_def, sym_def, refl_def, trans_def]
 	THEN REPEAT strip_tac);
@@ -315,11 +363,11 @@ val Ûconstant_image_thmÝ = save_pop_thm "constant_image_thm";
 =TEX
 =SML
 set_goal([], ¬
-	µX $<< f x·
-		Equiv(X, $<<)
-	±	(f Respects $<<) X
+	µX $¦ f x·
+		Equiv(X, $¦)
+	±	(f Respects $¦) X
 	±	x  X
-	´	{y | ¶z·z  EquivClass(X, $<<) x ± y = f z} = {f x}
+	´	{y | ¶z·z  EquivClass(X, $¦) x ± y = f z} = {f x}
 ®);
 a(REPEAT strip_tac);
 a(bc_thm_tac constant_image_thm);
@@ -335,11 +383,11 @@ val Ûrespects_image_thmÝ = save_pop_thm "respects_image_thm";
 =TEX
 =SML
 set_goal([], ¬
-	µX $<< f x·
-		Equiv(X, $<<)
-	±	(f Respects $<<) X
+	µX $¦ f x·
+		Equiv(X, $¦)
+	±	(f Respects $¦) X
 	±	x  X
-	´	Contents {y | ¶z·z  EquivClass(X, $<<) x ± y = f z} = f x
+	´	Contents {y | ¶z·z  EquivClass(X, $¦) x ± y = f z} = f x
 ®);
 a(REPEAT strip_tac);
 a(ALL_FC_T rewrite_tac[arb_gen respects_image_thm]);
@@ -348,9 +396,9 @@ val Ûrespects_image_contents_thmÝ = save_pop_thm "respects_image_contents_thm";
 =TEX
 =SML
 set_goal([], ¬
-	µX $<<·
-		Equiv(X, $<<)
-	´	µA· A  X // ($<<) ´ ¶x· x  X ± A = EquivClass(X, $<<) x
+	µX $¦·
+		Equiv(X, $¦)
+	´	µA· A  X // ($¦) ´ ¶x· x  X ± A = EquivClass(X, $¦) x
 
 ®);
 a(rewrite_tac[ quotient_def]);
@@ -394,6 +442,39 @@ a(all_var_elim_asm_tac1);
 a(ALL_ASM_FC_T rewrite_tac[]);
 val Ûfun_factors_unique_thmÝ = save_pop_thm "fun_factors_unique_thm";
 =TEX
+=SML
+set_goal([], ¬
+	µX $¦ f x·
+		Equiv(X, $¦)
+	±	(f Respects $¦) X
+	±	x  X
+	´	(f ç-ê) (EquivClass(X, $¦) x) = f x
+®);
+a(rewrite_tac[induced_def] THEN REPEAT strip_tac);
+a(bc_thm_tac respects_image_contents_thm THEN REPEAT strip_tac);
+val Ûinduced_fun_thmÝ = save_pop_thm "induced_fun_thm";
+=TEX
+=SML
+open_theory"groups";
+set_merge_pcs["basic_hol1", "'sets_alg", "'ú"];
+=TEX
+=SML
+val Ûgroup_defÝ = get_spec¬Group®;
+=TEX
+=SML
+set_goal([], ¬
+	(Universe, $+, ~, îú 0)  Group
+®);
+a(rewrite_tac[group_def, ú_plus_assoc_thm]);
+val Ûú_group_thmÝ = save_pop_thm "ú_group_thm";
+=TEX
+=SML
+set_goal([], ¬
+	({~(îú 1); îú 1}, $*, (Ìx·x), îú 1)  Group
+®);
+a(rewrite_tac[group_def, ú_times_assoc_thm]);
+a(REPEAT strip_tac THEN asm_rewrite_tac[]);
+val Ûú_units_group_thmÝ = save_pop_thm "ú_units_group_thm";
 
 =TEX
 %%%%
@@ -408,6 +489,7 @@ val Ûfun_factors_unique_thmÝ = save_pop_thm "fun_factors_unique_thm";
 %%%%
 =SML
 output_theory{out_file="wrk0681.th.doc", theory="equiv_rel"};
+output_theory{out_file="wrk0682.th.doc", theory="groups"};
 =TEX
 \end{document}
 =IGN
