@@ -64,7 +64,7 @@ DRA front end filter project RSRE 1C/6130.}
 \subsection{Changes History}
 \begin{description}
 \item[Issue \SCCSversion ({\FormatDate{$Date$
-}}) ]  Specification of data types moved to DS/FMU/FEF/004.
+}}) ]  Major changes after review. $hide$ achieved in a single pass.
 \end{description}
 
 \subsection{Changes Forecast}
@@ -94,31 +94,32 @@ push_pc "hol1";
 
 \section{THE FUNCTION $hide$}
 
-The purpose of the $hide$ function is to return a sanitised state of the database. This version of the database does not
+The purpose of the $hide$ function is to return a  version of the database that does not
 include any information the existence
 of which the user is not cleared to know, nor does it contain the true value of any field which the user is not cleared to see. This is achieved as follows :
 \begin{description}
 \item[Section \ref{CLEANTABLE}]
 A function $cleanTable$ is defined which takes a table and
-a clearance and returns a table which has been `cleaned'. 
-A table that the user is not permitted to access is replaced by an `empty' table. Otherwise,
+a clearance and returns a table which has been cleaned in the following way: 
+A table that the user is not permitted to access is replaced by an `empty' table; otherwise,
   all the rows and columns  about whose 
-existence the user is not cleared to know are hidden, and all the data the user is
+existence the user is not cleared to know are removed, and all the data the user is
 not cleared to see is replaced by dummy data.
 \item[Section \ref{CLEANDIRECTORY}]
 A function $cleanDirectory$ is defined which takes a directory and
-a clearance and returns a directory which has been `cleaned'. If the user is 
+a clearance and returns a directory which has been cleaned in the following way: if the user is 
 not permitted to know of the existence of the tables in the directory
 then a directory with no tables in it is returned; otherwise
-the tables in the directory are `cleaned' by $cleanTable$.
+the tables in the directory are cleaned by $cleanTable$.
 \item[Section \ref{CLEANSTATE}]
 Finally, the function $hide$ is defined which takes a state and a clearance
-and returns a state which has been `cleaned'. All directories about whose 
-existence the user is not cleared to know are hidden and the rest are cleaned by $cleanDirectory$.
+and returns a state which has been cleaned in the following way: all directories about whose 
+existence the user is not cleared to know are removed and the rest are cleaned by $cleanDirectory$.
 \end{description}
-\subsection{Sanitising a Table} \label{CLEANTABLE}
+\subsection{Cleaning a Table} \label{CLEANTABLE}
 In the case where the user is permitted to know of the existence of a table, but is not permitted
-to access it, i.e. his clearance does not dominate the table class, an `empty' table is left in the 
+to access it, i.e. his clearance does not dominate the table class, an `empty' table, $stubTable$,
+ is left in the 
 directory in place of that table. We define a classification $stubClass$ for such tables.
 
 ¹HOLCONST
@@ -128,111 +129,61 @@ directory in place of that table. We define a classification $stubClass$ for suc
 °
 
 ¹HOLCONST
-Ü	ÛleaveStubİ : Class ¸ TableSpec ­ TableSpec
+Ü	ÛstubTableİ : TableSpec
 ÷üüüüüüüüüüüüüü
-Ü	µ clear : Class; ts : TableSpec
-Ü	·	leaveStub(clear,ts)
-Ü		=
-Ü		MkTableSpec stubClass stubClass{}{}[]
+Ü	stubTable = MkTableSpec stubClass stubClass{}{}[]
 °
 
-All other tables are `sanitised' in the following way
-\begin{enumerate}
+All other tables are cleaned in the following way
+\begin{itemize}
 \item
-Remove  any rows about whose existence the user is 
+Remove from the column constraints those groups
+of columns about whose existence the user is 
 not cleared to know.
 \item
 Remove any  columns about whose existence the user is 
 not cleared to know. 
 \item
+Remove any  rows about whose existence the user is 
+not cleared to know. 
+\item
+Remove data from columns of remaining rows about whose existence the user is 
+not cleared to know.
+\item
 Replace data that the user is
 not cleared to see by  dummy values.
-\end{enumerate}
-\subsubsection{Remove Rows from Table}
-To hide from a table any rows about whose existence the user is 
-not cleared to know,  remove the relevant rows from the sequence of rows and replace the original rows of the table with this filtered sequence.
+\end{itemize}
 
-An auxiliary function which replaces the rows in a table with  given rows.
+\subsubsection{Clean Column Constraints}
+
+A function that takes a clearance and a table
+and returns a pair: the column constraints for columns whose
+existence is dominated by the clearance,  and the corresponding set of columns.
+
 
 ¹HOLCONST
-Ü	ÛreplaceRowsİ : TableSpec ­ Row LIST ­ TableSpec
+Ü	ÛcleanColConsİ : Class ­ TableSpec ­ (ColCons ¸ ColSpec ğ)
 ÷üüüüüüüüüüüüüü
-Ü	µ ts : TableSpec; rs : Row LIST
-Ü	·	replaceRows ts rs 
-Ü		= 
-Ü		MkTableSpec(TS_class ts)(TS_maxRow ts)(TS_colspecs ts)(TS_cons ts) rs
-°
-
-Now the function to remove the rows.
-
-¹HOLCONST
-Ü	ÛhideRowsİ : Class ¸ TableSpec ­ TableSpec
-÷üüüüüüüüüüüüüü
-Ü
-Ü	µ clear : Class; ts : TableSpec
-Ü	· 	hideRows(clear,ts) 
-Ü		= 
-Ü		replaceRows ts ((TS_rows ts) ù {r:Row|clear dominates (R_exist r)})
-°
-
-\subsubsection{Remove Columns from Table}
-
-To hide columns from a table,  it is necessary to check the existence class  
-of groups of columns. If the user is 
-not cleared to know the existence of a group of columns, then the group of columns must be removed from the table. This means removing all reference to the 
-identified columns in the $colspecs$  and $colposns$, removing the group number
-from the column group constraints and removing the actual data from each row. 
-First, identify which groups are to be hidden.
- 
-¹HOLCONST
-Ü	ÛgroupsToHideİ : Class ¸ TableSpec ­ Num ğ
-÷üüüüüüüüüüüüüü
-Ü	µ clear : Class; ts : TableSpec
-Ü	· 	groupsToHide(clear,ts) 
-Ü		=  
-Ü		{n : Num|³(clear dominates (CC_exist ((TS_cons ts) @ n)))}
-°
-
-
-A function to remove data from  given positions in the row.
-
-¹HOLCONST
-Ü	ÛremoveDataİ :  Num ğ­ Row ­ Row
-÷üüüüüüüüüüüüüü
-Ü	µ r : Row; ns : Num ğ 
-Ü	· 	removeData ns r
+Ü	µ clear : Class; ts: TableSpec
+Ü	· 	cleanColCons clear ts 
 Ü		=
-Ü		MkRow (R_exist r) (ns á (R_data r))
+Ü		let 	ccs = TS_cons ts ’ {cc|clear dominates (CC_exist cc)}
+Ü		in 
+Ü		(ccs,{col : ColSpec|(CS_consGroup col)  Dom ccs})
 °
 
-A function to  hide  groups of columns from a table.
+\subsubsection{Filter all Data in a Row}
+Filter out the data in columns about whose existence the user is cleared to know.
 
 ¹HOLCONST
-Ü	ÛhideGroupsİ : TableSpec ­ Num ğ ­ TableSpec
+Ü	ÛfilterRowİ :  ColSpec ğ ­ (Num ª Data) ­ (Num ª Data)
 ÷üüüüüüüüüüüüüü
-Ü
-Ü	µ ts : TableSpec; ns: Num ğ
-Ü	·	hideGroups ts ns
+Ü	µ cols : ColSpec ğ; ds : Num ª Data  
+Ü	· 	filterRow cols ds
 Ü		=
-Ü		let	colspecs = (TS_colspecs ts) \ {cs : ColSpec|(CS_consGroup cs)  ns}
-Ü		and	cons = ns  á (TS_cons ts)
-Ü		and 	rows = Map (removeData ns)(TS_rows ts)
-Ü		in	MkTableSpec(TS_class ts) (TS_maxRow ts) colspecs cons rows
+Ü		Dom{(n,c)|c  cols ± CS_posn c = n} ò ds
 °
 
-
-Finally, hide from a table all groups of columns about whose existence the user is 
-not cleared to know.
-
-
-¹HOLCONST
-Ü	ÛhideColsİ : Class ¸ TableSpec  ­ TableSpec
-÷üüüüüüüüüüüüüü
-Ü	µ clear : Class; ts: TableSpec; ns: Num ğ
-Ü	· 	hideCols(clear,ts) 
-Ü		=
-Ü		hideGroups ts (groupsToHide(clear,ts))	
-°
 
 
 \subsubsection{Replace Data in a Row with Dummy Data}
@@ -260,10 +211,10 @@ not cleared to see by a dummy value.
 
 ¹HOLCONST
 Ü
-Ü	ÛcleanDataİ : Class ­ Data ­ Data
+Ü	ÛreplaceDataİ : Class ­ Data ­ Data
 ÷üüüüüüüüüüüüüü
 Ü	µ clear : Class; d : Data
-Ü	·	cleanData clear d
+Ü	·	replaceData clear d
 Ü		=
 Ü		if ³(clear dominates (Dat_class d))
 Ü		then	MkData (Dat_class d)
@@ -271,23 +222,43 @@ not cleared to see by a dummy value.
 Ü		else 	d
 °
 
-
-A function to clean all the data in  a row.
+\subsubsection{Clean all Data in a Row}
+Filter out the data in columns about whose existence the user is cleared to know.
+Replace data in fields that the user is not cleared to see by 
+dummy values.
 
 ¹HOLCONST
 Ü
-Ü	ÛcleanRowİ : Class ­ Row ­ Row
+Ü	ÛcleanRowİ : Class ­ ColSpec ğ ­ Row ­ Row
 ÷üüüüüüüüüüüüüü
-Ü	µ clear : Class; r: Row
-Ü	·	cleanRow clear r 
+Ü	µ clear : Class; cols : ColSpec ğ; r: Row
+Ü	·	cleanRow clear cols r 
 Ü		= 
-Ü		MkRow (R_exist r)((R_data r) » (cleanData clear))
+Ü		MkRow (R_exist r)((filterRow cols (R_data r)) » (replaceData clear))
 °
 
-\subsubsection{Clean all Data in a Table}
+\subsubsection{Clean all Rows in a Table}
+
+Delete all rows about whose existence the user is not cleared to know, and then clean remaining rows.
+
+¹HOLCONST
+Ü
+Ü	ÛcleanRowsİ : Class ­ ColSpec ğ ­ Row LIST ­ Row LIST
+÷üüüüüüüüüüüüüü
+Ü	µ clear : Class; cols : ColSpec ğ; rs: Row LIST
+Ü	·	cleanRows clear cols rs 
+Ü		= 
+Ü		Map (cleanRow clear cols) (rs ù {r:Row|clear dominates (R_exist r)})
+°
+
+
+
+
+
+\subsubsection{The function $cleanTable$}
 
 The function $cleanTable$ either returns an `empty' table or a table where  the
-rows and columns that the user is not cleared to see have been hidden and fields that the 
+rows and columns that the user is not cleared to see have been removed and fields that the 
 user is not cleared to see have been overwritten by dummy fields.
 
 ¹HOLCONST
@@ -297,19 +268,25 @@ user is not cleared to see have been overwritten by dummy fields.
 Ü	·	cleanTable clear ts
 Ü		=
 Ü		if 	³(clear dominates (TS_class ts))
-Ü		then 	leaveStub(clear,ts)
-Ü		else	let ts' = hideCols(clear,hideRows(clear,ts))
-Ü			in		 
-Ü			replaceRows ts'(Map (cleanRow clear)(TS_rows ts'))
+Ü		then 	stubTable
+Ü		else	let (ccs,cols) = cleanColCons clear ts
+Ü			in
+Ü			MkTableSpec 
+Ü				(TS_class ts) 
+Ü				(TS_maxRow ts) 
+Ü				cols
+Ü				ccs
+Ü				(cleanRows clear cols (TS_rows ts))
 °
 
-\subsection{Sanitising a Directory} \label{CLEANDIRECTORY}
+
+\subsection{Cleaning a Directory} \label{CLEANDIRECTORY}
 Any tables in a directory about whose existence the user is 
 not cleared to know can be removed from that directory. These are all the
 tables in a directory whose $class$ component is not
 dominated by the user's clearance (i.e. the user is cleared to
 know the existence of the directory, but is not cleared to
-see the structure of the directory). To `clean' a directory, the tables in that 
+see the structure of the directory). To clean a directory, the tables in that 
 directory will either be hidden or modified by $cleanTable$.
 
 ¹HOLCONST
@@ -322,12 +299,14 @@ directory will either be hidden or modified by $cleanTable$.
 Ü		then	MkDirectory {}(Dir_exist dir)(Dir_class dir)
 Ü		else	
 Ü			let 	newtables = Dir_tables dir » cleanTable clear
-Ü			in	MkDirectory newtables(Dir_exist dir)(Dir_class dir)
+Ü			in	
+Ü			MkDirectory newtables(Dir_exist dir)(Dir_class dir)
 °
-\subsection{Sanitising a State} \label{CLEANSTATE}
+
+\subsection{Cleaning a State} \label{CLEANSTATE}
 Finally, any directories about whose existence the user is 
 not cleared to know can be removed from the state. All remaining directories will be
-`cleaned' by $cleanDirectory$.
+cleaned by $cleanDirectory$.
 
 ¹HOLCONST
 Ü	Ûhideİ : Class ¸ State ­ State
@@ -343,10 +322,9 @@ not cleared to know can be removed from the state. All remaining directories wil
 
 In \cite{DS/FMU/FEF/004} the function $processQuery$ is defined. This function takes a query, a user's classification and a state and returns the result of the query, i.e., the output to be seen by the user,  an update to be applied to the data base and some error messages.
 The effect of a query depends on the type of the query, which may be an $Insert$, a $Delete$ 
-an $UpDate$ or a $Select$. The sum type $Effect$ is defined in \cite{DS/FMU/FEF/004}.
+an $UpDate$ or a $Select$. 
 
-
-We have not taken into account that it may be necessary to have as a state invariant
+We have not yet determined whether it is necessary to have as a state invariant
 that  column existence classifications
 are in ascending order.
 \subsection{Auxiliary Functions}
@@ -357,17 +335,27 @@ not cleared to know have been hidden. We require a function that reveals the tru
 hidden row position.
 
 ¹HOLCONST
-Ü	Ûrevealİ : Class ­ TableSpec ­ Num ª Num
+Ü	ÛrevealRowİ : Class ­ TableSpec ­ Num ª Num
 ÷üüüüüüüüüüüüüü
 Ü	µ clear: Class; ts : TableSpec
-Ü	· 	reveal clear ts 
+Ü	· 	revealRow clear ts 
 Ü		= 
 Ü		let	visiblerows = {r:Row|clear dominates (R_exist r)}
-Ü		in	Squash(Id(Dom((ListRel(TS_rows ts)) ’ visiblerows))) 
+Ü		in	
+Ü		Squash(Id(Dom((ListRel(TS_rows ts)) ’ visiblerows))) 
 °
 
-We provide the auxiliary function $changeSpec$ (from Annex 2 {\em SSQL Abstract Machine})  which takes a full table name and a table and gives a new state.
+We provide the auxiliary functions $replaceRows$ and $changeSpec$ from Annex 2 {\em SSQL Abstract Machine} of the ITT \cite{ittdra}.
 
+
+¹HOLCONST
+Ü	ÛreplaceRowsİ : TableSpec ­ Row LIST ­ TableSpec
+÷üüüüüüüüüüüüüü
+Ü	µ ts : TableSpec; rs : Row LIST
+Ü	·	replaceRows ts rs 
+Ü		= 
+Ü		MkTableSpec(TS_class ts)(TS_maxRow ts)(TS_colspecs ts)(TS_cons ts) rs
+°
 
 ¹HOLCONST
 Ü	ÛchangeSpecİ : Tab ­ TableSpec ­ State ­ State
@@ -378,10 +366,11 @@ We provide the auxiliary function $changeSpec$ (from Annex 2 {\em SSQL Abstract 
 Ü		if	Front i  Dom s 
 Ü		then	let	dir = s @ Front i 
 Ü			in
-Ü				if 	Last i  Dom(Dir_tables dir) 
-Ü				then	let	dir' = MkDirectory(Dir_tables dir « {(Last i,ts)}) 
+Ü			if 	Last i  Dom(Dir_tables dir) 
+Ü			then	let	dir' = MkDirectory(Dir_tables dir « {(Last i,ts)}) 
 Ü								(Dir_exist dir)(Dir_class dir)
-Ü						in	s « {(Front i,dir')}
+Ü				in	
+Ü				s « {(Front i,dir')}
 Ü			else 	s
 Ü		else	s
 °
@@ -390,19 +379,22 @@ We provide the auxiliary function $changeSpec$ (from Annex 2 {\em SSQL Abstract 
 
 The function $colDefaults$ takes a   column number - data  relation and a table
  and supplies a new relation  with
-appropriate default values (obtained from the table information) in  columns which were hidden to the user.
+appropriate  column number - default value  pairs
+ added, corresponding to the  columns which were hidden to the user. The
+default values are obtained from the table information.
 
 
 ¹HOLCONST
 Ü	ÛcolDefaultsİ :  Class ­ TableSpec ­ (Num ª Data) ­  (Num ª Data)
 ÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
-Ü	µ  clear : Class; ts : TableSpec; d : Num ª Data
-Ü	·	colDefaults clear ts d
+Ü	µ  clear : Class; ts : TableSpec; ds : Num ª Data
+Ü	·	colDefaults clear ts ds
 Ü		=
-Ü		let ccs = {cs : ColSpec|(CS_consGroup cs)  groupsToHide(clear,ts)}
+Ü		let hiddencols = Snd(cleanColCons clear ts)
 Ü		in 
-Ü		d À {(n,data) | ¶cs · cs  ccs ± n = (CS_posn cs) ± data = (CS_default cs)} 
+Ü		ds « Dom{((n,d),c)|c  hiddencols ± n = CS_posn c ± d = CS_default c}
 °
+
 
 An insert query will fail if the user is not permitted to access the table.
 
@@ -410,14 +402,15 @@ An insert query will fail if the user is not permitted to access the table.
 ¹HOLCONST
 Ü	ÛinsertQueryİ :  (Class ¸ Insert ¸ State ¸ TableSpec) ­ State ¸ Errors
 ÷üüüüüüüüüüüüüü
-Ü	µ clear:Class; i:Tab; ds : (Num ª Data) LIST; e:Errors; s:State; ts : TableSpec
-Ü	·	insertQuery (clear,(i,ds,e),s,ts)
+Ü	µ clear:Class; i:Tab; ds : (Num ª Data) LIST; s:State; ts : TableSpec
+Ü	·	insertQuery (clear,(i,ds),s,ts)
 Ü		=
 Ü		if 	³(clear dominates  (TS_class ts))
-Ü		then 	(s,[accessDenied] ë e)
+Ü		then 	(s,[accessDenied])
 Ü		else
 Ü			let rl = Map ((MkRow clear) o (colDefaults clear ts)) ds 
-Ü			in	(changeSpec i (replaceRows ts ((TS_rows ts) ë rl)) s,e)	
+Ü			in	
+Ü			(changeSpec i (replaceRows ts ((TS_rows ts) ë rl)) s,[])	
 °
 
 \subsection{Delete}
@@ -432,14 +425,16 @@ then the structure of the table would have been hidden from him and therefore th
 
 
 ¹HOLCONST
-Ü	ÛdeleteQueryİ :  (Class ¸ Delete ¸ State ¸ TableSpec) ­  State ¸ Errors
+Ü	ÛdeleteQueryİ :  (Class ¸ Delete ¸ State ¸ TableSpec) ­  State
 ÷üüüüüüüüüüüüüü
 Ü	µ clear:Class; i:Tab; ns : Num ğ; e:Errors; s:State; ts:TableSpec
-Ü	·	deleteQuery(clear,(i,ns,e),s,ts)
+Ü	·	deleteQuery(clear,(i,ns),s,ts)
 Ü		=
-Ü		let	rs = Delete (TS_rows ts)(Ran(reveal clear ts))
-Ü			in	(changeSpec i (replaceRows ts rs) s,e)	
+Ü		let	rs = Delete (TS_rows ts) (Ran(ns ò (revealRow clear ts)))
+Ü		in	
+Ü		(changeSpec i (replaceRows ts rs) s)	
 °üüüüüüüüüüüüüüüüüüüüüüüüüüüü	
+
 
 
 \subsection{Update}
@@ -483,14 +478,14 @@ Now the effect of an update on a row.  A new row is only returned if all updates
 Ü	µ clear table_class:Class; us:Num ª Update; r:Row
 Ü	·	updateRow clear table_class (us,r)
 Ü		=
-Ü		let us' = 	RelCombine us (R_data r) » (updateField clear table_class)
+Ü		let 	us' = 	RelCombine us (R_data r) » (updateField clear table_class)
 Ü		in
-Ü			let es = RelList((us' ’ {x|isError x}) » destError)  
-Ü			in
-Ü			if 	es = []
-Ü			then	giveVal(MkRow (R_exist r)((R_data r) 
+Ü		let 	es = RelList((us' ’ {x|isError x}) » destError)  
+Ü		in
+Ü		if 	es = []
+Ü		then	giveVal(MkRow (R_exist r)((R_data r) 
 Ü						« ((us' ’ {x|isVal x}) » destVal)))
-Ü			else	giveError es
+Ü		else	giveError es
 °
 
 
@@ -500,38 +495,24 @@ Finally, the $updateQuery$ function.
 ¹HOLCONST
 Ü	ÛupdateQueryİ :  (Class ¸ UpDate ¸ State ¸ TableSpec)  ­ State ¸ Errors
 ÷üüüüüüüüüüüüüü
-Ü	µ clear:Class; i:Tab; us : Num ª (Num ª Update); e:Errors; s:State; ts : TableSpec
-Ü	·	updateQuery (clear,(i,us,e),s,ts)
+Ü	µ clear:Class; i:Tab; us : Num ª (Num ª Update); s:State; ts : TableSpec
+Ü	·	updateQuery (clear,(i,us),s,ts)
 Ü		=
-Ü		let 	us' = InverseRelation(reveal  clear ts) » us
+Ü		let 	us' = InverseRelation(revealRow  clear ts) » us
 Ü		in
-Ü			let	pr = RelCombine us' (ListRel(TS_rows ts)) 
+Ü		let	pr = RelCombine us' (ListRel(TS_rows ts)) 
 Ü					» (updateRow clear (TS_class ts))
-Ü			in	
-Ü				let es = RelList((pr ’ {x|isError x}) » destError)
-Ü				in	if es = []
-Ü					then	let	rs =  RelList(ListRel(TS_rows ts) 
+Ü		in	
+Ü		let 	es = RelList((pr ’ {x|isError x}) » destError)
+Ü		in	if 	es = []
+Ü			then	let	rs =  RelList(ListRel(TS_rows ts) 
 Ü								«((pr ’ {x|isVal x}) » destVal))
-Ü						in 	(changeSpec i(replaceRows ts rs) s,e)
-Ü					else	(s,(Flatten es) ë e)
+Ü				in 	(changeSpec i(replaceRows ts rs) s,[])
+Ü			else	(s,Flatten es)
 °
 
-\subsection{Select}
-
-Select all data specified by $SelectEffect$.  
-
-
-¹HOLCONST
-Ü	ÛselectQueryİ :  Select  ­ Data LIST LIST ¸ Errors
-÷üüüüüüüüüüüüüü
-Ü	µ d : Data LIST LIST; e:Errors
-Ü	· 	selectQuery(d,e) = (d,e)
-°
 
 \subsection{Specification of $updateState$}
-The four functions $insertQuery$, $deleteQuery$, $updateQuery$ and $selectQuery$ are put
-together to give $updateState$.
-
 We first give a function that determines whether or not a table name
 exists in a particular state.
 ¹HOLCONST
@@ -540,9 +521,7 @@ exists in a particular state.
 Ü	µ i : Tab; s:State
 Ü	· 	validTable i s 
 Ü		=
-Ü		(Front i  Dom s 
-Ü		± 
-Ü		Last i  Dom(Dir_tables(s @ (Front i))))
+Ü		(Front i  Dom s ± Last i  Dom(Dir_tables(s @ (Front i))))
 °
 
 Then a function that returns a table. This will only be applied in the case where the
@@ -555,42 +534,53 @@ name is valid.
 Ü	· 	
 Ü	getTable i  s = (Dir_tables(s @ (Front i))) @ (Last i)
 °
-
+For a select query, data is returned to the user, together with any error messages. The
+state of the database remains unchanged.
+For an insert, delete or update query, if an invalid table name is returned
+by $processQuery$, then
+ the state of the database remains unchanged and an appropriate error message is returned.
+For an insert, delete or update query, if errors were generated by $processQuery$
+then
+ the state of the database remains unchanged and the errors are returned.  
+For an insert, delete or update query, if a valid table name and no errors are returned
+by $processQuery$ then the appropriate update is carried out after the security 
+checks have been made.
 
 
 ¹HOLCONST
-Ü	ÛupdateStateİ : Class ¸ Effect ¸ State ­ 
+Ü	ÛupdateStateİ : Class ¸ (Effect ¸ Errors) ¸ State ­ 
 Ü				State ¸ (Class ¸ (Data LIST LIST ¸ Errors))
 ÷üüüüüüüüüüüüüü
-Ü	µ clear:Class;ef : Effect; s : State
-Ü	· 	updateState(clear, ef, s)
-Ü		=	if	isSelect ef
-Ü			then	let	(d1,e1) = selectQuery (destSelect ef) 
-Ü				in	
-Ü				(s,(clear,(d1,e1)))
+Ü	µ clear:Class;ef : Effect; es : Errors; s : State
+Ü	· 	updateState(clear,(ef,es),s)
+Ü		=	
+Ü		if	isSelect ef
+Ü		then	(s,(clear,(destSelect ef,es)))
+Ü		else	if 	³(es = [])  (* delete,update and insert only valid if no errors *)
+Ü			then	(s,(clear,([],es)))
 Ü			else	let	i = tabFromEffect ef
 Ü				in	
 Ü				if	validTable i s
 Ü				then	let ts = getTable i s 
 Ü					in
 Ü					if	isInsert ef
-Ü					then	let	(s2,e2) 
+Ü					then	let	(s1,e1) 
 Ü							= 
 Ü							insertQuery(clear,destInsert ef,s,ts)
 Ü						in	
-Ü						(s2,(clear,([],e2)))
-Ü					else	if	isUpdate ef
-Ü						then	let	(s3,e3) 
+Ü						(s1,(clear,([],e1)))
+Ü					else	if	isDelete ef
+Ü						then	let	s2 
 Ü								= 
 Ü								deleteQuery(clear,destDelete ef,s,ts)
 Ü							in	
-Ü							(s3,(clear,([],e3)))
-Ü						else	let	(s4,e4) 
+Ü							(s2,(clear,([],[])))
+Ü						else	let	(s3,e3)  (* must be Update *)
 Ü								= 
 Ü								updateQuery(clear,destUpdate ef,s,ts)
 Ü							in	
-Ü							(s4,(clear,([],e4)))
-Ü				else	(s,(clear,([],ErrorsFromEffect ef))) (* Invalid table name *)
+Ü							(s3,(clear,([],e3)))
+Ü				else	(s,(clear,([],[noSuchTable])))  (* Invalid table name *)
 °
 
 \section{CLOSING DOWN}
