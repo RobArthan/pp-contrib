@@ -672,7 +672,7 @@ by the $limb$ functions expanded out).
 Ü	CheckList cc ti [] elsec = elsec
 Ü±	CheckList cc ti (Cons cv cvs) elsec =
 Ü	let ((cec, cei), (vec, vei)) = cv
-Ü	in	if	³cc dom cec
+Ü	in	if	³cc dominates cec
 Ü		then	cec
 Ü		else if ti = cei
 Ü		then	vec
@@ -687,7 +687,7 @@ by the $limb$ functions expanded out).
 ÷üüüüüüüüüüüüüüüüüü
 Üµcc ti tc cvs elsec ·
 Ü	CheckTest cc (tc, ti) cvs elsec =
-Ü	if	cc dom tc
+Ü	if	cc dominates tc
 Ü	then	CheckList cc ti cvs elsec
 Ü	else	tc
 °
@@ -737,7 +737,7 @@ in \cite{trans} (with the work performed by the $limb$ functions expanded out).
 Ü	CaseC cc [] elsec = elsec
 Ü±	CaseC cc (Cons cv cvs) elsec =
 Ü	let ((cec, cei), (vec, vei)) = cv
-Ü	in	if	³cc dom cec
+Ü	in	if	³cc dominates cec
 Ü		then	cec
 Ü		else if ItemBool cei
 Ü		then	vec
@@ -903,30 +903,38 @@ See section \ref{OmissionsandAssumptions}.
 See section \ref{OmissionsandAssumptions}.
 \subsection{$ExistsTuples$}\label{ExistsTuples}
 This construct is parameterised by a table expression to compute
-the operand. The classification below is intended to be in the spirit
+the operand. The client clearance is also needed to filter out
+rows whose existence the client is not cleared to know.
+The clearance calculation below is intended to be in the spirit
 of $tuple\_list\sb{max\_row\_class}$ from \cite{trans}.
 ¹HOLCONST
-Ü	ÛExistsTuplesİ	: TABLE_COMP ­ VALUE_COMP
+Ü	ÛExistsTuplesİ	: Class ­ TABLE_COMP ­ VALUE_COMP
 ÷üüüüüüüüüüüüüüüüüü
-Üµte ·	ExistsTuples te =
+Üµcc te ·
+Ü	ExistsTuples cc te =
 Ü	Ìtl rl r·
 Ü	let	(c, t) = te tl
-Ü	in let	trl = DT_rows t
+Ü	in let	trl = DT_rows t ù
+Ü			{r | cc dominates DTR_row r ± cc dominates DTR_where r}
 Ü	in	(c lub lubl (Map DTR_row trl), BoolItem (³trl = []))
 °
 \subsection{$SingleValue$}\label{SingleValue}
 This construct is parameterised by a table expression to compute
-the operand. The classification below is sometimes more generous than that in
+the operand and the client clearance (to allow rows whose existence
+the client is not cleared to see to be hidden).
+The classification below is sometimes more generous than that in
 $internal\_value\sb{class}$ from \cite{trans} (which uses the statically
 known upper bound on the class of the single column in the table).
 
 ¹HOLCONST
-Ü	ÛSingleValueİ	: TABLE_COMP ­ VALUE_COMP
+Ü	ÛSingleValueİ	: Class ­ TABLE_COMP ­ VALUE_COMP
 ÷üüüüüüüüüüüüüüüüüü
-Üµte ·	SingleValue te =
+Üµcc te ·
+Ü	SingleValue cc te =
 Ü	Ìtl rl r·
 Ü	let	(c, t) = te tl
-Ü	in let	trl = DT_rows t
+Ü	in let	trl = DT_rows t ù
+Ü			{r | cc dominates DTR_row r ± cc dominates DTR_where r}
 Ü	in let	cil = DTR_cols (Hd trl)
 Ü	in let	(ic, ii) = Hd cil
 Ü	in	if	Length trl = 1 ± Length cil = 1
@@ -1384,8 +1392,8 @@ as currently formulated above are known not to be secure.
 Ü	±	(µf e· e  es ´ SetFuncAll f e  es)
 Ü	±	(µf e· e  es ´ SetFuncDistinct f e  es)
 Ü
-Ü	±	(µte· te  tes ´ ExistsTuples te  es)
-Ü	±	(µte· te  tes ´ SingleValue te  es)
+Ü	±	(µcc te· te  tes ´ ExistsTuples cc te  es)
+Ü	±	(µcc te· te  tes ´ SingleValue cc te  es)
 Ü
 Ü	±	(µi· TableContents i  tes)
 Ü
@@ -1574,5 +1582,5 @@ reveals information which should not be visible at class $c$.
  Ü		±	let	(c, i) = e r
  Ü			in let	(c‰0, i‰0) = e r‰0
  Ü			in	³i = i‰0
- Ü			±	³(c dominates cc ± c‰0 dom cc)}
+ Ü			±	³(c dominates cc ± c‰0 dominates cc)}
  °

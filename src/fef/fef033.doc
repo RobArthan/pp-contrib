@@ -109,6 +109,7 @@ The following theorem takes a minute or so to compute so we give
 a name to it here (to make the proof of the induction theorem easier
 to modify, e.g. if the definitions change).
 =SML
+(* **** The proof is commented out to save time until needed ****
 set_pc"hol";
 val table_computation_rw_thm =
 	rewrite_rule[get_spec¬¥‰2®] (get_spec¬TableComputations®);
@@ -141,8 +142,8 @@ set_goal([], ¬µq : TABLE_COMP ­ BOOL; p : VALUE_COMP ­ BOOL· µcc : Class ·
 	±	(µf e· p e ´ p(SetFuncAll f e))
 	±	(µf e· p e ´ p(SetFuncDistinct f e))
 
-	±	(µte· q te ´ p(ExistsTuples te))
-	±	(µte· q te ´ p(SingleValue te))
+	±	(µcc te· q te ´ p(ExistsTuples cc te))
+	±	(µcc te· q te ´ p(SingleValue cc te))
 
 	±	(µi· q(TableContents i))
 
@@ -175,6 +176,7 @@ a(swap_asm_concl_tac ¬e  ValueComputations cc®
 	THEN ¶_tac¬{te | q te}® THEN asm_rewrite_tac[]);
 val table_computation_induction_thm =
 	save_pop_thm"table_computation_induction_thm";
+**** end of commented out section **** *)
 =TEX
 \section{AUXILIARY DEFINITIONS}
 ¹HOLCONST
@@ -211,6 +213,25 @@ a(LEMMA_T ¬VI_val(MkValuedItem sterling (BoolVal i1))
 	(accept_tac o rewrite_rule(map get_spec[¬MkValuedItem®, ¬BoolVal®]))
 	THEN1 asm_rewrite_tac[]);
 val ÛBoolItem_OneOne_lemmaİ = save_pop_thm"BoolItem_OneOne_lemma";
+=TEX
+=SML
+set_goal([], ¬µc r1 r2·
+	HideDerTableRow c r1 = HideDerTableRow c r2 ´
+	Length (DTR_cols r1) = Length (DTR_cols r2)®);
+a(rewrite_tac(MkDerTableRow_lemma :: map get_spec[¬HideDerTableRow®, ¬Let®]));
+a(REPEAT strip_tac);
+a(LEMMA_T¬Length(Map(Ì (c', i) · if c dominates c'
+                   then (c', i)
+                   else (c', ValuedItemItem (MkValuedItem sterling dummyVal)))
+               (DTR_cols r1))
+             = Length(Map (Ì (c', i) · if c dominates c'
+                   then (c', i)
+                   else (c', ValuedItemItem (MkValuedItem sterling dummyVal)))
+               (DTR_cols r2))®
+	(strip_asm_tac o once_rewrite_rule[length_map_thm])
+	THEN1 asm_rewrite_tac[]);
+val ÛHideDerTableRow_Length_lemmaİ = save_pop_thm"HideDerTableRow_Length_lemma";
+=TEX
 =SML
 set_goal([], ¬µf a b c· f(if a then b else c) = (if a then f b else f c)®);
 a(REPEAT strip_tac THEN cases_tac¬a:BOOL® THEN asm_rewrite_tac[]);
@@ -226,6 +247,21 @@ a(lemma_tac ¬¶x y·xy = (x, y)® THEN1
 	(¶_tac¬Fst xy® THEN ¶_tac¬Snd xy®) THEN
 	asm_rewrite_tac[get_spec¬Split®]);
 val Ûsplit_thmİ = save_pop_thm"split_thm";
+=TEX
+=SML
+push_goal([], ¬µlist·Length list = 0 ¤ list = []®);
+a(REPEAT strip_tac THEN_LIST [id_tac, asm_rewrite_tac[get_spec¬Length®]]);
+a(POP_ASM_T ante_tac THEN list_induction_tac¬list®
+	THEN rename_tac[] THEN asm_rewrite_tac[get_spec¬Length®]);
+val Ûlength_0_thmİ = save_pop_thm"length_0_thm";
+=TEX
+=SML
+push_goal([], ¬µlist·Length list = 1 ¤ ¶x·list = [x]®);
+a(REPEAT strip_tac THEN_LIST [id_tac, asm_rewrite_tac[get_spec¬Length®]]);
+a(POP_ASM_T ante_tac THEN list_induction_tac¬list®
+	THEN rename_tac[] THEN asm_rewrite_tac[get_spec¬Length®, length_0_thm]);
+a(REPEAT strip_tac THEN prove_¶_tac);
+val Ûlength_1_thmİ = save_pop_thm"length_1_thm";
 =TEX
 =SML
 push_goal([], ¬µlist·
@@ -340,6 +376,9 @@ a(ALL_FC_T rewrite_tac [ListAnd_true_lemma]);
 a(rewrite_tac[glb_lattice_top_thm]);
 val ÛBinOpAnd_lemmaİ = save_pop_thm "BinOpAnd_lemma";
 =TEX
+The following primitive recursive reformulation of $CaseVal$ could
+perhaps do the case analysis more economically. Nonetheless it
+serves its purpose.
 =SML
 set_goal([], ¬µcc tst cev cevs ev·
 	CaseVal cc tst [] ev =
@@ -523,6 +562,9 @@ Omitted. see \cite{DS/FMU/FEF/032}.
 \subsection{Declarations}
 Omitted. see \cite{DS/FMU/FEF/032}.
 \subsection{Case Expressions}
+The proof below could probably be reworked to run rather quicker by
+taking care to move the lemmas proved by $tac1 \ldots tac4$ before
+the case split.
 =SML
 set_goal([], ¬µc te cel ee·
 	te  OK_VC c ±
@@ -602,6 +644,8 @@ a(MAP_EVERY (fn t => CASES_T t (fn th => rewrite_tac[th] THEN strip_asm_tac th))
 val ÛCaseVal_OK_lemmaİ = save_pop_thm"CaseVal_OK_lemma";
 =TEX
 \subsection{Set Functions}
+The main lemma (the second of the two below) is an example of
+strengthening an induction hypothesis almost beyond belief.
 =SML
 set_goal([], ¬µc f vc· vc  OK_VC c ´ SetFuncAll f vc  OK_VC c®);
 a(rewrite_tac(map get_spec[¬SetFuncAll®, ¬OK_VC®, ¬Let®])
@@ -659,32 +703,63 @@ val ÛCommonValue_OK_lemmaİ = save_pop_thm"CommonValue_OK_lemma";
 =TEX
 \subsection{$ExistsTuples$}
 =SML
-(* ****  Not yet complete ****
-set_goal([], ¬µc tc· tc  OK_TC c ´ ExistsTuples tc  OK_VC c®);
+set_goal([], ¬µc tc· tc  OK_TC c ´ ExistsTuples c tc  OK_VC c®);
 a(rewrite_tac(BoolItem_OneOne_lemma::dominates_lub_lemma::
 	map get_spec[¬OK_TC®, ¬OK_VC®, ¬ExistsTuples®, ¬Let®])
 	THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(cases_tac¬³HideDerTable c (Snd (tc tl‰0)) = HideDerTable c (Snd (tc tl‰1))®
 	THEN1 all_asm_fc_tac[]);
-a(strip_asm_tac (µ_elim¬DT_rows (Snd (tc tl‰0))® list_cases_thm));
-a(swap_nth_asm_concl_tac 2 THEN asm_rewrite_tac(MkDerTable_lemma::
-	map get_spec[¬HideDerTable®, ¬HideDerTableData®, ¬$ù®, ¬Let®]));
- .....
+a(strip_asm_tac (µ_elim
+	¬DT_rows (Snd (tc tl‰0)) ù
+		{r|c dominates DTR_row r ± c dominates DTR_where r}®
+	list_cases_thm));
+a(swap_nth_asm_concl_tac 2 THEN asm_rewrite_tac(
+	MkDerTable_lemma::dominates_lub_lemma::
+	map get_spec[¬HideDerTable®, ¬HideDerTableData®, ¬$ù®, ¬Let®, ¬Map®]));
 (* *** Goal "2" *** *)
 a(cases_tac¬³HideDerTable c (Snd (tc tl‰0)) = HideDerTable c (Snd (tc tl‰1))®
 	THEN1 all_asm_fc_tac[]);
-a(strip_asm_tac (µ_elim¬DT_rows (Snd (tc tl‰1))® list_cases_thm));
-a(swap_nth_asm_concl_tac 2 THEN asm_rewrite_tac(MkDerTable_lemma::
-	map get_spec[¬HideDerTable®, ¬HideDerTableData®, ¬$ù®, ¬Let®]));
-
+a(strip_asm_tac (µ_elim
+	¬DT_rows (Snd (tc tl‰1)) ù
+		{r|c dominates DTR_row r ± c dominates DTR_where r}®
+	list_cases_thm));
+a(swap_nth_asm_concl_tac 2 THEN asm_rewrite_tac(
+	MkDerTable_lemma::dominates_lub_lemma::
+	map get_spec[¬HideDerTable®, ¬HideDerTableData®, ¬$ù®, ¬Let®, ¬Map®]));
 val ÛExistsTuples_OK_lemmaİ = save_pop_thm"ExistsTuples_OK_lemma";
-**** end of incomplete section *** *)
+=TEX
+\subsection{$SingleValue$}
+TBA
+=TEX
+\subsection{$Contents$}
+=SML
+set_goal([], ¬µc i· Contents i  OK_VC c®);
+a(rewrite_tac(map get_spec[¬OK_VC®, ¬Contents®])
+	THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(cases_tac¬³HideDerTable c (Snd (tc tl‰0)) = HideDerTable c (Snd (tc tl‰1))®
+	THEN1 all_asm_fc_tac[]);
+a(strip_asm_tac (µ_elim
+	¬DT_rows (Snd (tc tl‰0)) ù
+		{r|c dominates DTR_row r ± c dominates DTR_where r}®
+	list_cases_thm));
+a(swap_nth_asm_concl_tac 2 THEN asm_rewrite_tac(
+	MkDerTable_lemma::dominates_lub_lemma::
+	map get_spec[¬HideDerTable®, ¬HideDerTableData®, ¬$ù®, ¬Let®, ¬Map®]));
+(* *** Goal "2" *** *)
+a(cases_tac¬³HideDerTable c (Snd (tc tl‰0)) = HideDerTable c (Snd (tc tl‰1))®
+	THEN1 all_asm_fc_tac[]);
+a(strip_asm_tac (µ_elim
+	¬DT_rows (Snd (tc tl‰1)) ù
+		{r|c dominates DTR_row r ± c dominates DTR_where r}®
+	list_cases_thm));
+a(swap_nth_asm_concl_tac 2 THEN asm_rewrite_tac(
+	MkDerTable_lemma::dominates_lub_lemma::
+	map get_spec[¬HideDerTable®, ¬HideDerTableData®, ¬$ù®, ¬Let®, ¬Map®]));
+val ÛExistsTuples_OK_lemmaİ = save_pop_thm"ExistsTuples_OK_lemma";
 =TEX
 \section{CLOSING DOWN}
-The following \Product{} instruction restores the previous proof context.
-=SML
-pop_pc();
 =TEX
 
 \newpage
