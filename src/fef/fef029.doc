@@ -274,10 +274,10 @@ The comments before the $then$s below show the corresponding ML pattern match
 °
 ¹HOLCONST
 Ü	Ûlookup‰c‰o‰l‰_‰s‰p‰e‰c‰_‰c‰l‰a‰s‰sİ :
-Ü		TRANS_STATE ¸ BOOL ¸ ColumnSpecification ­ (TsqlRepr ¸ Class)RESULT 
+Ü		TRANS_STATE ­ (BOOL ¸ ColumnSpecification) ­ (TsqlRepr ¸ Class)RESULT 
 ÷üüüüüüüüüüüüü
 Üµst flg cs·
-Ü	lookup‰c‰o‰l‰_‰s‰p‰e‰c‰_‰c‰l‰a‰s‰s (st, flg, cs) =
+Ü	lookup‰c‰o‰l‰_‰s‰p‰e‰c‰_‰c‰l‰a‰s‰s st (flg, cs) =
 Ü	if	flg
 Ü	then	lookup_col_spec_class_look(cs, innermost(symbolTable(st_stack st)))
 Ü	else	lookup_col_spec_class_look(cs, (symbolTable(st_stack st)))
@@ -322,10 +322,10 @@ $lookup\_col\_spec\_sterling\_look$ below.
 =TEX
 ¹HOLCONST
 Ü	Ûlookup‰c‰o‰l‰_‰s‰p‰e‰c‰_‰d‰i‰n‰a‰r‰yİ :
-Ü		TRANS_STATE ¸ BOOL ¸ ColumnSpecification ­ TsqlRepr RESULT 
+Ü		TRANS_STATE ­ (BOOL ¸ ColumnSpecification) ­ TsqlRepr RESULT 
 ÷üüüüüüüüüüüüü
 Üµst flg cs·
-Ü	lookup‰c‰o‰l‰_‰s‰p‰e‰c‰_‰d‰i‰n‰a‰r‰y (st, flg, cs) =
+Ü	lookup‰c‰o‰l‰_‰s‰p‰e‰c‰_‰d‰i‰n‰a‰r‰y st (flg, cs) =
 Ü	if	flg
 Ü	then	lookup_col_spec_dinary_look(cs, innermost(symbolTable(st_stack st)))
 Ü	else	lookup_col_spec_dinary_look(cs, (symbolTable(st_stack st)))
@@ -365,10 +365,10 @@ $lookup\_col\_spec\_sterling\_look$ below.
 =TEX
 ¹HOLCONST
 Ü	Ûlookup‰c‰o‰l‰_‰s‰p‰e‰c‰_‰s‰t‰e‰r‰l‰i‰n‰gİ :
-Ü		TRANS_STATE ¸ BOOL ¸ ColumnSpecification ­ TsqlRepr RESULT 
+Ü		TRANS_STATE ­ (BOOL ¸ ColumnSpecification) ­ TsqlRepr RESULT 
 ÷üüüüüüüüüüüüü
 Üµst flg cs·
-Ü	lookup‰c‰o‰l‰_‰s‰p‰e‰c‰_‰s‰t‰e‰r‰l‰i‰n‰g (st, flg, cs) =
+Ü	lookup‰c‰o‰l‰_‰s‰p‰e‰c‰_‰s‰t‰e‰r‰l‰i‰n‰g st (flg, cs) =
 Ü	if	flg
 Ü	then	lookup_col_spec_sterling_look(cs, innermost(symbolTable(st_stack st)))
 Ü	else	lookup_col_spec_sterling_look(cs, (symbolTable(st_stack st)))
@@ -503,149 +503,192 @@ to the following.
 °
 ¹HOLCONST
 Ü	Ûlookup‰c‰o‰l‰u‰m‰n‰_‰r‰o‰w‰_‰c‰l‰a‰s‰sİ
-Ü		: (TRANS_STATE ¸ BOOL ¸ ColumnSpecification) ­ TsqlRepr RESULT
+Ü		: TRANS_STATE ­ (BOOL ¸ ColumnSpecification) ­ TsqlRepr RESULT
 ÷üüüüüüüüüüüüüüüüüüüü
 Üµst flg cs·
-Ü	lookup‰c‰o‰l‰u‰m‰n‰_‰r‰o‰w‰_‰c‰l‰a‰s‰s (st, flg, cs) =
+Ü	lookup‰c‰o‰l‰u‰m‰n‰_‰r‰o‰w‰_‰c‰l‰a‰s‰s st (flg, cs) =
 Ü	if	flg
 Ü	then	lookup_column_row_class_look st (cs, innermost(symbolTable(st_stack st)))
 Ü	else	lookup_column_row_class_look st (cs, (symbolTable(st_stack st)))
 °
 =TEX
-!!!! GOT HERE !!!!
-=SML
-local	fun (look1 : TableSpecification ¸ TableDetail ­ TsqlRepr list)
-		(ts,td) = 	case (#tableName td) of
-					anonètnê => []
-				|	nameètnê tn => if ts = tn then 
-							(case (#rowClass td) of
-								anonètcê => raise internalError
-							|	nameètcê s => 
-									[column(#genCorr td,s)]
-							|	constantètcê c => 
-									[constant_class c])
-							else []
-	fun 	(look : TableSpecification ¸ Scope list ­ TsqlRepr)
-			(ts,[]) = raise noSuchTable
-		| look	(ts,sl)	= 	
-			let 	val outer = rev(tl(rev sl))
-				val {tables = tds,identifiers = ids} = hd(rev sl)
-			in 	(case fold(op @)(at2 (map look1)(seq(length tds,ts),tds)) of
-					[] => look(ts,outer)
-				|	[tr] => tr
-				|	trs => raise ambiguousName)
-			end		
-in				
-fun 	(Ûlookupètable_row_classêİ : bool ¸ TableSpecification ­ TsqlRepr) 
-				(true,ts )= look(ts,innermost (!symbolTable))
-|	lookupètable_row_classê (false,ts) = look(ts,!symbolTable)
-end;
-=TEX
-=SML
-local	fun (look1 : TableSpecification ¸ TableDetail ­ TableDetail list)
-		(ts,td) = 	case (#tableName td) of
-					anonètnê => []
-				|	nameètnê tn => if ts = tn then [td]
-							else []
-	fun 	(look : TableSpecification ¸ Scope list ­ TableDetail)
-			(ts,[]) = raise noSuchTable
-		| look	(ts,sl)	= 	
-			let 	val outer = rev(tl(rev sl))
-				val {tables = tds,identifiers = ids} = hd(rev sl)
-			in 	(case fold(op @)(at2 (map look1)(seq(length tds,ts),tds)) of
-					[] => look(ts,outer)
-				|	[ti] => ti
-				|	tis => raise ambiguousName)
-			end		
-in				
-fun 	(Ûlookupètable_detailêİ : TableSpecification ­ TableDetail) 
-	ts = look(ts,!symbolTable)
-end;
+Again {\it mutatatis mutandis},
+the remarks about $lookup\_col\_spec\_class\_look$ above apply to
+to the following.
+
+¹HOLCONST
+Ü	Ûlookup_table_row_class_lookİ
+Ü		: TableSpecification ¸ Scope LIST ­ TsqlRepr RESULT
+÷üüüüüüüüüüüüüüüüüüüüüü
+Üµts outer ti·
+Ü	lookup_table_row_class_look (ts, []) = Exception [noSuchTable]
+Ü±	lookup_table_row_class_look (ts, outer @ [ti]) =
+Ü	let	look1 (ts, td) =
+Ü			CASE (td_tableName td) [
+Ü			WHEN_anon‰t‰n [];
+Ü			WHEN_name‰t‰n tn·
+Ü				if	ts = tn
+Ü				then	CASE (td_rowClass td) [
+Ü					WHEN_anon‰t‰c [Exception[internalError]];
+Ü					WHEN_name‰t‰c s·
+Ü						[Ok(mk_column(td_genCorr td, s))];
+Ü					WHEN_constant‰t‰c c·
+Ü						[Ok(mk_constant_class c)]
+Ü					]
+Ü				else	[]
+Ü			]
+Ü	in let	(tds, ids) = (s_tables ti, s_identifiers ti)
+Ü	in let	trs = Fold ($@) (at2 (Map look1) (seq (Length tds) (ts), tds)) []
+Ü	in	if	trs = [] then lookup_table_row_class_look (ts, outer)
+Ü		else if	Tl trs = []
+Ü		then	Hd trs
+Ü		else	Exception[ambiguousName]
+°
+¹HOLCONST
+Ü	Ûlookup‰t‰a‰b‰l‰e‰_‰r‰o‰w‰_‰c‰l‰a‰s‰sİ
+Ü		: TRANS_STATE ­ (BOOL ¸ TableSpecification) ­ TsqlRepr RESULT
+÷üüüüüüüüüüüüüüüüüüüü
+Üµst flg ts·
+Ü	lookup‰t‰a‰b‰l‰e‰_‰r‰o‰w‰_‰c‰l‰a‰s‰s st (flg, ts) =
+Ü	if	flg
+Ü	then	lookup_table_row_class_look (ts, innermost(symbolTable(st_stack st)))
+Ü	else	lookup_table_row_class_look (ts, (symbolTable(st_stack st)))
+°
+
+¹HOLCONST
+Ü	Ûlookup_table_detail_lookİ
+Ü		: TableSpecification ¸ Scope LIST ­ TableDetail RESULT
+÷üüüüüüüüüüüüüüüüüüüüüü
+Üµts outer ti·
+Ü	lookup_table_detail_look (ts, []) = Exception [noSuchTable]
+Ü±	lookup_table_detail_look (ts, outer @ [ti]) =
+Ü	let	look1 (ts, td) =
+Ü			CASE (td_tableName td) [
+Ü			WHEN_anon‰t‰n [];
+Ü			WHEN_name‰t‰n tn·
+Ü				if	ts = tn
+Ü				then	[td]
+Ü				else	[]
+Ü			]
+Ü	in let	(tds, ids) = (s_tables ti, s_identifiers ti)
+Ü	in let	tis = Fold ($@) (at2 (Map look1) (seq (Length tds) (ts), tds)) []
+Ü	in	if	tis = [] then lookup_table_detail_look (ts, outer)
+Ü		else if	Tl tis = []
+Ü		then	Ok(Hd tis)
+Ü		else	Exception[ambiguousName]
+°
+¹HOLCONST
+Ü	Ûlookup‰t‰a‰b‰l‰e‰_‰d‰e‰t‰a‰i‰lİ
+Ü		: TRANS_STATE ­ TableSpecification ­ TableDetail RESULT
+÷üüüüüüüüüüüüüüüüüüüü
+Üµst ts·
+Ü	lookup‰t‰a‰b‰l‰e‰_‰d‰e‰t‰a‰i‰l st ts =
+Ü	lookup_table_detail_look (ts, (symbolTable(st_stack st)))
+°
 =TEX
 \subsection{Symbol Table Operations}
-=SML
-local	fun (find : string ¸ IdentDetail ­ IdentDetail list)
-		(n,id) = 	if n = #identName id
-				then  [id]
-				else []
-in
-fun 	(Ûenterèidentifierêİ : string ¸ ExpType ¸ Class ­ string ¸ string)
-	(name,et,up) =	
-	case !symbolTable of
-		[] => raise noScope
-	| 	sl => 	let 	val outer = rev(tl(rev sl))
-				val {tables = tds,identifiers = ids} = hd(rev sl)
-			in	if tds = [] then
-				let 	val 	unv = unique_name()
-						val	unc = unique_name()
-						val	id = 	{identName = name,
-								info = et,
-								lubèidê  = up,
-								vName = unv,
-								cName = name‰t unc}
-				in	if at2(map find) (seq(length ids,name),ids) <> []
-					then raise ambiguousName
-					else	
-					let val side_effect =  symbolTable := outer @ 
-								[{tables = [],identifiers = ids @ [id]}]
-					in (unv,unc)
-					end
-				end	
-				else raise wrongScope
-			end
-end;
+The following operation on state is a convenient short-hand in defining
+these operations. It replaces the top scope in the symbol table in a state
+with a given value.
+¹HOLCONST
+Ü	update_top_scope : TRANS_STATE ­ Scope ­ TRANS_STATE
+÷üüüüüüüüüüüüüüüüü
+Üµst sc·
+Ü	update_top_scope st sc =
+Ü	let	stk = st_stack st
+Ü	in let	symt = symbolTable stk
+Ü	in let	outer = Rev(Tl(Rev symt))
+Ü	in let	symt' = outer @ [sc]
+Ü	in	MkTRANS_STATE
+Ü		(MkST_STACK symt' (parameterTable stk))
+Ü		(query_class st) (query_constants_class st) (client_clearance st)
+°
+¹HOLCONST
+Ü	Ûenter‰i‰d‰e‰n‰t‰i‰f‰i‰e‰rİ
+Ü		: TRANS_STATE ­ (STRING ¸ ExpType ¸ Class)
+Ü			­ (TRANS_STATE ¸ STRING ¸ STRING)RESULT
+÷üüüüüüüüüüüü
+Üµst name et up·
+Ü	enter‰i‰d‰e‰n‰t‰i‰f‰i‰e‰r st (name,et,up) =
+Ü	let	fynd (n,id) = if n = id_identName id then  [id] else []
+Ü	in let	sl = symbolTable(st_stack st)
+Ü	in	if	sl = []
+Ü		then	Exception[noScope]
+Ü		else 	let	outer = Rev(Tl(Rev sl))
+Ü			in let	 ti = Hd(Rev sl)
+Ü			in let	(tds, ids) = (s_tables ti, s_identifiers ti)
+Ü			in	if	tds = []
+Ü				then	let	unv = unique_name st
+Ü					in let	unc = unique_name st
+Ü					in let	id =
+Ü						MkIdentDetail 
+Ü						name et up unv (mk_name‰t unc)
+Ü					in	if	³
+Ü							at2 (Map fynd)
+Ü							(seq(Length ids)name,ids)
+Ü							= []
+Ü						then	Exception[ambiguousName]
+Ü						else	let	sc' = MkScope [] (ids @ [id])
+Ü							in	Ok (update_top_scope st sc', unv,unc)
+Ü				else 	Exception[wrongScope]
+°
+¹HOLCONST
+Ü	Ûenter‰i‰d‰e‰n‰t‰i‰f‰e‰r‰_‰c‰o‰n‰s‰t‰a‰n‰t‰_‰c‰l‰a‰s‰sİ
+Ü		: TRANS_STATE ­ (STRING ¸ ExpType ¸ Class)
+Ü			­ (TRANS_STATE ¸ STRING)RESULT
+÷üüüüüüüüüüüü
+Üµst name et clasf·
+Ü	enter‰i‰d‰e‰n‰t‰i‰f‰e‰r‰_‰c‰o‰n‰s‰t‰a‰n‰t‰_‰c‰l‰a‰s‰s st (name,et,clasf) =
+Ü	let	fynd (n,id) = if n = id_identName id then  [id] else []
+Ü	in let	sl = symbolTable(st_stack st)
+Ü	in	if	sl = []
+Ü		then	Exception[noScope]
+Ü		else 	let	outer = Rev(Tl(Rev sl))
+Ü			in let	 ti = Hd(Rev sl)
+Ü			in let	(tds, ids) = (s_tables ti, s_identifiers ti)
+Ü			in	if	tds = []
+Ü				then	let	unv = unique_name st
+Ü					in let	id =
+Ü						MkIdentDetail 
+Ü						name et clasf unv c_anon‰t
+Ü					in	if	³
+Ü							at2 (Map fynd)
+Ü							(seq(Length ids)name,ids)
+Ü							= []
+Ü						then	Exception[ambiguousName]
+Ü						else	let	sc' = MkScope [] (ids @ [id])
+Ü							in	Ok (update_top_scope st sc', unv)
+Ü				else 	Exception[wrongScope]
+°
 =TEX
 =SML
-local	fun (find : string ¸ IdentDetail ­ IdentDetail list)
-		(n,id) = 	if n = #identName id
-				then  [id]
-				else []
-in
-fun 	(Ûenterèidentifier_constant_classêİ : string ¸ ExpType ¸ Class ­ string)
-	(name,et,clasf) =	
-	case !symbolTable of
-		[] => raise noScope
-	| 	sl => 	let 	val outer = rev(tl(rev sl))
-				val {tables = tds,identifiers = ids} = hd(rev sl)
-			in	if tds = [] then
-				let 	val 	unv = unique_name()
-						val	id = 	{identName = name,
-								info = et,
-								lubèidê  = clasf,
-								vName = unv,
-								cName = none‰t}
-				in	if at2(map find) (seq(length ids,name),ids) <> []
-					then raise ambiguousName
-					else	
-					let val side_effect =  symbolTable := outer @ 
-								[{tables = [],identifiers = ids @ [id]}]
-					in unv
-					end
-				end	
-				else raise wrongScope
-			end
-end;
+¹HOLCONST
+Ü	Ûextract‰p‰a‰r‰a‰m‰e‰t‰e‰rİ : STRING ¸ ParamInfo LIST  ­ ParamInfo LIST
+÷üüüüüüüüüüüüüüüüüüüüüü 
+Üµname l·
+Ü	extract‰p‰a‰r‰a‰m‰e‰t‰e‰r (name,l) = l ù {pi | pi_name pi = name}
+°
 =TEX
 =SML
-fun 	(Ûextractèparameterêİ : string ¸ ParamInfo list  ­ ParamInfo list) 
-				(name,[]) = 	[]	
-|	extractèparameterê		(name,l) = 	let	val more = rev(tl(rev l))
-							val pi = hd(rev l)
-						in
-							if name = #name pi
-							then extractèparameterê(name,more) @ [pi]
-							else 	extractèparameterê(name,more)
-						end;
+¹HOLCONST
+Ü	Ûenter‰p‰a‰r‰a‰m‰e‰t‰e‰rİ
+Ü	: TRANS_STATE ­ STRING ¸ Value ¸ Class ­ TRANS_STATE RESULT
+÷üüüüüüüüüüüüüüüüü
+Üµst name v clasf·
+Ü	enter‰p‰a‰r‰a‰m‰e‰t‰e‰r st (name,v,clasf) =	
+Ü	let	sl = symbolTable(st_stack st)
+Ü	in let	pt = parameterTable(st_stack st)
+Ü	in 	if	sl = []
+Ü		then	Exception[noScope]
+Ü		else if	extract‰p‰a‰r‰a‰m‰e‰t‰e‰r(name, pt) = []
+Ü		then	Ok(MkTRANS_STATE
+Ü			(MkST_STACK sl (pt @ [MkParamInfo name v clasf]))
+Ü			(query_class st) (query_constants_class st)
+Ü			(client_clearance st))
+Ü		else	Exception[ambiguousName]
+°
 =TEX
-=SML
-fun 	(Ûenterèparameterêİ : string ¸ Constant_valueèssqlê ¸ Class ­ unit) (name,v,clasf) =	
-	if !symbolTable <> []
-	then raise wrongScope
-	else 	case extractèparameterê(name,!parameterTable) of
-			[] => parameterTable := !parameterTable @  
-						[{name =name,val‰p =v,clasf =clasf}]
-		|	ps => raise ambiguousName;
-=TEX
+!!! GOT HERE !!!
 =SML
 fun 	(Ûenterècorr_tableêİ : string ¸ TableName ¸ TableInfo ¸ SsqlCol list ¸ TsqlClassName 
 									¸ TsqlCol list ­ string)
@@ -738,7 +781,7 @@ fun 	(Ûlookupèlocal_table_infoêİ : unit ­ TableInfo list )
 =TEX
 =SML
 fun 	(Ûlookupèparam_dataêİ : string ­ Constant_valueèssqlê ¸ Class) 
-	name = case extractèparameterê(name,!parameterTable) of
+	name = case extract‰p‰a‰r‰a‰m‰e‰t‰e‰r(name,!parameterTable) of
 			[] => raise noSuchParameter
 		|	[info] => (#val‰p info,#clasf info)
 		|	other => raise internalError;
@@ -1617,11 +1660,11 @@ fun 	(Ûvalueèdataêİ : Valueèssqlê ­ Valueètsqlê)
 				val data2 = valueèdataê v2
 			in	case class1 of
 					variable (c,u) => 
-					let	val (cn,dn) = enterèidentifierê(id,t1,u)
+					let	val (cn,dn) = enter‰i‰d‰e‰n‰t‰i‰f‰i‰e‰r(id,t1,u)
 					in	declare‰t (cn,(c,declare‰t(dn,(data1,data2)))) 
 					end
 				| 	constantèecê c =>
-					let	val dn =  enterèidentifier_constant_classê(id,t1,c)
+					let	val dn =  enter‰i‰d‰e‰n‰t‰i‰f‰e‰r‰_‰c‰o‰n‰s‰t‰a‰n‰t‰_‰c‰l‰a‰s‰s(id,t1,c)
 					in declare‰t(dn,(data1,data2)) 
 					end
 			end)
@@ -1677,7 +1720,7 @@ fun 	(Ûvalueèdataêİ : Valueèssqlê ­ Valueètsqlê)
 =SML
 |	valueèdataê	(row_existence‰s t) = 	
 				let 	val	ts = convertètable_specê t
- 					val	rc = lookupètable_row_classê(false,ts)
+ 					val	rc = lookup‰t‰a‰b‰l‰e‰_‰r‰o‰w‰_‰c‰l‰a‰s‰s(false,ts)
 				in  denote_name rc
 				end
 =TEX
@@ -1757,7 +1800,7 @@ and 	(Ûvalueètypeêİ : Valueèssqlê ­ ExpType)
 						val cl = lattice_top()
 					in
 					in_new_scope(fn () => 
-						let val i = enterèidentifier_constant_classê(id,et,cl)
+						let val i = enter‰i‰d‰e‰n‰t‰i‰f‰e‰r‰_‰c‰o‰n‰s‰t‰a‰n‰t‰_‰c‰l‰a‰s‰s(id,et,cl)
 						in valueètypeê v2 
 						end)
 					end
@@ -2408,12 +2451,12 @@ and 	(Ûinternal_valueèclassêİ : Valueèssqlê ­ InternalExpClass)
 				let val c =	
 					case class1 of
 						variable (c,u) => 
-						let val (cn,dn) = enterèidentifierê(id,t1,u)
+						let val (cn,dn) = enter‰i‰d‰e‰n‰t‰i‰f‰i‰e‰r(id,t1,u)
 						in	declare‰t (cn,(c,
 								declare‰t(dn,(data1,class2exp)))) 
 						end
 					| 	constantèecê c =>
-						let val dn =  enterèidentifier_constant_classê(id,t1,c)
+						let val dn =  enter‰i‰d‰e‰n‰t‰i‰f‰e‰r‰_‰c‰o‰n‰s‰t‰a‰n‰t‰_‰c‰l‰a‰s‰s(id,t1,c)
 						in declare‰t(dn,(data1,class2exp)) 
 						end
 				in		simple(variable(c,upper class2))
@@ -2643,7 +2686,7 @@ and 	(Ûinternal_valueèclassêİ : Valueèssqlê ­ InternalExpClass)
 =TEX
 =SML
 |	internal_valueèclassê	(row_existence‰s t) = 	
-				let val td = lookupètable_detailê(convertètable_specê t)
+				let val td = lookup‰t‰a‰b‰l‰e‰_‰d‰e‰t‰a‰i‰l(convertètable_specê t)
 				in  simple(constantèecê (#table_class(#info td)))
 				end
 =TEX
