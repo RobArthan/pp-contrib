@@ -61,9 +61,8 @@ DRA front end filter project RSRE 1C/6130.}
 \bibliography{fmu,fef}
 
 \subsection{Changes History}
-{\bf Issue \SCCSversion ({\FormatDate{$Date$
-}}) } 
-
+\begin{description}
+\item[Issue 3.2]
 \begin{enumerate}
 \item
 Changes made to $updateRow$ and $updateQuery$. The function $RelList$ moved
@@ -79,6 +78,14 @@ Function $insertQuery$ returns a state rather than a state and an empty list of 
 \item
 Function $colDefaults$ used in $insertQuery$ simplified.
 \end{enumerate}
+\item[Issue \SCCSversion(\FormatDate{$Date$
+})] The relations $Num\ ™\ Data$ used in $insertQuery$,  $Num\ ™\ Update$ in $updateRow$ and $Num\ ™(Num\ ™\ Update)$ in $updateQuery$
+ need to be partial functions in order that the invariant on the
+state is preserved by $updateState$. If this is not the
+case, an $ambiguousColumn$ or $ambiguousUpdate$ error is returned. Item 3 of changes in Issue 3.2 reversed.
+\end{description}
+
+
 
 \subsection{Changes Forecast}
 Changes  may be necessary  as a result of issues raised
@@ -97,7 +104,7 @@ SSQL is to be presented in three main parts. Two of these parts, the functions
 aspects of the SSQL semantics. The functions
  $hide$ and $updateState$ are formalised in this document.
 \section{PRELIMINARIES}
-The following ICL HOL instructions set up the new theory $fef005$ and set the context 
+The following \Product{} instructions set up the new theory $fef005$ and set the context 
 for the proof tools.
 =SML 
 open_theory "fef004";
@@ -461,18 +468,22 @@ default values are obtained from the table information.
 ‹					± n = CS_posn c ± d = CS_default c}
 ∞
 
-
+An $ambiguousColumn$ error is returned if the data in
+a row to be inserted is not a partial function.
 
 
 πHOLCONST
-‹	€insertQuery› :  (Class ∏ Insert ∏ StateR ∏ TableSpec) ≠ StateR 
+‹	€insertQuery› :  (Class ∏ Insert ∏ StateR ∏ TableSpec) ≠ StateR ∏ Errors
 ˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
 ‹	µ clear:Class; i:Tab; ds : (Num ™ Data) LIST; s:StateR; ts : TableSpec
 ‹	∑	insertQuery (clear,(i,ds),s,ts)
 ‹		=
 ‹		let rl = Map ((MkRow clear) o (colDefaults clear ts)) ds 
-‹		in	
-‹		(changeSpec i (replaceRows ts ((TS_rows ts) Î rl)) s)	
+‹		in
+‹		if ≥ Elems rl Ä RowS
+‹		then (s,[ambiguousColumn])
+‹		else	
+‹		((changeSpec i (replaceRows ts ((TS_rows ts) Î rl)) s),[])	
 ∞
 
 \subsection{Delete}
@@ -534,7 +545,10 @@ of data or an error message.
 ‹		else	giveError classChange
 ∞
 
-Now the effect of an update on a row.  A new row is only returned if all updates are secure; otherwise
+Now the effect of an update on a row. 
+
+Updates for a 
+row must be functional otherwise an $ambiguousUpdate$ error is returned.  A new row is only returned if all updates are secure; otherwise
  a sequence of errors is returned. 
 
 πHOLCONST
@@ -543,6 +557,9 @@ Now the effect of an update on a row.  A new row is only returned if all updates
 ‹	µ clear table_class:Class; us:Num ™ Update; r:Row
 ‹	∑	updateRow clear table_class (us,r)
 ‹		=
+‹		if ≥ us ç Functional
+‹		then giveError [ambiguousUpdate]
+‹		else
 ‹		let 	us' = 	RelCombine us (R_data r) ª Graph(updateField clear table_class)
 ‹		in
 ‹		let 	es = (us' í {x|isError x}) ª Graph destError  
@@ -554,7 +571,8 @@ Now the effect of an update on a row.  A new row is only returned if all updates
 
 
 
-Finally, the $updateQuery$ function. A check is made to prevent access to hidden columns. 
+Finally, the $updateQuery$ function. Updates  must be functional otherwise an $ambiguousUpdate$ error is returned.
+A check is made to prevent access to hidden columns.
 
 πHOLCONST
 ‹	€updateQuery› :  (Class ∏ UpDate ∏ StateR ∏ TableSpec)  ≠ StateR ∏ Errors
@@ -564,7 +582,9 @@ Finally, the $updateQuery$ function. A check is made to prevent access to hidden
 ‹		=
 ‹		let colnums = {n | ∂ c ∑ c ç visibleCols clear ts ± CS_posn c = n}
 ‹		in
-‹		if	≥((Dom (ﬁ (Ran us))) Ä colnums) 
+‹		if	≥ us ç Functional
+‹		then	(s,[ambiguousUpdate])
+‹		else if ≥((Dom (ﬁ (Ran us))) Ä colnums) 
 ‹		then	(s,[noSuchColumn])
 ‹		else 	let 	us' = Á~Í(revealRow  clear ts) ª us
 ‹			in
@@ -628,7 +648,7 @@ First, we define $updateStateR$ on the representation state.
 ‹				let	(s',es') 
 ‹					=	
 ‹					if 	isInsert ef
-‹					then	(insertQuery(clear,destInsert ef,s,ts),[])
+‹					then	insertQuery(clear,destInsert ef,s,ts)
 ‹					else if	isDelete ef
 ‹					then	(deleteQuery(clear,destDelete ef,s,ts),[])
 ‹					else	updateQuery(clear,destUpdate ef,s,ts)
@@ -652,7 +672,7 @@ Now the function $updateState$ on $State$.
 
 
 \section{CLOSING DOWN}
-The following ICL HOL instruction restores the previous proof context.
+The following \Product{} instruction restores the previous proof context.
 =SML
 pop_pc();
 =TEX
