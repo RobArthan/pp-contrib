@@ -1,0 +1,378 @@
+=TEX
+% TQtemplate.tex
+\documentstyle[hol1,11pt,TQ]{article}
+\def\Hide#1{}
+\def\Bool{``$\it{:}bool\,$''}
+\makeindex
+\TPPproject{DRA FRONT END FILTER PROJECT}  %% Mandatory field
+%\TPPvolume{}
+%\TPPpart{}
+\TPPtitle{Proof of Security (IIe)}  %% Mandatory field
+\TPPref{DS/FMU/FEF/015}  %% Mandatory field
+\def\SCCSversion{$Revision$
+}
+\TPPissue{\SCCSversion}  %% Mandatory field
+\TPPdate{\FormatDate{$Date$
+}}  %% Mandatory field (with sensible default)
+\TPPstatus{Draft}			%% Mandatory field
+\TPPtype{Specification}
+\TPPkeywords{}
+\TPPauthor{G.~M.~Prout & WIN01}  %% Mandatory field
+%\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
+\TPPauthorisation{R.B.~Jones & HAT Manager}
+\TPPabstract{This document completes the formal proof of security for the
+DRA front end filter project RSRE 1C/6130.}
+%\TPPabstractB{}
+%\TPPabstractC{}
+%\TPPabstractD{}
+%\TPPabstractE{}
+%\TPPabstractF{}
+\TPPdistribution{\parbox[t]{4.0in}{%
+	HAT FEF File \\
+	Simon Wiseman
+}}
+%\TPPclass{CLASSIFICATION}
+\newfont{\icllogo}{icllogo50}
+\def\TPPheadlhs{$\vcenter{\halign{##\cr\icllogo ICL\cr}}$}
+%\def\TPPheadlhs{}
+%\def\TPPheadcentre{}
+%def\TPPheadrhs{}
+%\def\TPPfootlhs{}
+%\def\TPPfootcentre{}
+%\def\TPPfootrhs{}
+
+\begin{document}
+\TPPsetsizes
+\makeTPPfrontpage
+
+\vfill
+\begin{centering}
+
+%\bf Copyright \copyright\ : International Computers Ltd \number\year
+
+\end{centering}
+
+\newpage
+\section {DOCUMENT CONTROL}
+\subsection{Contents List}
+\tableofcontents
+\subsection{Document Cross References}
+\bibliographystyle{fmu}
+\bibliography{fmu,fef}
+
+\subsection{Changes History}
+\begin{description}
+\item[Issue \SCCSversion(\FormatDate{$Date$
+})]First Issue.
+\end{description}
+
+\subsection{Changes Forecast}
+Changes  may be necessary  as a result of issues raised
+during  the transcription of the specification.
+\pagebreak
+\section{GENERAL}
+\subsection{Scope}
+This document, together with \cite{DS/FMU/FEF/010}, \cite{DS/FMU/FEF/011}, \cite{DS/FMU/FEF/012} and \cite{DS/FMU/FEF/013}, provides a formal proof  that the components $hide$ and $updateState$ 
+satisfy their critical 
+requirements, as specified in 
+the proof strategy  document \cite{DS/FMU/FEF/007}. It constitutes part of deliverable D6 
+of work package 1a, as given
+in section 7 of the Secure Database Technical Proposal, \cite{DS/FMU/017}.
+
+\subsection{Introduction}
+
+This document is a proof script which provides a formal proof that the behaviour of the SSQL abstract machine is secure.
+
+In the proof strategy document, \cite{DS/FMU/FEF/007}, we state the $main\_thm$:
+
+=GFT HOL output
+main_thm = Ù  Lemma1 ± Lemma3 ± Lemma4 ± Lemma5 ¥ behaviours SSQLam ç secure
+=TEX
+
+This result is progressed by the proofs of $Lemma3$, $Lemma4$ and $Lemma5$ in
+the unwinding proof document \cite{DS/FMU/FEF/009} to give $main\_thm1$:
+
+=GFT HOL output
+main_thm1 = Ù  Lemma1 ¥ behaviours SSQLam ç secure
+=TEX
+
+$Lemma1$ is the requirement on the critical components  $hide$ and $updateState$.
+
+{\bf Lemma1}
+=GFT 
+	?Ù 	hide ç secureHide ± (hide,updateState) ç secureUpdate
+=TEX
+
+In \cite{DS/FMU/FEF/010}, a formal proof of the first conjunct of $Lemma1$  is given.
+In \cite{DS/FMU/FEF/011}, formal proofs of the third and fourth conjuncts of the second
+conjunct of $Lemma1$ are given. In \cite{DS/FMU/FEF/012} and \cite{DS/FMU/FEF/013},
+formal proofs of the third and fourth conjuncts of the second
+conjunct of $Lemma1$ are given	 for $hideR$ and $updateStateR$. In this 
+document, we prove $Lemma1$ by using the results from \cite{DS/FMU/FEF/010}, \cite{DS/FMU/FEF/011}, 
+\cite{DS/FMU/FEF/012} and \cite{DS/FMU/FEF/013} together with a formal proof that $updateStateR$ maintains the invariant
+on the representation state.
+
+
+
+\section{PRELIMINARIES}
+The following \Product{} instructions set up the new theory $fef015$.
+
+=SML 
+open_theory "fef013";
+new_theory€"fef015"›;
+push_merge_pcs["hol","fefhol","fefrel","'pair1"] ;
+=TEX
+\section{$Lemma1$}
+
+\subsection{Relationship between $updateState$ and $updateStateR$} \label{REL}
+
+We first prove that if $updateStateR$ maintains the invariant
+on the representation state, then $hide$  and $updateState$ satisfy the relation
+$secureUpdate$.
+
+
+=SML
+push_goal([],
+	¨(µ clear s u ∑ isState s ¥ isState(Fst(updateStateR(clear,u,s)))) 
+	¥ (hide,updateState) ç secureUpdateÆ);
+a(REPEAT strip_tac THEN rewrite_tac[conjunct4,secureUpdate_def,hide_def]);
+a(LEMMA_T¨(µ c sâ1 sâ2 e
+             ∑ absState (hideR (c, repState sâ1))
+                   = absState (hideR (c, repState sâ2))
+                 ¥ Snd (updateState (c, e, sâ1)) = Snd (updateState (c, e, sâ2)))Æ
+	rewrite_thm_tac);
+=TEX
+=SML
+(* *** Goal "1" *** *)
+a(REPEAT strip_tac);
+a(strip_asm_tac(µ_elim¨sâ1ÆisState_lemma));
+a(strip_asm_tac(µ_elim¨sâ2ÆisState_lemma));
+a(bc_tac[conjunct3,eq_sym_rule(all_µ_elim hide_eq_lemma)]);
+a(fc_tac[hideR_lemma]);
+a(spec_nth_asm_tac 2 ¨cÆ);
+a(spec_nth_asm_tac 2 ¨cÆ);
+a(strip_asm_tac(list_µ_elim[¨hideR (c, repState sâ1)Æ,¨hideR (c, repState sâ2)Æ]isState_lemma2));
+=TEX
+=SML
+(* *** Goal "2" *** *)
+a(LEMMA_T¨µ câ1 câ2 sâ1 sâ2 e
+             ∑ absState (hideR (câ1, repState sâ1))
+                     = absState (hideR (câ1, repState sâ2))
+                   ± câ1 dominates câ2
+                 ¥ absState
+                     (hideR (câ1, repState (Fst (updateState (câ2, e, sâ1)))))
+                   = absState
+                     (hideR (câ1, repState (Fst (updateState (câ2, e, sâ2)))))Æ
+	rewrite_thm_tac);
+=TEX
+=SML
+(* *** Goal "2.1" *** *)
+a(REPEAT strip_tac);
+a(strip_asm_tac(µ_elim¨sâ2ÆisState_lemma));
+a(strip_asm_tac(µ_elim¨sâ1ÆisState_lemma));
+a(fc_tac[hideR_lemma]);
+a(spec_nth_asm_tac 2 ¨câ1Æ);
+a(spec_nth_asm_tac 2 ¨câ1Æ);
+a(strip_asm_tac(list_µ_elim[¨hideR (câ1, repState sâ1)Æ,
+	¨hideR (câ1, repState sâ2)Æ]isState_lemma2));
+a(LEMMA_T¨e = (Fst e,Snd e)Æ pure_once_asm_rewrite_thm_tac 
+	THEN_LIST[rewrite_tac[],rewrite_tac[updateState_def]]);
+a(list_spec_nth_asm_tac 10[¨câ2Æ,¨repState sâ1Æ,¨eÆ]);
+a(list_spec_nth_asm_tac 11[¨câ2Æ,¨repState sâ2Æ,¨eÆ]);
+a(fc_tac[conjunct2]);
+a(list_spec_nth_asm_tac 1[¨câ2Æ,¨eÆ]);
+a(fc_tac[isState_lemma1]THEN asm_rewrite_tac[]);
+=TEX
+=SML
+(* *** Goal "2.2" *** *)
+a(REPEAT strip_tac);
+a(strip_asm_tac(µ_elim¨sÆisState_lemma));
+a(fc_tac[hideR_lemma]);
+a(spec_nth_asm_tac 1 ¨câ2Æ);
+a(DROP_NTH_ASM_T 4 ante_tac);
+a(LEMMA_T¨e = (Fst e,Snd e)Æ pure_once_asm_rewrite_thm_tac 
+	THEN_LIST[rewrite_tac[],rewrite_tac[updateState_def]]);
+a(asm_fc_tac[]);
+a(list_spec_nth_asm_tac 2[¨câ1Æ,¨eÆ]);
+a(fc_tac[hideR_lemma]);
+a(spec_nth_asm_tac 1 ¨câ2Æ);
+a(fc_tac[isState_lemma1]THEN asm_rewrite_tac[]);
+a(¥_tac THEN swap_nth_asm_concl_tac 1);
+a(strip_asm_tac(list_µ_elim[¨hideR (câ2, repState s)Æ,
+	¨hideR (câ2, Fst (updateStateR (câ1, e, repState s)))Æ]isState_lemma2));
+a(fc_tac[conjunct1]);
+val €updateStateR_updateState_lemma› = save_pop_thm"updateStateR_updateState_lemma";
+=TEX
+=GFT HOL output
+updateStateR_updateState_lemma = 
+Ù (µ clear s u
+    ∑ isState s ¥ isState (Fst (updateStateR (clear, u, s))))
+    ¥ (hide, updateState) ç secureUpdate
+=TEX
+\subsection{Proof that the Invariant on the State is Maintained} \label{INV}
+We now prove that that the invariant on the representation state is maintained.
+\subsubsection{Insert}
+=SML
+push_goal([],¨µ clear i ds s ts ∑ s ç Functional ¥ insertQuery(clear,(i,ds),s,ts) ç FunctionalÆ);
+a(rewrite_tac[functional_def,insertQuery_def,changeSpec_def,´_single]
+	THEN REPEAT strip_tac THEN_TRY asm_rewrite_tac[]);
+a(asm_fc_tac[] THEN asm_fc_tac[]);
+val €insertQuery_fun_lemma› = save_pop_thm"insertQuery_fun_lemma";
+=TEX
+=GFT HOL output
+insertQuery_fun_lemma = 
+Ù µ clear i ds s ts
+  ∑ s ç Functional ¥ insertQuery (clear, (i, ds), s, ts) ç Functional
+=TEX
+=SML
+push_goal([],¨µ clear i ds s ts ∑ isState s  ¥ isState(insertQuery(clear,(i,ds),s,ts))Æ);
+a(rewrite_tac[get_spec¨isStateÆ,get_spec¨StateSÆ,ﬂ_def,°_def] 
+	THEN REPEAT µ_tac THEN strip_tac);
+a(lemma_tac¨insertQuery (clear, (i, ds), s, ts) ç FunctionalÆ);
+(* *** Goal "1" *** *)
+a(bc_tac[insertQuery_fun_lemma]THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(asm_rewrite_tac[]);
+a(LIST_DROP_NTH_ASM_T [1,3] (MAP_EVERY ante_tac) 
+	THEN rewrite_tac[™_def,get_spec¨IdeLÆ,get_spec¨DirectorySÆ,°_def,∏_def,
+	get_spec¨UniverseÆ,dom_thm,rel_ext_clauses,get_spec¨$Æ,insertQuery_def,
+	changeSpec_def,´_single]THEN REPEAT ¥_tac);
+a(REPEAT µ_tac THEN strip_tac);
+(* *** Goal "2.1" *** *)
+a(POP_ASM_T(rewrite_thm_tac) THEN rewrite_tac[get_spec¨MkDirectoryÆ]);
+a(rewrite_tac[ﬂ_def,°_def]);
+a(DROP_NTH_ASM_T 3 ante_tac THEN POP_ASM_T (rewrite_thm_tac o eq_sym_rule));
+a(POP_ASM_T (rewrite_thm_tac o eq_sym_rule) THEN ¥_tac);
+a(rewrite_tac[ﬂ_def,°_def]);
+die;
+
+
+a(REPEAT µ_tac THEN strip_tac);
+(* *** Goal "2.1" *** *)
+a(DROP_NTH_ASM_T 3 ante_tac THEN POP_ASM_T (rewrite_thm_tac o eq_sym_rule));
+a(POP_ASM_T (rewrite_thm_tac o eq_sym_rule) THEN 
+	¥_T(ante_tac o rewrite_rule[functional_def,´_single]));
+a(strip_tac THEN strip_tac);
+(* *** Goal "2.1.1" *** *)
+
+
+
+
+
+POP_ASM_T rewrite_thm_tac THEN rewrite_tac[get_spec¨MkDirectoryÆ]);
+a(LEMMA_T¨Dir_tables (s @ Front i)
+                 ´ {(Last i,
+                     replaceRows
+                         ts
+                         (TS_rows ts Î Map (MkRow clear o colDefaults clear ts) ds))}
+                ç FunctionalÆrewrite_thm_tac);
+
+
+
+a(DROP_NTH_ASM_T 7(strip_asm_tac o rewrite_rule[isInsert_def])); 
+a(POP_ASM_T (strip_asm_tac o rewrite_rule[isInsert_def]));
+a(LIST_DROP_NTH_ASM_T[2,3](MAP_EVERY ante_tac) 
+	THEN POP_ASM_T rewrite_thm_tac THEN 
+	rewrite_tac[destInsert_def,tabFromEffect_def,
+	getTable_def,rewrite_rule[dom_def]tabExists_def]
+	THEN REPEAT strip_tac);
+a(strip_asm_tac (pure_rewrite_rule[get_spec¨isStateÆ,get_spec¨StateSÆ,ﬂ_def,°_def]
+	(µ_elim¨sÆisState_lemma)));
+=TEX
+=SML
+push_goal([],¨µ clear s ∑ isState s ¥ isState(Fst (updateStateR (clear, u, s)))Æ);
+a(LEMMA_T¨u = (Fst u,Snd u)Æ pure_once_asm_rewrite_thm_tac 
+	THEN_LIST[rewrite_tac[],rewrite_tac[updateStateR_def] THEN REPEAT µ_tac]);
+a(rewrite_tac[get_spec¨isStateÆ,get_spec¨StateSÆ,ﬂ_def,°_def] THEN strip_tac);
+a(lemma_tac¨Fst
+                 (if isSelect (Fst u)
+                     then (s, clear, destSelect (Fst u), Snd u)
+                     else if ≥ Snd u = []
+                     then (s, clear, [], Snd u)
+                     else if tabExists clear (tabFromEffect (Fst u)) s
+                     then
+                       if ≥ clear dominates TS_class (getTable (tabFromEffect (Fst u)) s)
+                       then (s, clear, [], [accessDenied])
+                       else
+                         (Fst
+                               (if isInsert (Fst u)
+                                   then
+                                     (insertQuery
+                                           (clear, destInsert (Fst u), s,
+                                               getTable (tabFromEffect (Fst u)) s), [])
+                                   else if isDelete (Fst u)
+                                   then
+                                     (deleteQuery
+                                           (clear, destDelete (Fst u), s,
+                                               getTable (tabFromEffect (Fst u)) s), [])
+                                   else
+                                     updateQuery
+                                       (clear, destUpdate (Fst u), s,
+                                           getTable (tabFromEffect (Fst u)) s)), clear,
+                           [],
+                           Snd
+                               (if isInsert (Fst u)
+                                   then
+                                     (insertQuery
+                                           (clear, destInsert (Fst u), s,
+                                               getTable (tabFromEffect (Fst u)) s), [])
+                                   else if isDelete (Fst u)
+                                   then
+                                     (deleteQuery
+                                           (clear, destDelete (Fst u), s,
+                                               getTable (tabFromEffect (Fst u)) s), [])
+                                   else
+                                     updateQuery
+                                       (clear, destUpdate (Fst u), s,
+                                           getTable (tabFromEffect (Fst u)) s)))
+                     else (s, clear, [], [noSuchTable]))
+               ç FunctionalÆ);
+=TEX
+=SML
+(* *** Goal "1" *** *)
+a(strip_asm_tac(µ_elim ¨Fst uÆ query_type) THEN asm_rewrite_tac[]
+	THEN cases_tac¨≥ Snd u = []Æ THEN asm_rewrite_tac[]
+	THEN cases_tac¨tabExists clear (tabFromEffect (Fst u)) sÆTHEN asm_rewrite_tac[]
+	THEN cases_tac¨≥ clear dominates TS_class (getTable (tabFromEffect (Fst u)) s)Æ
+	THEN asm_rewrite_tac[]);
+=TEX
+
+
+
+
+\subsection{Proof of $Lemma1$}
+We prove $Lemma1$ using the results of section \ref{REL} and section \ref{INV}
+together with $secureHide\_lemma$ from \cite{DS/FMU/FEF/010}.
+
+
+
+\section{PROOF OF SECURITY OF SSQL}
+
+We now give the main result $secureSSQL$ that the behaviour of the SSQL abstract machine is secure.
+
+=SML
+val secureSSQL = save_thm("secureSSQL",rewrite_rule[lemma1_thm]main_thm1);
+=TEX
+
+=GFT HOL output
+secureSSQL = Ù behaviours SSQLam ç secure
+=TEX
+
+
+\section{CLOSING DOWN}
+The following \Product{} instruction restores the previous proof context.
+=SML
+pop_pc();
+=TEX
+
+
+\newpage
+\input{fef015th.tex}
+
+\newpage
+\twocolumn[\section{INDEX} \label{INDEX}]
+\small
+\printindex
+
+\end{document}
+
