@@ -127,7 +127,6 @@ DVIFILES = $(SMLFILES:.sml=.dvi) $(PHASE2FILES:.sml=.dvi) fef001.dvi
 ARCH:sh = echo `arch`
 HOLDB = $(ARCH)hol.db
 FEFDB = $(ARCH)fef.db
-PH2FEFDB = $(ARCH)ph2fef.db
 DIR	= /hat/projects/fef
 SDIR	= $(DIR)/SCCS
 SCCSGET	= sccs -d $(DIR) get
@@ -178,10 +177,6 @@ $(DOCFILES) : $(DIR)/SCCS/s.$$@
 
 €fef.db› : $(FEFDB)
 
-#	fef database without security proofs
-
-€ph2fef.db› : $(PH2FEFDB)
-
 
 #	Run LaTeX on all the documents, but do not actually print them.
 
@@ -214,23 +209,14 @@ $(SMLFILES:.sml=) : $$@.tex
 
 
 
-#	Form the fef database from the source files
+#	build the fef database (phase 1 specs and proofs plus phase 2 specs)
 
 $(FEFDB) : $(ALLSMLS) makefef.sh
 	rm -f $(FEFDB)
 	pp_make_database -f -p pp_hol#fin_set fef#cache_thms
 	- chmod u+w $(FEFDB)
 	makefef.sh -d $(FEFDB) -s "Built by makefile"  \
-		$(ALLSMLS)
-
-#	Form the fef database  without proofs from the source files
-
-$(PH2FEFDB) : $(PHASE2SMLS) makefef.sh
-	rm -f $(PH2FEFDB)
-	pp_make_database -f -p pp_hol#fin_set ph2fef#cache_thms
-	- chmod u+w $(PH2FEFDB)
-	makefef.sh -d $(PH2FEFDB) -s "Built by makefile"  \
-		$(PHASE2SMLS)
+		$(ALLSMLS) $(PHASE2SMLS)
 
 =TEX
 \section{TIDYING UP THE FILE STORE}
