@@ -1,6 +1,6 @@
 =TEX
 % TQtemplate.tex
-\documentstyle[hol,11pt,TQ]{article}
+\documentstyle[hol1,11pt,TQ]{article}
 \ftlinepenalty=9999
 \def\Hide#1{}
 \def\Bool{``$\it{:}bool\,$''}
@@ -15,7 +15,7 @@
 \TPPissue{\SCCSversion}  %% Mandatory field
 \TPPdate{\FormatDate{$Date$
 }}  %% Mandatory field (with sensible default)
-\TPPstatus{Approved}			%% Mandatory field
+\TPPstatus{Draft}			%% Mandatory field
 \TPPtype{Specification}
 \TPPkeywords{}
 \TPPauthor{G.~M.~Prout & WIN01}  %% Mandatory field
@@ -63,8 +63,11 @@
 \subsection{Changes History}
 \begin{description}
 \item[Issue 2.1] First approved version.
-\item[Issue $Revision$ ({\FormatDate{$Date$
-}})] Generic parameters missing from specification of $secure$.
+\item[Issue 2.2] Generic parameters missing from specification of $secure$.
+
+\item[Issue \SCCSversion ({\FormatDate{$Date$
+}}) ] Translation into ICL HOL. Removal of the condition on $BEHAVIOURS$.
+
 \end{description}
 
 \subsection{Changes Forecast}
@@ -94,34 +97,36 @@ that it can be proven that SSQL provides information flow security.
 \section{FORMAL SECURITY POLICY}
 \subsection{Setting Up}
 The following ICL HOL instructions set up the new theory $fef003$.
-å
-close_theory();
-load_theory "Z_Lib_rel";
-new_theory"âfef003á";
-æ
-An index of the names in the Z specification may be found in Section \ref{INDEX}. 
+=SML
+new_theory Û"fef003"İ;
+push_merge_pcs ["sets_ext","prove_¶"];
+=TEX
+An index of the names used in the formal specification may be found in Section \ref{INDEX}. 
 A listing of the theory $fef003$ created by processing this document using ICL HOL
 is in Section \ref{THEORYLIST}.
 \subsection{Classification}
 We begin formalising
 the security model by defining a relation $dominates$
-on classifications. We introduce a given set to represent the classifications.
+on classifications. We introduce a new type to represent the classifications.
 
-è
-İ	[âClassá]
-æ
+=SML
+new_type("Class",0);
+=TEX
 
 Classifications are partially ordered by the relation {\it dominates}.
 
-ê
-İ
-İ	_âdominatesá_ : Class  Class
-ÉÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
-İ	ƒ x,y,z: Class 
-İ			x dominates x
-İ		€	(x dominates y € y dominates x Š x = y)
-İ		€	(x dominates y € y dominates z Š x dominates z)
-Ë
+=SML
+declare_infix (150,"dominates");
+=TEX
+
+¹HOLCONST
+Ü	$Ûdominatesİ : Class ­ Class ­ BOOL
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ x y z: Class ·
+Ü			x dominates x
+Ü		±	(x dominates y ± y dominates x ´ x = y)
+Ü		±	(x dominates y ± y dominates z ´ x dominates z)
+°
 
 \subsection{The Type of Behavioural Models of Systems}
 
@@ -133,21 +138,12 @@ single query is a classification and some data.
 A `behaviour' of a system is a single sequence of inputs and
 the resulting sequence of outputs. A behavioural model
 is the set of all possible behaviours.
-This is formalised in Z as a function from the sequence of permissible inputs to the system, yielding the corresponding outputs.
-The behavioural model is independent of the state of the system and generic in QUERY and DATA. We also require the constraints that the function is total and
- the function be obtained by iterating a single step transition function. 
-
-
-è
-İ	âBEHAVIOURSá[QUERY,DATA] == 
-İ		{f: seq(QUERY ‰ Class)  ‹ seq(Class ‰ DATA)
-İ		|	ƒsi,si': seq(QUERY ‰ Class); so:seq(Class ‰ DATA)
-İ			| 	f si = so
-İ			 	#si = #so		
-İ				€ 	
-İ				(„so': seq(Class ‰ DATA)  f(si µ si') = so µ so')
-İ		}
-æ
+This is formalised  as a function from the sequence of permissible inputs to the system, yielding the corresponding outputs.
+The behavioural model is independent of the state of the system and generic in QUERY and DATA. 
+=SML
+declare_type_abbrev("BEHAVIOURS",["'QUERY","'DATA"],
+	¬: ('QUERY ¸ Class)LIST ­ (Class ¸ 'DATA)LIST®);
+=TEX
 
 \subsection{Critical Requirements} \label{CRITICAL}
 
@@ -163,30 +159,31 @@ To express the flow constraint in this way, it is first necessary to define filt
 Two sequences of inputs {\it si1} and {\it si2} are the same when viewed from a classification {\it c} if, after purging from both any input whose classification is not dominated by {\it c}, the two resulting purged 
 sequences are identical.
 
-ë[QUERY]
-İ	âsame_insá : Class ‹ (seq(QUERY ‰ Class)  seq(QUERY ‰ Class))
-ÉÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
-İ
-İ	ƒc: Class; si1, si2: seq(QUERY ‰ Class); v:‘ (QUERY ‰ Class)
-İ	|	v = {qc: QUERY ‰ Class|(c dominates (second qc))}
-İ		(si1,si2)  same_ins c 
-İ		‚
-İ		si1 Á v = si2 Á v
-Ë
+
+¹HOLCONST
+Ü	Ûsame_insİ : Class ­ (('QUERY ¸ Class)LIST ª ('QUERY ¸ Class)LIST)
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µc: Class; si1 si2: ('QUERY ¸ Class)LIST
+Ü	·	(si1,si2)  same_ins c 
+Ü		¤
+Ü		let v = {qc: 'QUERY ¸ Class|(c dominates (Snd qc))}
+Ü		in
+Ü		si1 ù v = si2 ù v
+°
 
 Two sequences of outputs {\it so1} and {\it so2} are the same when viewed from a classification {\it c} if, after purging from both any output whose classification is not dominated by {\it c}, the two resulting purged 
 sequences are identical.
 
-ë[DATA]
-İ	âsame_outsá : Class ‹ (seq (Class ‰ DATA)  seq (Class ‰ DATA))
-ÉÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
-İ
-İ	ƒc: Class; so1, so2: seq (Class ‰ DATA); v: ‘ (Class ‰ DATA)
-İ	|	v = {cd: Class ‰ DATA|(c dominates (first cd))}
-İ		(so1,so2)  same_outs c 
-İ		‚
-İ		so1 Á v = so2 Á v
-Ë
+¹HOLCONST
+Ü	Ûsame_outsİ : Class ­ ((Class ¸ 'DATA)LIST ª (Class ¸ 'DATA)LIST)
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µc: Class; so1 so2: (Class ¸ 'DATA)LIST
+Ü	·	(so1,so2)  same_outs c 
+Ü		¤
+Ü		let v = {cd: Class ¸ 'DATA|(c dominates (Fst cd))}
+Ü		in
+Ü		so1 ù v = so2 ù v
+°
 
 The constraint on information flows proposed for verification is that outputs classified at classes dominated by any class {\it c} are independent of inputs at classifications which 
 are not dominated by {\it c}.
@@ -194,16 +191,18 @@ We assume that mechanisms outside the scope of this model ensure that users see 
 
 This is expressed by saying that if two sequences of inputs are the same when viewed at a certain classification then the outputs will be the same when viewed at that classification.
 
-ë[QUERY,DATA]
-İ	âsecureá : ‘ BEHAVIOURS[QUERY,DATA]
-ÉÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
-İ
-İ	ƒbm:BEHAVIOURS[QUERY,DATA] bm  secure ‚
-İ
-İ	(ƒ c : Class; si1,si2 :seq(QUERY ‰ Class)
-İ	|	(si1,si2)  same_ins[QUERY] c 
-İ		(bm si1,bm si2)  same_outs[DATA] c)
-Ë
+
+¹HOLCONST
+Ü	Ûsecureİ: ('QUERY,'DATA)BEHAVIOURS ğ 
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µbm:('QUERY,'DATA)BEHAVIOURS
+Ü	·	bm  secure 
+Ü		¤
+Ü		µ c : Class; si1 si2 :('QUERY ¸ Class)LIST
+Ü			·	(si1,si2)  same_ins c 
+Ü				´
+Ü				(bm si1,bm si2)  same_outs c
+°
 
 The enunciation of the security requirement as a {\it property} of behavioural models of systems
 enables us to express directly the claim that a behavioural model of
@@ -232,58 +231,73 @@ hence we may refine the state of the system to an implementation
 provided we maintain its behaviour.
 
 \section{APPROVAL OF THE FORMAL SECURITY POLICY} 
-Comments on this document by DRA to be made  by 30th April 1992.
+Comments on this document by DRA to be made  by 22nd May 1992.
 
 \newpage
 \section{THEORY LISTING}\label{THEORYLIST}
-å
-list_z_theory"fef003";
-æ
+=SML
+print_theory"fef003";
+=TEX
+=GFT Output from theory lister
+ === The theory fef003 ===
 
-óHOL output
-Listing of the Theory fef003
+--- Parents ---
 
-Constants
+                library
 
-Class			: ‘ Class
-dominates		: ‘ (Class ‰ Class)
-BEHAVIOURS	: ‘ ‘ (‘ (í ‰ (*QUERY ‰ Class)) ‰ ‘ (í ‰ (Class ‰ *DATA)))
-same_ins		: ‘ (Class ‰ ‘ (‘ (í ‰ (*QUERY ‰ Class)) ‰ ‘ (í ‰ (*QUERY ‰ Class))))
-same_outs		: ‘ (Class ‰ ‘ (‘ (í ‰ (Class ‰ *DATA)) ‰ ‘ (í ‰ (Class ‰ *DATA))))
-secure			: ‘ ‘ (‘ (í ‰ (*QUERY ‰ Class)) ‰ ‘ (í ‰ (Class ‰ *DATA)))
+--- Constants ---
 
-Definitions
+$dominates      Class ­ Class ­ BOOL
+same_ins        Class
+                  ­ (('QUERY ¸ Class) LIST ¸ ('QUERY ¸ Class) LIST)
+                  SET
+same_outs       Class ­ ((Class ¸ 'DATA) LIST ¸ (Class ¸ 'DATA) LIST) SET
+secure          (('QUERY ¸ Class) LIST ­ (Class ¸ 'DATA) LIST) SET
 
-(Class = (HOL ABS_‘(\ x.T) LOH))
-((dominates  (Class  Class)) € 
-	(ƒx: Class; y: Class; z: Class | true 
-	 	(((x dominates x) € (((x dominates y) € (y dominates x)) Š (x = y))) 
-	€ 	(((x dominates y) € (y dominates z)) Š (x dominates z)))))
-[QUERY, DATA](BEHAVIOURS = {f: (seq (QUERY ‰ Class) ‹ seq (Class ‰ DATA)) 
-	|	(ƒsi: seq (QUERY ‰ Class); si': seq (QUERY ‰ Class); so: seq (Class ‰ DATA) 
-		| ((f si) = so) 
-		 (((# si) = (# so)) 
-		€ („so': seq (Class ‰ DATA) | true  ((f (si µ si')) = (so µ so')))))  f})
-[QUERY]((same_ins  (Class ‹ (seq (QUERY ‰ Class)  seq (QUERY ‰ Class)))) € 
-	(ƒc: Class; si1: seq (QUERY ‰ Class); si2: seq (QUERY ‰ Class); v: ‘ (QUERY ‰ Class) 
-	| 	(v = {qc: (QUERY ‰ Class) | (c dominates (second qc))  qc}) 
-	 	(((si1, si2)  (same_ins c)) ‚ ((si1 Á v) = (si2 Á v)))))
-[DATA]((same_outs  (Class ‹ (seq (Class ‰ DATA)  seq (Class ‰ DATA)))) € 
-	(ƒc: Class; so1: seq (Class ‰ DATA); so2: seq (Class ‰ DATA); v: ‘ (Class ‰ DATA) 
-	| 	(v = {cd: (Class ‰ DATA) | (c dominates (first cd))  cd}) 
-	 	(((so1, so2)  (same_outs c)) ‚ ((so1 Á v) = (so2 Á v)))))
-[QUERY, DATA]((secure  ‘ BEHAVIOURS) € 
-	(ƒbm: BEHAVIOURS | true 
-	 	((bm  secure) 
-		‚ 
-		(ƒc: Class; si1: seq (QUERY ‰ Class); si2: seq (QUERY ‰ Class) 
-		| 	((si1, si2)  (same_ins c)) 
-			 (((bm si1), (bm si2))  (same_outs c))))))
+--- Types ---
 
-Theorems
-val it = () : unit   
-æ
+Class
 
+--- Type Abbreviations ---
+
+('QUERY, 'DATA) BEHAVIOURS
+                ('QUERY ¸ Class) LIST ­ (Class ¸ 'DATA) LIST
+
+--- Fixity ---
+
+Infix 150:      dominates
+
+--- Definitions ---
+
+dominates       ô ConstSpec
+                    (Ì dominates'
+                        · µ x y z
+                          · dominates' x x
+                            ± (dominates' x y ± dominates' y x ´ x = y)
+                            ± (dominates' x y ± dominates' y z
+                              ´ dominates' x z)) $dominates
+same_ins        ô ConstSpec
+                    (Ì same_ins'
+                        · µ c si1 si2
+                          · (si1, si2)  same_ins' c
+                            ¤ (let v = {qc|c dominates Snd qc}
+                            in si1 ù v = si2 ù v)) same_ins
+same_outs       ô ConstSpec
+                    (Ì same_outs'
+                        · µ c so1 so2
+                          · (so1, so2)  same_outs' c
+                            ¤ (let v = {cd|c dominates Fst cd}
+                            in so1 ù v = so2 ù v)) same_outs
+secure          ô ConstSpec
+                    (Ì secure'
+                        · µ bm
+                          · bm  secure'
+                            ¤ (µ c si1 si2
+                              · (si1, si2)  same_ins c
+                                ´ (bm si1, bm si2)  same_outs c)) secure
+
+ === End of listing of theory fef003 ===
+=TEX
 \newpage
 \twocolumn[\section{INDEX} \label{INDEX}]
 \small
