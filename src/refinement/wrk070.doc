@@ -3,17 +3,17 @@
 # and probably earlier as well.
 #
 # To process the document in batch:
-pp_make_database -f -p zed wp
-docsml wp
-pp -i wp -d wp </dev/null >wp.run.log
-doctex wp wp.th
-texdvi wp
-texdvi wp
-# That will give you a document "wp.dvi" to print off and read.
+pp_make_database -f -p zed refcalc
+docsml refcalc preccalc
+pp -i refcalc,preccalc -d refcalc </dev/null >preccalc.run.log
+doctex preccalc preccalc.th
+texdvi preccalc
+texdvi preccalc
+# That will give you a document "preccalc.dvi" to print off and read.
 # To process the document interactively:
-pp_make_database -f -p zed wp
-xpp -f wp.doc -c pp -d wp &
-# then either do use_file"wp" to load the lot and start interacting with
+pp_make_database -f -p zed preccalc
+xpp -f preccalc.doc -c pp -d preccalc &
+# then either do use_file"preccalc" to load the lot and start interacting with
 # the results, or, select-and-execute your way through a chunk at a time.
 =TEX
 \documentclass[12pt]{article}
@@ -25,37 +25,23 @@ xpp -f wp.doc -c pp -d wp &
 \def\ZOtherLabel{}
 \def\ZSchemaLabel{}
 \def\Hide#1{\relax}
-\title{On Refinement and Partial Correctness \\ (DRAFT)}
+\title{Correctness of Imperative Programs \\ Precondition Calculation \\ (DRAFT)}
 \author{R.D. Arthan}
 \makeindex
 \begin{document}
 \maketitle
 \section{Introduction}\label{Intro}
 
-This note is concerned with a style of program verification in which
-the claims that can be verified have the form ``program $p$
-satisfies specification $s$ whenever it terminates''.
-This notion of correctness is traditionally referred to as partial correctness,
-although a more impartial term such as ``algorithmic correctness'' is
-preferred by some.
-A total correctness claim has the form ``program $p$
-satisfies specification $s$ and it always terminates''.
-For many practical purposes, partial correctness can be
-a much more useful notion than total correctness for several reasons.
-For example, tools other than formal specification and proof may be
-better suited to automatic analysis of termination.
-Furthermore, partial correctness claims have the clear advantage
-of sometimes being true in physical reality, whereas total
-correctness claims never are (e.g., consider what happens when the
-power supply fails).
+This note is the second in a planned series concerned with specification via
+pre- and post-conditions in a partial correctness setting.
+It applies the general notion of specification and refinement given in the first note in the series
+to give a notion of correctness for a simple imperative programming language, where
+programs and program fragments may be equipped with Floyd-Hoare style specification annotations.
 
-In the sequel, we provide a simple formal model in {\ProductZ}
-in which to reason about refinement notations along the lines of the Compliance Notation.
-It is particularly intended to assist with future work on handling more
-complex control flow than is currently handled in the Compliance Notation.
-A refinement notation comprising a miniature, but complete, imperative
-programming language annotated with formal specifications
-is presented; the semantics of that programming language and the notion
+In the sequel, we present a simple formal model in {\ProductZ}
+of a refinement notation comprising a miniature, but complete, imperative
+programming language annotated with formal specifications;
+the semantics of that programming language and the notion
 of correctness relative to the specification annotations is defined.
 A semantic model of a verification condition generator (or pre-condition
 calculator) is given which can be proved to be sound with respect both to
@@ -65,15 +51,15 @@ the specification annotations.
 \Hide{
 The following ML sets up a context for giving the {\ProductZ} specifications.
 =SML
-open_theory"refinement";
+open_theory"refcalc";
 set_pc"z_library1";
-force_delete_theory"wp" handle Fail _ => ();
-new_theory"wp";
+force_delete_theory"preccalc" handle Fail _ => ();
+new_theory"preccalc";
 =TEX
 }
 
 The Z specification uses infix notation for the following relation
-and function symbols:
+and function symbols (in addition to those defined in the first note):
 πZ
 ‹ rel  _ %models% _, _ ‚ _
 ∞
@@ -83,7 +69,8 @@ and function symbols:
 
 The specification contains a number of conjectures. All of these
 have been proved with {\Product} and the resulting theory listing
-is included as an appendix to this document.
+is included as an appendix to this document. An index to the Z specification
+is given at the end of the document.
 
 Please note this is work-in-progress and the current version of
 this note lacks any serious attempt to cite the literature or
@@ -95,7 +82,7 @@ practical applications --- they just give you warm feelings that if
 you give sufficiently strong specifications,
 you will get weakest, rather than just sufficient pre-conditions.
 The relational semantics given here goes back at least as far as early
-work of Hoare, at least in essence.
+work of Hoare.
 
 
 
@@ -123,7 +110,8 @@ which is a state $s'$ such that $(s, s') \in t$.
 
 \section{Predicates and Specifications}\label{PRED}
 
-We use the notions of predicates, specifications etc. from the first document in the series.
+We instantiate the notions of predicates, pre- post-conditions
+and specifications from the first document in the series:
 
 πZ
 ‹ €P_PRED› ¶ PRED[STATE]
@@ -158,7 +146,7 @@ While &
 While-loop
 \\\hline
 Spec &
-Programs with specifications
+Programs with specification annotations
 \\\hline
 \end{tabular}
 
@@ -185,7 +173,7 @@ in the procedure header.
 
 The following function gives the semantics of this notion of a program.
 The semantic value of a program is a state transformer.
-In the semantics, the specifications in the syntactic category Spec are just
+In the semantics, the specification annotations are just
 ignored --- it is the actual code that determines the semantics, not our aspirations
 for it.
 πZAX
@@ -233,7 +221,9 @@ which simply strips out all the specifications is semantics-preserving:
 
 \section{Program Correctness}\label{sat}
 For a program to be correct every part of it that has a specification
-must certainly satisfy that specification. We write
+must certainly satisfy that specification, which in our setting means that
+the semantic value of the program must be a refinement of the given specification annotation.
+We write
 =INLINEFT
 p %models% s
 =TEX
@@ -628,7 +618,7 @@ but very far from useful (since the mistaken predicate will require $s' = s$ is
 {\HOLindexOff\small
 \let\Section\section
 \def\section#1{\Section{#1}\label{THEORYLISTING}}
-\include{wp.th}}
+\include{preccalc.th}}
 
 \twocolumn[\section{INDEX}\label{INDEX}]
 {\small\printindex}
@@ -644,8 +634,8 @@ but very far from useful (since the mistaken predicate will require $s' = s$ is
 =TEX
 \ftlinepenalty=999
 =SML
-delete_pc"'refinement" handle Fail _ => ();
-new_pc "'refinement";
+delete_pc"'preccalc" handle Fail _ => ();
+new_pc "'preccalc";
 
 set_goal([], Ò
 	STATE_TRANSFORMER = U
@@ -666,8 +656,8 @@ a(rewrite_tac(map z_get_spec[
 	ÒPROGÆ,
 	Ò(_ ™ _)Æ]));
 val €refinement_u_thm› = save_pop_thm "refinement_u_thm";
-set_u_simp_eqn_cxt (u_simp_eqn_cxt [refinement_u_thm]) "'refinement";
-set_merge_pcs["'refinement", "'refcalc", "z_library1"];
+set_u_simp_eqn_cxt (u_simp_eqn_cxt [refinement_u_thm]) "'preccalc";
+set_merge_pcs["'preccalc", "'refcalc", "z_library1"];
 =TEX
 =SML
 set_goal([], Òµ R : U; T : U∑
@@ -1083,7 +1073,7 @@ val €prec_calc_compound_egs_thm›  = save_pop_thm"prec_calc_compound_egs_thm";
 =TEX
 \section{Epilogue}
 =SML
-z_output_theory{out_file="wp.th.doc", theory="-"};
+z_output_theory{out_file="preccalc.th.doc", theory="-"};
 =TEX
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PROOF SCRIPTS END HERE
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PROOF SCRIPTS END HERE
