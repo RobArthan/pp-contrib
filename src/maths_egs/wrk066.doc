@@ -1214,6 +1214,23 @@ a(LEMMA_T¬(Abs x * (Abs x) ›-›1) * Abs(x ›-›1) = (Abs x)›-›1® ante_tac THEN1
 a(ALL_FC_T rewrite_tac[¯_times_recip_thm]);
 val Û¯_abs_recip_thmÝ = save_pop_thm "¯_abs_recip_thm";
 =TEX
+Squares of absolute values are equal to squares:
+%%%%
+%%%%
+=SML
+set_goal([], ¬µx:¯· Abs x ^ 2 = x ^ 2®);
+a(REPEAT strip_tac);
+a(pure_rewrite_tac[prove_rule[]¬2 = (0 + 1) + 1®, ¯_î_exp_def]);
+a(rewrite_tac[conv_rule(ONCE_MAP_C eq_sym_conv) ¯_abs_times_thm]);
+a(LEMMA_T ¬î¯ 0 ¼ x * x® (fn th => rewrite_tac[¯_abs_def, th]));
+a(cases_tac¬î¯ 0 ¼ x ® THEN1
+	(bc_thm_tac ¯_0_¼_0_¼_times_thm THEN REPEAT strip_tac));
+a(lemma_tac¬î¯ 0 ¼ ~x® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(lemma_tac¬î¯ 0 ¼ ~x * ~x ® THEN1
+	(bc_thm_tac ¯_0_¼_0_¼_times_thm THEN REPEAT strip_tac));
+a(POP_ASM_T ante_tac THEN PC_T1 "¯_lin_arith" prove_tac[]);
+val Û¯_abs_squared_thmÝ = save_pop_thm "¯_abs_squared_thm";
+=TEX
 A monotonicity property for absolute values and multiplication:
 %%%%
 %%%%
@@ -1308,6 +1325,16 @@ val Û¯_plus_recip_thmÝ = save_pop_thm"¯_plus_recip_thm";
 set_goal([], ¬µm· î¯ 0 ^ (m+1) = î¯ 0 ± î¯ 1 ^ m = î¯ 1®);
 a(µ_tac THEN induction_tac¬m:î® THEN asm_rewrite_tac[¯_î_exp_def]);
 val Û¯_î_exp_0_1_thmÝ = save_pop_thm "¯_î_exp_0_1_thm";
+=TEX
+=TEX
+
+%%%%
+%%%%
+=SML
+set_goal([], ¬µx:¯· x ^ 2 = x * x®);
+a(pure_rewrite_tac[prove_rule[]¬2 = (0 + 1) + 1®, ¯_î_exp_def]);
+a(rewrite_tac[]);
+val Û¯_î_exp_square_thmÝ = save_pop_thm "¯_î_exp_square_thm";
 =TEX
 
 %%%%
@@ -7729,6 +7756,23 @@ a(STRIP_T (rewrite_thm_tac o once_rewrite_rule[¯_times_comm_thm]));
 val Ûexp_plus_thmÝ = save_pop_thm "exp_plus_thm";
 =TEX
 
+The next theorem just collects facts about the exponential function into a useful
+rewrite rule:
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬
+	Exp(î¯ 0) = î¯ 1
+±	(µx· Exp(~x) = Exp x ›-›1)
+±	(µx y· Exp(x + y) = Exp x * Exp y)
+±	(µx·î¯ 0 < Exp x)
+±	(µx·î¯ 0 ¼ Exp x)
+®);
+a(rewrite_tac[exp_def, exp_minus_thm, exp_plus_thm, ¯_¼_def, exp_0_less_thm]);
+val Ûexp_clausesÝ = save_pop_thm "exp_clauses";
+=TEX
+
 The exponential function is monotonic increasing:
 %%%%
 %%%%
@@ -7935,13 +7979,96 @@ set_goal([], ¬
 a(REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(rewrite_tac[eq_sym_rule (±_left_elim exp_def), log_def]);
-(* *** Goal "1" *** *)
+(* *** Goal "2" *** *)
 a(all_fc_tac[exp_0_less_onto_thm] THEN all_var_elim_asm_tac1);
 a(rewrite_tac[conv_rule(ONCE_MAP_C eq_sym_conv) exp_minus_thm, log_def]);
 (* *** Goal "3" *** *)
 a(all_fc_tac[exp_0_less_onto_thm] THEN all_var_elim_asm_tac1);
 a(rewrite_tac[conv_rule(ONCE_MAP_C eq_sym_conv) exp_plus_thm, log_def]);
 val Ûlog_clausesÝ = save_pop_thm "log_clauses";
+=TEX
+We have come a long way without introducing roots, but the time has come.
+It could have been done using the intermediate value theorem much earlier
+on, but we can do it with logarithms now. First we give the logarithm method
+for calculating powers:
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬
+	µm x· î¯ 0 < x ´ x ^ m = Exp (î¯ m * Log x)
+®);
+a(µ_tac THEN induction_tac¬m:î® THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(rewrite_tac[¯_î_exp_0_1_thm, exp_def]);
+(* *** Goal "3" *** *)
+a(rewrite_tac[¯_î_exp_def, î¯_plus_homomorphism_thm, ¯_times_plus_distrib_thm,
+	exp_clauses]);
+a(ALL_ASM_FC_T rewrite_tac[exp_log_thm]);
+a(PC_T1 "¯_lin_arith" prove_tac[]);
+val Û¯_î_exp_exp_log_thmÝ = save_pop_thm "¯_î_exp_exp_log_thm";
+=TEX
+And that gives us the existence of roots of positive values for positive integer exponents):
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬
+	µm x· ³m =  0 ± î¯ 0 < x ´ ¶y·î¯ 0 < y ± y ^ m = x
+®);
+a(REPEAT strip_tac);
+a(¶_tac¬Exp(Log x * (î¯ m)›-›1)®);
+a(lemma_tac ¬î¯ 0 < Exp (Log x * î¯ m ›-›1)® THEN rewrite_tac[exp_0_less_thm]);
+a(ALL_FC_T rewrite_tac[¯_î_exp_exp_log_thm]);
+a(rewrite_tac[log_def]);
+a(once_rewrite_tac[pc_rule1 "¯_lin_arith" prove_rule[]¬µa b c:¯· a * b * c = b * a * c®]);
+a(lemma_tac¬³î¯ m = î¯ 0® THEN1 asm_rewrite_tac[î¯_one_one_thm]);
+a(ALL_FC_T rewrite_tac[¯_recip_clauses, exp_log_thm]);
+val Ûpositive_root_thmÝ = save_pop_thm "positive_root_thm";
+=TEX
+Square roots are particularly useful (and we build in a potentially useful converse into the theorem):
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬
+	µx· î¯ 0 < x ¤ ¶y·î¯ 0 < y ± y ^ 2 = x
+®);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_fc_tac[rewrite_rule[](µ_elim¬2® positive_root_thm)]);
+a(¶_tac¬y® THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(all_var_elim_asm_tac1);
+a(rewrite_tac[¯_î_exp_square_thm]);
+a(bc_thm_tac ¯_0_less_0_less_times_thm THEN REPEAT strip_tac);
+val Ûsquare_root_thmÝ = save_pop_thm "square_root_thm";
+=TEX
+=TEX
+A similar theorem on square roots of non-negative numbers:
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬
+	µx· î¯ 0 ¼ x ¤ ¶y·î¯ 0 ¼ y ± y ^ 2 = x
+®);
+a(rewrite_tac[¯_¼_def] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_fc_tac[rewrite_rule[](µ_elim¬2® positive_root_thm)]);
+a(¶_tac¬y® THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(all_var_elim_asm_tac1);
+a(¶_tac¬î¯ 0® THEN rewrite_tac[¯_î_exp_0_1_thm]);
+(* *** Goal "3" *** *)
+a(all_var_elim_asm_tac1 THEN contr_tac);
+a(lemma_tac¬î¯ 0 < y ^ 2® THEN1
+	(rewrite_tac[¯_î_exp_square_thm] THEN bc_thm_tac ¯_0_less_0_less_times_thm
+		THEN REPEAT strip_tac));
+ (* *** Goal "4" *** *)
+a(all_var_elim_asm_tac1 THEN all_asm_ante_tac);
+a(rewrite_tac[¯_î_exp_square_thm]);
+val Ûsquare_root_thm1Ý = save_pop_thm "square_root_thm1";
 =TEX
 =TEX
 
@@ -8219,10 +8346,8 @@ the basic properties of the sine and cosine functions. The idea is to use the
 defining properties to derive some basic algebraic properties and then use
 the mean value theorem to show that sine and cosine are periodic with a
 period that can be taken as the definition of $2\pi$.
-We give what I consider to be a slight improvement on the treatment in Mitchell: for the algebraic
-facts we follow Mitchel fairly closely, we then use them to show that if $x$ is such that
-$\Sin{x} = \Cos{x}$, then $\Sin{2x} = 1$ and $\Cos{x} = 0$. That there is a least such positive $x$
-follows with a little work from the mean value theorem. This $x$ is $\pi/4$
+See, for example, Mitchell's Calculus Without Analytic Geometry.
+
 %%%%
 %%%%
 =SML
@@ -8327,8 +8452,7 @@ a(LIST_DROP_NTH_ASM_T [3, 4] rewrite_tac);
 a(REPEAT strip_tac THEN asm_rewrite_tac[] THEN PC_T1 "¯_lin_arith" prove_tac[]);
 val Ûsin_cos_plus_thmÝ = save_pop_thm "sin_cos_plus_thm";
 =TEX
-So far we have followed Mitchell fairly closely, we now go via a rather different path.
-First we show that if the sine and cosine functions are equal at $x$ then $\Sin{2x} = 1$
+We now show that if the sine and cosine functions are equal at $x$ then $\Sin{2x} = 1$
 and $\Cos{2x} = 0$.
 %%%%
 %%%%
@@ -8341,9 +8465,50 @@ set_goal([], ¬µx·
 a(REPEAT µ_tac THEN ´_tac);
 a(pure_once_rewrite_tac[pc_rule1 "¯_lin_arith" prove_rule[]¬î¯ 2 * x = x + x®]);
 a(ante_tac(µ_elim¬x® cos_squared_plus_sin_squared_thm));
-a(pure_rewrite_tac[prove_rule[]¬2 = (0 + 1) + 1®] THEN pure_rewrite_tac[¯_î_exp_def]);
-a(asm_rewrite_tac[sin_cos_plus_thm]);
+a(asm_rewrite_tac[¯_î_exp_square_thm, sin_cos_plus_thm]);
 val Ûsin_eq_cos_sin_cos_twice_thmÝ = save_pop_thm "sin_eq_cos_sin_cos_twice_thm";
+=TEX
+We need a special case ($z = 1$) following algebraic inequality, which we state in generality:
+
+%%%%
+%%%%
+=SML
+set_goal([], ¬µx y z:¯· x ^ 2 + y ^ 2 = z ^ 2 ´ Abs x ¼ Abs z®);
+a(contr_tac THEN POP_ASM_T (strip_asm_tac o rewrite_rule[¯_³_¼_less_thm]));
+a(LEMMA_T¬Abs x ^ 2 + Abs y ^ 2 = Abs z ^ 2® ante_tac
+	THEN1 asm_rewrite_tac[¯_abs_squared_thm] THEN contr_tac);
+a(lemma_tac ¬î¯ 0 ¼ Abs z® THEN1 rewrite_tac[¯_0_¼_abs_thm]);
+a(lemma_tac ¬î¯ 0 ¼ Abs y ^ 2® THEN1 
+	(rewrite_tac[¯_î_exp_square_thm] THEN
+		bc_thm_tac ¯_0_¼_0_¼_times_thm THEN REPEAT strip_tac
+			THEN rewrite_tac[¯_0_¼_abs_thm]));
+a(lemma_tac¬Abs z ^ 2 < Abs x ^ 2® THEN_LIST
+	[id_tac, PC_T1 "¯_lin_arith" asm_prove_tac[]]);
+a(lemma_tac¬î¯ 0 < Abs x ± î¯ 0 ¼ Abs x® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(rewrite_tac[¯_î_exp_square_thm]);
+a(bc_thm_tac ¯_¼_less_trans_thm THEN ¶_tac¬Abs z * Abs x®);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(bc_thm_tac ¯_¼_times_mono_thm THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(once_rewrite_tac[¯_times_comm_thm]);
+a(bc_thm_tac ¯_times_mono_thm THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
+val Ûsum_squares_abs_bound_thmÝ = save_pop_thm "sum_squares_abs_bound_thm";
+=TEX
+Whence sine and cosine are of absolute value at most one:
+%%%%
+%%%%
+=SML
+set_goal([], ¬
+	µx:¯· Abs(Sin x) ¼ î¯ 1 ± Abs(Cos x) ¼ î¯ 1
+®);
+a(strip_tac);
+a(strip_asm_tac (µ_elim¬x® cos_squared_plus_sin_squared_thm));
+a(TOP_ASM_T (strip_asm_tac o once_rewrite_rule[¯_plus_comm_thm]));
+a(ante_tac (list_µ_elim[¬Cos x®, ¬Sin x®, ¬î¯ 1®]sum_squares_abs_bound_thm));
+a(ante_tac (list_µ_elim[¬Sin x®, ¬Cos x®, ¬î¯ 1®]sum_squares_abs_bound_thm));
+a(asm_rewrite_tac[¯_î_exp_0_1_thm] THEN REPEAT strip_tac);
+val Ûabs_sin_abs_cos_¼_1_thmÝ = save_pop_thm "abs_sin_abs_cos_¼_1_thm";
 =TEX
 %%%%
 %%%%
