@@ -1,0 +1,2087 @@
+=TEX
+% TQtemplate.tex
+\documentstyle[hol1,11pt,TQ]{article}
+\def\Hide#1{}
+\def\Bool{``$\it{:}bool\,$''}
+\makeindex
+\TPPproject{DRA FRONT END FILTER PROJECT}  %% Mandatory field
+%\TPPvolume{}
+%\TPPpart{}
+\TPPtitle{Specification of $processQuery$}  %% Mandatory field
+\TPPref{DS/FMU/FEF/014}  %% Mandatory field
+\def\SCCSversion{$Revision$
+}
+\TPPissue{\SCCSversion}  %% Mandatory field
+\TPPdate{\FormatDate{$Date$
+}}  %% Mandatory field (with sensible default)
+\TPPstatus{Approved}			%% Mandatory field
+\TPPtype{Specification}
+\TPPkeywords{}
+\TPPauthor{G.~M.~Prout & WIN01}  %% Mandatory field
+%\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
+\TPPauthorisation{R.B.~Jones & HAT Manager}
+\TPPabstract{The formal specification of the function $processQuery$; this 
+completes the specifications of the main functionality of the SSQL semantics  for the
+DRA front end filter project RSRE 1C/6130.}
+%\TPPabstractB{}
+%\TPPabstractC{}
+%\TPPabstractD{}
+%\TPPabstractE{}
+%\TPPabstractF{}
+\TPPdistribution{\parbox[t]{4.0in}{%
+	HAT FEF File \\
+	Simon Wiseman
+}}
+%\TPPclass{CLASSIFICATION}
+\newfont{\icllogo}{icllogo50}
+\def\TPPheadlhs{$\vcenter{\halign{##\cr\icllogo ICL\cr}}$}
+%\def\TPPheadlhs{}
+%\def\TPPheadcentre{}
+%def\TPPheadrhs{}
+%\def\TPPfootlhs{}
+%\def\TPPfootcentre{}
+%\def\TPPfootrhs{}
+
+\begin{document}
+\TPPsetsizes
+\makeTPPfrontpage
+
+\vfill
+\begin{centering}
+
+%\bf Copyright \copyright\ : International Computers Ltd \number\year
+
+\end{centering}
+
+\newpage
+\section {DOCUMENT CONTROL}
+\subsection{Contents List}
+\tableofcontents
+\subsection{Document Cross References}
+\bibliographystyle{fmu}
+\bibliography{fmu,fef}
+
+\subsection{Changes History}
+\begin{description}
+\item[Issue \SCCSversion ({\FormatDate{$Date$
+}}) ] First version.
+
+
+\end{description}
+
+\subsection{Changes Forecast}
+Changes  may be necessary  as a result of issues raised
+during  the transcription of the specification.
+\pagebreak
+\section{GENERAL}
+\subsection{Scope}
+This document completes the formal specifications of the  of the main functionality
+ of the SSQL semantics. It constitutes deliverable D3 of work package 1a, as given
+in section 7 of the Secure Database Technical Proposal, \cite{DS/FMU/017}.
+
+\subsection{Introduction}
+
+
+In this document we give a formal
+specification for the function $processQuery$ which captures the main functionality of SSQL, i.e. how the 
+result of a query is computed from the state of the database. This is item 2 as
+desribed in the introduction to \cite{DS/FMU/FEF/004}. For anything that is incompletely specified in \cite{specssql}, we only give its signature.
+\subsection{Terminology}
+
+
+\section{PRELIMINARIES}
+The following ICL HOL instructions set up the new theory $fef014$  and set the context 
+for the proof tools.
+=SML 
+open_theory "fef005";
+new_theoryÛ"fef014"İ;
+push_pc "hol";
+
+=TEX
+
+
+\section{CONSTRUCTORS ETC.}
+First, we need destructor and discriminator functions for things of type $Item$ and $Val$.
+
+¹HOLCONST
+Ü	ÛdestValuedItemİ 	: Item ­ ValuedItem;
+Ü	ÛdestNullItemİ 	: Item ­ NullItem
+÷üüüüüüüüüüüüüü
+Ü	µ	v:ValuedItem; n:NullItem
+Ü	·	destValuedItem (ValuedItemItem v)	= v 
+Ü	±	destNullItem(NullItemItem n)	= n 
+°
+
+¹HOLCONST
+Ü	ÛisValuedItemİ 	: Item ­ Bool;
+Ü	ÛisNullItemİ 	: Item ­ Bool
+÷üüüüüüüüüüüüüü
+Ü	µ	i:Item
+Ü	·	(isValuedItem i	= ¶ v:ValuedItem 	· i = ValuedItemItem v)
+Ü	±	(isNullItem i	= ¶ n:NullItem 	· i =  NullItemItem n) 
+°
+
+¹HOLCONST
+Ü	ÛdestBoolValİ 	: Val ­ Bool;
+Ü	ÛdestStringValİ 	: Val ­ String;
+Ü	ÛdestIntValİ			: Val ­ Int;
+Ü	ÛdestFloatValİ		: Val ­ Float;
+Ü	ÛdestTimeValİ		: Val ­ Time;
+Ü	ÛdestIntervalValİ		: Val ­ Interval;
+Ü	ÛdestCodeValİ		: Val ­ Code;
+Ü	ÛdestClassValİ		: Val ­ Class
+÷üüüüüüüüüüüüüü
+Ü	µ	b s i f t int c cl
+Ü	·	destBoolVal (BoolVal b)	= b 
+Ü	±	destStringVal(StringVal s)	= s
+Ü	±	destIntVal(IntVal i) = i
+Ü	±	destFloatVal(FloatVal f) = f
+Ü	±	destTimeVal(TimeVal t) = t
+Ü	±	destIntervalVal(IntervalVal int) = int
+Ü	±	destCodeVal(CodeVal c) = c
+Ü	±	destClassVal(ClassVal cl) = cl 
+°
+
+¹HOLCONST
+Ü	ÛisBoolValİ 	: Val ­ Bool;
+Ü	ÛisStringValİ 	: Val ­ Bool;
+Ü	ÛisIntValİ			: Val ­ Bool;
+Ü	ÛisFloatValİ		: Val ­ Bool;
+Ü	ÛisTimeValİ		: Val ­ Bool;
+Ü	ÛisIntervalValİ		: Val ­ Bool;
+Ü	ÛisCodeValİ		: Val ­ Bool;
+Ü	ÛisClassValİ		: Val ­ Bool
+÷üüüüüüüüüüüüüü
+Ü	µ	v : Val
+Ü	·	(isBoolVal v	= ¶ b:Bool 	· v = BoolVal b)
+Ü	±	(isStringVal v	= ¶ s:String 	· v = StringVal s)
+Ü	±	(isIntVal v	= ¶ i:Int 	· v = IntVal i)
+Ü	±	(isFloatVal v	= ¶ f:Float 	· v = FloatVal f)
+Ü	±	(isTimeVal v	= ¶ t:Time 	· v = TimeVal t)
+Ü	±	(isIntervalVal v	= ¶ int:Interval 	· v = IntervalVal int)
+Ü	±	(isCodeVal v	= ¶ c:Code 	· v = CodeVal c)
+Ü	±	(isClassVal v	= ¶ cl:Class 	· v = ClassVal cl)
+°
+
+\section{CONTINUATION OF TRANSLATION}
+
+
+=SML
+declare_type_abbrev(Û"Col"İ,[],” Ide LIST®);
+=TEX
+
+=SML
+declare_type_abbrev(Û"Tuple"İ,[],” Col ­ Data + Errors®);
+=TEX
+
+\HOLindexEntry{GroupedResult}
+¹HOLLABPROD GroupedResultüüüüüüüüü
+Ü	ÛG_resİ 		: Data LIST;
+Ü	ÛG_groupİ		: Tuple LIST
+°üüüüüüüüüüüüüüüüüü
+
+
+The type ${Maybe}$ is given as a one-point type.
+
+=SML
+declare_type_abbrev(Û"Maybe"İ,[],” ONE®);
+declare_alias(Û"maybe"İ,¬One®);
+=TEX
+
+=SML
+declare_type_abbrev(Û"MaybeResult"İ,[],” Maybe + Data LIST®);
+=TEX
+
+\HOLindexEntry{Env}
+¹HOLLABPROD Envüüüüüüüüü
+Ü	ÛE_rowİ 		: Tuple;
+Ü	ÛE_groupİ		: Tuple LIST
+°üüüüüüüüüüüüüüüüüü
+
+$userName$, $userDirectory$, $userClearance$ and $timeNow$ are modelled as global variables.
+
+
+
+¹HOLCONST
+Ü	ÛuserNameİ : String;
+Ü	ÛuserDirectoryİ : Ide LIST;
+Ü	ÛuserClearanceİ : Class;
+Ü	ÛtimeNowİ : Time
+÷üüüüüüüüüüüüüü
+Ü	T	
+°
+=TEX
+\section{GIVEN FUNCTIONS}
+
+In this section, signatures only are given for those functions that have not been defined in the informal specification.
+
+=SML
+declare_infix (150,"lub");
+=TEX
+
+¹HOLCONST
+Ü	$Ûlubİ : Class ­ Class ­ Class
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	T
+°
+
+
+For convenience, we give the least upper bound over a sequence of classes.
+
+
+¹HOLCONST
+Ü	Ûlublİ : Class LIST ­ Class
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	T
+°
+
+
+=SML
+declare_infix (150,"dominates_w");
+=TEX
+
+¹HOLCONST
+Ü	$Ûdominates_wİ : Worth ­ Worth ­ Bool
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	T
+°
+
+=SML
+declare_infix (150,"lub_w");
+=TEX
+
+¹HOLCONST
+Ü	$Ûlub_wİ : Worth ­ Worth ­ Worth
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	T
+°
+
+We give the least upper bound over a sequence of worths.
+
+¹HOLCONST
+Ü	$Ûlub_wlİ : Worth LIST ­ Worth
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	T
+°
+
+The different `sorts' of operators are modelled
+as strings. 
+
+¹HOLCONST
+Ü	ÛNotİ ÛAndİ ÛOrİ ÛPlusİ ÛEqualİ		: String
+÷üüüüüüüüüüüüüü
+Ü	Not	= "Not"
+Ü±	And	= "And"
+Ü±	Or	= "Or"
+Ü±	Plus	= "Plus"
+Ü±	Equal	= "Equal"
+°
+
+=SML
+declare_type_abbrev(Û"Op"İ,[],” String®);
+=TEX
+An auxiliary function to obtain $Data$ from a classification, a worth and a value.
+
+¹HOLCONST
+Ü	ÛnewDataİ : Class ­ Worth ­ Val  ­ Data
+÷üüüüüüüüüüüüüü
+Ü	µ c w v · newData c w v = 
+Ü		MkData c (ValuedItemItem(MkValuedItem w v))
+°
+We require the least upper bound of clearances from a list of data together
+with the clearance of the user.
+¹HOLCONST
+Ü	Ûlub_dataİ : Data LIST ­ Class
+÷üüüüüüüüüüüüüü
+Ü	µ dl · lub_data dl = (userClearance lub (lubl (Map Dat_class dl)))
+°
+Similarly for worths.
+¹HOLCONST
+Ü	Ûlub_wdataİ : Data LIST ­ Worth
+÷üüüüüüüüüüüüüü
+Ü	µ dl · lub_wdata dl = lub_wl(Map (VI_worth o destValuedItem o Dat_item)dl)
+°
+$ExceptionData$ has classification at the least upper bound of a list
+of data and the clearance of the user. It's value is $ExceptionVal$, with worth $worthless$.
+¹HOLCONST
+Ü	ÛExceptionDataİ : Data LIST ­ Data
+÷üüüüüüüüüüüüüü
+Ü	µ dl · ExceptionData dl = newData (lub_data  dl) worthless ExceptionVal 
+°
+$NullData$ also has classification at the least upper bound of a list
+of data and the clearance of the user.
+
+¹HOLCONST
+Ü	ÛNullDataİ : Data LIST ­ Data
+÷üüüüüüüüüüüüüü
+Ü	µ dl · NullData dl = MkData (lub_data  dl)(NullItemItem null) 
+°
+
+=SML
+declare_alias(Û"true"İ,¬T®);
+declare_alias(Û"false"İ,¬F®);
+=TEX
+
+The specification  in \cite{specssql} of the semantics of the application of operators is incomplete.
+We have not modelled separately the `isNotCleared' case from \cite{specssql}
+because the data obtained from the application of an operator is always 
+classified at the least upper bound of the classification of the inputs and the 
+clearance of the user. If that least upper bound is not dominated by the user's
+clearance then the data will be treated in the same way as a classification
+result is treated in \cite{specssql}.
+
+
+
+¹HOLCONST
+Ü	ÛapplyNotİ : Data LIST ­ Data
+÷üüüüüüüüüüüüüü
+Üµ dl · applyNot dl = 
+Ü	if ³(#dl = 1) 
+Ü	then 	ExceptionData dl
+Ü	else 	if isNullItem (Dat_item (Hd dl)) 
+Ü	then Hd dl
+Ü	else 	let v = VI_val(destValuedItem(Dat_item (Hd dl)))
+Ü		in 
+Ü		if isBoolVal v 
+Ü		then newData(lub_data dl)(lub_wdata dl)(BoolVal(³ (destBoolVal v)))
+Ü		else ExceptionData dl
+°
+
+
+¹HOLCONST
+Ü	ÛapplyAndİ : Data LIST ­ Data
+÷üüüüüüüüüüüüüü
+Üµ dl · applyAnd dl =
+Ü	if ³(#dl = 2) 
+Ü	then ExceptionData dl
+Ü	else	
+Ü	let d‰1 = Hd dl and d‰2 = Hd(Tl dl)
+Ü	in	
+Ü	if isValuedItem (Dat_item d‰1) 
+Ü	then	
+Ü	let v‰1 = VI_val(destValuedItem(Dat_item d‰1))
+Ü	in
+Ü		if isValuedItem (Dat_item d‰2)
+Ü		then	
+Ü		let v‰2 = VI_val(destValuedItem(Dat_item d‰2))
+Ü		in
+Ü			if ((isBoolVal v‰1) ± (isBoolVal v‰2))
+Ü			then	newData(lub_data dl)(lub_wdata dl)
+Ü				(BoolVal((destBoolVal v‰1) ± (destBoolVal v‰2)))
+Ü			else if  (isBoolVal v‰1) ± (destBoolVal v‰1 = false)
+Ü			then  newData(lub_data dl)(lub_wdata dl)(BoolVal false)
+Ü			else if (isBoolVal v‰2) ± (destBoolVal v‰2 = false)
+Ü			then  newData(lub_data dl)(lub_wdata dl)(BoolVal false)
+Ü			else 	ExceptionData dl
+Ü		else NullData dl
+Ü	else 	NullData dl
+°
+¹HOLCONST
+Ü	ÛapplyOrİ : Data LIST ­ Data
+÷üüüüüüüüüüüüüü
+Üµ dl · applyOr dl =
+Ü	if ³(#dl = 2) 
+Ü	then ExceptionData dl
+Ü	else	
+Ü	let d‰1 = Hd dl and d‰2 = Hd(Tl dl)
+Ü	in	
+Ü	if isValuedItem (Dat_item d‰1) 
+Ü	then	
+Ü	let v‰1 = VI_val(destValuedItem(Dat_item d‰1))
+Ü	in
+Ü		if isValuedItem (Dat_item d‰2)
+Ü		then	
+Ü		let v‰2 = VI_val(destValuedItem(Dat_item d‰2))
+Ü		in
+Ü			if ((isBoolVal v‰1) ± (isBoolVal v‰2))
+Ü			then	newData(lub_data dl)(lub_wdata dl)
+Ü				(BoolVal((destBoolVal v‰1) ² (destBoolVal v‰2)))
+Ü			else if  (isBoolVal v‰1) ± (destBoolVal v‰1 = true)
+Ü			then  newData(lub_data dl)(lub_wdata dl)(BoolVal true)
+Ü			else if (isBoolVal v‰2) ± (destBoolVal v‰2 = true)
+Ü			then  newData(lub_data dl)(lub_wdata dl)(BoolVal true)
+Ü			else 	ExceptionData dl
+Ü		else NullData dl
+Ü	else 	NullData dl
+°
+
+We give the signature for a plus operator on type $Int$.
+
+=SML
+declare_infix (300,"intPlus");
+=TEX
+
+¹HOLCONST
+Ü	$ÛintPlusİ : Int ­ Int ­ Int
+÷üüüüüüüüüüüüüü
+Ü	T
+°
+
+	
+¹HOLCONST
+Ü	ÛapplyPlusİ : Data LIST ­ Data
+÷üüüüüüüüüüüüüü
+Üµ dl · applyPlus dl = 
+Ü	if ³(#dl = 2) 
+Ü	then ExceptionData dl
+Ü	else	
+Ü	let d‰1 = Hd dl and d‰2 = Hd(Tl dl)
+Ü	in	
+Ü		if (isNullItem (Dat_item d‰1) ² isNullItem (Dat_item d‰2))
+Ü		then	 NullData dl
+Ü		else
+Ü		let 	v‰1 = VI_val(destValuedItem(Dat_item d‰1)) 
+Ü		and	v‰2 = VI_val(destValuedItem(Dat_item d‰2))
+Ü		in	if ((isIntVal v‰1) ± (isIntVal v‰2))
+Ü			then	newData(lub_data dl)(lub_wdata dl)
+Ü				(IntVal((destIntVal v‰1) intPlus (destIntVal v‰2)))
+Ü			else 	ExceptionData dl
+°
+
+
+¹HOLCONST
+Ü	ÛapplyEqualİ : Data LIST ­ Data
+÷üüüüüüüüüüüüüü
+Üµ dl · applyEqual dl = 
+Ü	if ³(#dl = 2) 
+Ü	then ExceptionData dl
+Ü	else	
+Ü	let d‰1 = Hd dl and d‰2 = Hd(Tl dl)
+Ü	in	
+Ü		if (isNullItem (Dat_item d‰1) ² isNullItem (Dat_item d‰2))
+Ü		then	 NullData dl
+Ü		else
+Ü		let 	v‰1 = VI_val(destValuedItem(Dat_item d‰1)) 
+Ü		and	v‰2 = VI_val(destValuedItem(Dat_item d‰2))
+Ü		in	newData(lub_data dl)(lub_wdata dl)(BoolVal(v‰1 = v‰2))
+°
+
+
+¹HOLCONST
+Ü	Ûapplyİ : Op ­ Data LIST ­ Data
+÷üüüüüüüüüüüüüü
+Üµ dl·	apply Not dl 		= applyNot dl
+Ü±	apply And dl 		= applyAnd dl
+Ü±	apply Or dl		= applyOr dl
+Ü±	apply Plus dl 		= applyPlus dl
+Ü±	apply Equal dl	= applyEqual dl
+°
+
+
+
+
+
+
+We will use  $ë$ and $Cons$, where appropriate, for concatenation of two lists
+and prepending or appending an element to a list.
+\section{AUXILIARY FUNCTIONS} \label{AUX}
+
+=SML
+declare_infix (150,"o1");
+=TEX
+
+¹HOLCONST
+Ü	$Ûo1İ : ('x ­ 'y + Errors) ­ ('y ­ 'z + Errors) ­ ('x ­ 'z + Errors)
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ f g x · (f o1 g) x = 	if	isVal (f x) 
+Ü					then 	g(destVal(f x))
+Ü					else 	giveError(destError (f x))
+°
+
+
+=SML
+declare_infix (150,"o2");
+=TEX
+
+¹HOLCONST
+Ü	$Ûo2İ : ('x + Errors) ­ ('x ­ 'y + Errors) ­ ('y + Errors)
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ x f · (x o2 f)  = 	if	isVal x 
+Ü				then 	f (destVal x)
+Ü				else 	giveError (destError x)
+°
+
+
+
+=SML
+declare_infix (150,"o3");
+=TEX
+
+¹HOLCONST
+Ü	$Ûo3İ : ('x + Errors) ­ ('x ­ ('y ­ 'z + Errors)) ­ ('y ­ 'z + Errors)
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ x f y · (x o3 f) y  = 	if	isVal x 
+Ü					then 	(f (destVal x)) y
+Ü					else 	giveError (destError x)
+°
+We give  further functions of this form.
+=SML
+declare_infix (150,"o4");
+=TEX
+
+¹HOLCONST
+Ü	$Ûo4İ : ('x ­ 'y + Errors) ­ ('y ­ 'z) ­ ('x ­ 'z + Errors)
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ f g x · (f o4 g) x = 	if	isVal (f x) 
+Ü					then 	giveVal(g(destVal(f x)))
+Ü					else 	giveError(destError (f x))
+°
+=SML
+declare_infix (150,"o5");
+=TEX
+
+¹HOLCONST
+Ü	$Ûo5İ : ('x + Errors) ­ ('x ­ 'y) ­ ('y + Errors)
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ  x f · (x o5 f)  = 	if	isVal x 
+Ü				then 	giveVal(f (destVal x))
+Ü				else 	giveError (destError x)
+°
+
+=SML
+declare_infix (150,"o6");
+=TEX
+
+¹HOLCONST
+Ü	$Ûo6İ : (('x + Errors) ¸ ('y + Errors)) ­ ('x ­ 'y ­ 'z)  ­  ('z + Errors)
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ f x y · ((x,y) o6 f ) =	if	isVal x 
+Ü					then 	if isVal y 
+Ü						then giveVal(f(destVal x)(destVal y))
+Ü						else 	giveError (destError y)
+Ü					else 	if isVal y 
+Ü						then giveError (destError x)
+Ü						else giveError ((destError x) ë (destError y))
+°
+
+=SML
+declare_infix (150,"o7");
+=TEX
+
+¹HOLCONST
+Ü	$Ûo7İ : 'x  ­ ('x ­ 'y) + Errors ­ ('y + Errors) 
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ f x · (x o7 f)  = 	if	isVal f 
+Ü				then 	giveVal((destVal f) x)
+Ü				else 	giveError (destError f)
+°
+
+We cannot alias all the above because resolution would be ambiguous.
+
+=SML
+declare_infix (150,"*");
+declare_alias(Û"*"İ,¬$o1®);
+declare_alias(Û"*"İ,¬$o2®);
+declare_alias(Û"*"İ,¬$o3®);
+declare_alias(Û"*"İ,¬$o4®);
+declare_alias(Û"*"İ,¬$o6®);
+=TEX
+We will use $Hd$, $Tl$ , $Front$ and $Last$ for taking apart lists.
+
+=SML
+declare_infix (150,"list_À");
+=TEX
+
+¹HOLCONST
+Ü	$Ûlist_Àİ : 'x LIST ­ 'x LIST ­ 'x LIST
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ l‰1 · (l‰1 list_À []) = l‰1
+Ü	±	µ l‰2 x ·
+Ü			(l‰1 list_À (l‰2 ë [x])) 
+Ü			= 	if  x  Elems l‰1 then l‰1 list_À l‰2
+Ü				else (l‰1 list_À l‰2) ë [x]
+°
+
+We will use \verb+#+ for the length of a list and $Flat$ for concatenating a list
+of lists into a single list.
+
+=SML
+declare_infix (150,"amp1");
+=TEX
+
+¹HOLCONST
+Ü	$Ûamp1İ : ('x + Errors) ­ ('x + Errors) ­ ('x LIST + Errors)
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ x‰1 x‰2 · (x‰1 amp1 x‰2) =
+Ü	if 	isVal x‰1
+Ü		then	if	isVal x‰2
+Ü			then	giveVal([destVal x‰1] ë [destVal x‰2])
+Ü			else giveError (destError x‰2)
+Ü	else	if 	isVal x‰2
+Ü		then	giveError (destError x‰1)
+Ü		else	giveError(destError x‰1 ë destError x‰2)
+°
+
+=SML
+declare_infix (150,"amp2");
+=TEX
+
+¹HOLCONST
+Ü	$Ûamp2İ : ('x + Errors) ­ ('x LIST + Errors) ­ ('x LIST + Errors)
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ x xl · (x amp2 xl) =
+Ü	if 	isVal x
+Ü		then	if	isVal xl
+Ü			then	giveVal(Cons(destVal x) (destVal xl))
+Ü			else	giveError (destError xl)
+Ü	else	if 	isVal xl
+Ü		then	giveError (destError x)
+Ü		else	giveError(destError x ë destError xl)
+°
+
+=SML
+declare_infix (150,"amp3");
+=TEX
+
+¹HOLCONST
+Ü	$Ûamp3İ : ('x LIST + Errors) ­ ('x + Errors) ­ ('x LIST + Errors)
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ xl x · (xl amp3 x) =
+Ü	if 	isVal x
+Ü		then	if	isVal xl
+Ü			then	giveVal((destVal xl) ë [destVal x])
+Ü			else	giveError (destError xl)
+Ü	else	if 	isVal xl
+Ü		then	giveError (destError x)
+Ü		else	giveError(destError xl ë destError x)
+°
+
+=SML
+declare_infix (150,"amp4");
+=TEX
+
+¹HOLCONST
+Ü	$Ûamp4İ : ('x LIST + Errors) ­ ('x LIST + Errors) ­ ('x LIST + Errors)
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ xl‰1 xl‰2 · (xl‰1 amp4 xl‰2) =
+Ü	if 	isVal xl‰1
+Ü		then	if	isVal xl‰2
+Ü			then	giveVal((destVal xl‰1) ë (destVal xl‰2))
+Ü			else	giveError (destError xl‰2)
+Ü	else	if 	isVal xl‰2
+Ü		then	giveError (destError xl‰1)
+Ü		else	giveError((destError xl‰1) ë (destError xl‰2))
+°
+=SML
+declare_infix(150,"&");
+declare_alias(Û"&"İ,¬$amp1®);
+declare_alias(Û"&"İ,¬$amp2®);
+declare_alias(Û"&"İ,¬$amp3®);
+declare_alias(Û"&"İ,¬$amp4®);
+=TEX
+
+¹HOLCONST
+Ü	Ûseqİ : Num ­ 'x  ­ 'x LIST 
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ n x · seq n x =	if n = 0 then []
+Ü				else Cons x (seq (n - 1) x)
+°
+
+¹HOLCONST
+Ü	Ûenseqİ : (Num ­ 'x  + Errors) ­ 'x LIST 
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ f · enseq f = 
+Ü	let 	add = {(i,j) | 1 ¼ i ± µ j · 1 ¼ i ± j ¼ i ´ isVal (f j)}
+Ü	in	RelList add 
+°
+
+
+¹HOLCONST
+Ü	Ûpromoteİ : ('x ­ 'y + Errors) ­ ('x LIST­ 'y LIST + Errors) 
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ f s · promote f s = 
+Ü	if 	s = [] then giveVal[]
+Ü	else	(f (Hd s) & promote f (Tl s)) 	
+°
+
+Note : We will use the standard constant $Map$ in the cases where $promote$ has been used in the informal specification with functions that do not return sum types.
+
+¹HOLCONST
+Ü	Ûfindİ : 'x LIST ­ 'x  ­ Num + Errors  
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ s e · find s e = 	if s = [] then giveError(seq 1 error)
+Ü				else if (Hd s) = e then giveVal 1
+Ü				else if isVal(find (Tl s) e) then 
+Ü					giveVal(1 + destVal(find (Tl s) e))	
+Ü				else (find (Tl s) e)
+°
+
+
+¹HOLCONST
+Ü	Ûdistinctİ : 'x LIST ­ 'x LIST  
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	distinct [] = []
+Ü±	µ x l ·	distinct (l ë [x]) = 	
+Ü		if (x  Elems l) then distinct l
+Ü		else (distinct l) ë [x]		
+°
+
+¹HOLCONST
+Ü	ÛnoErrorsİ : Errors  
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	noErrors = []		
+°
+
+¹HOLCONST
+Ü	Ûone_colİ : Data LIST LIST ­ Data LIST + Errors  
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	one_col = promote (Ì ds · 
+Ü		if #ds = 1 then giveVal(Hd ds)
+Ü		else giveError(seq 1 tooWide))	
+°
+
+¹HOLCONST
+Ü	Ûone_resultİ : Data LIST ­ Data + Errors  
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ ds · one_result ds = 
+Ü		if #ds = 1 then giveVal(Hd ds)
+Ü		else giveError(seq 1 tooTall)	
+°
+
+¹HOLCONST
+Ü	Ûmake_dataİ : Val ­ Data  
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ v · make_data v = newData userClearance worthless v	
+°
+
+
+¹HOLCONST
+Ü	ÛfillTabİ : Tab ­ Tab  
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ i · fillTab i = if #i = 1 then userDirectory  ë i else i	
+°
+
+¹HOLCONST
+Ü	ÛfillColİ : Tab ­ Tab  
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ i · fillCol i = if #i = 2 then userDirectory  ë i else i	
+°
+
+We need access functions for obtaining directories from states, tables from 
+directories, column positions from tables and data from column number.
+
+¹HOLCONST
+Ü	ÛgetDirİ : State ­ Tab ­ Directory + Errors 
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ st tab · getDir st tab = 
+Ü		if tab  Dom (repState st)  then giveVal(repState st @ tab)
+Ü		else giveError (seq 1 noSuchDirectory) 	
+°
+
+¹HOLCONST
+Ü	ÛgetTabİ : Directory ­ Ide ­ TableSpec + Errors 
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ dir i · getTab dir i = 
+Ü		if i  Dom (Dir_tables dir)  then giveVal(Dir_tables dir @ i)
+Ü		else giveError (seq 1 noSuchTable) 	
+°
+
+¹HOLCONST
+Ü	ÛgetColPosnİ : TableSpec ­ Ide ­ Num + Errors 
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ ts i · getColPosn ts i = 
+Ü		if i  {name| ¶ c · c  TS_colspecs ts  ± CS_ide c = name}
+Ü		then giveVal(Å x· x  {posn| ¶ c · c  TS_colspecs ts  ± CS_posn c = posn})
+Ü		else giveError (seq 1 noSuchColumn) 	
+°
+
+¹HOLCONST
+Ü	ÛgetDataİ : Row ­ Num ­ Data + Errors 
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ r n · getData r n = 
+Ü		if n  Dom (R_data r) then giveVal((R_data r) @ n)
+Ü		else giveError (seq 1 noSuchColumn) 	
+°
+Now we define $lookup $.
+¹HOLCONST
+Ü	Ûlookupİ : State ­ Tab ­ TableSpec + Errors 
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ st tab · lookup st tab =
+Ü			let dir = getDir st (Front tab)
+Ü			in 	if isVal dir then getTab (destVal dir) (Last tab)
+Ü				else giveError(destError dir)
+°
+
+
+¹HOLCONST
+Ü	ÛcheckCompleteİ : Data LIST ­ Bool 
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	checkComplete [] = true
+Ü±	µ d tl · checkComplete (Cons d tl) =
+Ü			if ³(userClearance dominates (Dat_class d)) then false
+Ü			else checkComplete tl
+°
+
+We supply a boolean $isCleared$ which is semantically the same as 
+=INLINEFT 
+isData
+=TEX 
+in the informal specification.
+
+¹HOLCONST
+Ü	ÛisClearedİ : Data ­ Bool 
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ d : Data · isCleared d = (userClearance dominates (Dat_class d)) 	
+°
+We also supply a boolean $isNotCleared$ which is semantically the same as 
+=INLINEFT 
+isClass
+=TEX 
+in the informal specification.
+¹HOLCONST
+Ü	ÛisNotClearedİ : Data ­ Bool 
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ d : Data · isNotCleared d = ³ (isCleared d) 	
+°
+
+
+¹HOLCONST
+Ü	Ûcheck_where_completeİ : Bool  ­ Bool ­ Data ­ Data + Errors
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ comp b d · check_where_complete comp b d =
+Ü		if comp then giveVal d
+Ü		else if	 ³ (isCleared d) then giveError(seq 1 notCleared)
+Ü		else if isNullItem (Dat_item d) then giveVal d
+Ü		else 	let v = VI_val(destValuedItem(Dat_item d))
+Ü			in 
+Ü			if isBoolVal v then 
+Ü				if (destBoolVal v) = b then giveError(seq 1 notCleared)
+Ü				else giveVal d
+Ü			else giveError(seq 1 wrongType)
+Ü				 	
+°
+
+
+
+¹HOLCONST
+Ü	ÛresultBoolİ : Data ­ Bool + Errors
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ d : Data · resultBool d =
+Ü	if 	³ isCleared d then giveVal false
+Ü	else 	if isNullItem (Dat_item d) then giveVal false
+Ü	else 	let v = VI_val(destValuedItem(Dat_item d))
+Ü		in 
+Ü		if isBoolVal v then giveVal(destBoolVal v)
+Ü	else	giveError (seq 1 wrongType)	
+°
+
+We give a function $take\_data$ which returns the error $notCleared$ where appropriate.
+
+¹HOLCONST
+Ü	Ûtake_dataİ : Data ­ Data + Errors
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ d · take_data d = 	if isCleared d then giveVal d
+Ü 				else giveError(seq 1 notCleared)	
+°
+
+¹HOLCONST
+Ü	ÛresultClassİ : Data ­ Class + Errors
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ d : Data · resultClass d =
+Ü	let vi i = 	if isValuedItem i 
+Ü			then giveVal (destValuedItem i) 
+Ü			else giveError(seq 1 nullValue)
+Ü	and valClass v =if isClassVal v 
+Ü			then giveVal (destClassVal v) 
+Ü			else giveError(seq 1 wrongType)
+Ü	in	((((take_data d) o5 Dat_item) * vi) o5 VI_val) * valClass
+°
+
+
+¹HOLCONST
+Ü	Ûextractİ : Bool LIST ­ 'x LIST ­ 'x LIST
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ bs s · extract bs s =
+Ü	if bs = [] then s
+Ü	else if s = [] then s
+Ü	else if Hd bs = true then Cons (Hd s) (extract (Tl bs) (Tl s))
+Ü	else extract (Tl bs) (Tl s) 	
+°
+
+¹HOLCONST
+Ü	ÛemptyTupleİ : Col ­ Data + Errors
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ c · emptyTuple c = giveError (seq 1 noSuchColumn) 	
+°
+
+¹HOLCONST
+Ü	ÛemptyEnvİ : Env
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	emptyEnv = MkEnv emptyTuple (seq 1 emptyTuple) 	
+°
+
+
+We define the auxiliary functions for $join$ separately.
+=SML
+declare_infix(150,"star1");
+=TEX
+
+¹HOLCONST
+Ü	$Ûstar1İ : Tuple ­ Tuple ­ Tuple
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ a b c ·  (a star1 b) c =
+Ü	if a c = giveError(seq 1 noSuchColumn) then b c
+Ü	else if b c = giveError(seq 1 noSuchColumn) then a c
+Ü	else if (isVal (a c) ± isVal (b c)) then giveError(seq 1 ambiguousColumn)
+Ü	else if (isError (a c) ± isError (b c)) then 
+Ü			 giveError(destError(a c) list_À destError(b c))
+Ü	else if isError (a c) then a c
+Ü	else b c
+°
+=SML
+declare_infix(150,"star2");
+=TEX
+
+¹HOLCONST
+Ü	$Ûstar2İ : Tuple ­ Tuple LIST ­ Tuple LIST
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ a b  ·  (a star2 b)  =
+Ü	if b = [] then []
+Ü	else Cons (a star1 (Hd b)) (a star2 (Tl b))
+°
+
+=SML
+declare_infix(150,"star3");
+=TEX
+
+¹HOLCONST
+Ü	$Ûstar3İ : Tuple LIST ­ Tuple LIST ­ Tuple LIST
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ a b  ·  (a star3 b)  =
+Ü	if a = [] then []
+Ü	else ((Hd a) star2 b) ë ((Tl a) star3 b)
+°
+
+¹HOLCONST
+Ü	Ûjİ : Tuple LIST ­ Tuple LIST  LIST ­ Tuple LIST
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ t s  ·  j t s  =
+Ü	if s = [] then t
+Ü	else j (t star3 (Hd s))(Tl s)
+°
+
+Finally the $join$ function
+
+¹HOLCONST
+Ü	Ûjoinİ : Tuple LIST LIST ­ Tuple LIST
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	join = j []  	
+°
+
+=SML
+declare_infix(150,"starstar1");
+=TEX
+
+¹HOLCONST
+Ü	$Ûstarstar1İ : Tuple  ­ Tuple ­ Tuple
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ a b c ·  (a starstar1 b) c =
+Ü	if (b c) = giveError(seq 1 noSuchColumn) then a c
+Ü	else b c	
+°
+
+=SML
+declare_infix(150,"starstar2");
+=TEX
+
+¹HOLCONST
+Ü	$Ûstarstar2İ : Tuple  ­ Tuple LIST ­ Tuple LIST
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ a b ·  (a starstar2 b) =
+Ü	if b = [] then []
+Ü	else (Cons (a starstar1 (Hd b)) (a starstar2 (Tl b)))	
+°
+=SML
+declare_infix(150,"**");
+declare_alias(Û"**"İ,¬$starstar1®);
+declare_alias(Û"**"İ,¬$starstar2®);
+=TEX
+
+The function $visibleRows$ is unnecessary since $processQuery$ only
+applies to the hidden state of the database.
+
+Before we can proceed, we need to specify some of the Syntactic functions.
+
+\section{SYNTACTIC CLAUSES}
+We first define the different `sorts' of SSQL as new types. ($Query$ has
+already been introduced in \cite{DS/FMU/FEF/004}).
+
+=SML
+new_type("Value",0);
+=TEX
+=SML
+new_type("Col_spec",0);
+=TEX
+=SML
+new_type("Table_spec",0);
+=TEX
+=SML
+new_type("Col_name",0);
+=TEX
+=SML
+new_type("From_spec",0);
+=TEX
+=SML
+new_type("Set_clause",0);
+=TEX
+=SML
+new_type("Tuple_list",0);
+=TEX
+=SML
+new_type("Insert_list",0);
+=TEX
+=SML
+new_type("Classified_value",0);
+=TEX
+=SML
+new_type("Select_list",0);
+=TEX
+
+
+
+¹HOLCONST
+Ü	Ûdenote_nullİ : Value;
+Ü	Ûdenote_voidİ : Value;
+Ü	Ûdenote_trueİ : Value;
+Ü	Ûdenote_falseİ : Value;
+Ü	Ûdenote_integerİ : Int ­ Value;
+Ü	Ûdenote_stringİ : String ­ Value;
+Ü	Ûdenote_floatİ : Float ­ Value;
+Ü	Ûdenote_timeİ : Time ­ Value;
+Ü	Ûdenote_intervalİ : Interval ­ Value;
+Ü	Ûdenote_classİ : Class ­ Value;
+Ü	Ûdenote_codeİ : Code ­ Value
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	T  	
+°
+
+¹HOLCONST
+Ü	Ûmonopİ : Op ­ Value ­ Value;
+Ü	Ûbinopİ : Op ­ (Value  ¸ Value) ­ Value;
+Ü	Ûset_func_allİ : Op ­ Value ­ Value;
+Ü	Ûcount_allİ : Value;
+Ü	Ûall_binopİ : Op ­ Value ­ Tuple_list ­ Value;
+Ü	Ûcontentsİ : Col_spec ­ Value;
+Ü	Ûclassificationİ : Col_spec ­ Value
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	T  	
+°
+
+¹HOLCONST
+Ü	Ûuserİ : Value;
+Ü	Ûclearanceİ : Value;
+Ü	Ûcurrent_timeİ : Value
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	T  	
+°
+
+¹HOLCONST
+Ü	Ûdenote_col_specİ : Ide LIST ­ Col_spec;
+Ü	Ûdenote_table_specİ : Ide LIST ­ Table_spec;
+Ü	Ûdenote_col_nameİ : Ide ­ Col_name
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	T  	
+°
+
+¹HOLCONST
+Ü	Ûfromİ : Table_spec ­ From_spec;
+Ü	Ûcorrelate_fromİ : Ide ­ Table_spec ­ From_spec
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	T  	
+°
+
+¹HOLCONST
+Ü	Ûset_valueİ : Col_name ­ Value ­ Set_clause;
+Ü	Ûset_classİ : Col_name ­ Value ­ Set_clause;
+Ü	Ûset_class_and_valueİ : Col_name ­ Value ­ Value ­ Set_clause
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	T  	
+°
+
+¹HOLCONST
+Ü	Ûall_tuplesİ : Select_list ­ From_spec LIST ­ Value ­ 
+Ü				Col_spec LIST ­ Value ­ Tuple_list;
+Ü	Ûdistinct_tuplesİ : Select_list ­ From_spec LIST ­ Value ­ 
+Ü				Col_spec LIST ­ Value ­ Tuple_list;
+Ü	Ûevaluateİ : Select_list ­ From_spec LIST ­ Value ­ 
+Ü				Col_spec LIST ­ Value ­ Tuple_list
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	T  	
+°
+
+¹HOLCONST
+Ü	Ûinsert_tuplesİ : Tuple_list ­ Insert_list;
+Ü	Ûtupleİ : Classified_value LIST ­ Insert_list;
+Ü	Ûunionİ : Insert_list­ Insert_list ­ Insert_list
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	T  	
+°
+
+¹HOLCONST
+Ü	Ûclassifyİ : Value ­ Value ­ Classified_value;
+Ü	Ûclassify_defaultİ : Value ­ Classified_value
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	T  	
+°
+
+¹HOLCONST
+Ü	Ûall_columnsİ : Select_list;
+Ü	Ûselect_valuesİ : Value LIST ­ Select_list
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	T  	
+°
+
+¹HOLCONST
+Ü	Ûinsertİ : Table_spec ­ Col_name LIST ­ Insert_list ­ Query;
+Ü	Ûdeleteİ : From_spec ­ Value ­ Query;
+Ü	Ûupdateİ : From_spec ­ Set_clause LIST ­ Value ­ Col_spec LIST
+Ü				­Value ­ Query;
+Ü	Ûselectİ : Tuple_list ­ Query
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	T  	
+°
+\section{SYNTACTIC FUNCTIONS} \label{SYN}
+
+¹HOLCONST
+Ü	ÛCol_specİ : Col_spec ­ Col
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ il · Col_spec (denote_col_spec il) = fillCol il 	
+°
+
+¹HOLCONST
+Ü	ÛTable_specİ : Table_spec ­ Tab
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ il · Table_spec (denote_table_spec il) = fillTab il 	
+°
+
+\subsection{Auxiliary Functions - Continued}
+
+We continue with the translation of the auxiliary functions from section \ref{AUX}.
+Note that we do not check the existence class of rows or columns.
+
+
+
+¹HOLCONST
+Ü	ÛprojectTuplesİ : State ­ Table_spec  ­ Tab ­ Tuple LIST + Errors
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ st ts cn · projectTuples st ts cn =
+Ü	let table = Table_spec ts
+Ü	in	
+Ü	let spec = lookup st table 
+Ü	in
+Ü	if isError spec then giveError(destError spec)
+Ü	else	
+Ü	let 	coln c = 	if Front c = table then getColPosn (destVal spec) (Last c) 
+Ü			else if	 Front c = cn then getColPosn (destVal spec) (Last c)
+Ü			else giveError (seq 1 noSuchColumn)
+Ü	in
+Ü	let 	entuple r  = giveVal(Ìc · (coln c) * (getData r))
+Ü	in	(promote entuple)(TS_rows (destVal spec))
+°
+
+The function $changeSpec$ is defined in \cite{DS/FMU/FEF/005} upon the representation state.
+
+=SML
+declare_infix (150,"amp5");
+=TEX
+
+
+¹HOLCONST
+Ü	$Ûamp5İ : (Ide ­ Update + Errors) ­ (Ide ­ Update + Errors)
+Ü			­ (Ide ­ Update + Errors)
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ f g c · (f amp5 g) c =
+Ü	if (isError (f c) ± destError(f c) = seq 1 error) 
+Ü		² (isError (g c) ± destError(g c) = seq 1 error)
+Ü	then f c
+Ü	else if isClass (destVal(f c)) ± isItem (destVal(g c)) 
+Ü	then giveVal(DataUpdate(MkData(destClass (destVal(f c)))(destItem(destVal(g c)))))
+Ü	else if isClass (destVal(g c)) ± isItem (destVal(f c)) 
+Ü	then giveVal(DataUpdate(MkData(destClass (destVal(g c)))(destItem(destVal(f c)))))
+Ü	else giveError(seq 1 ambiguousUpdate)
+°
+
+
+
+=SML
+declare_infix (150,"amp6");
+=TEX
+
+¹HOLCONST
+Ü	$Ûamp6İ : (Ide ­ Update + Errors) ­ (Ide ­ Update + Errors)LIST
+Ü			­ (Ide ­ Update + Errors)
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ f s · (f amp6 s) = 	if s = [] then f
+Ü				else (f amp5 (Hd s)) amp6 (Tl s)
+°
+
+
+=SML
+declare_alias(Û"&"İ,¬$amp5®);
+declare_alias(Û"&"İ,¬$amp6®);
+=TEX
+
+We define $auxapply$ as an auxiliary function to $engroup$.
+
+¹HOLCONST
+Ü	Ûauxapplyİ : Col LIST ­ Tuple LIST ­ Env LIST ­ Env LIST
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ cs ts es · auxapply cs ts es =  
+Ü	let add cs t e = 
+Ü	if (promote t) cs = (promote (E_row e)) cs then MkEnv(E_row e)((E_group e) ë [t])
+Ü	else e
+Ü	in 
+Ü	let adds cs t = Map(add cs t)
+Ü	in
+Ü	if ts = [] then es
+Ü 	else auxapply cs (Tl ts) (adds cs (Hd ts) es)
+°
+
+¹HOLCONST
+Ü	Ûengroupİ : Col_spec LIST ­ Tuple LIST ­ Env LIST
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ g ts · engroup g ts = auxapply
+Ü		(Map(Ìc · Col_spec c)g)
+Ü		ts
+Ü		(Map(Ìt · MkEnv t [])ts)
+°
+
+¹HOLCONST
+Ü	ÛcolsInGroupİ : TableSpec ­ Num ­ Bool LIST
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	T
+°
+
+¹HOLCONST
+Ü	ÛandBoolsİ : Bool LIST ­ Bool
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ bs · andBools bs = 	if #bs = 0 then true
+Ü				else (Hd bs) ± andBools(Tl bs)
+°
+
+We require access functions for retrieving $ColSpec$ from a table given the column number or the column name, and $ColCon$ from a table given the column group number.
+
+¹HOLCONST
+Ü	Ûcolposnsİ : TableSpec ­ Num ­ ColSpec + Errors
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ t n · colposns t n =	if ¶‰1 c · c  TS_colspecs t ± CS_posn c = n
+Ü				then giveVal (Å c· c  TS_colspecs t ± CS_posn c = n)
+Ü				else giveError(seq 1 noSuchColumn)
+°
+
+¹HOLCONST
+Ü	Ûcolspecsİ : TableSpec ­ Ide ­ ColSpec + Errors 
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ t i · colspecs t i =	if ¶‰1 c · c  TS_colspecs t ± CS_ide c = i
+Ü				then giveVal (Å c· c  TS_colspecs t ± CS_ide c = i)
+Ü				else giveError(seq 1 noSuchColumn) 	
+°
+
+¹HOLCONST
+Ü	Ûconsİ : TableSpec ­ Num ­ ColCon + Errors
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ t n · cons t n =	if ¶‰1 cc · (n,cc)  TS_cons t 
+Ü				then giveVal (Å cc· (n,cc)  TS_cons t)
+Ü				else giveError(seq 1 error)
+°
+
+
+We define an auxiliary function for `anding' something of type $Bool\ +\ Errors$ with  something of type $Bool$.
+=SML
+declare_infix (40,"andb");
+=TEX
+
+¹HOLCONST
+Ü	$Ûandbİ : (Bool + Errors) ­ Bool ­ (Bool + Errors)
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ be b · (be andb b) =
+Ü		if isVal be
+Ü		then giveVal(destVal be ± b)
+Ü		else giveError(destError be)
+°
+
+
+
+¹HOLCONST
+Ü	ÛcheckGroupİ : TableSpec ­ (ColCon ­ Bool) ­ (TableSpec ­ Num ­ Bool) ­ Bool
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ ts cond check · checkGroup  ts cond check =
+Ü		andBools (enseq(Ìn· ((cons ts n) o5 cond) andb (check ts n)))
+°
+
+We first give a function which returns a list of data given a row.
+
+¹HOLCONST
+Ü	ÛdataListİ : Row ­ Data LIST
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ r · dataList r = RelList(Squash(R_data r))
+°
+
+
+¹HOLCONST
+Ü	ÛcheckUniquenessİ : TableSpec ­ Num ­ Bool
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ ts n · checkUniqueness ts n = 
+Ü		let key = 
+Ü		let ii = dataList » extract(colsInGroup ts n) » Map Dat_item
+Ü		in
+Ü		TS_rows » Map ii
+Ü		in
+Ü		key ts = distinct (key ts)	
+°
+We define $test$ as an auxiliary function to $CheckUniform$.
+
+¹HOLCONST
+Ü	Ûtestİ : Class LIST LIST ­ Bool
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ css · test css = 	if #css = 0 then true 
+Ü				else if #(distinct (Hd css)) = 1 then test(Tl css)
+Ü				else false	
+°
+
+¹HOLCONST
+Ü	ÛcheckUniformİ : TableSpec ­ Num ­ Bool
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ ts n · checkUniform ts n = 
+Ü		let classes =
+Ü		let cc = dataList » extract(colsInGroup ts n) » Map Dat_class
+Ü		in 
+Ü		TS_rows » Map cc
+Ü		in test (classes ts)	
+°
+
+We give a version of $seq$ that scoops up errors.
+
+¹HOLCONST
+Ü	ÛseqErrİ : Num ­ ('x  + Errors) ­ ('x LIST  + Errors)
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ n xe · seqErr n xe =	if isVal xe
+Ü				then giveVal(seq n (destVal xe))
+Ü				else giveError(destError xe)
+°
+
+
+
+
+¹HOLCONST
+Ü	ÛcheckIntegrityİ : TableSpec ­ (TableSpec ­ Num ­ Bool + Errors) ­ Bool
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ ts check · checkIntegrity ts check = 
+Ü		andBools (enseq(Ìn · check ts n))	
+°
+
+We define $inRange$ as an auxiliary function to $CheckUniform$.
+
+¹HOLCONST
+Ü	ÛinRangeİ :Class LIST ­ ColSpec LIST ­ Bool
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ cs css · inRange cs css =
+Ü 		let inRan cl c = ((cl dominates (CS_min c)) ± ((CS_max c) dominates cl)) 
+Ü		in
+Ü		(if #cs = 0 ² #css = 0
+Ü		then true
+Ü		else inRan (Hd cs) (Hd css) ± inRange (Tl cs) (Tl css)) 
+°
+
+We define $elem$ in terms of $Nth$.
+
+¹HOLCONST
+Ü	Ûelemİ : Num ­ 'a LIST ­ 'a
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ n xl · elem n xl =  Nth xl n	
+°
+
+
+¹HOLCONST
+Ü	ÛcheckFieldClassesİ : TableSpec ­ Num ­ Bool + Errors
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ ts n · checkFieldClasses ts n = 
+Ü		let classes = (TS_rows » Map(dataList » (elem n) » Dat_class)) ts 
+Ü		and cs = colposns ts n
+Ü		in (seqErr n cs) o5 (inRange classes) 
+Ü			
+°
+
+
+We define $rightType$ as an auxiliary function to $CheckType$. First we need constructors for type $Type$.
+
+¹HOLCONST
+Ü	ÛmonoleanTypeİ 		: Type;
+Ü	ÛbooleanTypeİ 		: Type;
+Ü	ÛcharsTypeİ 		: Type;
+Ü	ÛintegerTypeİ		: Type;
+Ü	ÛfloatingTypeİ		: Type;
+Ü	ÛtimeTypeİ		: Type;
+Ü	ÛintervalTypeİ		: Type;
+Ü	ÛclassTypeİ		: Type 
+÷üüüüüüüüüüüüüü
+Ü	monoleanType 	= InL monolean
+Ü±	booleanType 	= InR (InL boolean)
+Ü±	charsType   	= InR (InR (InL chars))
+Ü±	integerType 		= InR (InR (InR (InL integer)))
+Ü±	floatingType 		= InR (InR (InR (InR (InL floating))))
+Ü±	timeType		= InR (InR (InR (InR (InR (InL time)))))
+Ü±	intervalType	= InR (InR (InR (InR (InR (InR (InL interval))))))
+Ü±	classType		= InR (InR (InR (InR (InR (InR (InR class))))))
+°
+
+
+¹HOLCONST
+Ü	ÛrightTypeİ : Item LIST ­ ColSpec LIST ­ Bool
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ is css ·  rightType is css =
+Ü		let rightT i cs = 	
+Ü		let right =	Ìt v·	(t = monoleanType ± v = VoidVal)
+Ü				²	(t = booleanType ± isBoolVal v)
+Ü				²	(t = charsType ± isStringVal v)	
+Ü				²	(t = integerType ± isIntVal v)	
+Ü				²	(t = floatingType ± isFloatVal v)	
+Ü				²	(t = timeType ± isTimeVal v)	
+Ü				²	(t = intervalType ± isIntervalVal v)	
+Ü				²	(t = classType ± isClassVal v)
+Ü		in	
+Ü		if isNullItem i 
+Ü		then true
+Ü		else 	let vi = destValuedItem i
+Ü			in
+Ü			if VI_worth vi = sterling 
+Ü			then right (CS_sterlingType cs)(VI_val vi)
+Ü		else right (CS_dinaryType cs)(VI_val vi)
+Ü		in 
+Ü		(if  #is = 0 ² #css = 0
+Ü		then true
+Ü		else rightT (Hd is) (Hd css) ± rightType (Tl is) (Tl css))
+°
+
+¹HOLCONST
+Ü	ÛcheckTypeİ : TableSpec ­ Num ­ Bool + Errors
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ ts n · checkType ts n = 
+Ü		let itemList =  (TS_rows » Map(dataList » (elem n) » Dat_item)) ts
+Ü		and cs = colposns ts n
+Ü		in (seqErr n cs) o5 (rightType itemList)
+°
+
+We define $rightNull$ as an auxiliary function to $CheckNulls$.
+
+¹HOLCONST
+Ü	ÛrightNullİ : Item LIST ­ ColSpec LIST ­ Bool
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ is css ·  rightNull is css =
+Ü		let rightN i cs = ((isNullItem i) ± CS_nullType cs )		
+Ü		in
+Ü		(if  #is = 0 ² #css = 0
+Ü		then true
+Ü		else rightN (Hd is) (Hd css) ± rightNull (Tl is) (Tl css))
+°
+
+¹HOLCONST
+Ü	ÛcheckNullsİ : TableSpec ­ Num ­ Bool + Errors
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ ts n · checkNulls ts n = 
+Ü		let itemList =  (TS_rows » Map(dataList » (elem n) » Dat_item)) ts
+Ü		and cs = colposns ts n
+Ü		in (seqErr n cs) o5 (rightNull itemList)
+°
+
+
+
+
+
+
+\subsection{Syntactic Functions - Continued}
+We continue with the translation of the syntactic functions from section \ref{SYN}.
+
+
+¹HOLCONST
+Ü	ÛCol_nameİ : Col_name ­ Ide
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ i · Col_name (denote_col_name i) = i 	
+°
+
+
+¹HOLCONST
+Ü	ÛFrom_specİ : From_spec ­ State ­ Tuple LIST + Errors
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Üµ t cn st · 
+Ü	From_spec (from t) st = projectTuples st t [] 	
+Ü±	From_spec (correlate_from cn t) st = projectTuples st t (seq 1 cn)
+°
+
+¹HOLCONST
+Ü	ÛFrom_nameİ : From_spec ­ Tab
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Üµ t cn · 
+Ü	From_name (from t) = Table_spec t  	
+Ü±	From_name (correlate_from cn t) = Table_spec t 
+°
+
+
+
+We supply the signature for a function from $Num$ to $Int$.
+
+¹HOLCONST
+Ü	ÛNum_to_Intİ : Num ­ Int
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	T 	
+°
+
+
+We give a function $check\_where\_complete1$ which can be applied in the case where the first argument is not of type $Bool$, but of type $Bool\ +\ Errors$.
+¹HOLCONST
+Ü	Ûcheck_where_complete1İ : Bool + Errors ­ Bool ­ Data ­ Data + Errors
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ be b d · check_where_complete1 be b d = 
+Ü		if isVal be then check_where_complete (destVal be) b d
+Ü		else giveError(destError be)			 	
+°
+
+
+We give $all\_false$ used in the definition of $Tuple\_list\_complete$
+as an auxiliary function.
+
+¹HOLCONST
+Ü	Ûall_falseİ : Bool LIST ­ Bool
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ bs · all_false bs = 	if #bs = 0 then true 
+Ü				else if  Hd bs = true then false
+Ü				else all_false (Tl bs)		 	
+°
+
+
+Similarly  $same$ which is used as an auxiliary function to $eliminate$, a local
+function in 
+$Tuple\_list$ and $processUpdate$ .
+
+¹HOLCONST
+Ü	Ûsameİ : Bool LIST ­ Bool + Errors
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ bs · same bs =  
+Ü	if #bs = 0 then giveVal true
+Ü	else if #bs = 1 then giveVal(Hd bs)
+Ü	else if (Hd bs) = destVal(same (Tl bs)) then giveVal(Hd bs)
+Ü	else giveError(seq 1 ambiguousHaving)
+°
+
+
+
+\newpage
+{\ftlinepenalty=9999
+
+¹HOLCONST
+Ü	ÛValueİ : Value ­ State ­ Env ­ Data + Errors;
+Ü	ÛSet_clauseİ : Set_clause ­ State ­ Env ­ Ide ­ Update + Errors;
+Ü	ÛTuple_list_completeİ : Tuple_list ­ State ­ Env ­ Bool + Errors;
+Ü	ÛTuple_listİ : Tuple_list ­ State ­ Env ­ Data LIST LIST + Errors;
+Ü	ÛInsert_listİ : Insert_list ­ State ­ Data LIST LIST + Errors;
+Ü	ÛClassified_valueİ : Classified_value ­ State ­ Env ­ Data + Errors;
+Ü	ÛSelect_listİ : Select_list ­ State ­ Env ­ Tab LIST ­ Data LIST + Errors
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Üµ st e i s r m int cl c op v v‰1 v‰2 tl cs col id sel from_list 
+Üwhere group having cvl il‰1 il‰2 vl ts ·
+Ü	Value denote_null st e = giveVal(MkData userClearance(NullItemItem null))
+Ü±	Value denote_void st e = giveVal(make_data VoidVal)	
+Ü±	Value denote_true st e = giveVal(make_data (BoolVal true))	
+Ü±	Value denote_false st e = giveVal(make_data (BoolVal false))	
+Ü±	Value (denote_integer i) st e  = giveVal(make_data (IntVal i))	
+Ü±	Value (denote_string s) st e  = giveVal(make_data (StringVal s))	
+Ü±	Value (denote_float r) st e = giveVal(make_data (FloatVal r))	
+Ü±	Value (denote_time m) st e = giveVal(make_data (TimeVal m))	
+Ü±	Value (denote_interval int) st e = giveVal(make_data (IntervalVal int))
+Ü±	Value (denote_class cl) st e = giveVal(make_data (ClassVal cl))	
+Ü±	Value (denote_code c) st e = giveVal(make_data (CodeVal c))
+Ü±	Value (monop op v) st e = 
+Ü			(let v' = Value v st e
+Ü			in 
+Ü			if isVal v' then giveVal(apply op (seq 1(destVal v')))
+Ü			else giveError(destError v'))
+Ü±	Value (binop op (v‰1,v‰2)) st e = 
+Ü			(let v‰1' = Value v‰1 st e and v‰2' = Value v‰2 st e
+Ü			in 
+Ü			if isVal v‰1' then
+Ü				if isVal v‰2' then 
+Ü					giveVal(apply op (Cons(destVal(Value v‰1 st e))
+Ü					[destVal(Value v st e)]))
+Ü				else giveError(destError v‰2')
+Ü			else giveError((destError v‰1') ë (destError v‰2')))
+Ü±	Value (set_func_all op v) st e = 
+Ü		(let all_res = (promote Ì t · Value v st  (MkEnv t (E_group e)))(E_group e)
+Ü		in
+Ü		if isVal all_res 
+Ü		then giveVal((apply op)(destVal all_res))
+Ü		else giveError (destError all_res))
+Ü±	Value count_all st e = giveVal(make_data (IntVal (Num_to_Int(#(E_group e)))))
+Ü±	Value (all_binop op v tl) st e = 
+Ü			(let tlc = Tuple_list_complete tl st e
+Ü			and calc = 
+Ü				let ans = Value v st e
+Ü				in
+Ü				promote(Ìd·	if isVal ans 
+Ü						then giveVal(apply op ([destVal ans] ë [d]))
+Ü						else giveError(destError ans)) 
+Ü			in 
+Ü			(((((Tuple_list tl st e) o2 one_col) * calc) o5 apply And) * 
+Ü				take_data) * (check_where_complete1 tlc true)) 
+Ü±	Value (contents cs) st e =  (E_row e)(Col_spec cs)
+Ü±	Value (classification cs) st e =  
+Ü			(let ce = (((E_row e)(Col_spec cs)) o5 Dat_class)
+Ü			in
+Ü			if isVal ce 
+Ü			then giveVal(make_data (ClassVal(destVal ce)))
+Ü			else giveError(destError ce))
+Ü±	Value user st e = giveVal(make_data (StringVal userName))
+Ü±	Value clearance st e = giveVal(make_data (ClassVal userClearance))
+Ü±	Value current_time st e = giveVal(make_data (TimeVal timeNow))
+Ü±	Set_clause (set_value col v) st e id = 
+Ü			(let column = Col_name col
+Ü			and exp = Value v st e
+Ü			in
+Ü			if id = column
+Ü			then (exp * take_data) o5 DataUpdate	
+Ü			else giveError(seq 1 error))	
+Ü±	Set_clause (set_class col v) st e id = 
+Ü			(let column = Col_name col
+Ü			and exp = Value v st e
+Ü			in
+Ü			if id = column
+Ü			then (exp * resultClass) o5 ClassUpdate	
+Ü			else giveError(seq 1 error))
+Ü±	Set_clause (set_class_and_value col v‰1 v‰2) st e id = 
+Ü			(let column = Col_name col
+Ü			and value = (((Value v‰1 st e) * take_data) o5 Dat_item)
+Ü			and clas = ((Value v‰2 st e) * resultClass) 
+Ü			in
+Ü			if id = column
+Ü			then ((clas,value) * MkData) o5 DataUpdate	
+Ü			else giveError(seq 1 error))
+Ü±	Tuple_list_complete (all_tuples sel from_list where group having) st e = 
+Ü			(let froms = (promote (Ì fr · From_spec	fr st) * join)
+Ü			and ws g = promote(Ì t ·Value where st (MkEnv t g) o5 isNotCleared)g
+Ü			in
+Ü			(froms from_list * ws) o5 all_false)
+Ü±	Tuple_list_complete (distinct_tuples sel from_list where group having) = 
+Ü			Tuple_list_complete (all_tuples sel from_list where group having) 
+Ü±	Tuple_list_complete (evaluate sel from_list where group having) = 
+Ü			Tuple_list_complete (all_tuples sel from_list where group having) 
+Ü
+Ü±	Tuple_list (all_tuples sel from_list where group having) st e =	
+Ü			(let froms = (promote (Ì fr · From_spec	fr st) * join)
+Ü			and selr env = 
+Ü				(let tabs = Map From_name from_list
+Ü				in
+Ü				(Select_list sel st env tabs))
+Ü			and outer e = (Map(Ìei· MkEnv	((E_row e)**(E_row ei))
+Ü							((E_row e)**(E_group ei)))) 
+Ü			and where_filter ts =
+Ü				(let ws g = 
+Ü				let ev t =
+Ü				let elim = 
+Ü				let eliminate = 
+Ü					(Ì s env h·(promote
+Ü					((((Ìt·Value h s (MkEnv t (E_group env))) * seq 1) 
+Ü					* applyNot) o1 resultBool)(E_group env)) * same)	
+Ü				in
+Ü				eliminate st (MkEnv t g) having
+Ü				in
+Ü				if isError elim then elim
+Ü				else if (destVal elim) = true then (giveVal false)
+Ü				else (Value where st (MkEnv t g)) * resultBool
+Ü				in
+Ü				promote ev g
+Ü				in
+Ü			 	(ts o7 ((ws ts) o5 extract)))
+Ü			in 
+Ü			((((froms from_list) * where_filter) o5 (engroup group)) 
+Ü				o5 (outer e)) * promote selr)
+Ü±	Tuple_list (distinct_tuples sel from_list where group having) st e =
+Ü		((Tuple_list (all_tuples sel from_list where group having)st e) o5 distinct)
+Ü±	Tuple_list (evaluate sel from_list where group having) st e =
+Ü			(let froms = (promote (Ìfr· From_spec	fr st) * join)
+Ü			and selg env = 	
+Ü				(let tabs = Map From_name from_list
+Ü				in
+Ü				(if isVal(Select_list sel st env tabs)
+Ü				then giveVal(MkGroupedResult(destVal
+Ü					(Select_list sel st env tabs))(E_group env))
+Ü				else giveError(destError(Select_list sel st env tabs))))
+Ü			and outer e =( Map(Ìei· 	MkEnv	((E_row e)**(E_row ei))
+Ü							((E_row e)**(E_group ei))))
+Ü			and ev grs = 	if distinct(Map G_group grs) 
+Ü						= Map G_group (distinct grs)
+Ü					then giveVal(Map G_res grs)
+Ü					else giveError(seq 1 ambiguousEvaluate)
+Ü			and where_filter ts =
+Ü				(let ws g = promote(Ìt·Value where st (MkEnv t g) 
+Ü					* resultBool)g
+Ü				in
+Ü			 	(ts o7 ((ws ts) o5 extract)))
+Ü			in 
+Ü			(((((froms from_list) * where_filter) o5 (engroup group)) o5
+Ü				 (outer e)) * promote selg) * ev)	
+Ü±	Insert_list (insert_tuples tl) st =
+Ü			(let (check:Data LIST LIST ­ Data LIST LIST + Errors) d = 
+Ü				(let tlc = Tuple_list_complete tl st emptyEnv	
+Ü				in
+Ü				if isVal tlc then
+Ü					if destVal tlc = true then giveVal d
+Ü					else giveError (seq 1 notCleared)
+Ü				else giveError (seq 1 notCleared))
+Ü			in (Tuple_list tl st emptyEnv) * promote(promote  take_data))
+Ü±	Insert_list (tuple cvl) st = 
+Ü		(let d_or_err = promote	(Ìcv·Classified_value cv st emptyEnv)cvl	
+Ü		in 	if isVal d_or_err then giveVal(seq 1 (destVal d_or_err))
+Ü			else giveError(destError d_or_err))
+Ü±	Insert_list (union il‰1 il‰2) st = 
+Ü		(Insert_list il‰1 st amp4 Insert_list il‰2 st)
+Ü±	Classified_value (classify v v‰1) st e = 
+Ü		(let resv = Value v st e
+Ü		and resc = Value v‰1 st e
+Ü		in
+Ü		((resc o2 resultClass),((resv * take_data) o5 Dat_item)) * MkData)
+Ü±	Classified_value (classify_default v) st e = 
+Ü		(let combine c d = MkData c (Dat_item d) 
+Ü		and newDat = ((Value v st e) o2 
+Ü			(Ìd·	if isCleared d then giveVal d 
+Ü				else giveError(seq 1 notCleared)))
+Ü		and newClass = userClearance
+Ü		in
+Ü		(newDat o5 (combine newClass)))
+Ü±	Select_list all_columns st e = 
+Ü		(let vals = denote_col_spec » contents » (Ìv·Value v st e) 
+Ü 		and col t = enseq(((lookup st t * colposns) * CS_ide) * (Ìi· t ë [i]))
+Ü		in
+Ü		((Map col) » Flat) » (promote vals))
+Ü±	Select_list (select_values vl) st e ts = (promote(Ìv·Value v st e) vl)	
+°
+}
+
+We separate the $processQuery$ function into four parts, corresponding
+to the type of query.
+
+For an insert query, a list of relations from $Num$ to $Data$, one relation for
+ each new row, will be passed to the update
+function, hence there is no need for reordering. Classification of the new rows
+ is also achieved by the update function. Only those columns that the user is 
+cleared to see are visible.
+
+The integrity checks are not carried out at this stage because the $updateState$
+function defined in \cite{DS/FMU/FEF/005} only allows an insert, delete
+ or update query to update the database if no errors have been reported. 
+We could handle integrity checks in one of two ways:
+\begin{enumerate}
+\item
+Carry out integrity checks on the hidden state
+of the database after the update has occurred,.
+\item
+Provide an extra parameter $Warnings$ which contains integrity check information
+from a particular query. This would be
+returned from $processQuery$ and supplied to $updateState$, but would not 
+prevent an update taking place.
+\end{enumerate}
+
+The function $processInsert$ returns a relation from column number to data, or a list of errors. The column default value is provided for column positions for which
+there is no corresponding data in the insert list. 
+
+
+The function $Elems$ takes a list and returns the set of elements in the list.
+We specify a function $mkRel$ that takes a list of column number and a list of data and
+returns a relation from column number to data.
+
+¹HOLCONST
+Ü	ÛmkRelİ : 'a LIST ­ 'b LIST ­ ('a ª 'b) 
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ cns ds · mkRel cns ds = Elems(Combine cns ds)
+°
+
+We give a function $unionErr$ that scoops up errors.
+
+=SML
+declare_infix (260,"unionErr");
+=TEX
+
+
+¹HOLCONST
+Ü	$ÛunionErrİ : ('a ğ + Errors) ­ ('a ğ + Errors) ­ ('a ğ + Errors)
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ x y · (x unionErr y) =
+Ü		if isVal x
+Ü		then 	if isVal y
+Ü			then giveVal((destVal x) À (destVal y))
+Ü			else giveError(destError y)
+Ü		else 	if isVal y
+Ü			then giveError(destError x)
+Ü			else giveError((destError x) ë (destError y))
+°
+
+We modify $find$ to the case where the list being searched may be an error.
+¹HOLCONST
+Ü	Ûfindİ : 'x LIST ­ 'x  ­ Num + Errors
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ x y · (x unionErr y) =
+Ü		if isVal x
+Ü		then 	if isVal y
+Ü			then giveVal((destVal x) À (destVal y))
+Ü			else giveError(destError y)
+Ü		else 	if isVal y
+Ü			then giveError(destError x)
+Ü			else giveError((destError x) ë (destError y))
+°
+
+The function $ELems$ returns the elements of a list.
+
+¹HOLCONST
+Ü	Ûfindİ : 'x LIST ­ 'x  ­ Num + Errors
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ x y · (x unionErr y) =
+Ü		if isVal x
+Ü		then 	if isVal y
+Ü			then giveVal((destVal x) À (destVal y))
+Ü			else giveError(destError y)
+Ü		else 	if isVal y
+Ü			then giveError(destError x)
+Ü			else giveError((destError x) ë (destError y))
+°
+
+
+
+The error $wrongWidth$ is not in the domain of possible errors - replaced by $tooWide$.
+
+
+¹HOLCONST
+Ü	ÛprocessInsertİ : Table_spec ­ Col_name LIST ­ Insert_list  ­ State ­ 
+Ü				Effect + Errors
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Üµ t cns il st · processInsert t cns il st = 
+Ü	let spec = lookup st (Table_spec t)
+Ü	and givenNames = Map Col_name cns
+Üin	let defaults = ((spec o3 colposns) * CS_default)
+Üin	let givenNums = promote ((spec o3 colspecs) * CS_posn)givenNames
+Üin 	let colNums = Map CS_posn (enseq(spec * colposns))	
+Üin	let map nums ds n = 	if isVal(find nums n) 
+Ü				then giveVal(n,elem (destVal(find nums n))ds)
+Ü				else  if isVal (defaults n)
+Ü				then giveVal(n,destVal(defaults n))
+Ü				else giveError(destError(defaults n))
+Üin 	let addDefaults ds = if #givenNames = 0
+Ü			then promote (map colNums ds)colNums
+Ü			else if isVal givenNums
+Ü			then promote (map (destVal givenNums) ds)colNums
+Ü			else giveError(destError givenNums)
+Üin	let width ds = 	if #givenNames = 0
+Ü			then 	if #colNums = #ds
+Ü				then giveVal ds
+Ü				else giveError(seq 1 tooWide)
+Ü			else	if #givenNames = #ds
+Ü				then giveVal ds
+Ü				else giveError(seq 1 tooWide)
+Üin	let effect =	if isVal spec
+Ü			then 	if TS_maxRow (destVal spec) dominates userClearance
+Ü				then giveError(seq 1 rowClassTooLow)
+Ü			else  (Insert_list il st) o2 promote (width o1 (addDefaults * Elems))
+Ü			else	giveError(destError spec)
+Üin	if isError effect
+Ü	then giveError (destError effect)
+Ü	else giveVal(InsertEffect(Table_spec t,destVal effect))	
+°
+
+
+A set of rows to be deleted will only be passed on to $updataState$ if there are no errors.
+
+¹HOLCONST
+Ü	ÛprocessDeleteİ : From_spec ­ Value ­ State ­ Effect + Errors
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Üµ f w st · processDelete f w st = 
+Ü	let table = From_name f
+Üin	let spec = lookup st table
+Üin	let ts = From_spec f st
+Üin 	let where = 	if isVal ts
+Ü			then promote(Ìt·Value w st (MkEnv t (destVal ts)))(destVal ts)
+Ü			else giveError(destError ts)
+Üin	let whereBools = (where * (promote resultBool))
+Üin	let complete = 	if isError where then true
+Ü			else checkComplete (destVal where)	
+Üin	let doomed =	if isError whereBools
+Ü			then giveError(destError whereBools)
+Ü			else giveVal(Dom(ListRel(destVal whereBools) ’ {true}))
+Üin	if isError doomed
+Ü	then giveError(destError doomed)
+Ü	else if complete then giveVal(DeleteEffect(From_name f,destVal doomed))
+Ü	else giveError(seq 1 mayNotBeComplete)	
+°
+
+
+
+¹HOLCONST
+Ü	ÛprocessSelectİ : Tuple_list ­ State ­ Effect ¸ Errors
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Üµ tl st · processSelect tl st = 
+Ü	let retrieved = Tuple_list tl st emptyEnv
+Ü	and tlc = Tuple_list_complete tl st emptyEnv
+Üin	if isError retrieved
+Ü	then (SelectEffect[],destError retrieved)
+Ü	else 	if isVal tlc
+Ü	then 	if(destVal tlc) = true
+Ü		then (SelectEffect(destVal retrieved),[])
+Ü		else (SelectEffect(destVal retrieved),seq 1 mayNotBeComplete)
+Ü	else (SelectEffect[],destError tlc)	
+°
+
+
+
+
+
+\section{CLOSING DOWN}
+The following ICL HOL instruction restores the previous proof context.
+=SML
+pop_pc();
+=TEX
+
+=IGN
+output_theory{theory = "fef014",out_file = "fef014th.doc"};
+=TEX
+
+\newpage
+=IGN
+\input{fef014th.tex}
+=TEX
+\newpage
+\twocolumn[\section{INDEX} \label{INDEX}]
+\small
+\printindex
+
+\end{document}
+
+
+¹HOLCONST
+Ü	ÛprocessUpdateİ : From_spec ­ Set_clause LIST ­ Value ­ Col_spec LIST  
+Ü			­ Value ­ State ­ Effect + Errors
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Üµ f ss w g h · processUpdate f ss w g h st = 
+Ü	let table = From_name f
+Üin	let spec = lookup st table
+Üin	let ts = From_spec f st
+Üin	let whereResults = 	let ev e =
+Ü				let elim = 
+Ü				let eliminate = 
+Ü					(Ì s env h·(promote
+Ü					((((Ìt·Value h s (MkEnv t (E_group env))) * seq 1) 
+Ü					* applyNot) o1 resultBool)(E_group env)) * same)	
+Ü				in
+Ü				eliminate st e h
+Ü				in
+Ü				(if isError elim then (giveError(destError elim))
+Ü				else if (destVal elim) = true then (giveVal (make_data(BoolVal false)))
+Ü				else (Value w st e))
+Ü				in
+Ü				(if isVal ts then promote ev (engroup g (destVal ts))
+Ü				else giveError(destError ts))
+Üin 	let whereBools = (whereResults * (promote resultBool))
+Üin	let complete = 	if isError where then true
+Ü			else checkComplete (destVal where)
+Üin 	let sets e = ((Ìc·giveError(seq 1 error)) & Map(Ìs · Set_clause s st e)ss)
+Üin 	let getEnv n = 	if isVal ts then giveVal(MkEnv(Nth (destVal ts)n)(destVal ts))
+Ü			else giveError(destError ts)
+Üin 	rowUpd n = ((spec o3 colposns) * CS_ide) o1 (getEnv n * sets)
+Üin	where =  	if isError whereBools
+Ü			then giveError(destError whereBools)
+Ü			else giveVal(Dom(ListRel(destVal whereBools) ’ {true})) 
+Ü
+
+
+
+Üin	getTuple n = 	if isVal ts
+Ü			then giveVal(Nth (destVal ts)n)
+Ü			else giveError(destError ts)
+
+Üin 	effect n = ((spec o3 colposns) * CS_ide) o1 (sets(MkEnv t (destVal ts)) 
+
+type_of¬let spec = lookup st table in (spec o5 TS_rows) o5 Nth®;
+
+
+if isVal ts
+Ü			then promote(Ìt·Value w st (MkEnv t (destVal ts)))(destVal ts)
+Ü			else giveError(destError ts)
+
+
+
+Üin 	let sets e = ((spec o3 colposns) * CS_ide) o1
+Ü			(Ìc·giveError(seq 1 error)) & Map(Ìs · Set_clause s st e)ss
+Üin  	let complete = 	if isError whereResults then true
+Ü			else checkComplete (destVal whereResults)	
+Üin	let where =	if isError whereBools
+Ü			then giveError(destError whereBools)
+Ü			else giveVal(Dom(ListRel(destVal whereBools) ’ {true}))
+Üin	if isError where
+Ü	then giveError(destError where)
+Ü	else if complete then giveVal(UpdateEffect(From_name f,destVal where))
+Ü	else giveError(seq 1 mayNotBeComplete)		
+
+
+
+Ü	let table = From_name f
+Üin	let spec = lookup st table
+Üin	let cols = enseq((spec o3 colposns) * CS_ide)
+Üin	let ts =From_spec f st
+
+
+
+
+(let ws g = 
+Ü				let ev t =
+Ü				let elim = 
+Ü				let eliminate = 
+Ü					(Ì s env h·(promote
+Ü					((((Ìt·Value h s (MkEnv t (E_group env))) * seq 1) 
+Ü					* applyNot) o1 resultBool)(E_group env)) * same)	
+Ü				in
+Ü				eliminate st (MkEnv t g) having
+Ü				in
+Ü				if isError elim then elim
+Ü				else if (destVal elim) = true then (giveVal false)
+Ü				else (Value where st (MkEnv t g)) * resultBool
+Ü				in
+Ü				promote ev g
+Ü				in
+Ü			 	(ts o7 ((ws ts) o5 extract)))
+
+Ü	and givenNames = Map Col_name cns
+Üin	let defaults = ((spec o3 colposns) * CS_default)
+Üin	let givenNums = promote ((spec o3 colspecs) * CS_posn)givenNames
+Üin 	let colNums = Map CS_posn (enseq(spec * colposns))	
+Üin	let map nums ds n = 	if isVal(find nums n) 
+Ü				then giveVal(n,elem (destVal(find nums n))ds)
+Ü				else  if isVal (defaults n)
+Ü				then giveVal(n,destVal(defaults n))
+Ü				else giveError(destError(defaults n))
+Üin 	let addDefaults ds = if #givenNames = 0
+Ü			then promote (map colNums ds)colNums
+Ü			else if isVal givenNums
+Ü			then promote (map (destVal givenNums) ds)colNums
+Ü			else giveError(destError givenNums)
+Üin	let width ds = 	if #givenNames = 0
+Ü			then 	if #colNums = #ds
+Ü				then giveVal ds
+Ü				else giveError(seq 1 tooWide)
+Ü			else	if #givenNames = #ds
+Ü				then giveVal ds
+Ü				else giveError(seq 1 tooWide)
+Üin	let effect =	if isVal spec
+Ü			then 	if TS_maxRow (destVal spec) dominates userClearance
+Ü				then giveError(seq 1 rowClassTooLow)
+Ü			else  (Insert_list il st) o2 promote (width o1 (addDefaults * Elems))
+Ü			else	giveError(destError spec)
+Üin	if isError effect
+Ü	then giveError (destError effect)
+Ü	else giveVal(InsertEffect(Table_spec t,destVal effect))	
+°
+
+
+¹HOLCONST
+Ü	ÛprocessQueryİ : Query ¸ Class ¸ State ­ Effect + Errors
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü µ  c st t cns il ·
+Ü	processQuery((insert t cns il),c,st) = processInsert t cns il c st
+Ü
+°
+
+
