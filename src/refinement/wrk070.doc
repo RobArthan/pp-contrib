@@ -260,30 +260,75 @@ a much more complex representation, but we have no need of that.
 Refinement is a notion that is fundamental to the notion of program
 correctness that we will define; however, it is a semantic notion
 that is independent of the syntax of programs.
-
-A state transformer $t_2$ refines another state transformer $t_1$ iff.
-the domain of $t_2$ includes that of $t_1$ and every pair $(s, s')$ related
-by $t_2$ are also related by $t_2$. The first of these conditions is
-the traditional notion of liveness --- it says that $t_2$ is able to
-respond in any state that $t_1$ can respond in. The second
+Recall that a specification statement comprises a predicate, the
+pre-condition, and a state transformer, the post-condition.
+One specification statement, 
+=INLINEFT
+sâ2 = (precâ2, postcâ2)
+=TEX
+\ refines another
+=INLINEFT
+sâ1 = (precâ1, postcâ1)
+=TEX
+\ iff.
+=INLINEFT
+precâ2
+=TEX
+\ includes
+=INLINEFT
+precâ1
+=TEX
+, the domain of
+=INLINEFT
+postcâ2
+=TEX
+\ includes all elements of the domain of
+=INLINEFT
+postcâ1
+=TEX
+\ that satisfy
+=INLINEFT
+precâ1
+=TEX
+\ and the restriction of
+=INLINEFT
+postcâ2
+=TEX
+\ to
+=INLINEFT
+precâ1
+=TEX
+\ is contained in
+=INLINEFT
+postcâ1
+=TEX
+.
+The first two of these conditions amount to the
+the traditional notion of liveness --- they say, in effect, that $s_2$ is able to
+respond in any state that $s_1$ can respond in. The third
 condition is the traditional notion of safety --- it says that any response
-made by $t_2$ in a state in which $t_1$ could respond
-is a response that could also be made by $t_1$.
-We write $t_1 \sqsubseteq t2$ to mean that $t_2$ refines $t_1$.
+made by $s_2$ in a state satisfying the pre-condition of $s_1$
+is a response that could also be made by $s_1$.
+
 πZ
 ‹ relation _ √ _
 ∞
 
 πZAX
-‹ €_ √ _› : STATE_TRANSFORMER ™ STATE_TRANSFORMER
+‹ €_ √ _› : SPEC ™ SPEC
 ˜¸¸¸¸¸¸
-‹ µtâ1, tâ2 : STATE_TRANSFORMER∑
-‹	tâ1 √ tâ2 § dom tâ1 Ä dom tâ2 ± dom tâ1 Ú tâ2 Ä tâ1
+‹ µprecâ1, precâ2 : PRED; postcâ1, postcâ2 : STATE_TRANSFORMER∑
+‹	(precâ1, postcâ1) √ (precâ2, postcâ2)
+‹ §	precâ1 Ä precâ2
+‹ ±	precâ1 ° dom postcâ1 Ä dom postcâ2
+‹ ±	precâ1 Ú postcâ2 Ä postcâ1
 ∞
 
-If $t_1$ and $t_2$ are any two state transformers.
+
+
+If $t_1$ and $t_2$ are two state transformers.
 The $t_1$ {\em cut-down} of $t_2$ is the largest set of states, $c$ say,
-such that $t_2$ refines the restriction of $t_1$ to $c$.
+such that $(c, t_2)$ refines $(c, t_2)$.
 We write this as $t_1 \downarrow t_2$.
 
 πZ
@@ -293,14 +338,14 @@ We write this as $t_1 \downarrow t_2$.
 ‹ €_ %downarrow% _› : STATE_TRANSFORMER ∏ STATE_TRANSFORMER ≠ STATE
 ˜¸¸¸¸¸¸
 ‹ µtâ1, tâ2 : STATE_TRANSFORMER∑
-‹	tâ1 %downarrow% tâ2 = ﬁ{c : STATE | c Ú tâ1 √ tâ2}
+‹	tâ1 %downarrow% tâ2 = ﬁ{c : STATE | (c, tâ1) √ (c, tâ2)}
 ∞
 The following conjecture states the main properties of the cut-down.
 πZ
 ‹ cutdown_clauses_cnj ?Ù
 ‹	µtâ1, tâ2 : STATE_TRANSFORMER∑
-‹	tâ1 %downarrow% tâ2 Ú tâ1 √ tâ2
-‹ ±	(µc : STATE | c Ú tâ1 √ tâ2 ∑ c Ä tâ1 %downarrow% tâ2)
+‹	(tâ1 %downarrow% tâ2, tâ1) √ (tâ1 %downarrow% tâ2, tâ2)
+‹ ±	(µc : STATE | (c, tâ1) √ (c, tâ2) ∑ c Ä tâ1 %downarrow% tâ2)
 ∞
 
 There are many equivalent ways of formulating the above definition.
@@ -309,42 +354,39 @@ construction.
 πZ
 ‹ cutdown_pointwise_cnj ?Ù
 ‹	µtâ1, tâ2 : STATE_TRANSFORMER∑
-‹	tâ1 %downarrow% tâ2 = {s : STATE | s ç dom tâ1 ¥ {s} Ú tâ1 √ tâ2}
+‹	tâ1 %downarrow% tâ2 = {s : STATE | ({s}, tâ1) √ ({s}, tâ2)}
 ∞
 \subsection{Program Correctness}
 Intuitively, a program is correct if every part of it that has a specification
-satisfies that specification. We relativise this notion to a notion
-of correctness with respect to a given set of starting states, identified
-by some predicate, $c$. As always we are only concerned
+satisfies that specification. 
+As always we are only concerned
 with partial correctness here: a program, $p$,
-is then correct with respect to $c$
-if every part of it that has a specification will either
+is then correct if every part of it that has a specification will either
 fail to terminate or will satisfy the specification
-when $p$ is started in a state in $c$. We write
+when $p$. We write
 =INLINEFT
-c %models% p
+%models% p
 =TEX
 \ when this holds.
 
 πZ
-‹ relation _ %models% _
+‹ relation %models% _
 ∞
 We can now formally define the relation $(\_ \models \_)$.
 In the clause for the syntactic category Spec, note that we insist
 that the program does not terminate in states that satisfy the
 precondition but make the post-condition unsatisfiable.
 πZAX
-‹ €_ %models% _› : PRED ™ PROG
+‹ €%models% _› :  PROG
 ˜¸¸¸¸¸¸
-‹ µt, postc : STATE_TRANSFORMER; pâ1, pâ2 : PROG; câ1, câ2, prec : PRED∑
-‹	(câ1 %models% (Atom t))
-‹ ±	(câ1 %models% (Seq (pâ1, pâ2)) § câ1 %models% pâ1 ± semantics pâ1 ®câ1© %models% pâ2)
-‹ ±	(câ1 %models% (If(câ2, pâ1, pâ2)) § câ1 ° câ2 %models% pâ1 ± câ1 \ câ2 %models% pâ2)
-‹ ±	(câ1 %models% (While(câ2, pâ1)) § (câ1 ° dom (semantics(While(câ2, pâ1)))) %models% pâ1)
-‹ ±	(câ1 %models% (Spec((prec, postc), pâ1)) 
-‹	§ 	 câ1 ° prec %models% pâ1
-‹	±	(câ1 ° dom (semantics pâ1)) Ú postc √ semantics pâ1
-‹	±	câ1 ° (prec \ dom postc) ° dom (semantics pâ1) = ö)
+‹ µt : STATE_TRANSFORMER; pâ1, pâ2 : PROG; c : PRED; s : SPEC∑
+‹	(%models% (Atom t))
+‹ ±	(%models% (Seq (pâ1, pâ2)) § %models% pâ1 ± %models% pâ2)
+‹ ±	(%models% (If(c, pâ1, pâ2)) § %models% pâ1 ± %models% pâ2)
+‹ ±	(%models% (While(c, pâ1)) § %models% pâ1)
+‹ ±	(%models% (Spec(s, pâ1)) 
+‹	§ 	s √ (STATE, semantics pâ1)
+‹	±	%models% pâ1)
 ∞
 \subsection{Precondition Calculation}
 A pre-condition calculator is a function that takes a program and a post-condition as
@@ -354,38 +396,20 @@ be partial, because, for example, there may be atomic statement forms that are
 intractable. However, these can always be handled by returning an empty
 pre-condition, so we take pre-condition calculators to be total functions.
 πZ
-‹ €PREC_CALC› ¶ PROG ∏ PRED ≠ PRED
+‹ €PREC_CALC› ¶ PROG ∏ STATE_TRANSFORMER ≠ PRED
 ∞
 A pre-condition calculator is sound if the pre-condition it returns
-for any program and post-condition is such that execution of the
-program in any state satisfying the pre-condition will indeed
-either fail to terminate or result
-in a state satisfying the post-condition.
+for any program and post-condition is such that execution
+of the program subject to the pre-condition refines the specification
+statement formed from the returned pre-condition and the given post-condition.
 πZAX
 ‹ €sound_prec_calc› : PREC_CALC
 ˜¸¸¸¸¸¸
 ‹ µpc : PREC_CALC∑
 ‹	pc ç sound_prec_calc
-‹ §	(µprog : PROG; postc, prec : PRED
+‹ §	(µprog : PROG; postc : STATE_TRANSFORMER; prec : PRED
 ‹	|	prec = pc (prog, postc)
-‹	∑	semantics prog ®prec© Ä postc)
-∞
-The above notion has been defined without using the notion of
-refinement. However, it could have been reformulated in terms
-of refinement as captured in the following conjecture.
-The alternative formulation is not preferred because the case
-of an empty (i.e., unsatisfiable) post-condition has to
-be treated specially.
-πZ
-‹ sound_prec_calc_refine_cnj ?Ù
-‹ µpc : PREC_CALC∑
-‹	pc ç sound_prec_calc
-‹ §	(µprog : PROG; postc, prec : PRED
-‹	|	prec = pc (prog, postc) ± postc Ω ö
-‹	∑	(dom (semantics prog) ° prec) ∏ postc √ semantics prog)
-‹ ±	(µprog : PROG; prec : PRED
-‹	|	prec = pc (prog, ö)
-‹	∑	dom (semantics prog) ° prec = ö)
+‹	∑	(prec, postc) √ (prec, semantics prog))
 ∞
 
 The notion of soundness is a purely semantic one: it does not require
@@ -397,18 +421,15 @@ pre-condition, {\it prec}, say, we take the relation
 {\it postc} $\times$ {\it prec} as the specification of the program and
 require that the resulting program be correct with respect to this specification
 in any state.
-In fact, it turns out to be convenient to generalise this to require
-this to hold for the returned pre-condition and any weakening of
-the given post-condition.
 
 πZAX
 ‹ €correct_prec_calc› : PREC_CALC
 ˜¸¸¸¸¸¸
 ‹ µpc : PREC_CALC∑
 ‹	pc ç correct_prec_calc
-‹ §	(µprog : PROG; postc, prec : PRED
+‹ §	(µprog : PROG; postc : STATE_TRANSFORMER; prec : PRED
 ‹	|	prec = pc (prog, postc)
-‹	∑	STATE %models% Spec((prec, STATE ∏ postc), prog))
+‹	∑	%models% Spec((prec, postc), prog))
 ∞
 We can now formulate the conjecture that correctness for pre-condition calculators is indeed a stronger
 notion than soundness.
@@ -429,18 +450,37 @@ val €prog_u_thm› = save_thm("prog_u_thm",
 	(z_get_spec ÒPROGÆ));
 val €pred_u_thm› = save_thm("pred_u_thm",
 	rewrite_rule[state_u_thm] (z_get_spec ÒPREDÆ));
-val €refines_thm› = save_thm("refines_thm",
-	rewrite_rule[state_transformer_u_thm] (z_get_spec Ò(_√_)Æ));
+val €spec_u_thm› = save_thm("spec_u_thm",
+	rewrite_rule[pred_u_thm, state_transformer_u_thm] (z_get_spec ÒSPECÆ));
+=TEX
+=SML
+set_goal([], Òµ sâ1, sâ2 : U∑
+	sâ1 √ sâ2
+           § sâ1.1 Ä sâ2.1
+             ± sâ1.1 ° dom (sâ1.2) Ä dom (sâ2.2)
+             ± sâ1.1 Ú sâ2.2 Ä sâ1.2Æ);
+a(z_µ_tac);
+a(LEMMA_TÒsâ1 = (sâ1.1, sâ1.2) ± sâ2 = (sâ2.1, sâ2.2)Æ pure_once_rewrite_thm_tac
+	THEN1 PC_T1 "z_library_ext" REPEAT strip_tac);
+a(pure_rewrite_tac[rewrite_rule[state_transformer_u_thm, pred_u_thm] (z_get_spec Ò(_√_)Æ)]);
+a(rewrite_tac[]);
+val €refines_thm› = save_pop_thm "refines_thm";
+=TEX
+=SML
 val €cutdown_thm› = save_thm("cutdown_thm",
 	rewrite_rule[state_transformer_u_thm, state_u_thm]
 		(z_get_spec Ò(_%downarrow%_)Æ));
+=TEX
+=SML
 set_goal([], Ò
 	sound_prec_calc =
 	{	pc : PREC_CALC
-	|	µ prog : U; postc, prec : U
+	|	µ prog : U; postc : U; prec : U
 		| prec = pc (prog, postc)
-		∑ semantics prog ® prec © Ä postc}Æ);
-a(strip_asm_tac (rewrite_rule[prog_u_thm, pred_u_thm](z_get_specÒsound_prec_calcÆ)));
+		∑ (prec, postc) √ (prec, semantics prog)}Æ);
+a(strip_asm_tac
+	(rewrite_rule[prog_u_thm, pred_u_thm, state_transformer_u_thm]
+		(z_get_specÒsound_prec_calcÆ)));
 a(PC_T "z_library_ext" strip_tac THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(PC_T1 "z_library_ext" all_asm_fc_tac[]);
@@ -456,10 +496,11 @@ val €sound_prec_calc_thm› = save_pop_thm "sound_prec_calc_thm";
 set_goal([], Ò
 	correct_prec_calc =
 	{	pc : PREC_CALC
-	|	µ prog : U; postc, prec : U
+	|	µ prog : U; postc : U; prec : U
 		| prec = pc (prog, postc)
-		∑ STATE %models% Spec ((prec, STATE ∏ postc), prog)}Æ);
-a(strip_asm_tac (rewrite_rule[prog_u_thm, pred_u_thm](z_get_specÒcorrect_prec_calcÆ)));
+		∑ %models% Spec ((prec, postc), prog)}Æ);
+a(strip_asm_tac (rewrite_rule[prog_u_thm, pred_u_thm, state_transformer_u_thm]
+	(z_get_specÒcorrect_prec_calcÆ)));
 a(PC_T "z_library_ext" strip_tac THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(PC_T1 "z_library_ext" all_asm_fc_tac[]);
@@ -473,23 +514,15 @@ val €correct_prec_calc_thm› = save_pop_thm "correct_prec_calc_thm";
 =TEX
 =SML
 val €correct_thm› = save_thm("correct_thm",
-	rewrite_rule[state_transformer_u_thm, state_u_thm, prog_u_thm, pred_u_thm]
-		(z_get_spec Ò(_%models%_)Æ));
+	rewrite_rule[state_transformer_u_thm, spec_u_thm, state_u_thm, prog_u_thm, pred_u_thm]
+		(z_get_spec Ò(%models%_)Æ));
 =TEX
 =SML
 set_goal([], get_conjecture "-" "cutdown_clauses_cnj");
 a(rewrite_tac[state_transformer_u_thm, state_u_thm, refines_thm, cutdown_thm] THEN
-	REPEAT strip_tac);
-(* *** Goal "1" *** *)
-a(PC_T1 "z_library_ext" prove_tac[]);
-(* *** Goal "2" *** *)
-a(PC_T1 "z_library_ext" REPEAT strip_tac);
-(* *** Goal "2.1" *** *)
-a(z_∂_tacÒ{x1}Æ THEN PC_T1 "z_library_ext" asm_prove_tac[]);
-(* *** Goal "2.2" *** *)
-a(PC_T1 "z_library_ext" asm_prove_tac[]);
-(* *** Goal "3" *** *)
-a(PC_T1 "z_library_ext" REPEAT strip_tac);
+	REPEAT strip_tac
+	THEN PC_T1 "z_library_ext" REPEAT strip_tac
+	THEN PC_T1 "z_library_ext" asm_prove_tac[]);
 a(z_∂_tacÒ{x1}Æ THEN PC_T1 "z_library_ext" asm_prove_tac[]);
 val €cutdown_clauses›  = save_pop_thm"cutdown_clauses";
 =TEX
@@ -503,32 +536,8 @@ a(PC_T1 "z_library_ext" asm_prove_tac[]);
 (* *** Goal "2" *** *)
 a(PC_T1 "z_library_ext" asm_prove_tac[]);
 (* *** Goal "3" *** *)
-a(z_∂_tacÒ{x1}Æ THEN PC_T1 "z_library_ext" asm_prove_tac[]);
-(* *** Goal "4" *** *)
 a(z_∂_tacÒ{x1}Æ THEN REPEAT strip_tac);
 val €cutdown_pointwise_thm›  = save_pop_thm"cutdown_pointwise_thm";
-=TEX
-=SML
-set_goal([], get_conjecture "-" "sound_prec_calc_refine_cnj");
-a(REPEAT_UNTIL is_§ strip_tac THEN
-	ALL_FC_T1 fc_§_canon rewrite_tac[z_get_specÒsound_prec_calcÆ]);
-a(rewrite_tac[pred_u_thm] THEN REPEAT strip_tac);
-(* *** Goal "1" *** *)
-a(ALL_ASM_FC_T (MAP_EVERY ante_tac) []);
-a(rewrite_tac[refines_thm] THEN PC_T1 "z_library_ext" prove_tac[]);
-(* *** Goal "2" *** *)
-a(ALL_ASM_FC_T (MAP_EVERY ante_tac) []);
-a(PC_T1 "z_library_ext" prove_tac[]);
-(* *** Goal "3" *** *)
-a(cases_tacÒpostc = {}Æ);
-(* *** Goal "3.1" *** *)
-a(var_elim_nth_asm_tac 1 THEN ALL_ASM_FC_T (MAP_EVERY ante_tac) []);
-a(PC_T1 "z_library_ext" prove_tac[]);
-(* *** Goal "3.2" *** *)
-a(ALL_ASM_FC_T (MAP_EVERY ante_tac) []);
-a(POP_ASM_T ante_tac THEN rewrite_tac[refines_thm] THEN
-	PC_T1 "z_library_ext" prove_tac[]);
-val €sound_prec_calc_refine_thm›  = save_pop_thm"sound_prec_calc_refine_thm";
 =TEX
 =SML
 set_goal([], get_conjecture "-" "correct_prec_calc_sound_cnj");
@@ -536,18 +545,8 @@ a(rewrite_tac[correct_prec_calc_thm, sound_prec_calc_thm]);
 a(PC_T "z_library_ext" strip_tac THEN REPEAT strip_tac);
 a(all_asm_fc_tac[]);
 a(POP_ASM_T ante_tac THEN DROP_ASMS_T discard_tac);
-a(rewrite_tac[state_u_thm, correct_thm]);
-a(rewrite_tac[refines_thm] THEN PC_T1 "z_library_ext" REPEAT strip_tac);
-a(lemma_tacÒpostc Ω öÆ);
-(* *** Goal "1" *** *)
-a(swap_nth_asm_concl_tac 3 THEN REPEAT strip_tac);
-a(asm_rewrite_tac[] THEN z_∂_tac ÒxÆ THEN PC_T1 "z_library_ext" asm_prove_tac[]);
-(* *** Goal "2" *** *)
-a(lemma_tac Ò(µA:U∑ (A ∫ STATE) Ú (U ∏ postc) = A ∏ postc)
-	±(µR:U∑ (dom (dom (R ∫ STATE_TRANSFORMER) ∏ postc) Ú R) = R)Æ THEN1
-	(POP_ASM_T ante_tac THEN  PC_T1 "z_library_ext" prove_tac[]));
-a(swap_nth_asm_concl_tac 7 THEN asm_rewrite_tac[] THEN REPEAT strip_tac);
-a(z_∂_tacÒ(x1¶x, x2¶x1)Æ THEN REPEAT strip_tac);
+a(rewrite_tac[refines_thm, correct_thm]);
+a(taut_tac);
 val €correct_prec_calc_sound_thm›  = save_pop_thm"correct_prec_calc_sound_thm";
 =TEX
 
