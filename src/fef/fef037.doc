@@ -47,7 +47,7 @@ DRA front end filter project RSRE 1C/6130.}
 \subsection{Changes History}
 \begin{description}
 \item[\SCCSversion ({\FormatDate{$Date$
-}})] Removed $hol\_quit$ and $hol\_save$.
+}})] Tidied up a bit.
 \end{description}
 
 \subsection{Changes Forecast}
@@ -112,7 +112,6 @@ ARCH:sh = echo `arch`
 HOLDB = $(ARCH)hol.db
 FEFDB = $(ARCH)fef.db
 DIR	= /hat/projects/fef
-MLDBASE = $(DIR)/from_ied/poly_2.04/ML_dbase
 SDIR	= $(DIR)/SCCS
 SCCSGET	= sccs -d $(DIR) get
 
@@ -199,11 +198,11 @@ $(SMLFILES:.sml=) : $$@.tex
 
 $(FEFDB) : $(SMLFILES) makefef.sh
 	- chmod u+w $(HOLDB)
+	rm -f $(FEFDB)
 	hol_make_database -f -p hol#fin_set fef
 	- chmod u+w $(FEFDB)
-	makefef.sh -w -d $(FEFDB) -s "Built by makefile"  wrk044.sml wrk046.sml $(SMLFILES)
-	- discgarb $(FEFDB)
-	chmod -w $(FEFDB)
+	makefef.sh -d $(FEFDB) -s "Built by makefile"  wrk044.sml wrk046.sml \
+		$(SMLFILES)
 
 =TEX
 \section{TIDYING UP THE FILE STORE}
@@ -262,9 +261,6 @@ system.  The following options are provided.
 
 \item[-g ] Run the disc garbage collector after all the compilations.
 
-\item[-w ] Make a database with write access (default is to use
-	{\tt chmod -w} to make it read-only).
-
 \item[-s] Optional system version (a string).
 \end{description}
 
@@ -289,30 +285,34 @@ to indicate addition of fefversions,
 otherwise at 2.
 =DUMP makefef.sh
 #! /bin/sh
-# Ûmakefef.shÝ
+# makefef.sh
 #	A shell script that controls the builds of the fef database.
 #	Created from:  fef100.doc  $Id$ %Z%
 
-usage="makefef.sh: usage: makefef.sh [-d database] [-d] [-g] files"
+usage="makefef.sh: usage: makefef.sh [-d database] [-g] [-s fef_issue] files"
+
+# -g - do a garbage collect at the end
+# -d - source database to have material added in
+# -s - fef issue number (assigned to ML variable fef version)
 
 collect=n
 database=`pwd`/`arch`"hol.db"
 loadReader="1"
-readonly=y
 build_version="Not given"
 
 # Argument processing
 
-while getopts gwd:s: arg
+while getopts gd:s: arg
 do
     case $arg in
         g)    collect=y ;;
         d)    database=$OPTARG ;;
-        w)    readonly=n ;;
         s)    build_version=$OPTARG ;;
         \?)   echo $usage ; exit 1 ;;
     esac
 done
+
+# Discard all flags - only arguments left are file names
 shift `expr $OPTIND - 1`
 
 echo Compilation summary > .makefef.compile_summary
@@ -328,15 +328,14 @@ do
 
 	echo Trying: $i > .makefef.log_file
 
-	Reader=use_file
-
 	(
+# Material only put in during load of first loaded file
 	if test $loadReader = "1"
 	then
 		echo 'val fefversions : string list ref = ref'
 		date '+ ["- - build_on %y/%m/%d %H:%M:%S",'
 		echo '"Built from files in directory"];'
-		echo 'val system_version : string = "'$build_version'";'
+		echo 'val fef_version : string = "'$build_version'";'
 	cat <<EOF
 		fun Install (name, version) = (
 		let
@@ -344,7 +343,7 @@ do
 		in
 			output(log_file, "\nCompiling:\t" ^ name ^ "\n");
 			output(std_out, "Compiling: " ^ name ^ "\n");
-			$Reader name;
+			use_file name;
 			fefversions := version :: !fefversions;
 			output(log_file, "\t" ^ name ^ " compiled\n");
 			close_out log_file;
@@ -353,7 +352,10 @@ do
 		);
 EOF
 	fi
+# Material put in during the load of each file
 	echo "$command; save_and_quit();"
+
+# The following is where the above is piped to
 	) | hol -d $database -i fef_initialisation.sml 2>&1
 
 	cat .makefef.log_file >> .makefef.compile_summary
@@ -361,21 +363,10 @@ EOF
 	loadReader="2"
 done
 
-#	If this is an incremental build then the tie-off code is
-#	only wanted if the "-t" option was given.
-
-#       Here we build an input stream for "poly" (embedded in script "hol") over several lines of
+#       Here we build an input stream for "hol" over several lines of
 #	shell script, delimited by "##Start" and "##End".
 
 (	##Start
-	# Produce the tie-off code, the first part of which gives
-	# details of the non-Standard ML files used in the build
-
-	if test -f "$workfile"
-	then
-		awk '$$3=="used"{printf "fefversions := \"%s\" :: !fefversions;\n", $$0}' \
-			$workfile
-	fi
 
 	echo 'val fefversions : string list ref = ref'
 	date '+("- - build_completed %y/%m/%d %H:%M:%S" :: !fefversions);'
@@ -389,15 +380,13 @@ then
 	discgarb $database
 fi
 
-if test $readonly = "y"
-then
-	chmod -w $database
-fi
+# Always make database read-only
+chmod -w $database
 
 echo " " >> .makefef.compile_summary
 echo ================================
 sed		-e '/^Compiling:/N' \
-		-e 's/^Compiling:	\(......\.sml\)\n	\1 compiled$/Compiled OK:	\1/' \
+		-e 's/^Compiling:	\(.*\.sml\)\n	\1 compiled$/Compiled OK:	\1/' \
 		-e '/^$/d' \
 		-e 's/\n$//' \
 		-e 's/\n/--/g' \
