@@ -65,7 +65,7 @@ implementation of SWORD for the DRA front end filter project RSRE 1C/6130.}
 \subsection{Changes History}
 \begin{description}
 \item[Issue \SCCSversion ({\FormatDate{$Date$%
-}}) ] First draft.
+}}) ] Typos corrected.
 \end{description}
 
 \subsection{Changes Forecast}
@@ -94,18 +94,17 @@ formalising the critical requirements. Some formal material is included.
 \section{PRELIMINARIES}
 The following \Product{} instructions set the context for the proof
 tools and set up the new theory $fef026$, with parent the theory
-$fef022$ in which the architectural model is formalised.
+$fef025$ in which the representation of an SSQL State as a TSQL State is formalised.
 =SML 
-open_theory "fef022";
+open_theory "fef025";
 new_theoryÛ"fef026"İ;
-new_parentÛ"fef025"İ;
 push_pc "hol";
 =TEX
 
 \section{CONSTRUCTING THE SUBSYSTEMS}
 \subsection{Introduction}
 The abstract formulation of the critical requirements on
-the subsystems of $FE\_SWORD$ given in the previous section give little
+the subsystems of $FE\_SWORD$ given in \cite{DS/FMU/FEF/022}  give little
 insight into {\em how} the subsystems are to be constructed. Further detail
 on the actual data types involved is required to discuss this.
 
@@ -127,13 +126,13 @@ with $k$ columns is represented as a TSQL table with $1 + 3k$ columns:
 the first column in the TSQL table contain the row existence classes,
 successive blocks of 3 columns give the classification, the dinary data
 and the sterling data for the corresponding SSQL column. The SSQL state
-also associates some `static'' classification information about each
+also associates some `static' classification information about each
 table, namely: its class ($TS\_class$\footnote{%
 The names used here are as used in \cite{DS/FMU/FEF/004}.%
 }) and its maximum
 row class ($TS\_maxRow$), and also about each column in a table, namely:
 its existence class ($CC\_exist$) and the maximum and minimum classifications
-for the data in the column ($CS\_min$, $CS\_,max$). This information
+for the data in the column ($CS\_min$, $CS\_max$). This information
 is not represented in the TSQL state (as modelled here, although in
 practice, it will be held in a TSQL table); however, it is used in
 the transformations of \cite{filter} in order to optimise the representation,
@@ -148,7 +147,7 @@ and hence of TSQL. The main security-relevant mechanisms used in the
 transformations are therefore best understood if the optimisations,
 the handling of the scoping rules for the two languages,
 and the security checks themselves are
-best handled separately in a formal treatment.
+handled separately in a formal treatment.
 
 Most of the complexity of the TSQL and SSQL semantics is in the $SELECT$
 query. Indeed, at least in $TSQL$, the $DELETE$, $INSERT$ and $UPDATE$
@@ -165,8 +164,8 @@ and so use the following data types for them:
 
 ¹HOLLABPROD DerColSpecüüüüüüüüüüüüüüüüüüü
 Ü	DCS_name	: Ide LIST LIST;
-Ü	DCS_min		: Class;
-Ü	DCS_max		: Class;
+Ü	DCS_min	: Class;
+Ü	DCS_max	: Class;
 Ü	DCS_exists	: Class
 °üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
 ¹HOLLABPROD DerTableSpecüüüüüüüüüüüüüüüüüü
@@ -177,7 +176,7 @@ and so use the following data types for them:
 °üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
 ¹HOLLABPROD DerTableRowüüüüüüüüüüüüüüüüüü
 Ü	DTR_where	: Class;
-Ü	DTR_row		: Class;
+Ü	DTR_row	: Class;
 Ü	DTR_cols	: (Class ¸ Item) LIST
 °üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
 ¹HOLLABPROD DerTableüüüüüüüüüüüüüüüüüüüü
@@ -198,7 +197,7 @@ The names by which the column may be known
 $DCS\_min$/$DCS\_max$ &
 The minimum and maximum classes for data in the column
 (taken from the $ColSpec$s for the column initially) \\\hline
-$DCS\_exist$ &
+$DCS\_exists$ &
 The column existence class
 (taken from the $ColCon$ for the column initially) \\\hline
 $DTS\_name$ &
@@ -292,10 +291,10 @@ query and the transformed query might have the form:
 =GFT TSQL Example
 	SELECT col1‰c LUB col2‰c, rc, col2‰s + col3‰s, col2‰c LUB col3‰c
 	FROM table‰t
-	WHERE (col1‰s < col1‰s OR NOT cc DOM (col1‰c LUB col2‰c)) AND cc DOM rc
+	WHERE (col1‰s < col2‰s OR NOT cc DOM (col1‰c LUB col2‰c)) AND cc DOM rc
 =TEX
 Here the transformations have arranged to include in the derived table
-passed to the filter rows for which either the SSQL $WHERE$ clause is true
+passed to the filter, rows for which either the SSQL $WHERE$ clause is true
 or the client is not cleared to compute the $WHERE$ clause. The filter
 can then discard rows for which the $WHERE$ clause computation is a possible
 covert channel. The classification associated with each computed data value
@@ -337,7 +336,7 @@ any such rows the data query should not be allowed to proceed.
 
 \paragraph{Example 4}
 The above examples involve selection from a single table. Selection
-from (cartesian product of) several tables follows similar lines except
+from (the cartesian product of) several tables follows similar lines except
 that the row existence classes must be combined to give the existence
 class for the derived table. For, example, consider:
 
@@ -366,17 +365,17 @@ e.g. the $HAVING$ clause.
 \item
 The details of the computation of the classification of
 the result of an expression (cf. example 2 above where for each row,
-the expression $col1 + col2$ is assigned a classification which
-is the least upper bound of the classifications of $col1$ and $col2$ in that
+the expression $col2 + col3$ is assigned a classification which
+is the least upper bound of the classifications of $col2$ and $col3$ in that
 row).
 \item
 The details of the mapping of the SSQL name space onto the TSQL name space.
 \item
 The handling of nested $SELECT$ queries and the management of the
-scope of the names spaces within them.
+scope of the name spaces within them.
 \end{enumerate}
 
-In order to simplify the handling of both nested $SELECT$s and
+In order to simplify the handling both of nested $SELECT$s and
 of name space management, it is proposed to use a model of the
 TSQL execution mechanism in which the essence of the $SELECT$
 functionality is separated out. To do this, we restrict attention
@@ -419,11 +418,9 @@ of derived tables. A fairly explicit algorithm is
 specified for the SSQL states. The view for the TSQL states is then loosely
 specified in terms of the SSQL formulation.
 
-At this stage we have 
-ignored the classifications associated with directories 
-on the grounds that the symbol table operations described in 
-\cite{trans} only  allow manipulation of tables about whose existence the user 
-is cleared to know and which the user is allowed access.
+The classification of a derived table in an SSQL state 
+will be the least upper
+ bound of the corresponding table classification and `containing directory' classifications in the SSQL state.
 
 
 
@@ -658,7 +655,7 @@ $f$ reveals information which should not be visible at class $c$:
 °
 
 (The above is modelled on condition $E$ in section 4 of
-\cite{DS/FMU/FEF/022}. It may not be quite strong enough, vf. condition
+\cite{DS/FMU/FEF/022}. It may not be quite strong enough, cf. condition
 $D$ there.)
 
 We can now assert the critical requirements on the queries resulting from the
@@ -681,8 +678,8 @@ transformations using the following auxiliary:
 °
 ¹HOLCONST
 Ü	ÛSTP_secure_Eİ	:	(DerTable ¸ State‰t ­ State‰t ¸ Errors)
-Ü			­	(DerTable LIST ­ DerTable ¸ Errors) ğ
-Ü			­	(Query, 'PARS) STP_TYPE ğ
+Ü				­	(DerTable LIST ­ DerTable ¸ Errors) ğ
+Ü				­	(Query, 'PARS) STP_TYPE ğ
 ÷üüüüüüüüüüüüüü
 Ü	µupd cmps·
 Ü	STP_secure_E upd cmps
@@ -741,6 +738,7 @@ PC_C1 "hol1" rewrite_conv(map get_spec[¬Map®, ¬Nth®, ¬Let®])
 in let	comp tl = h (Map (Nth(irl tl)) [3; 1; 1; 2])
 in	comp®;
 =TEX
+
 We can now start to construct the primitive building blocks.
 In each case, we identify the origin in the specification of
 the transformations of the computation of the relevant clearances.
@@ -795,8 +793,7 @@ of functions which compute class-item pairs from a row of a table,
 together with column specifications to use for the computed fields.
 The operation acts on the first table in the argument list. 
 The argument functions are expected to assign appropriate classifications
-to the resulting fields. The computed table is anonymous as are its
-columns (.
+to the resulting fields. The computed table is anonymous.
 
 Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
 
@@ -837,9 +834,9 @@ declare_type_abbrev("PROJ_PAR", [],
 °
 \subsection{$WHERE$}
 The $WHERE$ operation is parameterised by a
-functions to compute class-itema class and a truth value from a row of a table.
+function to compute a class and a truth value from a row of a table.
 The operation acts on the first table in the argument list. 
-The argument function is expected to give an appropriate classifications
+The argument function is expected to give an appropriate classification
 for the where clause class. The specification of the computed table is
 the same as the original.
 
