@@ -65,17 +65,10 @@ DRA front end filter project RSRE 1C/6130.}
 
 \subsection{Changes History}
 \begin{description}
-\item[Issue 1.2 ({\FormatDate{93/02/08}}) ] First draft.
-\item[Issue 1.3~({\FormatDate{93/18/93}}) ]
-Corrected after comments and further thought.
-Check function removed, since the test is always that it returns
-no rows. Subsystem security property reformulated so as not to
-mention the construction function.
-\item[Issue 1.4~({\FormatDate{93/02/18}}) ]
-Various typos corrected. First issued draft.
-\item[Issue \SCCSversion~({\FormatDate{$Date$%
-}}) ]
-Some constants renamed to avoid clash with names in the theory $fef021$.
+\item[Issue \SCCSversion]
+SSQL Transformation Processor is now allowed to signal errors.
+The definition of subsystem security conditions is now spread over
+several boxes.
 \end{description}
 
 \subsection{Changes Forecast}
@@ -195,13 +188,13 @@ an optional TSQL query).
 
 =SML
 declare_type_abbrev(Û"STP_TYPE"İ, ["'TSQL_QUERY", "'PARS"],
-	” (Query ¸ Class) ­ 'TSQL_QUERY ¸ ('TSQL_QUERY + ONE) ¸ 'PARS ®);
+	” (Query ¸ Class) ­ ('TSQL_QUERY ¸ ('TSQL_QUERY + ONE) ¸ 'PARS) + Errors ®);
 
 declare_type_abbrev(Û"FILTER_TYPE"İ, ["'PARS"],
 	” (Class ¸ ANSWER ¸ 'PARS) ­ ANSWER®);
 =TEX
 Note that the type of the SSQL Transformation Processor means that its
-effect does not depend upon TSQL state;
+effect does not depend upon the TSQL state;
 this reflects the fact that, while it is planned in the SWORD Front End
 implementation to store information
 relating to the structure of the database in the TSQL DBMS, in the
@@ -223,17 +216,20 @@ as follows:
 Ü			­ 'PARS FILTER_TYPE
 Ü			­ 'ST TF_TYPE
 ÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
-Ü	µ dbms stp filter q c st·
-Ü		mkTf‰f dbms stp filter ((q, c), st)
-Ü	=	let	(dq, ocq, pars) = stp (q, c)
-Ü		in let	(st', (cks, errs)) =
-Ü				if IsL ocq
-Ü				then	dbms (OutL ocq, st)
-Ü				else	(st, ([], []))
-Ü		in	if cks = [] ± errs = [] 
-Ü			then	let	(st'',ans2) = dbms (dq, st')
-Ü				in	(st'', (c, filter (c, ans2, pars)))
-Ü			else	(st', (c, [], [notCleared]))
+Üµ dbms stp filter q c st·
+Ü	mkTf‰f dbms stp filter ((q, c), st)
+Ü=	let	res = stp(q, c)
+Ü	in	if isError res
+Ü		then	(st, (c, [], destError res))
+		else	let	(dq, ocq, pars) = destVal res
+Ü			in let	(st', (cks, errs)) =
+Ü					if IsL ocq
+Ü					then	dbms (OutL ocq, st)
+Ü					else	(st, ([], []))
+Ü			in	if cks = [] ± errs = [] 
+Ü				then	let	(st'', ans2) = dbms (dq, st')
+Ü					in	(st'', (c, filter (c, ans2, pars)))
+Ü					else	(st', (c, [], [notCleared]))
 °
 
 
@@ -294,90 +290,176 @@ $hide$ function of \cite{DS/FMU/FEF/005} and quantification over the
 SSQL states to make the necessary assertions about information flow in
 the TSQL states. Of necessity, at the level of abstraction taken
 so far in this document, it is only possible to make these assertions
-as properties of the three subsystems taken together. The following
-formulation has been derived by attempting to
+as properties of the two or more of the three subsystems taken together.
+
+The following formulation has been derived by attempting to
 give necessary conditions on the results of the SSQL Transformation
 Processor to ensure that a secure system results for a given DBMS and
-filter operation. As with the initial state and behavioural model,
-the assertion is parameterised by the represention function, $repr$.
+filter operation. It is largely based on the analogous decomposition of
+the security conjecture in \cite{DS/FMU/FEF/007}.
+As with the initial state and behavioural model,
+the conditions are parameterised as necessary by the represention function,
+$repr$.
+
+The following function determines whether the checks to be imposed before
+issuing the data query are satisfied. Its first parameter is the
+TSQL DBMS. The second parameter is the result returned
+by the SSQL Transformation Processor. If this parameter is an error indicator
+then there is no data query to issue. Otherwise, if the parameter
+does contain the optional check query then the data query is only to be issued
+if execution of the check query in the state given by the
+third parameter produces no errors and no rows of output
 
 ¹HOLCONST
-Ü	Ûsubsys_secureİ	: (State ­ 'ST)
-Ü			­ (('TSQL_QUERY, 'ST) DBMS_TYPE
-Ü			¸  ('TSQL_QUERY, 'PARS) STP_TYPE
-Ü			¸  'PARS FILTER_TYPE) SET
+Ü	Ûok_to_proceedİ	:  (('TSQL_QUERY, 'ST) DBMS_TYPE)
+Ü			­ (('TSQL_QUERY ¸ ('TSQL_QUERY + ONE) ¸ 'PARS) + Errors )
+Ü			­ 'ST
+Ü			­ BOOL
 ÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
-Üµrepr dbms stp filter·
-Ü	(dbms, stp, filter)  subsys_secure repr
+Üµdbms st stp_res·
+Ü	ok_to_proceed dbms stp_res st
+Ü¤		³isError stp_res
+Ü	±	let	(dq, ocq, pars) = destVal stp_res
+Ü		in	IsL ocq
+Ü		´	let	(cks, errs) = Snd(dbms(OutL ocq, st))
+Ü			in	errs = [] ± cks = []
+°
+
+Informally, what we want to say is that the components $dbms$, $stp$ and $filter$
+are secure subsystems with respect to a given
+representation function $repr$
+if the data query, $dq$, optional check query, $ocq$ and parameters,
+$pars$ returned by $stp$ for any query, $q$, at any clearance, $c$, have the
+following properties (where we say that ``the check fails for a state''
+if the transformation processing reported an error, or
+there is an optional check query, $ocq$, and its execution either gives
+or returns one or more rows of output).
+
+We now give five conditions which we assert will guarantee the desired
+overall security property. Each condition is defined as a set.
+The first four conditions do not depend on the $filter$ component and so are defined as sets of DBMS-SSQL Transformation Processor pairs (parameterised by
+the representation function). The fifth condition involves the filter
+as well and so is a set of triples (again parameterised by the
+representation function). The conditions follow:
+
+($A$)
+Execution of $dq$ on any state for which the check succeeds
+preserves all the structural
+constraints which allow a TSQL state to be viewed in a unique way as an
+SSQL state:
+
+¹HOLCONST
+Ü	Ûsubsys_secureAİ	: (State ­ 'ST)
+Ü				­ (('TSQL_QUERY, 'ST) DBMS_TYPE
+Ü				¸  ('TSQL_QUERY, 'PARS) STP_TYPE) SET
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Üµrepr dbms stp·
+Ü	(dbms, stp)  subsys_secureA repr
 Ü¤	µq c·
-Ü	let	(dq, ocq, pars) = stp(q, c)
-Ü	in let	check st =
-Ü			if	IsL ocq
-Ü			then	let	(cks, errs) = Snd(dbms(OutL ocq, st))
-Ü				in	³errs = [] ± cks = []
-Ü			else	T
-Ü	in
-Ü(*A*)		(µs· ¶‰1s'· check (repr s) ´ repr s' = Fst(dbms(dq, repr s)))
-Ü
-Ü(*B*)	±	(µst‰1·	IsL ocq
+Ü	let	res = stp(q, c)
+Ü	in let	(dq, ocq, pars) = destVal (stp(q, c))
+Ü	in let	ok s = ok_to_proceed dbms res s
+Ü	in	µs· ¶‰1s'· ok (repr s) ´ repr s' = Fst(dbms(dq, repr s))
+°
+
+($B$)
+If there is a query in $ocq$ then its execution does not change the
+state (i.e., it is a $SELECT$ query) and gives rise to no errors:
+
+¹HOLCONST
+Ü	Ûsubsys_secureBİ	: (State ­ 'ST)
+Ü				­ (('TSQL_QUERY, 'ST) DBMS_TYPE
+Ü				¸  ('TSQL_QUERY, 'PARS) STP_TYPE) SET
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Üµrepr dbms stp·
+Ü	(dbms, stp)  subsys_secureB repr
+Ü¤	µq c·
+Ü	let	res = stp(q, c)
+Ü	in let	(dq, ocq, pars) = destVal (stp(q, c))
+Ü	in	µst‰1·	³isError res ± IsL ocq
 Ü		´	let	(st‰2, (cks, errs)) = dbms(OutL ocq, st‰1)
-Ü			in	st‰2 = st‰1 ± errs = [])
-Ü
-Ü(*C*)	±	(µc' s' s d·
+Ü			in	st‰2 = st‰1 ± errs = []
+°
+
+($C$)
+If for some clearance $c'$, execution of $dq$ changes the state
+in a way which is visible at clearance $c'$, and $c'$ does not dominate
+$c$, then the check must fail:
+
+
+¹HOLCONST
+Ü	Ûsubsys_secureCİ	: (State ­ 'ST)
+Ü				­ (('TSQL_QUERY, 'ST) DBMS_TYPE
+Ü				¸  ('TSQL_QUERY, 'PARS) STP_TYPE) SET
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Üµrepr dbms stp·
+Ü	(dbms, stp)  subsys_secureC repr
+Ü¤	µq c·
+Ü	let	res = stp(q, c)
+Ü	in let	(dq, ocq, pars) = destVal (stp(q, c))
+Ü	in let	ok s = ok_to_proceed dbms res s
+Ü	in	(µc' s' s d·
 Ü			(repr s', d) = dbms(dq, repr s)
 Ü		±	³hide(c', s) = hide(c', s')
 Ü		±	³c' dominates c
-Ü		´	³check(repr s))
+Ü		´	³ok(repr s))
 Ü
-Ü(*D*)	±	(µc' s‰1 s‰2 s‰1' s‰2' d‰1 d‰2·
+°
+
+($D$)
+If the states resulting from execution of $dq$
+reveal a distinction which a client at clearance $c'$,
+dominating $c$, is not allowed to see then the check must fail:
+
+¹HOLCONST
+Ü	Ûsubsys_secureDİ	: (State ­ 'ST)
+Ü			­ (('TSQL_QUERY, 'ST) DBMS_TYPE
+Ü			¸  ('TSQL_QUERY, 'PARS) STP_TYPE) SET
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Üµrepr dbms stp·
+Ü	(dbms, stp)  subsys_secureD repr
+Ü¤	µq c·
+Ü	let	res = stp(q, c)
+Ü	in let	(dq, ocq, pars) = destVal (stp(q, c))
+Ü	in let	ok s = ok_to_proceed dbms res s
+Ü	in	(µc' s‰1 s‰2 s‰1' s‰2' d‰1 d‰2·
 Ü			hide(c, s‰1) = hide(c, s‰2)
 Ü		±	(repr s‰1', d‰1) = dbms(dq, repr s‰1)
 Ü		±	(repr s‰2', d‰2) = dbms(dq, repr s‰2)
 Ü		±	c' dominates c
 Ü		±	³hide(c', s‰1') = hide(c', s‰2')
-Ü		´	³check(repr s‰1))
-Ü
-Ü(*E*)	±	(µs‰1 s‰2 s‰1' s‰2' d‰1 d‰2·
+Ü		´	³ok(repr s‰1))
+°
+
+($E$)
+If the outputs resulting from execution of $dq$ reveal a distinction
+which a client at clearance $c$ is not allowed to see between two states,
+then the check must fail:
+
+¹HOLCONST
+Ü	Ûsubsys_secureEİ	: (State ­ 'ST)
+Ü			­ (('TSQL_QUERY, 'ST) DBMS_TYPE
+Ü			¸  ('TSQL_QUERY, 'PARS) STP_TYPE
+Ü			¸  'PARS FILTER_TYPE) SET
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Üµrepr dbms stp filter·
+Ü	(dbms, stp, filter)  subsys_secureE repr
+Ü¤	µq c·
+Ü	let	res = stp(q, c)
+Ü	in let	(dq, ocq, pars) = destVal (stp(q, c))
+Ü	in let	ok s = ok_to_proceed dbms res s
+Ü	in	(µs‰1 s‰2 s‰1' s‰2' d‰1 d‰2·
 Ü			hide(c, s‰1) = hide(c, s‰2)
 Ü		±	(repr s‰1', d‰1) = dbms(dq, repr s‰1)
 Ü		±	(repr s‰2', d‰2) = dbms(dq, repr s‰2)
 Ü		±	³filter(c, d‰1, pars) = filter(c, d‰2, pars)
-Ü		´	³check(repr s‰1))
+Ü		´	³ok(repr s‰1))
 °
 
-Informally, the above says that the components $dbms$, $stp$ and $filter$
-are secure subsystems with respect to a given
-representation function $repr$
-if the data query, $dq$, optional check query, $ocq$ and parameters,
-$pars$ returned by $stp$ for any query, $q$, at any clearance, $c$, have the
-following properties (where we say that ``the check succeeds for a state''
-if there is no query in $ocq$ or if there is but its execution does not
-fail and gives an empty table):
-
-\begin{description}
-\item{$A$}
-Execution of $dq$ on any state for which the check succeeds
-preserves all the structural
-constraints which allow a TSQL state to be viewed in a unique way as an
-SSQL state;
-\item{$B$}
-If there is a query in $ocq$ then its execution does not change the
-state (i.e., it is a $SELECT$ query) and gives rise to no errors;
-\item{$C$}
-If for some clearance $c'$, execution of $dq$ changes the state
-in a way which is visible at clearance $c'$, and $c'$ does not dominate
-$c$, then the check must not succeed;
-\item{$D$}
-If the states resulting from execution of $dq$
-reveal a distinction which a client at clearance $c'$,
-dominating $c$, is not allowed to see then the check must not succeed.
-\item{$E$}
-If the outputs resulting from execution of $dq$ reveal a distinction
-which a client at clearance $c$ is not allowed to see between two states,
-then the check must not succeed.
 \end{description}
 
-Clearly clause $A$ makes little sense unless $repr$
+\paragraph{Remarks}
+Clearly condition $A$ makes little sense unless $repr$
 is 1-1. The space optimisations made in the transformations imply that
 one cannot recover the SSQL state from the TSQL state alone, since, for
 example, without knowledge of the structure of the SSQL table it
@@ -398,6 +480,25 @@ components of the SSQL Abstract Machine.
 Clause $4$ of $secureUpdate$ just says that the client clearance is
 faithfully passed on from the input to the output, and is ensured by
 the definition of $mkTf\sb{t}$.
+
+We now put the five conditions together:
+
+¹HOLCONST
+Ü	Ûsubsys_secureİ	: (State ­ 'ST)
+Ü			­ (('TSQL_QUERY, 'ST) DBMS_TYPE
+Ü			¸  ('TSQL_QUERY, 'PARS) STP_TYPE
+Ü			¸  'PARS FILTER_TYPE) SET
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Üµrepr dbms stp filter·
+Ü	(dbms, stp, filter)  subsys_secure repr
+Ü¤			(dbms, stp)
+Ü			subsys_secureA repr
+Ü			¡	subsys_secureB repr
+Ü			¡	subsys_secureC repr
+Ü			¡	subsys_secureD repr
+Ü	±		(dbms, stp, filter)
+Ü			subsys_secureE repr
+°
 
 The correctness conjecture for the architectural model presented in
 this document is then the following conjecture
