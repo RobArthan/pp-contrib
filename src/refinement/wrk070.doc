@@ -259,11 +259,6 @@ which simply strips out all the specifications is semantics-preserving:
 ‹	∑ µp : PROG∑ semantics(strip_specs p) = semantics p
 ∞
 
-
-
-
-
-
 \subsection{Refinement}
 Refinement is a notion that is fundamental to the notion of program
 correctness that we will define; however, it is a semantic notion
@@ -299,7 +294,7 @@ precâ1
 postcâ1
 =TEX
 .
-The first of these conditions is the vestigial analogue of liveness in our partial
+The first of these conditions is a vestigial analogue of liveness in our partial
 correctness view of refinement --- it actually says that $s_2$ may weaken the
 pre-condition and so be more specific about its requirements for non-termination.
 The second condition is the traditional notion of safety --- it says that any response
@@ -319,11 +314,27 @@ includes the possibility that $s_2$ may be unable to respond where $s_1$ can.
 ‹ §	precâ1 Ä precâ2
 ‹ ±	precâ1 Ú postcâ2 Ä postcâ1
 ∞
+To check the definitions, we state two simple conjectures about refinement.
+The first says that any specification with an empty pre-condition is
+chaotic --- it may be refined by any specification:
+πZ
+‹ chaos_cnj ?Ù µ postc : STATE_TRANSFORMER; s : SPEC∑ (ö, postc) √ s
+∞
+The secondc conjecture says that when $s_2$ refines $s_1$, then
+the post-condition of $s_2$ cannot respond in any 
+state in the pre-condition of $s_1$ for which the post-condition of
+$s_1$ cannot respond.
+πZ
+‹ deadlock_cnj ?Ù
+‹ µ precâ1, precâ2 : PRED; postcâ1, postcâ2 : STATE_TRANSFORMER∑
+‹	(precâ1, postcâ1) √ (precâ2, postcâ2)
+‹ ¥	(precâ1 \ dom postcâ1) ° dom postcâ2 = ö
+∞
 
 
-If $t_1$ and $t_2$ are two state transformers.
+If $t_1$ and $t_2$ are two post-conditions.
 The $t_1$ {\em cut-down} of $t_2$ is the largest set of states, $c$ say,
-such that $(c, t_2)$ refines $(c, t_2)$.
+such that $(c, t_2)$ refines $(c, t_1)$.
 We write this as $t_1 \downarrow t_2$.
 
 πZ
@@ -353,34 +364,34 @@ construction.
 ∞
 \subsection{Program Correctness}
 Intuitively, a program is correct if every part of it that has a specification
-satisfies that specification. 
-As always we are only concerned
-with partial correctness here: a program, $p$,
-is then correct if every part of it that has a specification will either
-fail to terminate or will satisfy the specification
-when $p$. We write
+satisfies that specification. We relativise this notion to a notion
+of correctness with respect to a given set of starting states, identified
+by some predicate, $c$. A program, $p$, is then correct with respect to $c$
+if every part of it that has a specification will satisfy the specification
+when $p$ is started in a state in $c$. We write
 =INLINEFT
-%models% p
+c %models% p
 =TEX
 \ when this holds.
-
 πZ
-‹ relation %models% _
+‹ relation _ %models% _
 ∞
-We can now formally define the relation $(\_ \models \_)$.
-In the clause for the syntactic category Spec, note that we insist
-that the program does not terminate in states that satisfy the
-precondition but make the post-condition unsatisfiable.
 πZAX
-‹ €%models% _› :  PROG
+‹ €_ %models% _› : PRED ™ PROG
 ˜¸¸¸¸¸¸
-‹ µt : STATE_TRANSFORMER; pâ1, pâ2 : PROG; c : PRED; s : SPEC∑
-‹	(%models% (Atom t))
-‹ ±	(%models% (Seq (pâ1, pâ2)) § %models% pâ1 ± %models% pâ2)
-‹ ±	(%models% (If(c, pâ1, pâ2)) § %models% pâ1 ± %models% pâ2)
-‹ ±	(%models% (While(c, pâ1)) § %models% pâ1)
-‹ ±	(%models% (Spec(s, pâ1)) § s √ (STATE, semantics pâ1) ± %models% pâ1)
+‹ µt, postc : STATE_TRANSFORMER; pâ1, pâ2 : PROG; câ1, câ2, prec : PRED∑
+‹	(câ1 %models% (Atom t))
+‹ ±	(câ1 %models% (Seq (pâ1, pâ2)) § câ1 %models% pâ1 ± semantics pâ1 ®câ1© %models% pâ2)
+‹ ±	(câ1 %models% (If(câ2, pâ1, pâ2)) § câ1 ° câ2 %models% pâ1 ± câ1 \ câ2 %models% pâ2)
+‹ ±	(câ1 %models% (While(câ2, pâ1)) § (câ1 ° câ2) %models% pâ1)
+‹ ±	(câ1 %models% (Spec((prec, postc), pâ1))
+‹		§ (câ1 ° prec, postc) √ (câ1, semantics pâ1) ± (câ1 ° prec) %models% pâ1)
 ∞
+Any program should be correct with respect to the empty set of starting states:
+πZ
+‹ empty_correct_cnj ?Ù µprog : PROG∑ ö %models% prog
+∞
+
 \subsection{Precondition Calculation}
 A pre-condition calculator is a function that takes a program and a post-condition as
 its argument and returns a predicate that, we hope, gives the pre-condition for
@@ -421,13 +432,54 @@ require that the resulting program be correct.
 ‹	pc ç correct_prec_calc
 ‹ §	(µprog : PROG; postc : STATE_TRANSFORMER; prec : PRED
 ‹	|	prec = pc (prog, postc)
-‹	∑	%models% Spec((prec, postc), prog))
+‹	∑	prec %models% Spec((prec, postc), prog))
 ∞
 We can now formulate the (not very deep)
 conjecture that correctness for pre-condition calculators is indeed a stronger
 notion than soundness.
 πZ
 ‹ correct_prec_calc_sound_cnj ?Ù correct_prec_calc Ä sound_prec_calc
+∞
+We can also exhibit a correct, but not at all useful, pre-condition calculator,
+which simply offers the empty set as a pre-condition which will achieve
+any desired post-condition:
+πZ
+‹ trivial_correct_prec_calc_cnj ?Ù
+‹	µ pc : PREC_CALC
+‹	|	µprog : PROG; post : STATE_TRANSFORMER∑ pc (prog, post) = ö
+‹	∑	pc ç correct_prec_calc
+∞
+
+We now give a model of a more useful pre-condition calculator. The description
+is a loose one.
+πZAX
+‹ €prec_calc› : PREC_CALC
+˜¸¸¸¸¸¸
+‹ µt, postc, postcâ1 : STATE_TRANSFORMER; pâ1, pâ2 : PROG; c, precâ1 : PRED∑
+‹
+‹	prec_calc (Atom t, postc) = postc %downarrow% t
+‹
+‹ ± 	prec_calc (Seq (pâ1, pâ2), postc) = ﬁ
+‹		{ final : STATE; initial, middle : STATE
+‹		| middle = prec_calc(pâ2, STATE ∏ {final})
+‹		± initial = prec_calc(pâ1, STATE ∏ middle)
+‹		∑ initial ° postcÁ~Í ®{final}© }
+‹
+‹ ±	prec_calc (If(c, pâ1, pâ2), postc) =
+‹		(prec_calc(pâ1, postc) ° c) ¿ (prec_calc(pâ2, postc) \ c)
+‹
+‹ ±	(∂ bef, aft : PRED
+‹	 |	bef = prec_calc(pâ1, STATE ∏ aft)
+‹	 ∑	prec_calc (While(c, pâ1), postc) =
+‹		{ st : (dom((id STATE) ° postc) \ c) ¿ (bef ° c)
+‹		| (dom postc ° c) ∏ (aft \ c) Ä postc})
+‹
+‹ ±	prec_calc (Spec((precâ1, postcâ1), pâ1), postc) =
+‹		 (postc %downarrow% postcâ1) ° precâ1 ° prec_calc(pâ1, postcâ1)
+∞
+We conjecture that the above is a correct pre-condition calculator:
+πZ
+‹ correct_prec_calc_cnj ?Ù prec_calc ç correct_prec_calc
 ∞
 
 \subsection{Proofs}
@@ -490,7 +542,7 @@ set_goal([], Ò
 	{	pc : PREC_CALC
 	|	µ prog : U; postc : U; prec : U
 		| prec = pc (prog, postc)
-		∑ %models% Spec ((prec, postc), prog)}Æ);
+		∑ prec %models% Spec ((prec, postc), prog)}Æ);
 a(strip_asm_tac (rewrite_rule[prog_u_thm, pred_u_thm, state_transformer_u_thm]
 	(z_get_specÒcorrect_prec_calcÆ)));
 a(PC_T "z_library_ext" strip_tac THEN REPEAT strip_tac);
@@ -507,12 +559,17 @@ val €correct_prec_calc_thm› = save_pop_thm "correct_prec_calc_thm";
 =SML
 val €correct_thm› = save_thm("correct_thm",
 	rewrite_rule[state_transformer_u_thm, spec_u_thm, state_u_thm, prog_u_thm, pred_u_thm]
-		(z_get_spec Ò(%models%_)Æ));
+		(z_get_spec Ò(_%models%_)Æ));
 =TEX
 =SML
 val €semantics_thm› = save_thm("semantics_thm",
 	rewrite_rule[state_transformer_u_thm, spec_u_thm, state_u_thm, prog_u_thm, pred_u_thm]
 		(z_get_spec ÒsemanticsÆ));
+=TEX
+=SML
+val €prec_calc_thm› = save_thm("prec_calc_thm",
+	rewrite_rule[state_transformer_u_thm, spec_u_thm, state_u_thm, prog_u_thm, pred_u_thm]
+		(z_get_spec Òprec_calcÆ));
 =TEX
 =SML
 set_goal([], ¨
@@ -562,12 +619,30 @@ a(prog_induction_tacÒpÆ THEN asm_rewrite_tac[semantics_thm]);
 val strip_specs_thm = save_pop_thm "strip_specs_thm";
 =TEX
 =SML
+set_goal([], get_conjecture "-" "chaos_cnj");
+a(rewrite_tac[refines_thm] THEN PC_T1 "z_library_ext" prove_tac[]);
+val €chaos_thm›  = save_pop_thm"chaos_thm";
+=TEX
+=SML
+val €chaos_u_thm› = save_thm("chaos_u_thm",
+	rewrite_rule[state_transformer_u_thm, spec_u_thm] chaos_thm);
+=TEX
+=SML
+set_goal([], get_conjecture "-" "deadlock_cnj");
+a(rewrite_tac[refines_thm] THEN PC_T1 "z_library_ext" prove_tac[]);
+val €deadlock_thm›  = save_pop_thm"deadlock_thm";
+=TEX
+=SML
 set_goal([], get_conjecture "-" "cutdown_clauses_cnj");
 a(rewrite_tac[state_transformer_u_thm, state_u_thm, refines_thm, cutdown_thm] THEN
 	REPEAT strip_tac
 	THEN PC_T1 "z_library_ext" REPEAT strip_tac
 	THEN PC_T1 "z_library_ext" asm_prove_tac[]);
 val €cutdown_clauses›  = save_pop_thm"cutdown_clauses";
+=TEX
+=SML
+val €cutdown_u_clauses›  = save_thm("cutdown_u_clauses",
+	rewrite_rule[state_transformer_u_thm, state_u_thm] cutdown_clauses);
 =TEX
 =SML
 set_goal([], get_conjecture "-" "cutdown_pointwise_cnj");
@@ -586,10 +661,40 @@ a(rewrite_tac[correct_prec_calc_thm, sound_prec_calc_thm]);
 a(PC_T "z_library_ext" strip_tac THEN REPEAT strip_tac);
 a(all_asm_fc_tac[]);
 a(POP_ASM_T ante_tac THEN DROP_ASMS_T discard_tac);
-a(rewrite_tac[refines_thm, correct_thm]);
-a(taut_tac);
+a(rewrite_tac[refines_thm, correct_thm] THEN taut_tac);
 val €correct_prec_calc_sound_thm›  = save_pop_thm"correct_prec_calc_sound_thm";
 =TEX
+=SML
+set_goal([], get_conjecture "-" "empty_correct_cnj");
+a(rewrite_tac[prog_u_thm] THEN REPEAT strip_tac);
+a(prog_induction_tacÒprogÆ THEN_TRY rewrite_tac[correct_thm] THEN REPEAT strip_tac);
+a(LEMMA_T Òs = (s.1, s.2)Æ once_rewrite_thm_tac THEN1 PC_T1 "z_library_ext" REPEAT strip_tac);
+a(asm_rewrite_tac[correct_thm, chaos_u_thm]);
+val €empty_correct_thm›  = save_pop_thm"empty_correct_thm";
+=TEX
+=SML
+val €empty_correct_u_thm› = save_thm("empty_correct_u_thm",
+	rewrite_rule[prog_u_thm] empty_correct_thm);
+=TEX
+=SML
+set_goal([], get_conjecture "-" "trivial_correct_prec_calc_cnj");
+a(rewrite_tac[prog_u_thm, state_transformer_u_thm]);
+a(REPEAT strip_tac THEN asm_rewrite_tac[correct_prec_calc_thm, correct_thm]);
+a(REPEAT strip_tac THEN asm_rewrite_tac[chaos_u_thm, empty_correct_u_thm]);
+val €trivial_correct_prec_calc_thm›  = save_pop_thm"trivial_correct_prec_calc_thm";
+=TEX
+=IGN
+set_goal([], get_conjecture "-" "correct_prec_calc_cnj");
+a(rewrite_tac[correct_prec_calc_thm, prec_calc_thm]);
+a(REPEAT strip_tac THEN all_var_elim_asm_tac1);
+a(z_intro_µ_tacÒ(postc¶postc)Æ);
+a(prog_induction_tac ÒprogÆ );
+(* *** Goal "1" *** *)
+a(rewrite_tac[prec_calc_thm, correct_thm, semantics_thm, cutdown_u_clauses]);
+(* *** Goal "1" *** *)
+a(rewrite_tac[prec_calc_thm, correct_thm, semantics_thm]);
+
+val €correct_prec_calc_thm›  = save_pop_thm"correct_prec_calc_thm";
 
 \subsection{Epilogue}
 =SML
