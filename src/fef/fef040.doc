@@ -9,7 +9,7 @@
 %\TPPvolume{}
 %\TPPpart{}
 \TPPtitle{Multi-level Formal Security Policy}  %% Mandatory field
-\TPPref{DS/FMU/FEF/003}  %% Mandatory field
+\TPPref{DS/FMU/FEF/040}  %% Mandatory field
 \def\SCCSversion{$Revision$
 }
 \TPPissue{\SCCSversion}  %% Mandatory field
@@ -87,13 +87,16 @@ in section 7 of the Proposal for Phase 3, \cite{DS/FMU/FEF/039}.
 \subsection{Setting Up}
 The following \Product{} instructions set up the new theory $fef040$ and set the context 
 for the proof tools.
-The parent theory is the theory $fef003$ which contains the single level security policy and, in particular, the definition of the lattice of security classes:
+The parent theory is the theory $fef003$ which contains the single level security policy and, in particular, the definition of the lattice of security classes.
 =SML
 open_theory"fef003";
 (force_delete_theory "fef040" handle _ => ());
 new_theory €"fef040"›;
+new_parent €"fef010"›;
 push_pc "hol";
 =TEX
+\Note{{\it Pro tem.} $fef010$ which contains the consistency result for the dominance relation is made a parent to permit its use in proofs in this theory.}
+
 \section{MULTI-LEVEL SECURITY POLICY}
 =TEX
 An index of the names used in the formal specification may be found in Section \ref{INDEX}. 
@@ -111,21 +114,37 @@ An output might be an SSQL table with nodes labelling the cells.
 As in the single level model, a {\em behaviour} of a system is a single sequence of inputs and the resulting sequence of outputs.
 The {\em behavioural model} of a system is the set of all its possible behaviours.
 Since we are only concerned with deterministic systems, this is formalised  as a function from the sequences of inputs to sequences of outputs.
-For simplicity, we model inputs and outputs as having the same type; the behavioural model is generic in the type $'OBJ$ used to represent them. 
+The behavioural model is generic in the types $'IP$ and $OP$ used to represent inputs and outputs. 
 =SML
-declare_type_abbrev(€"ML_BEHAVIOURS"›,["'OBJ"], ¨: ('OBJ)LIST ≠ ('OBJ )LISTÆ);
+declare_type_abbrev(€"ML_BEHAVIOURS"›,["'IP", "'OP"], ¨: ('IP)LIST ≠ ('OP )LISTÆ);
 =TEX
 
 \subsection{Classes}
 We use the lattice of security classes defined in \cite{DS/FMU/FEF/003} as the type $Class$ togeth with operations $dominates$, $lub$, etc.
-We will need the notion of the down-set of a class:
-
+We will need the notions of the down-set
+=INLINEFT
+c%downarrow%
+=TEX
+, and the up-set
+=INLINEFT
+c%uparrow%
+=TEX
+\ of a class $c$.
+=SML
+declare_postfix(300, "%downarrow%");
+declare_postfix(300, "%uparrow%");
+=TEX
 πHOLCONST
-‹	€DownSet› : Class ≠ Class 
+‹	€$%downarrow%› : Class ≠ Class 
 ˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
-‹µc∑	DownSet c = { d | c dominates d }
+‹µc∑	c %downarrow% = { d | c dominates d }
 ∞
 
+πHOLCONST
+‹	€$%uparrow%› : Class ≠ Class 
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹µc∑	c %uparrow% = { d | d dominates c }
+∞
 
 \subsection{Purging Data}
 In \cite{DS/FMU/FEF/003}, the security policy is expressed in terms of relations $same\_ins$, and $same\_outs$ parameterised by a security class.
@@ -150,15 +169,15 @@ I.e., $x$ and $y$ are taken as the same at $c$ iff. they become identical when w
 To tackle the result labelling property, it is useful to have available the analogous notion for any set of classes, not just down-sets.
 To do this we introduce the idea of an {\em indexed equivalence relation}.
 This is to be a function, $s$ associating with each set, $A$, of classes, an equivalence relation $s(A)$.
-We require that $s$ be antimonotonic with respect to inclusion, that is to say, the bigger $A$ is, the finer is the equivalence relation $s(A)$:
+We require that $s$ be antimonotonic with respect to inclusion, that is to say, the bigger the set $A$, the finer is the equivalence relation $s(A)$:
 
 πHOLCONST
 ‹	€IndexedEquiv› : (Class  ≠ ('a ™ 'a)) 
 ˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
 ‹	IndexedEquiv =
 ‹	{	s
-‹	|	(µa∑ s(a) ç Equivalence)
-‹	±	(µa b∑ a Ä b ¥ s(b) Ä s(a))}
+‹	|	(µA∑ s(A) ç Equivalence)
+‹	±	(µA B∑ A Ä B ¥ s(B) Ä s(A))}
 ∞
 (Here $s$ stands for ``same'' reflecting the terminology of \cite{DS/FMU/FEF/003}).
 
@@ -167,49 +186,94 @@ We require that $s$ be antimonotonic with respect to inclusion, that is to say, 
 \Note{Offers for a better name than ``indexed equivalence relation'' would be gratefully received.
 I have tried ``purging relation'' and ``filter'' and didn't like them much.}
 
-\subsection{Security Policy} \label{CRITICAL}
-
-The general multi-level security policy is parameterised by an indexed equivalence relation as defined in the previous section.
+Given a relation parameterised by individual classes we may lift it to an indexed relation.
+In the next section, this lifting function allows us to relate the multi-level security policy with the single level one of \cite{DS/FMU/FEF/003}.
+It is defined as follows:
 
 πHOLCONST
-‹	€ml_secure›: (Class  ≠ ('OBJ LIST ™ 'OBJ LIST)) ≠ 'OBJ ML_BEHAVIOURS 
-˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
-‹	µs b
-‹	∑	b ç ml_secure(s) 
-‹	§	s ç IndexedEquiv
-‹		±	µc iâ1 iâ2∑
-‹				(iâ1, iâ2) ç s (DownSet c)
-‹			¥	(b iâ1, b iâ2) ç s (DownSet c)
+‹	€LiftRel› : (Class ≠ ('a ™ 'a)) ≠ (Class  ≠ ('a ™ 'a))
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹µR∑	LiftRel R = (ÃA∑•{ r | ∂c∑ c ç A ± r = R c })
 ∞
 
-Note that $ml\_secure(s)$ is empty if $s$ is not a indexed equivalence relation.
 
+
+\subsection{Security Policy} \label{CRITICAL}
+
+The general multi-level security policy is parameterised by indexed equivalence relations on the inputs and outputs as defined in the previous section.
+It is convenient to have the policy as a property of arbitrary functions rather than just of functions mapping input lists to output lists. 
+
+πHOLCONST
+‹	€ml_secure› :	(Class  ≠ ('I ™ 'I)) ≠
+‹			(Class  ≠ ('O ™ 'O)) ≠
+‹			('I ≠ 'O) 
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µsâI sâO b
+‹	∑	b ç ml_secure sâI sâO 
+‹	§		sâI ç IndexedEquiv
+‹		±	sâO ç IndexedEquiv
+‹		±	µc iâ1 iâ2∑
+‹				(iâ1, iâ2) ç sâI (c %downarrow%)
+‹			¥	(b iâ1, b iâ2) ç sâO (c %downarrow%)
+∞
+
+The following conjecture, which is fairly straightforward to prove once a few lemmas about dwon-sets etc. have been established, shows that the above multi-leve security policy does generalise the single level one of \cite{DS/FMU/FEF/003}.
+=SML
+val €conj_040_1› = ¨
+	µbm∑ bm ç secure § bm ç ml_secure (LiftRel same_ins) (LiftRel same_outs)
+Æ;
+=TEX
 \section{RESULT LABELLING}
 \subsection{Observations}
 The general way we are modelling structured multi-level objects requires us to use indirect means to handle the idea of a component of an object labelled with a class.
 We think of the component as being modelled by the function which maps an object, or a sequence of same, to the class-value pair held in the component.
-For present purposes, it is convenient to think of such a function as a pair of functions, one returning a class and the other as a value.
+For present purposes, it is generally more convenient to think of such a function as a pair of functions, one returning a class and the other as a value.
 
-In general, given an arbitrary function on a set endowed with an indexed equivalence relation, we consider the set of (minimal) sets of classes which may influence the value taken by the function on a particular element of its domain.
+
+In general, given an arbitrary function on a set endowed with an indexed equivalence relation, we consider the classes at or above which information has flowed into the result of applying the function.
 This notion may be formalised as follows:
 
 πHOLCONST
-‹	€Influences›: (Class  ≠ ('a ™ 'a)) ≠ 'a ≠ ('a ≠ 'b) ≠ Class  
+‹	€Influenced›: (Class  ≠ ('a ™ 'a)) ≠ 'a ≠ ('a ≠ 'b) ≠ Class 
 ˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
 ‹µs x f∑
-‹	Influences s x f =
-‹	{	A : Class 
-‹	| 	(∂y∑ (x, y) ç s(A) ± ≥f(x) = f(y))
-‹	±	µB∑ B † A ¥ ≥∂y∑ (x, y) ç s(B) ± ≥f(x) = f(y)}
+‹	Influenced s x f =
+‹	{ c | ∂y∑ (x, y) ç s(~(c %uparrow%)) ± ≥f(x) = f(y) }
 ∞
 
-\Note{Should one be using uncurried functions here: $Influences(s, x, f)$?}
+That is to say
+=INLINEFT
+Influenced s x f
+=TEX
+\ is the set of classes $c$ for which there is some state $y$, such that $f$ distinguishes $x$ and $y$, but $x$ and $y$ appear to be identical when viewed from any class which does not dominate $c$.
+
+
+\Note{Should one be using uncurried functions here: $Influenced(s, x, f)$?}
 
 We model the process of examining a labelled component of an object in the output of a system by a pair of functions, $(C, V)$: $C$ computing the class; and $V$ computing the value.
 We will call such a pair an observation:
 =SML
 declare_type_abbrev(€"OBSERVATION"›,["'a", "'b"], ¨: ('a ≠ Class) ∏ ('a ≠ 'b)Æ);
 =TEX
+The labelled value taken by an observation of an object is defined as follows:
+
+πHOLCONST
+‹	ObservedValue : ('a, 'b) OBSERVATION ≠ 'a ≠ (Class ∏ 'b)
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹µC V x∑
+‹	ObservedValue (C, V) x = (C x, V x)
+∞
+
+We can think of the labelled values resulting from observations as (single-level) classified objects using the following parameterised equivalence relation, which corresponds to the filtering operation performed on database cells in the single-level formulation of SWORD.
+
+πHOLCONST
+‹	SameLabVal : Class ≠ (Class ∏ 'b) ™ (Class ∏ 'b)
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹µc∑	SameLabVal c =
+‹	{	((câ1, yâ1), (câ2, yâ2))
+‹	|	câ1 = câ2
+‹	±	(c dominates câ1 ¥ yâ1 = yâ2)}
+∞
 
 We can now consider the question of when the process of making an observation is secure.
 When a client makes an observation, we assume that some trusted part of the overall system will check the class which is returned and will prevent revelation of the value to clients who are not cleared to see it.
@@ -222,19 +286,23 @@ These ideas may be formalised as follows:
 ˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
 ‹µs∑	SecureObs s =
 ‹	{	(C, V) : ('a, 'b) OBSERVATION
-‹	|	µx∑	ﬁ(Influences s x C) = {}
-‹		±	ﬁ(Influences s x V) Ä DownSet(C x) }
-‹
+‹	|	µx∑	Influenced s x C Ä {lattice_bottom}
+‹		±	Influenced s x V Ä (C x)%downarrow% }
 ∞
-\Note{In some sense, it is having to use $ﬁ$ above which ``fixes'' the problem with using greatest lower bounds in \cite{securityprops}; the extent to which it usefully saves the situation is yet to be seen.}
 
-We now make a conjecture:
+The the above definition is necessary the required security properties on an observation is shown by the following conjecture:
 =SML
-val €ml_secure_conj› = ¨
-µs: (Class  ≠ ('OBJ LIST ™ 'OBJ LIST)); b : 'OBJ ML_BEHAVIOURS∑
-	b ç ml_secure s §
-	s ç IndexedEquiv
-	±	µ(C, V)∑ (C, V) ç SecureObs s ¥ (C o b, V o b) ç SecureObs s
+val €conj_040_2› = ¨
+µs∑		s ç IndexedEquiv
+	¥	µC V∑	ObservedValue (C, V) ç ml_secure s (LiftRel SameLabVal)
+		¥	(C, V) ç SecureObs s
+Æ;
+=TEX
+=IGN
+val €conj_040_3› = ¨
+µs∑		s ç IndexedEquiv
+	¥	µC V∑	(C, V) ç SecureObs s
+		¥	ObservedValue (C, V) ç ml_secure s (LiftRel SameLabVal)
 Æ;
 =TEX
 \section{CLOSING DOWN}
@@ -242,7 +310,7 @@ The following \Product{} instruction restores the previous proof context.
 =SML
 pop_pc();
 =TEX
-=IGN
+=SML
 output_theory{theory = "fef040",out_file = "fef040th.doc"};
 =TEX
 \newpage
@@ -255,38 +323,270 @@ output_theory{theory = "fef040",out_file = "fef040th.doc"};
 \printindex
 
 \end{document}
-=IGN SML
-=TEX 
-=IGN SML
-set_goal([], ¨µs x f g∑
-	Graph g Image Influences s x (f o g) Ä Influences s x fÆ);
-a(rewrite_tac(map get_spec[¨InfluencesÆ, ¨GraphÆ, ¨$ImageÆ]) THEN
-	REPEAT strip_tac);
-a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac);
-(* *** Goal "1" *** *)`
-a(var_elim_nth_asm_tac 1);
 
-a(∂_tac¨yÆ ]);
-
-val €influences_o_thm› = save_pop_thm"influences_o_thm";
-
-=TEX 
-=IGN SML
-val €ﬁ_Ä_thm› = pc_rule1 "sets_ext" prove_rule[]¨µa b∑ a Ä b ¥ ﬁa Ä ﬁbÆ;
-=IGN SML
-set_goal([], ml_secure_conj);
-a(rewrite_tac(map get_spec[¨ml_secureÆ, ¨SecureObsÆ]) THEN REPEAT strip_tac);
-a(lemma_tac¨Influences s x (C o b) Ä Influences s x CÆ
-	THEN1 rewrite_tac[influences_o_thm]);
- 
+=SML
+set_pc"hol";
+set_goal([], ¨µl a b∑ (l ˘ a) ˘ b = l ˘ (a ° b)Æ);
+a(REPEAT strip_tac);
+a(list_induction_tac ¨lÆ THEN asm_rewrite_tac[get_spec¨$˘Æ]);
+a(REPEAT strip_tac);
+a(cases_tac¨x ç aÆ THEN asm_rewrite_tac[get_spec¨$˘Æ]);
 (* *** Goal "1" *** *)
-a(spec_nth_asm_tac 1 ¨b xÆ);
-a(PC_T "sets_ext" contr_tac);
-a(rename_tac[(¨s'Æ, "D")]);
-a(GET_NTH_ASM_T 6 (PC_T1 "sets_ext" strip_asm_tac));
-a(spec_nth_asm_tac 1 ¨b xÆ);
+a(cases_tac¨x ç bÆ THEN asm_rewrite_tac[get_spec¨$˘Æ]);
+(* *** Goal "1.1" *** *)
+a(LEMMA_T ¨x ç a ° bÆ rewrite_thm_tac THEN REPEAT strip_tac);
+(* *** Goal "1.2" *** *)
+a(LEMMA_T ¨≥x ç a ° bÆ rewrite_thm_tac THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(LEMMA_T ¨≥x ç a ° bÆ rewrite_thm_tac THEN REPEAT strip_tac);
+val €˘_˘_thm› = save_pop_thm"˘_˘_thm";
+=TEX
+=SML
+set_goal([], ¨
+	lattice_bottom %uparrow% = Universe
+±	lattice_top %downarrow% = Universe
+Æ);
+a(PC_T1 "sets_ext" prove_tac(map get_spec
+	[¨$%uparrow%Æ, ¨$%downarrow%Æ, ¨lattice_bottomÆ]));
+val €up_down_thm1› = save_pop_thm"up_down_thm1";
+=TEX
+=SML
+set_goal([], ¨
+µc∑	c ç c %downarrow%
+± 	c ç c %uparrow%
+± 	lattice_bottom ç c %downarrow%
+± 	lattice_top ç c %uparrow%
+Æ);
+a(PC_T1 "sets_ext" prove_tac(map get_spec
+	[¨$%uparrow%Æ, ¨$%downarrow%Æ, ¨lattice_bottomÆ]));
+val €up_down_thm2› = save_pop_thm"up_down_thm2";
+=TEX
+=SML
+val €up_down_clauses› = save_thm("up_down_clauses",
+	(all_µ_intro o list_±_intro o map all_µ_elim)[up_down_thm1, up_down_thm2]);
+=TEX
+=SML
+set_goal([], ¨
+µc d∑	≥ d dominates c ¥ d %downarrow% Ä ~(c %uparrow%)
+Æ);
+a(PC_T1 "sets_ext" prove_tac(map get_spec
+	[¨~Æ, ¨$%uparrow%Æ, ¨$%downarrow%Æ, ¨lattice_bottomÆ]));
+a(contr_tac THEN all_fc_tac[get_spec¨lattice_bottomÆ]);
+val €up_down_thm3› = save_pop_thm"up_down_thm3";
+=SML
+set_merge_pcs["'bin_rel", "hol2"];
+set_goal([], ¨
+µR∑	(µc∑ R c ç Equivalence) ¥
+	(LiftRel R) ç IndexedEquiv
+Æ);
+a(rewrite_tac(map get_spec[¨LiftRelÆ, ¨IndexedEquivÆ, ¨EquivalenceÆ]) THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(asm_rewrite_tac[]);
+a(spec_nth_asm_tac 3 ¨sÆ THEN all_asm_fc_tac[] THEN all_asm_fc_tac[]);
+(* *** Goal "3" *** *)
+a(asm_rewrite_tac[]);
+a(spec_nth_asm_tac 4 ¨sÆ THEN1 all_asm_fc_tac[]);
+a(spec_nth_asm_tac 4 ¨sÆ THEN all_asm_fc_tac[] THEN all_asm_fc_tac[]);
+(* *** Goal "4" *** *)
+a(spec_nth_asm_tac 3 ¨sÆ THEN1 all_asm_fc_tac[]);
+val €lift_rel_indexed_equiv_thm› = save_pop_thm"lift_rel_indexed_equiv_thm";
+=TEX
+=SML
+set_goal([], ¨
+	µc∑ same_ins c ç Equivalence
+Æ);
+a(rewrite_tac(map get_spec[¨same_insÆ, ¨EquivalenceÆ, ¨LetÆ]) THEN
+	REPEAT strip_tac THEN asm_rewrite_tac[]);
+val €same_ins_equiv_thm› = save_pop_thm"same_ins_equiv_thm";
+=TEX
+=SML
+set_goal([], ¨
+	µc∑ same_outs c ç Equivalence
+Æ);
+a(rewrite_tac(map get_spec[¨same_outsÆ, ¨EquivalenceÆ, ¨LetÆ]) THEN
+	REPEAT strip_tac THEN asm_rewrite_tac[]);
+val €same_outs_equiv_thm› = save_pop_thm"same_outs_equiv_thm";
+=TEX
+=SML
+set_goal([], ¨
+	LiftRel same_ins ç IndexedEquiv
+±	LiftRel same_outs ç IndexedEquiv
+Æ);
+a(REPEAT strip_tac THEN
+	bc_tac[lift_rel_indexed_equiv_thm] THEN
+	rewrite_tac[same_ins_equiv_thm, same_outs_equiv_thm]);
+val €same_ins_same_outs_indexed_equiv_thm› =
+	save_pop_thm"same_ins_same_outs_indexed_equiv_thm";
+=TEX
+=SML
+set_pc"hol";
+set_goal([], ¨
+µR∑	(µc∑ R c ç Equivalence) ±
+	(µc d∑c dominates d ¥ R c Ä R d) ¥
+	µc∑ (LiftRel R)(c %downarrow%) = R c
+Æ);
+a(rewrite_tac[get_spec¨LiftRelÆ] THEN REPEAT strip_tac);
+a(PC_T1 "sets_ext" REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(spec_nth_asm_tac 1 ¨R cÆ);
+a(spec_nth_asm_tac 1 ¨cÆ);
+a(all_fc_tac[up_down_clauses]);
+(* *** Goal "2" *** *)
+a(asm_ante_tac ¨c' ç c %downarrow%Æ THEN asm_rewrite_tac[get_spec¨$%downarrow%Æ]);
+a(strip_tac THEN all_asm_fc_tac[] THEN PC_T1 "sets_ext" all_asm_fc_tac[]);
+val €equiv_anti_mono_lift_rel_thm› = save_pop_thm"equiv_anti_mono_lift_rel_thm";
+=TEX
+=SML
+set_pc"hol2";
+set_goal([], ¨
+	µc d∑c dominates d ¥ same_ins c Ä same_ins d
+Æ);
+a(rewrite_tac(map get_spec[¨same_insÆ, ¨LetÆ]) THEN
+	REPEAT strip_tac THEN rename_tac[]);
+a(LEMMA_T¨µx∑
+	x ˘ {(q, c')|d dominates c'} =
+	(x ˘ {(q, c')|c dominates c'}) ˘ {(q, c')|d dominates c'}Æ
+	(fn th => once_rewrite_tac [th] THEN asm_rewrite_tac[]));
+a(rewrite_tac[˘_˘_thm]);
+a(LEMMA_T¨{(q, c')|c dominates c'} ° {(q, c')|d dominates c'} =
+	{(q, c')|d dominates c'}Æ rewrite_thm_tac);
+(* *** Goal "1" *** *)
+a(REPEAT strip_tac);
+a(all_fc_tac[get_spec¨$dominatesÆ]);
+val €same_ins_anti_mono_thm› = save_pop_thm"same_ins_anti_mono_thm";
+=TEX
+=SML
+set_pc"hol2";
+set_goal([], ¨
+	µc d∑c dominates d ¥ same_outs c Ä same_outs d
+Æ);
+a(rewrite_tac(map get_spec[¨same_outsÆ, ¨LetÆ]) THEN
+	REPEAT strip_tac THEN rename_tac[]);
+a(LEMMA_T¨µx∑
+	x ˘ {(c', d')|d dominates c'} =
+	(x ˘ {(c', d')|c dominates c'}) ˘ {(c', d')|d dominates c'}Æ
+	(fn th => once_rewrite_tac [th] THEN asm_rewrite_tac[]));
+a(rewrite_tac[˘_˘_thm]);
+a(LEMMA_T¨{(c', d')|c dominates c'} ° {(c', d')|d dominates c'} =
+	{(c', d')|d dominates c'}Æ rewrite_thm_tac);
+(* *** Goal "1" *** *)
+a(REPEAT strip_tac);
+a(all_fc_tac[get_spec¨$dominatesÆ]);
+val €same_outs_anti_mono_thm› = save_pop_thm"same_outs_anti_mono_thm";
+=TEX
+=SML
+set_pc"hol";
+set_goal([], ¨
+µc∑	(LiftRel same_ins)(c %downarrow%) = same_ins c
+±	(LiftRel same_outs)(c %downarrow%) = same_outs c
+Æ);
+a(REPEAT strip_tac THEN intro_µ_tac(¨c:ClassÆ, ¨c:ClassÆ) THEN
+	bc_tac[equiv_anti_mono_lift_rel_thm] THEN
+	rewrite_tac
+	[same_ins_equiv_thm, same_outs_equiv_thm,
+	same_ins_anti_mono_thm, same_outs_anti_mono_thm]);
+val €lift_rel_same_ins_same_outs_down_set_thm› =
+	save_pop_thm"lift_rel_same_ins_same_outs_down_set_thm";
+=TEX 
+=SML
+set_pc"hol";
+set_goal([], conj_040_1);
+a(rewrite_tac(map get_spec[¨secureÆ, ¨ml_secureÆ]) THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(rewrite_tac[same_ins_same_outs_indexed_equiv_thm]);
+(* *** Goal "2" *** *)
+a(rewrite_tac[same_ins_same_outs_indexed_equiv_thm]);
+(* *** Goal "3" *** *)
+a(POP_ASM_T ante_tac THEN
+	asm_rewrite_tac[lift_rel_same_ins_same_outs_down_set_thm]);
+(* *** Goal "4" *** *)
+a(swap_nth_asm_concl_tac 2 THEN
+	asm_rewrite_tac[lift_rel_same_ins_same_outs_down_set_thm]);
+a(contr_tac THEN all_asm_fc_tac[]);
+val €thm_040_1› = save_pop_thm"thm_040_1";
+=TEX 
+=SML
+val €ﬁ_Ä_thm› = pc_rule1 "sets_ext" prove_rule[]¨µa b∑ a Ä b ¥ ﬁa Ä ﬁbÆ;
+=SML
+=TEX 
+=SML
+set_merge_pcs["'bin_rel", "hol2"];
+set_goal([], ¨µc∑ SameLabVal c ç EquivalenceÆ);
+a(rewrite_tac(map get_spec[¨SameLabValÆ, ¨EquivalenceÆ])
+	THEN REPEAT strip_tac THEN PC_T1 "prop_eq" asm_prove_tac[]);
+val €same_lab_val_equiv_thm› = save_pop_thm"same_lab_val_equiv_thm";
+=TEX 
+=SML
+set_pc"hol";
+set_goal([], ¨LiftRel SameLabVal ç IndexedEquivÆ);
+a(bc_tac[lift_rel_indexed_equiv_thm] THEN rewrite_tac[same_lab_val_equiv_thm]);
+val €lift_rel_same_lab_val_equiv_thm› =
+	save_pop_thm"lift_rel_same_lab_val_equiv_thm";
+=TEX
+=SML
+set_pc"hol2";
+set_goal([], ¨
+	µc d∑c dominates d ¥ SameLabVal c Ä SameLabVal d
+Æ);
+a(rewrite_tac(map get_spec[¨SameLabValÆ]) THEN REPEAT strip_tac);
+a(all_fc_tac[get_spec¨$dominatesÆ]);
+val €same_lab_val_anti_mono_thm› = save_pop_thm"same_lab_val_anti_mono_thm";
+=TEX
+=SML
+set_goal([], ¨
+µc∑	(LiftRel SameLabVal)(c %downarrow%) = SameLabVal c
+Æ);
+a(bc_tac[equiv_anti_mono_lift_rel_thm] THEN
+	rewrite_tac
+	[same_lab_val_equiv_thm, same_lab_val_anti_mono_thm]);
+val €lift_rel_same_lab_down_thm› = save_pop_thm"same_lab_down_thm";
+=TEX 
+=SML
+set_pc"hol";
+set_goal([], conj_040_2);
+a(rewrite_tac(lift_rel_same_lab_down_thm:: map get_spec
+	[¨SecureObsÆ, ¨ObservedValueÆ, ¨SameLabValÆ,
+	¨ml_secureÆ, ¨InfluencedÆ]) THEN
+	PC_T1 "hol2" REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(rename_tac[(¨x'Æ, "c")] THEN cases_tac¨µd∑d dominates cÆ);
+(* *** Goal "1.1" *** *)
+a(lemma_tac ¨c dominates lattice_bottom ± lattice_bottom dominates cÆ
+	THEN1 asm_rewrite_tac[get_spec¨lattice_bottomÆ]);
+a(all_fc_tac[get_spec¨lattice_bottomÆ]);
+(* *** Goal "1.2" *** *)
+a(list_spec_nth_asm_tac 5 [¨dÆ, ¨xÆ, ¨yÆ]);
+a(all_fc_tac[up_down_thm3]);
+a(LIST_GET_NTH_ASM_T [9]
+	(ALL_FC_T (PC_T1 "sets_ext" all_fc_tac) o
+		map (rewrite_rule[get_spec¨IndexedEquivÆ])));
+(* *** Goal "2" *** *)
+a(rename_tac[(¨x'Æ, "c")] THEN rewrite_tac[get_spec¨$%downarrow%Æ]);
+a(contr_tac);
+a(lemma_tac¨C x dominates C xÆ THEN1 rewrite_tac[get_spec¨lattice_bottomÆ]);
+a(list_spec_nth_asm_tac 5 [¨C xÆ, ¨xÆ, ¨yÆ]);
+a(all_fc_tac[up_down_thm3]);
+a(LIST_GET_NTH_ASM_T [9]
+	(ALL_FC_T (PC_T1 "sets_ext" all_fc_tac) o
+		map (rewrite_rule[get_spec¨IndexedEquivÆ])));
+val €thm_040_2› = save_pop_thm"thm_040_2";
+=TEX 
+=IGN SML
+set_pc"hol";
+set_goal([], conj_040_3);
+a(rewrite_tac(lift_rel_same_lab_down_thm:: map get_spec
+	[¨SecureObsÆ, ¨ObservedValueÆ, ¨SameLabValÆ,
+	¨ml_secureÆ, ¨InfluencedÆ]) THEN
+	PC_T1 "hol2" REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(rewrite_tac[lift_rel_same_lab_val_equiv_thm]);
+(* *** Goal "1" *** *)
 
-);
+
+
+val €thm_040_3› = save_pop_thm"thm_040_3";
 
 =IGN
 \section{STATE MACHINES}
