@@ -1156,7 +1156,8 @@ a(DROP_NTH_ASM_T 2 ante_tac THEN cases_tac¬s m = x® THEN asm_rewrite_tac[]);
 val Ûcts_lim_seq_thm1Ý = save_pop_thm "cts_lim_seq_thm1";
 =TEX
 A few other simple facts about limits of sequences will be useful.
-The following shows that we can ignore any finite leading subsequence of
+The following ``shift theorem''
+shows that we can ignore any finite leading subsequence of
 a sequence when we calculate its limit:
 =SML
 set_goal([], ¬µm s x· (s --> x) ¤ (Ìn·s (m+n)) --> x®);
@@ -1171,6 +1172,44 @@ a(TOP_ASM_T (strip_asm_tac o rewrite_rule[¼_def]) THEN all_var_elim_asm_tac1);
 a(SPEC_NTH_ASM_T 1 ¬n+i® ante_tac THEN conv_tac (ONCE_MAP_C anf_conv) THEN REPEAT strip_tac);
 val Ûlim_seq_shift_thmÝ = save_pop_thm "lim_seq_shift_thm";
 =TEX
+Using the shift theorem, we can now prove a further sharpening of
+the characterisation of continuity in terms of sequence convergence.
+=SML
+set_goal([], ¬µf x·
+	f CtsAt x ¤
+	¶a b· a < x ± x < b ±
+	(µs· s --> x ± (µm·³s m = x ± a < s m ± s m < b) ´ (Ìm·f(s m)) --> f x)®);
+a(rewrite_tac[cts_lim_seq_thm1] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(¶_tac¬x + ~(î¯ 1)® THEN ¶_tac¬x + î¯ 1® THEN REPEAT strip_tac);
+a(GET_NTH_ASM_T 3 bc_thm_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(GET_NTH_ASM_T 2 (strip_asm_tac o rewrite_rule[lim_seq_def]));
+a(LIST_GET_NTH_ASM_T [5, 6]
+	(MAP_EVERY(strip_asm_tac o once_rewrite_rule[¯_less_0_less_thm])));
+a(LIST_GET_NTH_ASM_T [3] all_fc_tac);
+a(once_rewrite_tac[µ_elim¬n + n'®lim_seq_shift_thm]);
+a(rewrite_tac[]);
+a(LEMMA_T¬µi j k· s((i+j)+k)=(Ìk·s((i + j) + k))k® once_rewrite_thm_tac THEN1
+	rewrite_tac[]);
+a(DROP_NTH_ASM_T 8 bc_thm_tac);
+a(ALL_FC_T asm_rewrite_tac[lim_seq_shift_thm] THEN contr_tac
+	THEN POP_ASM_T (strip_asm_tac o rewrite_rule[¯_³_less_¼_thm]));
+(* *** Goal "2.1" *** *)
+a(lemma_tac ¬î¯ 0 ¼ ~(s((n+n')+m)) + x® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(LEMMA_T¬³Abs(~(~(s((n+n')+m)) + x)) < x + ~a® ante_tac THEN1
+	(asm_rewrite_tac[¯_abs_minus_thm] THEN 
+	asm_rewrite_tac[¯_abs_def] THEN
+	PC_T1 "¯_lin_arith" asm_prove_tac[]));
+a(rewrite_tac[] THEN GET_NTH_ASM_T 4 bc_thm_tac THEN PC_T1 "lin_arith" prove_tac[]);
+(* *** Goal "2.2" *** *)
+a(lemma_tac ¬î¯ 0 ¼ s((n+n')+m) + ~x® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(LEMMA_T¬³Abs(s((n+n')+m) + ~x) < b + ~x® ante_tac THEN1
+	(asm_rewrite_tac[¯_abs_def] THEN
+	PC_T1 "¯_lin_arith" asm_prove_tac[]));
+a(rewrite_tac[] THEN GET_NTH_ASM_T 3 bc_thm_tac THEN PC_T1 "lin_arith" prove_tac[]);
+val Ûcts_lim_seq_thm2Ý = save_pop_thm "cts_lim_seq_thm2";
+=TEX
 =SML
 set_goal([], ¬µs x· (s --> x) ± ³x = î¯ 0 ´ ¶n·µm· n ¼ m ´ ³s m = î¯ 0®);
 a(rewrite_tac[lim_seq_def] THEN contr_tac);
@@ -1180,6 +1219,25 @@ a(spec_nth_asm_tac 3 ¬n®);
 a(spec_nth_asm_tac 3 ¬m®);
 a(POP_ASM_T ante_tac THEN asm_rewrite_tac[¯_abs_minus_thm]);
 val Ûlim_seq_³_0_thmÝ = save_pop_thm "lim_seq_³_0_thm";
+=TEX
+Now we give the useful result that continuity is a local property: i.e.,
+if two functions agree in a neighbourhood of a point and
+one is continuous at that point then so is the other:
+=SML
+set_goal([], ¬µf g x a b·
+	a < x ± x < b
+±	(µy· a < y ± y < b ´ f y = g y)
+±	g CtsAt x
+´	f CtsAt x ®);
+a(REPEAT strip_tac THEN rewrite_tac[cts_lim_seq_thm2]);
+a(¶_tac¬a® THEN ¶_tac¬b® THEN REPEAT strip_tac);
+a(LEMMA_T¬µm·f(s m) = g(s m)®rewrite_thm_tac THEN1
+	(REPEAT strip_tac THEN
+	spec_nth_asm_tac 1 ¬m:î® THEN
+	all_asm_fc_tac[]));
+a(LEMMA_T¬f x = g x®rewrite_thm_tac THEN1 all_asm_fc_tac[]);
+a(GET_NTH_ASM_T 3 (bc_thm_tac o rewrite_rule[cts_lim_seq_thm]) THEN asm_rewrite_tac[]);
+val Ûcts_local_thmÝ = save_pop_thm"cts_local_thm";
 =TEX
 We now show that the polynomial constructions preserve limits.
 
@@ -1290,6 +1348,113 @@ set_goal([], ¬(Ìx·î¯ 3 * ((1/2)+x)›-›1) CtsAt 1/3®);
 a(REPEAT (simple_cts_tac THEN REPEAT strip_tac));
 a(rewrite_tac[]);
 val test2 = pop_thm();
+=TEX
+Another useful lemma says any function continuous
+on a closed interval can be extended to a function continuous
+on the whole line.
+It is occasionally useful to know the chosen values of the continuous extension
+so we prove that stronger form first and then derive the weaker one from it.
+For various reasons, we formulate the stronger form with the equations
+arranged to map in the other order.
+=SML
+set_goal([], ¬µa b f·
+	a < b
+±	(µx· a ¼ x ± x ¼ b ´ f CtsAt x)
+´	(¶g·
+		(µx· a ¼ x ± x ¼ b ´ g x = f x)
+	±	(µx·x < a ´ g x = f a)
+	±	(µx·b < x ´ g x = f b)
+	±	(µx· g CtsAt x)) ®);
+a(REPEAT strip_tac);
+a(¶_tac¬Ìz·
+	if	z < a
+	then	f a
+	else if	b < z
+	then	f b
+	else	f z® THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(LEMMA_T¬³x < a ± ³ b < x® asm_rewrite_thm_tac THEN1
+	PC_T1 "¯_lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(asm_rewrite_tac[]);
+(* *** Goal "3" *** *)
+a(LEMMA_T¬³x < a®  asm_rewrite_thm_tac THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+(* *** Goal "4" *** *)
+a(cases_tac¬x < a® THEN1 bc_thm_tac cts_local_thm);
+(* *** Goal "4.1" *** *)
+a(¶_tac¬Ìx·f a® THEN ¶_tac¬a® THEN ¶_tac¬x + ~(î¯ 1)® THEN
+	asm_rewrite_tac[const_cts_thm] THEN REPEAT strip_tac THEN
+	asm_rewrite_tac[]);
+(* *** Goal "4.2" *** *)
+a(cases_tac¬x = a® THEN1 all_var_elim_asm_tac1);
+(* *** Goal "4.2.1" *** *)
+a(rewrite_tac[cts_lim_seq_thm2]);
+a(POP_ASM_T ante_tac THEN rewrite_tac[cts_lim_seq_thm] THEN REPEAT strip_tac);
+a(¶_tac¬a + ~(î¯ 1)® THEN ¶_tac¬b® THEN REPEAT strip_tac);
+a(LEMMA_T¬³b < a ® rewrite_thm_tac THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(LEMMA_T¬µm·³b < s m®rewrite_thm_tac THEN1
+	(REPEAT strip_tac THEN
+	spec_nth_asm_tac 1 ¬m:î® THEN
+	PC_T1 "¯_lin_arith" asm_prove_tac[]));
+a(LEMMA_T ¬µm:î·
+	f a = (Ìi· f a)m
+± 	f (s m) = (Ìi·f(s i))m
+±	(s m < a ¤ (Ìi·s i < a) m)® once_rewrite_thm_tac
+	THEN1 rewrite_tac[]);
+a(bc_thm_tac lim_seq_choice_thm THEN rewrite_tac[const_lim_seq_thm]);
+a(SPEC_NTH_ASM_T 3 ¬a® ante_tac);
+a(LEMMA_T ¬a ¼ b® rewrite_thm_tac THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(strip_tac THEN all_asm_fc_tac[]);
+(* *** Goal "4.2.2" *** *)
+a(cases_tac¬x < b® THEN1 bc_thm_tac cts_local_thm);
+(* *** Goal "4.2.2.1" *** *)
+a(lemma_tac ¬a < x® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(¶_tac¬f® THEN ¶_tac¬b® THEN ¶_tac¬a® THEN asm_rewrite_tac[]);
+a(REPEAT strip_tac THEN1 
+	(LEMMA_T ¬³y < a ± ³b < y®rewrite_thm_tac THEN
+	PC_T1 "¯_lin_arith" asm_prove_tac[]));
+a(GET_NTH_ASM_T 5 bc_thm_tac THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
+(* *** Goal "4.2.2.2" *** *)
+a(cases_tac¬x = b® THEN1 all_var_elim_asm_tac1);
+(* *** Goal "4.2.2.2.1" *** *)
+a(LIST_DROP_NTH_ASM_T [1,2] discard_tac THEN rewrite_tac[cts_lim_seq_thm2]);
+a(POP_ASM_T ante_tac THEN rewrite_tac[cts_lim_seq_thm] THEN REPEAT strip_tac);
+a(¶_tac¬a® THEN ¶_tac¬b + î¯ 1® THEN REPEAT strip_tac);
+a(LEMMA_T¬³b < a ® rewrite_thm_tac THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(LEMMA_T¬µm·³s m < a®rewrite_thm_tac THEN1
+	(REPEAT strip_tac THEN
+	spec_nth_asm_tac 1 ¬m:î® THEN
+	PC_T1 "¯_lin_arith" asm_prove_tac[]));
+a(LEMMA_T ¬µm:î·
+	f b = (Ìi· f b)m
+± 	f (s m) = (Ìi·f(s i))m
+±	(b < s m ¤ (Ìi·b < s i) m)® once_rewrite_thm_tac
+	THEN1 rewrite_tac[]);
+a(bc_thm_tac lim_seq_choice_thm THEN rewrite_tac[const_lim_seq_thm]);
+a(SPEC_NTH_ASM_T 3 ¬b® ante_tac);
+a(LEMMA_T ¬a ¼ b® rewrite_thm_tac THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(strip_tac THEN all_asm_fc_tac[]);
+(* *** Goal "4.2.2.2.2" *** *)
+a(LEMMA_T ¬b < x® ante_tac THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(LIST_DROP_NTH_ASM_T [1,2,3,4] discard_tac THEN strip_tac);
+a(all_fc_tac[µ_elim¬b®¯_less_dense_thm]);
+a(bc_thm_tac cts_local_thm);
+a(¶_tac¬Ìx·f b® THEN ¶_tac¬x + î¯ 1® THEN ¶_tac¬b® THEN
+	asm_rewrite_tac[const_cts_thm] THEN REPEAT strip_tac THEN
+	asm_rewrite_tac[]);
+a(LEMMA_T ¬³y < a® rewrite_thm_tac THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
+val Ûcts_extension_thm1Ý = save_pop_thm"cts_extension_thm1";
+=TEX
+The weaker form of the extension theorem can now easily be derived:
+=SML
+set_goal([], ¬µa b f·
+	a < b
+±	(µx· a ¼ x ± x ¼ b ´ f CtsAt x)
+´	(¶g· (µx· a ¼ x ± x ¼ b ´ g x = f x) ± (µx· g CtsAt x)) ®);
+a(REPEAT strip_tac);
+a(all_fc_tac[cts_extension_thm1]);
+a(¶_tac¬g® THEN asm_rewrite_tac[]);
+val Ûcts_extension_thmÝ = save_pop_thm"cts_extension_thm";
 =TEX
 \subsection{Derivatives}
 Following Harrison, we make much use of Carath\'{e}odory's characterisation
@@ -1470,7 +1635,7 @@ val Ûrecip_deriv_thmÝ = save_pop_thm "recip_deriv_thm";
 =TEX
 \subsubsection{Some of the Classical Theorems}
 First of all we prove the following rather unusual result which works out
-nicely in many cases where we would otherwise have to work directly with
+nicely in some cases where we would otherwise have to work directly with
 suprema. For the want of a better name, we call it the ``curtain
 induction principle'' (think of sliding a curtain along the real line starting
 from $-\infty$).
@@ -1524,7 +1689,94 @@ a(¶_tac¬x + ~(1/2)® THEN ¶_tac¬x + (1/2)® THEN REPEAT strip_tac);
 a(¶_tac¬y'+3/2® THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
 val test10 = pop_thm();
 =TEX
-Heine-Borel theorem: nearly all the work is in the following lemma:
+Bolzano's principle of bisection, via a lemma which contains most
+of the argument:
+=SML
+set_goal([], ¬µp·
+	(µx y·y < x ´ p x y)
+±	(µx y z· x ¼ y ± y ¼ z ± p x y ± p y z ´ p x z)
+±	(µy·¶d· î¯ 0 < d ± (µx z·  x ¼ y ± y ¼ z ± z - x < d ´ p x z))
+´	(µx y·p x y)
+®);
+a(REPEAT strip_tac);
+a(LEMMA_T¬µt·t ¼ y ´ p x t® (strip_asm_tac o µ_elim¬y®));
+a(lemma_tac¬µc·p c c® THEN1
+	(REPEAT strip_tac THEN
+	POP_ASM_T (strip_asm_tac o µ_elim¬c:¯®) THEN
+	POP_ASM_T bc_thm_tac THEN asm_rewrite_tac[]));
+a(curtain_induction_tac¬y:¯®);
+(* *** Goal "1" *** *)
+a(¶_tac¬x + ~(î¯ 1)® THEN REPEAT strip_tac);
+a(lemma_tac¬t < x® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(REPEAT strip_tac);
+a(GET_NTH_ASM_T 3 bc_thm_tac THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
+(* *** Goal "3" *** *)
+a(cases_tac¬y' < x®);
+(* *** Goal "3.1" *** *)
+a(¶_tac¬y' + ~(î¯ 1)® THEN ¶_tac¬x® THEN REPEAT strip_tac);
+a(cases_tac¬t < x® THEN1 all_asm_fc_tac[]);
+a(lemma_tac¬t = x® THEN_LIST[PC_T1"¯_lin_arith"asm_prove_tac[], all_var_elim_asm_tac1]);
+a(asm_rewrite_tac[]);
+(* *** Goal "3.2" *** *)
+a(POP_ASM_T (strip_asm_tac o rewrite_rule[¯_³_less_¼_thm]));
+a(cases_tac¬³µb·b < y' ´ p x b®);
+(* *** Goal "3.2.1" *** *)
+a(¶_tac¬b® THEN ¶_tac¬y' + î¯ 1® THEN REPEAT strip_tac);
+a(spec_nth_asm_tac 2 ¬b®);
+(* *** Goal "3.2.2" *** *)
+a(spec_nth_asm_tac 4 ¬y'®);
+a(¶_tac¬y' + ~(1/3*d)® THEN ¶_tac¬y' + 1/3*d® THEN REPEAT strip_tac
+	THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]
+	THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(cases_tac¬t < y'® THEN1 all_asm_fc_tac[]);
+a(POP_ASM_T (strip_asm_tac o rewrite_rule[¯_³_less_¼_thm]));
+a(lemma_tac¬¶a·x ¼ a ± a ¼ y' ± y' - a ¼ 1/3*d ± p x a®);
+(* *** Goal "3.2.2.1" *** *)
+a(cases_tac¬x ¼ y' + ~(1/3*d)®);
+(* *** Goal "3.2.2.1.1" *** *)
+a(¶_tac¬y' + ~(1/3*d)® THEN REPEAT strip_tac THEN_TRY
+	PC_T1"¯_lin_arith" asm_prove_tac[]);
+a(spec_nth_asm_tac 7 ¬y' + ~(1/3*d)®);
+a(PC_T1 "¯_lin_arith" asm_prove_tac[]);
+(* *** Goal "3.2.2.1.2" *** *)
+a(¶_tac¬x® THEN REPEAT strip_tac THEN1
+	PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(asm_rewrite_tac[]);
+(* *** Goal "3.2.2.2" *** *)
+a(GET_NTH_ASM_T 14 bc_thm_tac);
+a(¶_tac¬a® THEN REPEAT strip_tac THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(GET_NTH_ASM_T 8 bc_thm_tac THEN REPEAT strip_tac);
+a(PC_T1 "¯_lin_arith" asm_prove_tac[]);
+val Ûbisection_lemmaÝ = pop_thm();
+=TEX
+=SML
+set_goal([], ¬µp·
+	(µx y z· x ¼ y ± y ¼ z ± p x y ± p y z ´ p x z)
+±	(µy·¶d· î¯ 0 < d ± (µx z·  x ¼ y ± y ¼ z ± z - x < d ´ p x z))
+´	(µa b· a ¼ b ´ p a b)
+®);
+a(REPEAT strip_tac);
+a(lemma_tac¬µa b·(Ì x y·if x ¼ y then p x y else T)a b® THEN1
+	(bc_thm_tac bisection_lemma THEN rewrite_tac[] THEN REPEAT strip_tac));
+(* *** Goal "1" *** *)
+a(PC_T1 "¯_lin_arith" asm_prove_tac[]);
+(* *** Goal "2" (= 3, 4, and 5) *** *)
+a(all_asm_fc_tac[]);
+(* *** Goal "6" *** *)
+a(spec_nth_asm_tac 2 ¬y®);
+a(¶_tac¬d® THEN REPEAT strip_tac);
+a(DROP_NTH_ASM_T 5 (strip_asm_tac o rewrite_rule[]));
+a(all_asm_fc_tac[]);
+(* *** Goal "7" *** *)
+a(POP_ASM_T (ante_tac o list_µ_elim[¬a®, ¬b®]) THEN asm_rewrite_tac[]);
+val Ûbisection_thmÝ = save_pop_thm"bisection_thm";
+=TEX
+The Heine-Borel theorem says that every covering of a closed interval by a family
+of open sets has a finite subcovering.
+Nearly all the analysis is in the following lemma, which deals with
+the case where the covering actually covers the whole real line:
 =SML
 set_goal([], ¬µV x y·
 	V € OpenSets
@@ -1575,6 +1827,11 @@ a(LIST_GET_NTH_ASM_T [3] all_fc_tac);
 a(¶_tac ¬s'® THEN REPEAT strip_tac);
 val Ûheine_borel_lemmaÝ = pop_thm();
 =TEX
+The Heine-Borel theorem follows from the lemma by a slightly tedious
+argument showing that w.l.o.g., we may assume that the open covering
+of the closed interval is actually an open covering of the whole real line
+(becauuse one can throw in the complement of the interval first and then
+afterwards discard it from the finite subcovering).
 =SML
 set_goal([], ¬µV x y·
 	V € OpenSets
@@ -1620,105 +1877,148 @@ a(¶_tac¬s® THEN PC_T1 "sets_ext1" REPEAT strip_tac);
 a(¶_tac¬x'® THEN REPEAT strip_tac);
 val Ûheine_borel_thmÝ = save_pop_thm "heine_borel_thm";
 =TEX
-Bolzano's principle of bijection:
+The next classical result is that a function continuous on a closed
+interval is bounded on that interval.
+We do the special case where the function is continuous everywhere
+as a lemma first:
 =SML
-set_goal([], ¬µp·
-	(µx y·y < x ´ p x y)
-±	(µx y z· x ¼ y ± y ¼ z ± p x y ± p y z ´ p x z)
-±	(µy·¶d· î¯ 0 < d ± (µx z·  x ¼ y ± y ¼ z ± Abs(z - x) < d ´ p x z))
-´	(µx y·p x y)
-®);
+set_goal([], ¬µf·
+	(µx· f CtsAt x)
+´	µa b·a ¼ b ´ (¶c· µx· a ¼ x ± x ¼ b ´ f x < c) ®);
+a(µ_tac THEN ´_tac);
+a(bc_thm_tac (rewrite_rule[]
+	(µ_elim¬Ìa b·¶c· µx· a ¼ x ± x ¼ b ´ f x < c®bisection_thm)));
 a(REPEAT strip_tac);
-a(LEMMA_T¬µt·t ¼ y ´ p x t® (strip_asm_tac o µ_elim¬y®));
-a(lemma_tac¬µc·p c c® THEN1
-	(REPEAT strip_tac THEN
-	POP_ASM_T (strip_asm_tac o µ_elim¬c:¯®) THEN
-	POP_ASM_T bc_thm_tac THEN asm_rewrite_tac[]));
-a(curtain_induction_tac¬y:¯®);
 (* *** Goal "1" *** *)
-a(¶_tac¬x + ~(î¯ 1)® THEN REPEAT strip_tac);
-a(lemma_tac¬t < x® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
-a(all_asm_fc_tac[]);
+a(cases_tac¬c < c'® THEN_LIST [¶_tac¬c'®, ¶_tac¬c®] THEN
+	REPEAT strip_tac THEN
+	strip_asm_tac(list_µ_elim[¬x':¯®, ¬y®]¯_¼_cases_thm) THEN
+	all_asm_fc_tac[] THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
 (* *** Goal "2" *** *)
-a(REPEAT strip_tac);
-a(GET_NTH_ASM_T 3 bc_thm_tac THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
-(* *** Goal "3" *** *)
-a(cases_tac¬y' < x®);
-(* *** Goal "3.1" *** *)
-a(¶_tac¬y' + ~(î¯ 1)® THEN ¶_tac¬x® THEN REPEAT strip_tac);
-a(cases_tac¬t < x® THEN1 all_asm_fc_tac[]);
-a(lemma_tac¬t = x® THEN_LIST[PC_T1"¯_lin_arith"asm_prove_tac[], all_var_elim_asm_tac1]);
-a(asm_rewrite_tac[]);
-(* *** Goal "3.2" *** *)
-a(POP_ASM_T (strip_asm_tac o rewrite_rule[¯_³_less_¼_thm]));
-a(cases_tac¬³µb·b < y' ´ p x b®);
-(* *** Goal "3.2.1" *** *)
-a(¶_tac¬b® THEN ¶_tac¬y' + î¯ 1® THEN REPEAT strip_tac);
-a(spec_nth_asm_tac 2 ¬b®);
-(* *** Goal "3.2.2" *** *)
-a(spec_nth_asm_tac 4 ¬y'®);
-a(¶_tac¬y' + ~(1/3*d)® THEN ¶_tac¬y' + 1/3*d® THEN REPEAT strip_tac
-	THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]
-	THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
-a(cases_tac¬t < y'® THEN1 all_asm_fc_tac[]);
-a(POP_ASM_T (strip_asm_tac o rewrite_rule[¯_³_less_¼_thm]));
-a(lemma_tac¬¶a·x ¼ a ± a ¼ y' ± Abs(y' - a) ¼ 1/3*d ± p x a®);
-(* *** Goal "3.2.2.1" *** *)
-a(lemma_tac¬î¯ 0 ¼ 1/3*d® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
-a(cases_tac¬x ¼ y' + ~(1/3*d)®);
-(* *** Goal "3.2.2.1.1" *** *)
-a(¶_tac¬y' + ~(1/3*d)® THEN REPEAT strip_tac THEN_LIST
-	[PC_T1"¯_lin_arith" asm_prove_tac[],
-	conv_tac (ONCE_MAP_C ¯_anf_conv) THEN asm_rewrite_tac[¯_abs_def],
-	id_tac]);
-a(spec_nth_asm_tac 8 ¬y' + ~(1/3*d)®);
-a(PC_T1 "¯_lin_arith" asm_prove_tac[]);
-(* *** Goal "3.2.2.1.2" *** *)
-a(¶_tac¬x® THEN REPEAT strip_tac);
-(* *** Goal "3.2.2.1.2.1" *** *)
-a(lemma_tac¬î¯ 0 ¼ y' + ~x® THEN1
-	PC_T1 "¯_lin_arith" asm_prove_tac[]);
-a(asm_rewrite_tac[¯_abs_def] THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
-(* *** Goal "3.2.2.1.2.2" *** *)
-a(asm_rewrite_tac[]);
-(* *** Goal "3.2.2.2" *** *)
-a(GET_NTH_ASM_T 14 bc_thm_tac);
-a(¶_tac¬a® THEN REPEAT strip_tac THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
-a(GET_NTH_ASM_T 8 bc_thm_tac THEN REPEAT strip_tac);
-a(lemma_tac¬Abs(t - y') ¼ 1/3*d®);
-(* *** Goal "3.2.2.2.1" *** *)
-a(lemma_tac¬î¯ 0 ¼ t + ~y'® THEN1
-	PC_T1 "¯_lin_arith" asm_prove_tac[]);
-a(asm_rewrite_tac[¯_abs_def] THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
-(* *** Goal "3.2.2.2.2" *** *)
-a(bc_thm_tac ¯_¼_less_trans_thm THEN ¶_tac¬Abs(t - y') + Abs(y' - a)®);
-a(REPEAT strip_tac THEN_LIST
-	[bc_thm_tac ¯_abs_plus_bc_thm,
-	PC_T1"¯_lin_arith" asm_prove_tac[]]);
-a(conv_tac (ONCE_MAP_C ¯_anf_conv) THEN REPEAT strip_tac);
-val Ûbisection_lemmaÝ = pop_thm();
-=TEX
-=SML
-set_goal([], ¬µp·
-	(µx y z· x ¼ y ± y ¼ z ± p x y ± p y z ´ p x z)
-±	(µy·¶d· î¯ 0 < d ± (µx z·  x ¼ y ± y ¼ z ± Abs(z - x) < d ´ p x z))
-´	(µx y· x ¼ y ´ p x y)
-®);
-a(REPEAT strip_tac);
-a(lemma_tac¬µx y·(Ì x y·if x ¼ y then p x y else T)x y® THEN1
-	(bc_thm_tac bisection_lemma THEN rewrite_tac[] THEN REPEAT strip_tac));
-(* *** Goal "1" *** *)
-a(PC_T1 "¯_lin_arith" asm_prove_tac[]);
-(* *** Goal "2" (= 3, 4, and 5) *** *)
-a(all_asm_fc_tac[]);
-(* *** Goal "6" *** *)
-a(spec_nth_asm_tac 2 ¬y'®);
+a(POP_ASM_T (ante_tac o rewrite_rule[cts_at_def] o µ_elim¬y®));
+a(STRIP_T (strip_asm_tac o µ_elim¬î¯ 1®));
 a(¶_tac¬d® THEN REPEAT strip_tac);
-a(DROP_NTH_ASM_T 5 (strip_asm_tac o rewrite_rule[]));
+a(¶_tac¬f y + î¯ 1® THEN REPEAT strip_tac);
+a(lemma_tac ¬Abs(x' + ~y) < d®);
+(* *** Goal "2.1" *** *)
+a(cases_tac¬î¯ 0 ¼ (x' + ~y)® THEN asm_rewrite_tac[¯_abs_def]
+	THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
+(* *** Goal "2.2" *** *)
+a(all_asm_fc_tac[] THEN swap_nth_asm_concl_tac 1);
+a(POP_ASM_T ante_tac THEN rewrite_tac[¯_³_less_¼_thm] THEN REPEAT strip_tac);
+a(lemma_tac¬î¯ 0 ¼ (f x' + ~(f y))® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(asm_rewrite_tac[¯_abs_def] THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
+val Ûcts_bounded_lemmaÝ = pop_thm();
+=TEX
+Now the general result on the boundedness of a function continuous on
+some interval:
+=SML
+set_goal([], ¬µf a b·
+	(µx· a ¼ x ± x ¼ b ´ f CtsAt x)
+´	¶c· µx· a ¼ x ± x ¼ b ´ f x < c ®);
+a(REPEAT strip_tac);
+a(cases_tac¬³a ¼ b® THEN1
+	(LEMMA_T¬µx·³(a ¼ x ± x ¼ b)®rewrite_thm_tac THEN
+	PC_T1 "¯_lin_arith" asm_prove_tac[]));
+a(cases_tac¬a = b® THEN1 all_var_elim_asm_tac1);
+a(¶_tac¬f b + î¯ 1® THEN REPEAT strip_tac THEN
+	LEMMA_T ¬x = b® rewrite_thm_tac THEN
+	PC_T1 "¯_lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(lemma_tac ¬a < b® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(all_fc_tac[conv_rule (ONCE_MAP_C eq_sym_conv) cts_extension_thm]);
+a(all_fc_tac[cts_bounded_lemma]);
+a(¶_tac¬c® THEN REPEAT strip_tac THEN ALL_ASM_FC_T rewrite_tac[]);
+val Ûcts_bounded_thmÝ = save_pop_thm "cts_bounded_thm";
+=TEX
+The next classical result is the intermediate value theorem.
+As so often, a lemma containing the main part of the argument comes first.
+We follow many authors in doing the case where the intermediate value is $0$
+first to simplify the absolute value reasoning and we restrict to the case
+where the function is negative towards the left of the interval and positive
+towards the right. The proof is by bisection.
+=SML
+set_goal([], ¬µf·
+	(µx· f CtsAt x)
+´	µa b· a ¼ b ´ f a < î¯ 0 ± î¯ 0 < f b ´ ¶x·a ¼ x ± x ¼ b ± f x = î¯ 0®);
+a(REPEAT µ_tac THEN ´_tac);
+a(bc_thm_tac (rewrite_rule[]
+	(µ_elim¬Ìa b·f a < î¯ 0 ± î¯ 0 < f b ´ ¶x·a ¼ x ± x ¼ b ± f x = î¯ 0®
+	bisection_thm)));
+a(REPEAT strip_tac THEN_TRY SOLVED_T
+	(contr_tac THEN all_asm_fc_tac[¯_¼_trans_thm] THEN all_asm_fc_tac[]));
+(* *** Goal "1" *** *)
+a(lemma_tac¬f y = î¯ 0® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(contr_tac THEN all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(cases_tac¬f y = î¯ 0® THEN1
+	(¶_tac¬î¯ 1® THEN contr_tac THEN all_asm_fc_tac[]));
+a(DROP_NTH_ASM_T 2 (strip_asm_tac o rewrite_rule[cts_at_def] o µ_elim¬y®));
+a(lemma_tac ¬î¯ 0 < (1/3)*Abs (f y)® THEN1
+	(lemma_tac ¬³Abs (f y) = î¯ 0® THEN1
+	asm_rewrite_tac[¯_abs_eq_0_thm] THEN
+	strip_asm_tac(µ_elim¬f y®¯_0_¼_abs_thm) THEN
+	PC_T1 "¯_lin_arith" asm_prove_tac[]));
 a(all_asm_fc_tac[]);
-(* *** Goal "7" *** *)
-a(POP_ASM_T (ante_tac o list_µ_elim[¬x®, ¬y®]) THEN asm_rewrite_tac[]);
-val Ûbisection_thmÝ = save_pop_thm"bisection_thm";
+a(¶_tac¬d® THEN REPEAT strip_tac);
+a(lemma_tac¬î¯ 0 ¼ ~(x + ~y) ± î¯ 0 ¼ z + ~y® THEN1
+	PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(LEMMA_T¬Abs(~(x + ~y)) < d ± Abs(z + ~y) < d® ante_tac THEN1
+	(asm_rewrite_tac[¯_abs_def] THEN
+	PC_T1 "¯_lin_arith" asm_prove_tac[]));
+a(rewrite_tac[¯_abs_minus_thm] THEN REPEAT strip_tac);
+a(LIST_GET_NTH_ASM_T [10] all_fc_tac);
+a(LIST_DROP_NTH_ASM_T [1, 2, 7, 8, 14] (MAP_EVERY ante_tac) THEN
+	DROP_ASMS_T discard_tac THEN
+	MAP_EVERY cases_tac
+		[¬î¯ 0 ¼ f z + ~(f y)®, ¬î¯ 0 ¼ f x + ~(f y)®, ¬î¯ 0 ¼ f y®] THEN
+	asm_rewrite_tac[¯_abs_def] THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
+val Ûintermediate_value_lemmaÝ = pop_thm();
+=TEX
+With the lemma, we can prove the intermediate value theorem proper.
+There is a small amount of doubt about what the exact statement should be.
+We interpret the weasel word ``between'' which occurs in so many textbook
+accounts as meaning strictly between. (A more general formulation with
+non-strict inequalities is only vacuously more general --- it just gives
+one the trivial cases where the interval consists of a point or where the
+intermediate value is achieved at one of the end-points).
+=SML
+set_goal([], ¬µf a b·
+	a < b
+±	(µx·a ¼ x ± x ¼ b ´ f CtsAt x)
+´	(µy·(f a < y ± y < f b ² f b < y ± y < f a) ´ ¶x· a < x ± x < b ± f x = y)®);
+a(lemma_tac¬µf a b·
+	a < b
+±	(µx·a ¼ x ± x ¼ b ´ f CtsAt x)
+´	(µy·(f a < y ± y < f b) ´ ¶x· a < x ± x < b ± f x = y)®);
+a(REPEAT strip_tac);
+a(lemma_tac¬µx·a ¼ x ± x ¼ b ´ (Ìz·f z + ~y) CtsAt x® THEN1
+	(REPEAT (simple_cts_tac ORELSE strip_tac) THEN ALL_ASM_FC_T rewrite_tac[]));
+a(DROP_NTH_ASM_T 4 discard_tac);
+a(all_fc_tac[conv_rule (ONCE_MAP_C eq_sym_conv) cts_extension_thm]);
+a(LEMMA_T¬(Ìz·f z + ~y) a < î¯ 0 ± î¯ 0 < (Ìz·f z + ~y) b® ante_tac THEN1
+	(rewrite_tac[] THEN PC_T1 "¯_lin_arith" asm_prove_tac[]));
+a(lemma_tac ¬a ¼ b® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(spec_nth_asm_tac 3 ¬a® THEN POP_ASM_T pure_rewrite_thm_tac);
+a(spec_nth_asm_tac 3 ¬b® THEN POP_ASM_T rewrite_thm_tac THEN REPEAT strip_tac);
+a(all_fc_tac[intermediate_value_lemma]);
+a(lemma_tac¬³x = a ± ³x = b® THEN1
+	(contr_tac THEN all_var_elim_asm_tac1 THEN PC_T1 "¯_lin_arith" asm_prove_tac[]));
+a(lemma_tac¬a < x ± x < b® THEN1
+	(PC_T1 "¯_lin_arith" asm_prove_tac[]));
+a(¶_tac ¬x® THEN REPEAT strip_tac);
+a(LIST_GET_NTH_ASM_T [12] (ALL_FC_T (MAP_EVERY ante_tac)));
+a(asm_rewrite_tac[] THEN PC_T1 "¯_lin_arith" prove_tac[]);
+(* *** Goal "2" *** *)
+a(REPEAT strip_tac THEN1 (contr_tac THEN all_asm_fc_tac[] THEN all_asm_fc_tac[]));
+a(lemma_tac¬µ x· a ¼ x ± x ¼ b ´ (Ìx· ~(f x)) CtsAt x® THEN1
+	(REPEAT (simple_cts_tac ORELSE strip_tac) THEN ALL_ASM_FC_T rewrite_tac[]));
+a(lemma_tac¬ (Ìx· ~(f x)) a < ~y ± ~y < (Ìx· ~(f x)) b® THEN1
+	(rewrite_tac[] THEN PC_T1 "¯_lin_arith" asm_prove_tac[]));
+a(all_asm_fc_tac[]);
+a(¶_tac¬x® THEN REPEAT strip_tac);
+a(POP_ASM_T ante_tac THEN rewrite_tac[] THEN PC_T1 "¯_lin_arith" prove_tac[]);
+val Ûintermediate_value_thmÝ = save_pop_thm"intermediate_value_thm";
 =TEX
 \subsubsection{Theorems about Uniform Limits}
 We now prove some basic facts about limits of locally uniformly convergent
