@@ -66,17 +66,15 @@ The subjects covered are the basic facts about:
 
 TO DO:
 
-1) Some kind of tool to automate calculation of derivatives
-
-2) TIdy-up of the organisation of the last few results on power series (e.g.,
+1) TIdy-up of the organisation of the last few results on power series (e.g.,
 to make it easier to show that a function defined by a differential equation
 satisfied by some power series is the limit of that power series).
 
-3) Make systematic use of open and closed interval functions in the statements
+2) Make systematic use of open and closed interval functions in the statements
 of the basic theorems on limits etc. (A very small start has been made on this,
 recent results having been stated using intervals).
 
-4) Basic properties of sine and cosine.
+3) Some general rationalisation - e.g., names of theorems, selection of theorems.
 
 %%%%
 %%%%
@@ -409,13 +407,54 @@ The sine and cosine functions defined by a differential equation:
 ‹ ±	(µx∑ (Sin HasDeriv Cos x) x)
 ‹ ±	(µx∑ (Cos HasDeriv ~(Sin x)) x)
 ∞
+Archimedes' constant, the generator of the group of roots of the sine function:
+%%%%
+%%%%
+=SML
+πHOLCONST
+‹ 	€ArchimedesConstant› : Ø
+˜¸¸¸¸¸¸
+‹	ÓØ 0 < ArchimedesConstant
+‹ ±	Sin(ArchimedesConstant) = ÓØ 0
+‹ ±	(µx∑ Sin x = ÓØ 0
+‹ 	¥ (∂ m∑ x = ÓØ m * ArchimedesConstant ≤ ~x = ÓØ m *ArchimedesConstant))
+∞
+Archimedes' constant is of course almost always known by another name:
+=SML
+declare_alias("–", ¨ArchimedesConstantÆ);
 =TEX
+From one point of view, almost the whole of the formal treatment in this document may
+be viewed as a systematic and informative proof of the consistency of the definitions above.
+%%%%
+%%%%
+%%%%
+%%%%
+
+\section{Overview of the Formalisation}
+This document presents a formalisation in  {\ProductHOL}
+along the lines of John Harrison's HOL treatment of the calculus described
+in chapter 3 of his thesis \cite{Harrison96}.
+The work was begun late in 2001 originally just to exercise the real number theory
+in {\ProductHOL} on a purely mathematical application.
+That work had some success with polynomial, limits, continuity
+and derivatives but lack of time prevented further progress for some time.
+
+
+The references cited for the mathematics mostly used \cite{Rudin76} and
+\cite{Mitchell69}.
+
+
+\newpage
+
 %%%%
 %%%%
 %%%%
 %%%%
 {\HOLindexOff
 \include{analysis.th}}
+
+\bibliographystyle{plain}
+\bibliography{bookspapers}
 %%%%
 %%%%
 %%%%
@@ -8044,7 +8083,6 @@ a(rewrite_tac[Ø_Ó_exp_square_thm]);
 a(bc_thm_tac Ø_0_less_0_less_times_thm THEN REPEAT strip_tac);
 val €square_root_thm› = save_pop_thm "square_root_thm";
 =TEX
-=TEX
 A similar theorem on square roots of non-negative numbers:
 %%%%
 %%%%
@@ -8070,6 +8108,48 @@ a(all_var_elim_asm_tac1 THEN all_asm_ante_tac);
 a(rewrite_tac[Ø_Ó_exp_square_thm]);
 val €square_root_thm1› = save_pop_thm "square_root_thm1";
 =TEX
+Square roots, when they exist are unique up to sign:
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨
+	µx y:Ø∑ x ^ 2 = y ^ 2 § x = y ≤ x = ~y
+Æ);
+a(rewrite_tac[Ø_Ó_exp_square_thm] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(LEMMA_T ¨(x + ~y) *(x + y) = ÓØ 0Æ ante_tac THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(rewrite_tac[Ø_times_eq_0_thm] THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(asm_rewrite_tac[]);
+(* *** Goal "3" *** *)
+a(asm_rewrite_tac[] THEN PC_T1 "Ø_lin_arith" prove_tac[]);
+val €square_root_unique_thm› = save_pop_thm "square_root_unique_thm";
+=TEX
+=TEX
+Squaring and taking square roots is monotonic for positive values:
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨
+	µx y∑ ÓØ 0 < x ± ÓØ 0 < y ¥ (x ^ 2 < y ^ 2 § x < y)
+Æ);
+a(rewrite_tac[Ø_Ó_exp_square_thm] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(CONTR_T (asm_tac o rewrite_rule[Ø_≥_less_º_thm]));
+a(lemma_tac¨ÓØ 0 º x ± ÓØ 0 º yÆ THEN1 asm_rewrite_tac[Ø_º_def]);
+a(LEMMA_T¨y * y º x * xÆ (fn th => strip_asm_tac th THEN
+	PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(bc_thm_tac Ø_º_trans_thm THEN ∂_tac¨y*xÆ);
+a(conv_tac (RAND_C (once_rewrite_conv[Ø_times_comm_thm])));
+a(ALL_FC_T rewrite_tac[Ø_º_times_mono_thm]);
+(* *** Goal "2" *** *)
+a(bc_thm_tac Ø_less_trans_thm THEN ∂_tac¨x*yÆ);
+a(conv_tac (RAND_C (once_rewrite_conv[Ø_times_comm_thm])));
+a(strip_asm_tac Ø_times_mono_thm);
+a(rename_tac[] THEN ALL_ASM_FC_T rewrite_tac[]);
+val €square_square_root_mono_thm› = save_pop_thm "square_square_root_mono_thm";
 =TEX
 
 We now look at the sine and cosine functions. The patter is simuliar to that for the exponential
@@ -8332,7 +8412,23 @@ val €sin_def› = get_spec¨SinÆ;
 val €cos_def› = get_spec¨CosÆ;
 =TEX
 =TEX
-Now we have a useful connectikon of facts about the derivatives of our basic
+From the definitions it follows that the sine and cosine functions
+have derivatives everywhere and so are everywhere continuous:
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨ µx∑ Sin CtsAt x ± Cos CtsAt xÆ);
+a(REPEAT strip_tac THEN bc_thm_tac has_deriv_cts_thm);
+(* *** Goal "1" *** *)
+a(∂_tac ¨Cos xÆ THEN rewrite_tac[sin_def]);
+(* *** Goal "2" *** *)
+a(∂_tac ¨~(Sin x)Æ THEN rewrite_tac[sin_def]);
+val €sin_cos_cts_thm› = save_pop_thm "sin_cos_cts_thm";
+=TEX
+
+=TEX
+Now we have a useful connection of facts about the derivatives of our basic
 set of transcendental functions
 =SML
 val €trans_deriv_thms› = [
@@ -8452,6 +8548,42 @@ a(LIST_DROP_NTH_ASM_T [3, 4] rewrite_tac);
 a(REPEAT strip_tac THEN asm_rewrite_tac[] THEN PC_T1 "Ø_lin_arith" prove_tac[]);
 val €sin_cos_plus_thm› = save_pop_thm "sin_cos_plus_thm";
 =TEX
+\ldots and the facts that sine and cosine are odd and even respectively:
+%%%%
+%%%%
+=SML
+set_goal([], ¨µx∑ 
+	Sin(~x) = ~(Sin x)
+±	Cos(~x) = Cos x
+Æ);
+a(lemma_tac¨µx∑ ((Ãx∑ ~(Sin(~x))) HasDeriv (Ãx∑ Cos (~x)) x) xÆ
+	THEN1 (strip_tac THEN rewrite_tac[] THEN TRANS_DERIV_T ante_tac
+		THEN conv_tac (ONCE_MAP_C Ø_anf_conv)
+			THEN REPEAT strip_tac));
+a(lemma_tac¨µx∑ ((Ãx∑ Cos(~x)) HasDeriv ~((Ãx∑ ~(Sin (~x))) x)) xÆ
+	THEN1 (strip_tac THEN rewrite_tac[] THEN TRANS_DERIV_T ante_tac
+		THEN conv_tac (ONCE_MAP_C Ø_anf_conv)
+			THEN REPEAT strip_tac));
+a(ante_tac (list_µ_elim[¨(Ãx∑ ~(Sin(~x)))Æ, ¨(Ãx∑ Cos (~x))Æ] sin_cos_unique_lemma2));
+a(asm_rewrite_tac[sin_def] THEN ¥_tac THEN µ_tac);
+a(pure_once_rewrite_tac[prove_rule[]¨Sin (~ x) = ~(~(Sin (~x)))Æ]);
+a(pure_asm_rewrite_tac[] THEN rewrite_tac[]);
+val €sin_cos_minus_thm› = save_pop_thm "sin_cos_minus_thm";
+=TEX
+The previous results give rise to several useful subgroups of the additive group 
+of reals. The zeroes of the sine function comprise the group we use to define
+$\pi$. The next theorem states that it is indeed a subgroup:
+%%%%
+%%%%
+=SML
+set_goal([], ¨
+	ÓØ 0  ç {x | Sin x = ÓØ 0} 
+±	(µx y∑ x ç {x | Sin x = ÓØ 0} ± y ç {x | Sin x = ÓØ 0} ¥ x + y ç {x | Sin x = ÓØ 0})
+±	(µx∑ x ç {x | Sin x = ÓØ 0} ¥ ~x ç {x | Sin x = ÓØ 0})
+Æ);
+a(REPEAT strip_tac THEN asm_rewrite_tac[sin_def, sin_cos_plus_thm, sin_cos_minus_thm]);
+val €sin_0_group_thm› = save_pop_thm "sin_0_group_thm";
+=TEX
 We now show that if the sine and cosine functions are equal at $x$ then $\Sin{2x} = 1$
 and $\Cos{2x} = 0$.
 %%%%
@@ -8468,8 +8600,8 @@ a(ante_tac(µ_elim¨xÆ cos_squared_plus_sin_squared_thm));
 a(asm_rewrite_tac[Ø_Ó_exp_square_thm, sin_cos_plus_thm]);
 val €sin_eq_cos_sin_cos_twice_thm› = save_pop_thm "sin_eq_cos_sin_cos_twice_thm";
 =TEX
-We need a special case ($z = 1$) following algebraic inequality, which we state in generality:
-
+We need a special case ($z = 1$)
+of the following algebraic inequality, which is just as easy to state and prove for arbitrary $z$:
 %%%%
 %%%%
 =SML
@@ -8510,7 +8642,7 @@ a(ante_tac (list_µ_elim[¨Sin xÆ, ¨Cos xÆ, ¨ÓØ 1Æ]sum_squares_abs_bound_thm));
 a(asm_rewrite_tac[Ø_Ó_exp_0_1_thm] THEN REPEAT strip_tac);
 val €abs_sin_abs_cos_º_1_thm› = save_pop_thm "abs_sin_abs_cos_º_1_thm";
 =TEX
-We plan to make our estimates of the vlaue of $\pi/2$ a little bit more accurate than
+We plan to make our estimates of the value of $\pi/2$ a little bit more accurate than
 the ones given by Mitchell. The following general theorem will give us a lower bound
 (it implies that the first zero of the cosine function is at least 1).
 %%%%
@@ -8528,7 +8660,8 @@ a(all_var_elim_asm_tac1 THEN POP_ASM_T ante_tac THEN asm_rewrite_tac[] THEN stri
 a(LEMMA_T ¨Abs(f b + ~(f a)) = Abs((b + ~a) * d)Æ ante_tac THEN1
 	 asm_rewrite_tac[] THEN rewrite_tac[Ø_abs_times_thm]);
 a(lemma_tac ¨ÓØ 0 º b + ~aÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-a(strip_tac THEN LEMMA_T ¨b + ~a = Abs (b + ~a)Æ once_rewrite_thm_tac THEN1 asm_rewrite_tac[Ø_abs_def]);
+a(strip_tac THEN LEMMA_T ¨b + ~a = Abs (b + ~a)Æ once_rewrite_thm_tac
+	THEN1 asm_rewrite_tac[Ø_abs_def]);
 a(POP_ASM_T rewrite_thm_tac);
 a(conv_tac (RAND_C (pure_once_rewrite_conv[prove_rule[]¨µx∑x = x * ÓØ 1Æ])));
 a(bc_thm_tac Ø_º_times_mono_thm);
@@ -8537,14 +8670,68 @@ a(DROP_NTH_ASM_T 6 bc_thm_tac THEN REPEAT strip_tac);
 a(∂_tac¨xÆ THEN REPEAT strip_tac);
 val €deriv_linear_estimate_thm› = save_pop_thm "deriv_linear_estimate_thm";
 =TEX
+From the above estimate, $\Cos{x}$ is positive for $x$ in the open interval $(0, 1)$:
+%%%%
+%%%%
+=SML
+set_goal([], ¨
+	µx∑ x ç OpenInterval (ÓØ 0) (ÓØ 1) ¥ ÓØ 0 < Cos x
+Æ);
+a(rewrite_tac[open_interval_def] THEN contr_tac);
+a(POP_ASM_T  (strip_asm_tac o rewrite_rule[Ø_≥_less_º_thm]));
+a(ante_tac (list_µ_elim[¨CosÆ, ¨ÓØ 0Æ, ¨xÆ, ¨ÓØ 1Æ, ¨Cos xÆ]deriv_linear_estimate_thm));
+a(asm_rewrite_tac[cos_def, abs_sin_abs_cos_º_1_thm] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(∂_tac¨~(Sin x')Æ THEN rewrite_tac[cos_def]);
+(* *** Goal "2" *** *)
+a(lemma_tac ¨(Cos HasDeriv ~(Sin x')) x'Æ THEN1 rewrite_tac[cos_def]);
+a(all_fc_tac[deriv_unique_thm] THEN all_var_elim_asm_tac1);
+a(rewrite_tac[abs_sin_abs_cos_º_1_thm, Ø_abs_minus_thm]);
+(* *** Goal "3" *** *)
+a(lemma_tac¨≥ÓØ 0 º Cos x + ~(ÓØ 1)Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(asm_rewrite_tac[Ø_abs_def, Ø_≥_º_less_thm]);
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+val €cos_positive_estimate_thm› = save_pop_thm "cos_positive_estimate_thm";
+=TEX
+Whence $\Sin{x}$ too is positive for $x$ in the open interval $(0, 1)$, and so, 
+by the sum formula for $x$ in $[1, 2)$ as well.
+%%%%
+%%%%
+=SML
+set_goal([], ¨
+	µx∑ x ç OpenInterval (ÓØ 0) (ÓØ 2) ¥ ÓØ 0 < Sin x
+Æ);
+a(LEMMA_T¨µx∑ x ç OpenInterval (ÓØ 0) (ÓØ 1) ¥ ÓØ 0 < Sin xÆ ante_tac);
+(* *** Goal "1" *** *)
+a(rewrite_tac[open_interval_def] THEN REPEAT strip_tac);
+a(ante_tac (list_µ_elim[¨SinÆ, ¨ÓØ 0Æ, ¨xÆ]deriv_0_less_thm));
+a(asm_rewrite_tac[cos_def, sin_cos_cts_thm] THEN REPEAT strip_tac);
+a(POP_ASM_T (ante_tac o µ_elim¨Cos x'Æ) THEN rewrite_tac[cos_def]);
+a(lemma_tac¨x' < ÓØ 1Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(ALL_FC_T rewrite_tac[rewrite_rule[open_interval_def] cos_positive_estimate_thm]);
+(* *** Goal "2" *** *)
+a(rewrite_tac[open_interval_def] THEN REPEAT strip_tac);
+a(lemma_tac¨ÓØ 0 < (1/2)*x ± (1/2)*x < ÓØ 1Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(LIST_DROP_NTH_ASM_T [3, 4, 5] all_fc_tac);
+a(all_fc_tac [rewrite_rule[open_interval_def] cos_positive_estimate_thm]);
+a(pure_once_rewrite_tac[pc_rule1 "Ø_lin_arith" prove_rule[]¨ x = (1/2)*x + (1/2)*xÆ]);
+a(rewrite_tac[sin_cos_plus_thm]);
+a(LEMMA_T ¨ÓØ 0 < Sin((1/2)*x) * Cos((1/2)*x) ± ÓØ 0 <  Cos((1/2)*x) * Sin((1/2)*x)Æ
+	(fn th => ante_tac th THEN PC_T1 "Ø_lin_arith" prove_tac[]));
+a(REPEAT strip_tac THEN all_fc_tac[Ø_0_less_0_less_times_thm]);
+val €sin_positive_estimate_thm› = save_pop_thm "sin_positive_estimate_thm";
+
+=TEX
 Now, following Mitchell but getting the best estimate we can from the proof we have the following
 theorem that shows that if the cosine function is  greater than $1/\sqrt{2}$ in some interval
 $[0, t)$, then $t$ is at most $\sqrt{2}$.
 %%%%
 %%%%
 =SML
-set_goal([], ¨
-	µt∑ ÓØ 0 < t ±  (µx∑ÓØ 0 < x ± x < t ¥ 1/2 < Cos x ^ 2) ¥ t ^ 2 º ÓØ 2
+set_goal([], ¨µt∑
+	ÓØ 0 < t
+±	(µx∑ÓØ 0 < x ± x < t ¥ 1/2 < Cos x ^ 2)
+¥	t ^ 2 º ÓØ 2
 Æ);
 a(rewrite_tac[Ø_Ó_exp_square_thm] THEN REPEAT strip_tac);
 a(ante_tac (list_µ_elim[¨SinÆ, ¨ÓØ 0Æ, ¨tÆ]mean_value_thm1));
@@ -8577,36 +8764,44 @@ a(REPEAT strip_tac THEN1
 		rewrite_tac[abs_sin_abs_cos_º_1_thm, Ø_0_º_abs_thm]);
 val €cos_greater_root_2_thm› = save_pop_thm "cos_greater_root_2_thm";
 =TEX
-By the intermediate value theorem and the last results,there is an $x$
+By the intermediate value theorem and the last result,there is an $x$
 with $0 < x$,  $x^2 < 2 + e$ and $\Cos{x} = 1/\sqrt{2}$. for any positive $e$
 %%%%
 %%%%
 =SML
 set_goal([], ¨
-	µe∑ ÓØ 0 < e ¥ ∂x∑ ÓØ 0 < x ± x ^ 2 < ÓØ 2 + e ± Cos x ^ 2 = 1/2
+	µe∑ ÓØ 0 < e ¥ ∂x∑ ÓØ 0 < x ± x ^ 2 < ÓØ 2 + e ± ÓØ 0 < Cos x ± Cos x ^ 2 = 1/2
 Æ);
-a(REPEAT strip_tac THEN lemma_tac ¨ÓØ 0 < ÓØ 2 + e Æ THEN1 PC_T1"Ø_lin_arith" asm_prove_tac[]);
-a(cases_tac¨≥µx∑ ÓØ 0 < x ± x ^ 2 < ÓØ 2 + e ¥ ÓØ 0 º  (Ãx∑ Cos x ^ 2  + ~(1/2)) xÆ
+a(REPEAT strip_tac THEN lemma_tac ¨ÓØ 0 < ÓØ 2 + e Æ THEN1
+	PC_T1"Ø_lin_arith" asm_prove_tac[]);
+a(lemma_tac¨∂rt2∑ÓØ 0 < rt2 ± rt2 ^ 2 = 1/2Æ THEN1
+	(bc_thm_tac square_root_thm THEN rewrite_tac[]));
+a(ante_tac(list_µ_elim[¨rt2Æ, ¨ÓØ 1Æ] square_square_root_mono_thm));
+a(asm_rewrite_tac[] THEN REPEAT strip_tac);
+a(cases_tac¨≥µx∑ ÓØ 0 < x ± x ^ 2 < ÓØ 2 + e ¥ ÓØ 0 º  (Ãx∑ Cos x + ~rt2) xÆ
 	THEN REPEAT  strip_tac);
 (* *** Goal "1" *** *)
 a(POP_ASM_T (strip_asm_tac o rewrite_rule[Ø_≥_º_less_thm]));
-a(lemma_tac ¨ µx∑ (Ãx∑ Cos x ^ 2  + ~(1/2))  CtsAt xÆ);
+a(lemma_tac ¨ µx∑ (Ãx∑ Cos x + ~rt2)  CtsAt xÆ);
 (* *** Goal "1.1" *** *)
 a(DROP_ASMS_T discard_tac THEN
 	REPEAT strip_tac THEN bc_thm_tac has_deriv_cts_thm THEN REPEAT strip_tac);
-a(contr_tac THEN asm_tac (rewrite_rule[] (deriv_rule trans_deriv_thms ¨ (Ãx∑ Cos x ^ 2 + ~(1/2)) Æ ¨xÆ)));
+a(contr_tac THEN asm_tac (rewrite_rule[] (deriv_rule trans_deriv_thms ¨ (Ãx∑ Cos x + ~rt2) Æ ¨xÆ)));
 a(all_asm_fc_tac[]);
 (* *** Goal "1.2" *** *)
-a(ante_tac (list_µ_elim[¨(Ãx∑ Cos x ^ 2 + ~(1/2))Æ, ¨ÓØ 0Æ, ¨xÆ] intermediate_value_thm));
+a(ante_tac (list_µ_elim[¨(Ãx∑ Cos x + ~rt2)Æ, ¨ÓØ 0Æ, ¨xÆ] intermediate_value_thm));
 a(pure_asm_rewrite_tac[] THEN asm_rewrite_tac[cos_def]);
+a(lemma_tac¨ÓØ 0 < ÓØ 1 + ~rt2Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 a(STRIP_T (ante_tac o µ_elim¨ÓØ 0Æ) THEN asm_rewrite_tac[] THEN REPEAT strip_tac);
-a(∂_tac¨x'Æ THEN REPEAT strip_tac THEN_LIST[id_tac, PC_T1 "Ø_lin_arith" asm_prove_tac[]]);
-a(bc_thm_tac Ø_less_trans_thm THEN ∂_tac¨x^2Æ  THEN REPEAT strip_tac);
-a(rewrite_tac[Ø_Ó_exp_square_thm] THEN bc_thm_tac Ø_less_trans_thm
-	THEN ∂_tac ¨x' * xÆ THEN REPEAT strip_tac THEN1
-		(bc_thm_tac Ø_times_mono_thm THEN REPEAT strip_tac));
-a(once_rewrite_tac [Ø_times_comm_thm] THEN
-		bc_thm_tac Ø_times_mono_thm THEN REPEAT strip_tac);
+a(∂_tac¨x'Æ THEN REPEAT strip_tac);
+(* *** Goal "1.2.1" *** *)
+a(ante_tac(list_µ_elim[¨x'Æ, ¨xÆ] square_square_root_mono_thm));
+a(asm_rewrite_tac[] THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "1.2.2" *** *)
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "1.2.3" *** *)
+a(lemma_tac¨Cos x' = rt2Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(all_var_elim_asm_tac1 THEN REPEAT strip_tac);
 (* *** Goal "2" *** *)
 a(POP_ASM_T (strip_asm_tac o rewrite_rule[]) THEN contr_tac);
 a(lemma_tac¨ÓØ 0 < ÓØ 2  + (1/2)*eÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
@@ -8617,17 +8812,178 @@ a(lemma_tac ¨t ^ 2 º ÓØ 2Æ THEN_LIST
 a(REPEAT strip_tac);
 a(lemma_tac ¨x ^ 2 < t ^ 2Æ );
 (* *** Goal "2.1" *** *)
-a(rewrite_tac[Ø_Ó_exp_square_thm] THEN bc_thm_tac Ø_less_trans_thm
-		THEN ∂_tac ¨x * tÆ THEN REPEAT strip_tac THEN1
-			(bc_thm_tac Ø_times_mono_thm THEN REPEAT strip_tac));
-a(once_rewrite_tac [Ø_times_comm_thm] THEN
-		bc_thm_tac Ø_times_mono_thm THEN REPEAT strip_tac);
+a(ante_tac(list_µ_elim[¨xÆ, ¨tÆ] square_square_root_mono_thm));
+a(asm_rewrite_tac[] THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 (* *** Goal "2.2" *** *)
 a(lemma_tac¨x ^ 2 < ÓØ 2 + eÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-a(LEMMA_T¨ÓØ 0  º Cos x ^ 2 + ~(1/2)Æ ante_tac THEN1 all_asm_fc_tac[]);
-a(SPEC_NTH_ASM_T 8 ¨xÆ ante_tac);
-a(REPEAT strip_tac THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(GET_NTH_ASM_T 11 (rewrite_thm_tac o eq_sym_rule));
+a(LIST_GET_NTH_ASM_T [9] all_fc_tac);
+a(lemma_tac¨ÓØ 0 < Cos xÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(ante_tac(list_µ_elim[¨rt2Æ, ¨Cos xÆ] square_square_root_mono_thm));
+a(asm_rewrite_tac[]);
+a(STRIP_T rewrite_thm_tac);
+a(lemma_tac¨rt2 º Cos xÆ  THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(swap_nth_asm_concl_tac 1 THEN asm_rewrite_tac[Ø_º_def]);
+a(DROP_NTH_ASM_T 11 (ante_tac o µ_elim¨xÆ) THEN asm_rewrite_tac[]);
+a(contr_tac THEN all_var_elim_asm_tac1);
 val €cos_squared_eq_half_thm› = save_pop_thm "cos_squared_eq_half_thm";
+=TEX
+Pulling the above pieces together, there is an $x$ in the open interval $(0, 2)$ such
+that $\Sin{x} = \Cos{x}$.
+
+%%%%
+%%%%
+=SML
+set_goal([], ¨
+	∂x∑ x ç OpenInterval (ÓØ 0) (ÓØ 2) ± Sin x = Cos x
+Æ);
+a(ante_tac (µ_elim¨1/4Æ cos_squared_eq_half_thm) THEN rewrite_tac[] THEN strip_tac);
+a(strip_asm_tac (µ_elim¨xÆ cos_squared_plus_sin_squared_thm));
+a(lemma_tac¨Sin x ^ 2 = 1/2Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(ante_tac(list_µ_elim[¨xÆ, ¨3/2Æ] square_square_root_mono_thm));
+a(asm_rewrite_tac[] THEN strip_tac);
+a(lemma_tac¨x < ÓØ 2Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(all_fc_tac[rewrite_rule[open_interval_def] sin_positive_estimate_thm]);
+a(∂_tac¨xÆ THEN asm_rewrite_tac[open_interval_def] THEN REPEAT strip_tac);
+a(LEMMA_T ¨Sin x ^ 2 = Cos x ^ 2Æ ante_tac THEN1 asm_rewrite_tac[]);
+a(rewrite_tac[square_root_unique_thm]);
+a(REPEAT strip_tac THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+val €sin_eq_cos_exists_thm› = save_pop_thm "sin_eq_cos_exists_thm";
+=TEX
+That gives us a positive zero for the sine function:
+%%%%
+%%%%
+=SML
+set_goal([], ¨
+	∂x∑ ÓØ 0 < x ± Sin x = ÓØ 0
+Æ);
+a(strip_asm_tac (rewrite_rule[open_interval_def] sin_eq_cos_exists_thm));
+a(all_fc_tac[sin_eq_cos_sin_cos_twice_thm]);
+a(∂_tac¨ÓØ 2*x + ÓØ 2*xÆ THEN asm_rewrite_tac[sin_cos_plus_thm]);
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+val €sin_positive_zero_thm› = save_pop_thm "sin_positive_zero_thm";
+=TEX
+Now we prove the general result that non-trivial discrete subgroups of the additive group
+of reals are cyclic. (This follows on from some of the work done in constructing the
+multiplicative structure of the reals, and we follow the same naming conventions for
+variables as were used there).
+
+%%%%
+%%%%
+=SML
+set_goal([], ¨ µG h a∑
+	ÓØ 0 ç G
+±	(µ g h∑ g ç G ± h ç G ¥ g + h ç G)
+±	(µ g∑ g ç G ¥ ~ g ç G)
+±	ÓØ 0 < h
+±	h ç G
+±	ÓØ 0 < a
+±	(µh∑ÓØ 0 < h ± h ç G ¥ a < h)
+¥	∂g∑ÓØ 0 < g ±  g ç G ± µh∑ÓØ 0 < h ± h ç G ¥ ∂m∑h = ÓØ m * g
+Æ);
+a(contr_tac);
+a(lemma_tac¨µm x∑x ç G ¥ ÓØ m * x ç GÆ THEN1 
+	(µ_tac THEN induction_tac¨m:ÓÆ THEN asm_rewrite_tac[ÓØ_plus_homomorphism_thm]));
+(* *** Goal "1" *** *)
+a(rewrite_tac[Ø_times_plus_distrib_thm] THEN REPEAT strip_tac);
+a(GET_NTH_ASM_T 9 bc_thm_tac THEN REPEAT strip_tac);
+a(GET_NTH_ASM_T 2 bc_thm_tac THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(lemma_tac¨µh∑h ç G ± ÓØ 0 < h ¥ ∂k∑k ç G ± ÓØ 0 < k ± k < hÆ);
+(* *** Goal "2.1" *** *)
+a(LIST_DROP_NTH_ASM_T [ 5, 6] discard_tac THEN REPEAT strip_tac);
+a(DROP_NTH_ASM_T 4 (ante_tac o µ_elim¨hÆ));
+a(asm_rewrite_tac[] THEN REPEAT strip_tac);
+a(lemma_tac¨ÓØ 0 º h'Æ THEN1 asm_rewrite_tac[Ø_º_def]);
+a(strip_asm_tac (list_µ_elim[¨hÆ, ¨h'Æ] Ø_archimedean_division_thm));
+a(all_var_elim_asm_tac1);
+a(DROP_NTH_ASM_T 4 (ante_tac o µ_elim¨qÆ));
+a(cases_tac¨r = ÓØ 0Æ THEN1 asm_rewrite_tac[]);
+a(DROP_NTH_ASM_T 3 ante_tac THEN asm_rewrite_tac[Ø_º_def]);
+a(POP_ASM_T (rewrite_thm_tac o conv_rule(RAND_C eq_sym_conv)));
+a(REPEAT strip_tac THEN ∂_tac¨rÆ THEN REPEAT strip_tac);
+a(LEMMA_T¨r = (ÓØ q * h + r) + ~(ÓØ q * h)Æ once_rewrite_thm_tac THEN1
+	(rewrite_tac[pc_rule1"Ø_lin_arith" prove_rule[]¨µx∑ (x + r) + ~x = rÆ]));
+a(LIST_GET_NTH_ASM_T [8, 11, 12] bc_tac THEN REPEAT strip_tac);
+(* *** Goal "2.2" *** *)
+a(lemma_tac¨∂f∑µx∑x ç G ± ÓØ 0 < x ¥ f x ç G ± ÓØ 0 < f x ± f x < xÆ
+	THEN1 prove_∂_tac THEN REPEAT strip_tac);
+(* *** Goal "2.2.1" *** *)
+a(cases_tac¨≥(x' ç G ± ÓØ 0 < x')Æ THEN asm_rewrite_tac[]);
+a(GET_NTH_ASM_T 3 bc_thm_tac THEN REPEAT strip_tac);
+(* *** Goal "2.2.2" *** *)
+a(lemma_tac¨∂s∑s 0 = h ± µm∑s(m+1) = f(s m)Æ THEN1 prove_∂_tac);
+a(lemma_tac¨µ m∑ s m ç G ± ÓØ 0 < s m ± s (m + 1) < s mÆ THEN1
+	(strip_tac THEN induction_tac¨m:ÓÆ THEN asm_rewrite_tac[]));
+(* *** Goal "2.2.2.1" *** *)
+a(all_asm_fc_tac[]);
+(* *** Goal "2.2.2.2" *** *)
+a(LIST_GET_NTH_ASM_T [6] all_fc_tac THEN REPEAT strip_tac);
+a(LIST_GET_NTH_ASM_T [12] all_fc_tac);
+(* *** Goal "2.2.2.3" *** *)
+a(ante_tac(list_µ_elim[¨sÆ, ¨ÓØ 0Æ] lim_seq_mono_dec_thm)
+	THEN asm_rewrite_tac[Ø_º_def]);
+a(contr_tac);
+a(POP_ASM_T discard_tac THEN all_fc_tac[lim_seq_diffs_tend_to_0_thm]);
+a(POP_ASM_T ante_tac THEN rewrite_tac[lim_seq_def] THEN REPEAT strip_tac);
+a(∂_tac¨aÆ THEN REPEAT strip_tac);
+a(∂_tac¨nÆ THEN REPEAT strip_tac);
+a(spec_nth_asm_tac 2 ¨nÆ);
+a(LEMMA_T¨≥ÓØ 0 º s(n+1) + ~(s n)Æ (fn th => rewrite_tac[th, Ø_abs_def])
+	THEN1 (POP_ASM_T ante_tac THEN PC_T1 "Ø_lin_arith" prove_tac[]));
+a(spec_nth_asm_tac 5 ¨n+1Æ);
+a(lemma_tac¨~ (s (n + 1)) + s n ç GÆ THEN1
+	(LIST_GET_NTH_ASM_T [19, 20] bc_tac THEN REPEAT strip_tac));
+a(lemma_tac¨ÓØ 0 < ~ (s (n + 1)) + s nÆ
+	THEN1 (GET_NTH_ASM_T 5 ante_tac THEN PC_T1 "Ø_lin_arith" prove_tac[]));
+a(LIST_GET_NTH_ASM_T [17] all_fc_tac);
+a(DROP_ASM_T  ¨a < ~ (s (n + 1)) + s nÆ ante_tac THEN PC_T1 "Ø_lin_arith" prove_tac[]);
+val €Ø_discrete_subgroup_thm› = save_pop_thm "Ø_discrete_subgroup_thm";
+=TEX
+and that gives us $\pi$:
+%%%%
+%%%%
+=SML
+set_goal([], ¨∂pi∑
+	ÓØ 0 < pi
+±	Sin pi = ÓØ 0
+±	(µx∑ÓØ 0 < x ± Sin x = ÓØ 0 ¥ ∂m∑x = ÓØ m * pi)
+Æ);
+a(strip_asm_tac sin_positive_zero_thm);
+a(strip_asm_tac (rewrite_rule[open_interval_def] sin_positive_estimate_thm));
+a(lemma_tac ¨µx∑ÓØ 0 < x ± Sin x = ÓØ 0 ¥ ÓØ 1 < xÆ THEN1 contr_tac);
+(* *** Goal "1" *** *)
+a(lemma_tac¨x' < ÓØ 2Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(ALL_ASM_FC_T (MAP_EVERY ante_tac)[]);
+a(asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(ante_tac (list_µ_elim[¨{x | Sin x = ÓØ 0}Æ, ¨xÆ, ¨ÓØ 1Æ] Ø_discrete_subgroup_thm));
+a(rename_tac[] THEN asm_rewrite_tac[sin_0_group_thm] THEN REPEAT strip_tac);
+val €pi_consistency_thm› = save_pop_thm "pi_consistency_thm";
+=TEX
+Et, voil\'a:
+%%%%
+%%%%
+=TEX
+=SML
+push_consistency_goal¨–Æ;
+a(strip_asm_tac pi_consistency_thm);
+a(∂_tac ¨piÆ THEN asm_rewrite_tac[]);
+a(REPEAT strip_tac);
+a(DROP_NTH_ASM_T 4 discard_tac);
+a(strip_asm_tac(list_µ_elim[¨ÓØ 0Æ, ¨xÆ] Ø_less_cases_thm));
+(* *** Goal "1" *** *)
+a(all_asm_fc_tac[]);
+a(∂_tac¨mÆ  THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(∂_tac¨0Æ  THEN asm_rewrite_tac[]);
+(* *** Goal "3" *** *)
+a(lemma_tac¨ÓØ 0 < ~x ±  Sin (~x) = ÓØ 0Æ THEN1
+	(asm_rewrite_tac[sin_cos_minus_thm] THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(all_asm_fc_tac[]);
+a(∂_tac¨mÆ  THEN asm_rewrite_tac[]);
+val _ = save_consistency_thm ¨–Æ (pop_thm());
+val €–_def› = get_spec¨–Æ;
 =TEX
 %%%%
 %%%%
