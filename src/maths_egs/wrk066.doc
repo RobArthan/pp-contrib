@@ -1497,7 +1497,7 @@ val Û¯_archimedean_times_thmÝ = save_pop_thm "¯_archimedean_times_thm";
 %%%%
 %%%%
 =SML
-set_goal([], ¬µx y·î¯ 0 < d ± î¯ 0 ¼ y ´ ¶q r· y = î¯ q * d + r ± î¯ 0 ¼ r ± r < d®);
+set_goal([], ¬µd y·î¯ 0 < d ± î¯ 0 ¼ y ´ ¶q r· y = î¯ q * d + r ± î¯ 0 ¼ r ± r < d®);
 a(REPEAT strip_tac);
 a(lemma_tac¬µm y·î¯ 0 ¼  y ± y < î¯ m * d ´ ¶q r· y = î¯ q * d + r ± î¯ 0 ¼ r ± r < d®);
 (* *** Goal "1" *** *)
@@ -2794,6 +2794,18 @@ a(rewrite_tac[const_lim_seq_thm]);
 (* *** Goal "3" *** *)
 a(rewrite_tac[]);
 val Ûrecip_deriv_thmÝ = save_pop_thm "recip_deriv_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬µf c t·
+	(f HasDeriv c) t
+±	³f t = î¯ 0
+´	((Ìx· (f x) ›-›1) HasDeriv ~((f t) ›-›1 * (f t) ›-›1) * c ) t®);
+a(REPEAT strip_tac);
+a(all_fc_tac [recip_deriv_thm]);
+a(all_fc_tac [comp_deriv_thm]);
+val Ûrecip_comp_deriv_thmÝ = save_pop_thm "recip_comp_deriv_thm";
 =TEX
 %%%%
 %%%%
@@ -6673,6 +6685,265 @@ a(strip_asm_tac exp_consistency_thm);
 a(¶_tac ¬f® THEN asm_rewrite_tac[]);
 val _ = save_consistency_thm ¬Exp® (pop_thm());
 val Ûexp_defÝ = get_spec¬Exp®;
+=TEX
+
+We now develop some basic properties of the exponential function.
+A consequence of the differential equation is the following fact, which
+says that if a function $f$ is its own derivative on some open interval then
+it is equal to a constant multiple of the exponential function on that interval.
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬
+	µf a b t·
+	(µx· x  OpenInterval a b ´ ³f x = î¯ 0)
+±	(µx· x  OpenInterval a b ´ (f HasDeriv f x) x)
+±	t  OpenInterval a b
+´	(µx· x  OpenInterval a b ´ Exp x = Exp t * f t ›-›1 * f x)
+®);
+a(rewrite_tac[open_interval_def] THEN REPEAT strip_tac);
+a(lemma_tac¬µy· a < y ± y < b ´ ((Ìy·Exp y * f y ›-›1) HasDeriv î¯ 0) y®);
+(* *** Goal "1" *** *)
+a(LIST_DROP_NTH_ASM_T [1, 2, 3, 4] discard_tac);
+a(REPEAT strip_tac);
+a(DROP_NTH_ASM_T 3 (strip_asm_tac o µ_elim¬y®));
+a(DROP_NTH_ASM_T 4 (strip_asm_tac o µ_elim¬y®));
+a(all_fc_tac[ recip_comp_deriv_thm]);
+a(LIST_DROP_NTH_ASM_T [3] discard_tac);
+a(strip_asm_tac (µ_elim¬y® (±_right_elim exp_def)));
+a(LEMMA_T¬
+	((Ì y· Exp y * f y ›-›1) HasDeriv
+		Exp y * f y ›-›1 + Exp y * ~ (f y ›-›1 * f y ›-›1) * f y)  y®  ante_tac THEN1
+	(ALL_FC_T (MAP_EVERY ante_tac)[times_deriv_thm] THEN rewrite_tac[] THEN taut_tac));
+a(rewrite_tac[pc_rule1 "¯_lin_arith" prove_rule[]¬µa b c d:¯·a * ~(b * c) * d = ~(a * b * c * d)®]);
+a(ALL_FC_T rewrite_tac[¯_recip_clauses]);
+(* *** Goal "2" *** *)
+a(LIST_DROP_NTH_ASM_T [2, 3] (MAP_EVERY ante_tac));
+a(ALL_FC_T (MAP_EVERY (strip_asm_tac o rewrite_rule[])) [deriv_0_thm]);
+a(REPEAT strip_tac);
+a(LIST_DROP_NTH_ASM_T [3] all_fc_tac);
+a(all_var_elim_asm_tac1);
+a(asm_rewrite_tac[¯_times_assoc_thm1]);
+a(rewrite_tac[¯_times_assoc_thm]);
+a(all_asm_fc_tac[] THEN ALL_FC_T rewrite_tac[¯_recip_clauses]);
+val Ûexp_unique_thmÝ = save_pop_thm "exp_unique_thm";
+=TEX
+
+The exponential function is continuous everywhere
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬ µx· Exp CtsAt x®);
+a(REPEAT strip_tac THEN bc_thm_tac has_deriv_cts_thm);
+a(¶_tac ¬Exp x® THEN rewrite_tac[exp_def]);
+val Ûexp_cts_thmÝ = save_pop_thm "exp_cts_thm";
+=TEX
+
+The exponential function is positive in some neighbourhood of zero:
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬ ¶b· î¯ 0 < b ± µx·x  OpenInterval (~b) b ´ î¯ 0 < Exp x®);
+a(rewrite_tac[open_interval_def]);
+a(ante_tac(µ_elim ¬î¯ 0® exp_cts_thm) THEN
+	rewrite_tac[cts_at_def, exp_def]);
+a(STRIP_T (strip_asm_tac o µ_elim¬î¯ 1®));
+a(¶_tac¬d® THEN REPEAT strip_tac);
+a(lemma_tac¬Abs x < d® THEN1
+	(cases_tac¬î¯ 0 ¼ x® THEN asm_rewrite_tac[¯_abs_def]
+		THEN PC_T1 "¯_lin_arith" asm_prove_tac[]));
+a(all_asm_fc_tac[]);
+a(POP_ASM_T ante_tac THEN
+	cases_tac¬î¯ 0 ¼ Exp x + ~(î¯ 1)® THEN asm_rewrite_tac[¯_abs_def]
+		THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
+val Ûexp_0_less_lemmaÝ = save_pop_thm "exp_0_less_lemma";
+=TEX
+
+The exponential function maps addition to multiplication if one operand
+lies in some neighbourhood of zero. 
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬ ¶b· î¯ 0 < b ± µx y·x  OpenInterval (~b) b ´ Exp (x + y) = Exp x * Exp y®);
+a(strip_asm_tac exp_0_less_lemma);
+a(¶_tac¬b® THEN asm_rewrite_tac[]);
+a(REPEAT µ_tac THEN intro_µ_tac(¬x:¯®, ¬x:¯®));
+a(lemma_tac¬µx· ((Ìx· Exp(x + y)) HasDeriv (Ìx· Exp(x + y)) x) x®);
+(* *** Goal "1" *** *)
+a(rewrite_tac[] THEN REPEAT strip_tac);
+a(conv_tac(RATOR_C(LEFT_C(Ì_un_Â_rands_conv))));
+a(pure_once_rewrite_tac[prove_rule[]¬Exp(x + y) = Exp(x + y) * î¯ 1®]);
+a(bc_thm_tac comp_deriv_thm);
+a(rewrite_tac[exp_def]);
+a(conv_tac(RATOR_C(LEFT_C(Ì_un_Â_rands_conv))));
+a(pure_once_rewrite_tac[prove_rule[]¬î¯ 1 =î¯ 1 + î¯ 0®]);
+a(bc_thm_tac plus_deriv_thm);
+a(rewrite_tac[id_deriv_thm, const_deriv_thm]);
+(* *** Goal "2" *** *)
+a(lemma_tac¬µx· x  OpenInterval (~b)  b ´ ³ Exp x = î¯ 0®
+	THEN1 (REPEAT strip_tac THEN all_asm_fc_tac[]
+		THEN PC_T1 "¯_lin_arith" asm_prove_tac[]));
+a(lemma_tac¬µx· x  OpenInterval (~b)  b ´ ((Ìx·Exp (x + y) * Exp x ›-›1) HasDeriv î¯ 0) x®);
+(* *** Goal "2.1" *** *)
+a(REPEAT strip_tac);
+a(DROP_NTH_ASM_T 2 (strip_asm_tac o µ_elim¬x®));
+a(strip_asm_tac(µ_elim¬x®(±_right_elim exp_def)));
+a(all_fc_tac[ recip_comp_deriv_thm]);
+a(LIST_DROP_NTH_ASM_T [2] discard_tac);
+a(DROP_NTH_ASM_T 4 (strip_asm_tac o list_µ_elim[¬x®]));
+a(LEMMA_T¬
+	((Ì y'· (Ì x· Exp (x + y)) y' * (Ì x· Exp x ›-›1) y')
+	HasDeriv (Ì x· Exp (x + y)) x * (Ì x· Exp x ›-›1) x
+		+ (Ì x· Exp (x + y)) x * ~ (Exp x ›-›1 * Exp x ›-›1) * Exp x)x® 
+		ante_tac THEN1
+	(ALL_FC_T (MAP_EVERY ante_tac)[times_deriv_thm] THEN rewrite_tac[] THEN taut_tac));
+a(rewrite_tac[pc_rule1 "¯_lin_arith" prove_rule[]¬µa b c d:¯·a * ~(b * c) * d = ~(a * b * c * d)®]);
+a(ALL_FC_T rewrite_tac[¯_recip_clauses]);
+(* *** Goal "2" *** *)
+a(all_fc_tac[
+	rewrite_rule[prove_rule[open_interval_def]
+		¬µA B Y·A < Y ± Y <  B ¤ Y  OpenInterval A  B®]
+			deriv_0_thm]);
+a(lemma_tac¬î¯ 0  OpenInterval (~b)b ® THEN1 
+	(rewrite_tac[open_interval_def] THEN PC_T1 "¯_lin_arith" asm_prove_tac[]));
+a(REPEAT strip_tac);
+a(LIST_DROP_NTH_ASM_T [3, 5] (ALL_FC_T (MAP_EVERY ante_tac)));
+a(rewrite_tac[exp_def] THEN REPEAT strip_tac THEN all_var_elim_asm_tac1);
+a(POP_ASM_T (rewrite_thm_tac o eq_sym_rule));
+a(once_rewrite_tac[pc_rule1 "¯_lin_arith" prove_rule[]¬µa b c:¯· a * b * c = b * a * c®]);
+a(ALL_FC_T rewrite_tac[¯_recip_clauses]);
+val Ûexp_plus_lemmaÝ = save_pop_thm "exp_plus_lemma";
+=TEX
+
+The exponential function is positive and maps addition
+to multiplication for non-negative arguments:
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µx· î¯ 0 ¼ x ´ î¯ 0 <  Exp x ± µy·Exp (x + y) = Exp x * Exp y®);
+a(lemma_tac¬¶d·î¯ 0 < d
+±	µt· î¯ 0 ¼ t ± t ¼ d ´ î¯ 0 < Exp t ± µz· Exp (t + z) =  Exp t * Exp z®);
+(* *** Goal "1" *** *)
+a(strip_asm_tac exp_0_less_lemma);
+a(strip_asm_tac exp_plus_lemma);
+a(strip_asm_tac (list_µ_elim[¬b®, ¬b'®]¯_bound_below_2_thm));
+a(¶_tac¬d® THEN REPEAT strip_tac);
+(* *** Goal "1.1" *** *)
+a(DROP_NTH_ASM_T 8 bc_thm_tac THEN rewrite_tac[open_interval_def]);
+a(PC_T1 "¯_lin_arith" asm_prove_tac[]);
+(* *** Goal "1.2" *** *)
+a(DROP_NTH_ASM_T 6 bc_thm_tac THEN rewrite_tac[open_interval_def]);
+a(PC_T1 "¯_lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(lemma_tac¬µq x· Exp(î¯ q * d + x) = Exp(î¯ q * d) * Exp x® );
+(* *** Goal "2.1" *** *)
+a(µ_tac THEN induction_tac¬q:î® THEN REPEAT strip_tac THEN1 rewrite_tac[exp_def]);
+a(rewrite_tac[î¯_plus_homomorphism_thm, ¯_times_plus_distrib_thm]);
+a(rewrite_tac[µ_elim¬î¯ q * d® ¯_plus_comm_thm]);
+a(lemma_tac¬î¯ 0 ¼ d® THEN1 asm_rewrite_tac[¯_¼_def]);
+a(spec_nth_asm_tac 3 ¬d®);
+a(asm_rewrite_tac[¯_plus_assoc_thm, ¯_times_assoc_thm]);
+(* *** Goal "2.2" *** *)
+a(lemma_tac¬µq· î¯ 0 < Exp(î¯ q * d)® );
+a(µ_tac THEN induction_tac¬q:î® THEN REPEAT strip_tac THEN1 rewrite_tac[exp_def]);
+a(asm_rewrite_tac[î¯_plus_homomorphism_thm, ¯_times_plus_distrib_thm]);
+a(bc_thm_tac ¯_0_less_0_less_times_thm THEN REPEAT strip_tac);
+a(lemma_tac¬î¯ 0 ¼ d® THEN1 asm_rewrite_tac[¯_¼_def]);
+a(spec_nth_asm_tac 4 ¬d®);
+(* *** Goal "2.2.2" *** *)
+a(µ_tac THEN ´_tac THEN all_fc_tac[¯_archimedean_division_thm]);
+a(all_var_elim_asm_tac1);
+a(lemma_tac¬r ¼ d® THEN1 asm_rewrite_tac[¯_¼_def]);
+a(LIST_GET_NTH_ASM_T [7] all_fc_tac);
+a(rewrite_tac[µ_elim¬î¯ q * d® ¯_plus_comm_thm]);
+a(asm_rewrite_tac[¯_plus_assoc_thm, ¯_times_assoc_thm]);
+a(bc_thm_tac ¯_0_less_0_less_times_thm THEN asm_rewrite_tac[]);
+val Ûexp_0_less_plus_lemmaÝ = save_pop_thm "exp_0_less_plus_lemma";
+=TEX
+
+The exponential function maps negation to reciprocal:
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µx· Exp (~x) = Exp x ›-›1®);
+a(lemma_tac ¬µx· î¯ 0 ¼ x ´ Exp (~x) = Exp x ›-›1®);
+(* *** Goal "1" *** *)
+a(REPEAT strip_tac THEN fc_tac [exp_0_less_plus_lemma]);
+a(lemma_tac¬³Exp x = î¯ 0® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(DROP_NTH_ASM_T 3 (ante_tac o µ_elim¬~x®));
+a(rewrite_tac[exp_def] THEN REPEAT strip_tac);
+a(LEMMA_T ¬Exp x ›-›1 * î¯ 1 = Exp x ›-›1 * Exp x * Exp (~ x)® ante_tac
+	THEN1 (pure_asm_rewrite_tac[] THEN strip_tac));
+a(rewrite_tac[¯_times_assoc_thm1]);
+a(ALL_FC_T rewrite_tac[¯_recip_clauses]);
+a(REPEAT strip_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(REPEAT strip_tac);
+a(lemma_tac¬î¯ 0 ¼ x ² î¯ 0 ¼ ~x® THEN1 PC_T1 "¯_lin_arith" prove_tac[]
+	THEN all_asm_fc_tac[exp_0_less_plus_lemma]);
+a(lemma_tac¬³Exp (~x) = î¯ 0® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(DROP_NTH_ASM_T 4 (rewrite_thm_tac o rewrite_rule[]));
+a(ALL_FC_T rewrite_tac[¯_recip_clauses]);
+val Ûexp_minus_thmÝ = save_pop_thm "exp_minus_thm";
+=TEX
+
+The exponential function is positive everywhere:
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µx·  î¯ 0 < Exp x®);
+a(REPEAT strip_tac);
+a(lemma_tac¬î¯ 0 ¼ x ² î¯ 0 ¼ ~x® THEN1 PC_T1 "¯_lin_arith" prove_tac[]);
+(* *** Goal "1" *** *)
+a(all_fc_tac [exp_0_less_plus_lemma]);
+(* *** Goal "2" *** *)
+a(all_fc_tac [exp_0_less_plus_lemma]);
+a(ante_tac (µ_elim¬~x® exp_minus_thm));
+a(rewrite_tac[] THEN strip_tac THEN asm_rewrite_tac[]);
+a(bc_thm_tac ¯_0_less_0_less_recip_thm THEN REPEAT strip_tac);
+val Ûexp_0_less_thmÝ = save_pop_thm "exp_0_less_thm";
+=TEX
+
+The exponential function maps addition to multiplication everywhere:
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µx y·  Exp (x + y) = Exp x * Exp y®);
+a(REPEAT strip_tac);
+a(lemma_tac¬î¯ 0 ¼ x ² î¯ 0 ¼ ~x® THEN1 PC_T1 "¯_lin_arith" prove_tac[]);
+(* *** Goal "1" *** *)
+a(ALL_FC_T rewrite_tac [exp_0_less_plus_lemma]);
+(* *** Goal "2" *** *)
+a(fc_tac [exp_0_less_plus_lemma]);
+a(DROP_NTH_ASM_T 2 (ante_tac o µ_elim¬~y®));
+a(LEMMA_T ¬~x + ~y = ~(x + y)® pure_rewrite_thm_tac THEN1 PC_T1 "¯_lin_arith" prove_tac[]);
+a(pure_rewrite_tac[exp_minus_thm]);
+a(lemma_tac¬î¯ 0 < Exp x ± î¯ 0 < Exp y ± î¯ 0 < Exp (x + y)®
+	THEN1 rewrite_tac[exp_0_less_thm]);
+ a(lemma_tac¬³Exp x = î¯ 0 ± ³Exp y = î¯ 0 ± ³Exp (x + y) = î¯  0®
+	THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(REPEAT strip_tac);
+a(LEMMA_T ¬Exp (x + y) ›-›1 * Exp y= (Exp x ›-›1 * Exp y ›-›1) * Exp y® ante_tac
+	THEN1 asm_rewrite_tac[]);
+a(rewrite_tac[¯_times_assoc_thm] THEN ALL_FC_T rewrite_tac[¯_recip_clauses]);
+a(REPEAT strip_tac);
+a(LEMMA_T ¬(Exp (x + y) ›-›1 * Exp y) * Exp x = Exp x ›-›1 * Exp x® ante_tac
+	THEN1 asm_rewrite_tac[]);
+a(rewrite_tac[¯_times_assoc_thm] THEN ALL_FC_T rewrite_tac[¯_recip_clauses]);
+a(REPEAT strip_tac);
+a(LEMMA_T ¬Exp(x + y) * (Exp (x + y) ›-›1 * Exp y * Exp x) = Exp (x + y)® ante_tac
+	THEN1 asm_rewrite_tac[]);
+a(rewrite_tac[¯_times_assoc_thm1] THEN ALL_FC_T rewrite_tac[¯_recip_clauses]);
+a(STRIP_T (rewrite_thm_tac o once_rewrite_rule[¯_times_comm_thm]));
+val Ûexp_plus_thmÝ = save_pop_thm "exp_plus_thm";
 =TEX
 %%%%
 %%%%
