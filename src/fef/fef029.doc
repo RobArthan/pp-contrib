@@ -150,7 +150,7 @@ transformation process.
 ¹HOLCONST
 Ü	Ûfind‰c‰o‰l‰u‰m‰nÝ : ColumnSpecification ¸ TableDetail LIST ­ 
 Ü					(TableDetail ¸ SsqlCol ¸ TsqlCol)LIST
-÷üüüüüüüüüüüüüüüüüüüüüüüüüüü 
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüü
 Üµcs tdl·
 Ü	find‰c‰o‰l‰u‰m‰n(cs,tdl) =
 Ü	let	look (n, td, scl, tcl) =
@@ -174,7 +174,7 @@ transformation process.
 ¹HOLCONST
 Ü	Ûfind‰i‰d‰e‰n‰tÝ : ColumnSpecification ¸ IdentDetail LIST ­ 
 Ü					IdentDetail LIST
-÷üüüüüüüüüüüüüüüüüüüüüüüüüüü 
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüü
 Üµcs idl·
 Ü	find‰i‰d‰e‰n‰t (cs, idl) =
 Ü	CASE cs [
@@ -471,7 +471,6 @@ $lookup\_col\_spec\_sterling\_look$ below.
 Again {\it mutatatis mutandis},
 the remarks about $lookup\_col\_spec\_class\_look$ above apply to
 to the following.
-=SML
 ¹HOLCONST
 Ü	Ûlookup_column_row_class_lookÝ
 Ü		: TRANS_STATE ­ ColumnSpecification  ¸ Scope LIST ­ TsqlRepr RESULT
@@ -591,7 +590,7 @@ The following operation on state is a convenient short-hand in defining
 these operations. It replaces the top scope in the symbol table in a state
 with a given value.
 ¹HOLCONST
-Ü	update_top_scope : TRANS_STATE ­ Scope ­ TRANS_STATE
+Ü	Ûupdate_top_scopeÝ : TRANS_STATE ­ Scope ­ TRANS_STATE
 ÷üüüüüüüüüüüüüüüüü
 Üµst sc·
 Ü	update_top_scope st sc =
@@ -603,6 +602,9 @@ with a given value.
 Ü		(MkST_STACK symt' (parameterTable stk))
 Ü		(query_class st) (query_constants_class st) (client_clearance st)
 °
+The local function $find$ used in several places in the following has been
+misspelt as $fynd$ to avoid clashing with the constant $find$ defined
+in \cite{DS/FMU/FEF/014}.
 ¹HOLCONST
 Ü	Ûenter‰i‰d‰e‰n‰t‰i‰f‰i‰e‰rÝ
 Ü		: TRANS_STATE ­ (STRING ¸ ExpType ¸ Class)
@@ -661,15 +663,13 @@ with a given value.
 Ü				else 	Exception[wrongScope]
 °
 =TEX
-=SML
 ¹HOLCONST
 Ü	Ûextract‰p‰a‰r‰a‰m‰e‰t‰e‰rÝ : STRING ¸ ParamInfo LIST  ­ ParamInfo LIST
-÷üüüüüüüüüüüüüüüüüüüüüü 
+÷üüüüüüüüüüüüüüüüüüüüü
 Üµname l·
 Ü	extract‰p‰a‰r‰a‰m‰e‰t‰e‰r (name,l) = l ù {pi | pi_name pi = name}
 °
 =TEX
-=SML
 ¹HOLCONST
 Ü	Ûenter‰p‰a‰r‰a‰m‰e‰t‰e‰rÝ
 Ü	: TRANS_STATE ­ STRING ¸ Value ¸ Class ­ TRANS_STATE RESULT
@@ -688,112 +688,123 @@ with a given value.
 Ü		else	Exception[ambiguousName]
 °
 =TEX
-!!! GOT HERE !!!
-=SML
-fun 	(Ûenterècorr_tableêÝ : string ¸ TableName ¸ TableInfo ¸ SsqlCol list ¸ TsqlClassName 
-									¸ TsqlCol list ­ string)
-	(cn,ts,ti,scs,rcn,tcs) =	
-		case !symbolTable of
-				[] => raise noScope
-			| 	sl => 	let 	val outer = rev(tl(rev sl))
-						val {tables = tds,identifiers = ids} = hd(rev sl)
-					in 	if ids = [] then
-					let 	val gc = unique_name()
-						val td = 	{tableName = ts,
-								corrName = name‰s cn,
-								genCorr = gc,
-								info = ti,
-								columns = scs,
-								rowClass = rcn,
-								implementation = tcs,
-								constraints = 	{null_allowed=[],
-										lwb=[],
-										unique=[],
-										uniform=[],
-										index=[]}}
-					val side_effect =  symbolTable := outer @
-								[{tables = rev(td::tds),identifiers=[]}]
-					in gc
-					end
-						else raise wrongScope
-					end;
+¹HOLCONST
+Ü	Ûenter‰c‰o‰r‰r‰_‰t‰a‰b‰l‰eÝ
+Ü		: TRANS_STATE ­ (STRING ¸ TableName ¸ TableInfo ¸ SsqlCol LIST ¸ TsqlClassName ¸ TsqlCol LIST)
+Ü			­ (TRANS_STATE ¸ STRING)RESULT
+÷üüüüüüüüüüüü
+Üµst cn ts ti scs rcn tcs·
+Ü	enter‰c‰o‰r‰r‰_‰t‰a‰b‰l‰e st (cn, ts, ti, scs, rcn, tcs) =
+Ü	let	sl = symbolTable(st_stack st)
+Ü	in	if	sl = []
+Ü		then	Exception[noScope]
+Ü		else 	let	outer = Rev(Tl(Rev sl))
+Ü			in let	 t = Hd(Rev sl)
+Ü			in let	(tds, ids) = (s_tables t, s_identifiers t)
+Ü			in	if	ids = []
+Ü				then	let	gc = unique_name st
+Ü					in let	td =
+Ü						MkTableDetail 
+Ü						ts (mk_name‰s cn) gc ti scs rcn
+Ü						tcs (MkConstraintInfo[][][][][])
+Ü					in let	sc' = MkScope (tds @ [td]) []
+Ü					in	Ok (update_top_scope st sc', gc)
+Ü				else 	Exception[wrongScope]
+°
 =TEX
-=SML
-fun 	(ÛenterètableêÝ : TableName ¸ TableInfo ¸ SsqlCol list 
-				¸ TsqlClassName ¸ TsqlCol list ­ string)
-		(ts,ti,scs,rcn,tcs) =	
-		case !symbolTable of
-				[] => raise noScope
-			| 	sl => 	let 	val outer = rev(tl(rev sl))
-						val {tables = tds,identifiers = ids} = hd(rev sl)
-					in 	if ids = [] then
-					let 	val gc = unique_name()
-						val td = 	{tableName = ts,
-								corrName = anon‰s,
-								genCorr = gc,
-								info = ti,
-								columns = scs,
-								rowClass = rcn,
-								implementation = tcs,
-								constraints = 	{null_allowed=[],
-										lwb=[],
-										unique=[],
-										uniform=[],
-										index=[]}}
-					val side_effect =  symbolTable := outer @
-								[{tables = rev(td::tds),identifiers=[]}]
-					in gc
-					end
-						else raise wrongScope
-					end;
+¹HOLCONST
+Ü	Ûenter‰t‰a‰b‰l‰eÝ
+Ü		: TRANS_STATE ­ (TableName ¸ TableInfo ¸ SsqlCol LIST ¸ TsqlClassName ¸ TsqlCol LIST)
+Ü			­ (TRANS_STATE ¸ STRING)RESULT
+÷üüüüüüüüüüüü
+Üµst ts ti scs rcn tcs·
+Ü	enter‰t‰a‰b‰l‰e st (ts, ti, scs, rcn, tcs) =
+Ü	let	sl = symbolTable(st_stack st)
+Ü	in	if	sl = []
+Ü		then	Exception[noScope]
+Ü		else 	let	outer = Rev(Tl(Rev sl))
+Ü			in let	 t = Hd(Rev sl)
+Ü			in let	(tds, ids) = (s_tables t, s_identifiers t)
+Ü			in	if	ids = []
+Ü				then	let	gc = unique_name st
+Ü					in let	td =
+Ü						MkTableDetail 
+Ü						ts (c_anon‰s) gc ti scs rcn
+Ü						tcs (MkConstraintInfo[][][][][])
+Ü					in let	sc' = MkScope (tds @ [td]) []
+Ü					in	Ok (update_top_scope st sc', gc)
+Ü				else 	Exception[wrongScope]
+°
 =TEX
-=SML
-fun 	(Ûenter_scopeÝ : unit ­ unit) () = 
-	symbolTable := !symbolTable @ [{tables = [],identifiers = []}];
+¹HOLCONST
+Ü	Ûenter_scopeÝ : TRANS_STATE ­ TRANS_STATE
+÷üüüüüüüüüüüüüüüüü
+Üµst·
+Ü	enter_scope st =
+Ü	let	stk = st_stack st
+Ü	in let	symt = symbolTable stk
+Ü	in let	outer = Rev(Tl(Rev symt))
+Ü	in let	symt' = outer @ []
+Ü	in	MkTRANS_STATE
+Ü		(MkST_STACK symt' (parameterTable stk))
+Ü		(query_class st) (query_constants_class st) (client_clearance st)
+°
 =TEX
-=SML
-fun 	(Ûleave_scopeÝ : unit ­ unit) () = 
-	case !symbolTable of
-		[] => raise noScope
-	|	sl => symbolTable := rev(tl(rev sl));
-=TEX
+The block-structured approach we use means that $leave\_scope$ is
+not necessary.
 
-=SML
-fun 	(Ûgetètable_infoêÝ : TableSpecification ­ TableInfo ¸ ConstraintInfo ¸ SsqlCol list 
-						¸ TsqlClassName ¸ TsqlCol list) x 
-				= raise notDefined "getètable_infoê";
+¹HOLCONST
+Ü	Ûget‰t‰a‰b‰l‰e‰i‰n‰f‰oÝ
+Ü	: TableSpecification ­
+Ü	(TableInfo ¸ ConstraintInfo ¸ SsqlCol LIST ¸ TsqlClassName ¸ TsqlCol LIST)
+÷üüüüüüüüüüüüüüüü
+Ü	true
+°
 =TEX
-=SML
-fun 	(Ûlookupèlocal_table_implementationêÝ : unit ­ TsqlClassName list ) () 
-					= raise notDefined "lookupèlocal_table_implementationê";
+¹HOLCONST
+Ü	Ûget‰t‰a‰b‰l‰e‰i‰n‰f‰oÝ
+Ü	: TableSpecification ­
+Ü	(TableInfo ¸ ConstraintInfo ¸ SsqlCol LIST ¸ TsqlClassName ¸ TsqlCol LIST)
+÷üüüüüüüüüüüüüüüü
+Ü	true
+°
 =TEX
-=SML
-fun 	(Ûlookupèlocal_table_infoêÝ : unit ­ TableInfo list ) 
-	() = 	let 	fun 	(look1 : TableDetail ­ TableInfo)
-				td = #info td
-			fun	(look : Scope ­ TableInfo list)
-				sc = map look1 (#tables sc)
-		in
-		case fold(op @)(map look(innermost (!symbolTable))) of
-			[] => raise noScope
-		|	trs => trs
-		end;
+The function $lookup\sp{local\_table\_implementation}$ of \cite{DS/FMU/FEF/020,trans}
+is not used so we omit it.
 =TEX
-=SML
-fun 	(Ûlookupèparam_dataêÝ : string ­ Constant_valueèssqlê ¸ Class) 
-	name = case extract‰p‰a‰r‰a‰m‰e‰t‰e‰r(name,!parameterTable) of
-			[] => raise noSuchParameter
-		|	[info] => (#val‰p info,#clasf info)
-		|	other => raise internalError;
+¹HOLCONST
+Ü	Ûlookup‰l‰o‰c‰a‰l‰_‰t‰a‰b‰l‰e‰_‰i‰n‰f‰oÝ
+Ü	: TRANS_STATE ­ (TableInfo LIST) RESULT
+÷üüüüüüüüüüüüüüüü
+Üµst·	lookup‰l‰o‰c‰a‰l‰_‰t‰a‰b‰l‰e‰_‰i‰n‰f‰o st =
+Ü	let 	look sc = Map td_info (s_tables sc)
+Ü	in let	trs = Fold($@)(Map look (innermost(symbolTable(st_stack st)))) []
+Ü	in	if trs = []
+Ü		then	Exception[noScope]
+Ü		else	Ok trs
+°
 =TEX
-Entering and leaving scope is achieved by side effect. We define a function to  this.
-=SML
-fun 	(Ûin_new_scopeÝ (what : unit ­ 'a):'a) = (
-	let	val side_effect = enter_scope()
-		val body = what()
-		val side_effect = leave_scope()
-	in	body
-	end);
+¹HOLCONST
+Ü	Ûlookup‰p‰a‰r‰a‰m‰_‰d‰a‰t‰aÝ
+Ü	: TRANS_STATE ­ STRING ­ (Value ¸ Class) RESULT
+÷üüüüüüüüüüüüüüüü
+Üµst name·
+Ü	lookup‰p‰a‰r‰a‰m‰_‰d‰a‰t‰a st name =
+Ü	let infos = extract‰p‰a‰r‰a‰m‰e‰t‰e‰r(name, parameterTable(st_stack st))
+Ü	in	if	infos = []
+Ü		then	Exception[noSuchParameter]
+Ü		else if	Tl infos = []
+Ü		then	let info = Hd infos in Ok(pi_val‰p info, pi_clasf info)
+Ü		else	Exception[internalError]
+°
+=TEX
+¹HOLCONST
+Ü	Ûin_new_scopeÝ
+Ü	: (TRANS_STATE ­ 'a ­ 'b) ­ (TRANS_STATE ­ 'a ­ 'b)
+÷üüüüüüüüüüüüüüüü
+Üµwhat·
+Ü	in_new_scope what = (Ìst· (Ìa· what (enter_scope st) a))
+°
 =TEX
 \subsection{Transformations Proper}
 =SML
@@ -1461,7 +1472,7 @@ fun 	(Ûlubèssql_colêÝ : SsqlCol ¸ SsqlCol ­ SsqlCol)
 		col_class = lubèbound_infoê(cc1,cc2)};
 =TEX
 =SML
-fun 	(Ûlubètable_infoêÝ : TableInfo ¸ TableInfo ­ TableInfo)
+fun 	(Ûlub‰t‰a‰b‰l‰e‰i‰n‰f‰oÝ : TableInfo ¸ TableInfo ­ TableInfo)
 	({table_exist_class = tec1,table_class = tc1,row_class = rc1},
 		{table_exist_class = tec2,table_class = tc2,row_class = rc2}) 
 		=  
@@ -1742,7 +1753,7 @@ fun 	(ÛvalueèdataêÝ : Valueèssqlê ­ Valueètsqlê)
 |	valueèdataê	(context‰s s) = 	let val  (cv,class) = contextual_data s
 						in	constant_valueèdataê cv 
 						end
-|	valueèdataê	(parameter‰s name) = 	let val  (cv,class) = lookupèparam_dataê name
+|	valueèdataê	(parameter‰s name) = 	let val  (cv,class) = lookup‰p‰a‰r‰a‰m‰_‰d‰a‰t‰a name
 							in	constant_valueèdataê cv 
 							end
 =TEX
@@ -1937,7 +1948,7 @@ and 	(ÛvalueètypeêÝ : Valueèssqlê ­ ExpType)
 |	valueètypeê	(context‰s s) = 	let val  (cv,class) = contextual_data s
 						in	(constant_valueètypeê cv,worthless) 
 						end
-|	valueètypeê	(parameter‰s name) = 	let val  (cv,class) = lookupèparam_dataê name
+|	valueètypeê	(parameter‰s name) = 	let val  (cv,class) = lookup‰p‰a‰r‰a‰m‰_‰d‰a‰t‰a name
 							in	(constant_valueètypeê cv,worthless) 
 							end
 =TEX
@@ -1958,7 +1969,7 @@ and 	(Ûtuple_listèdataêÝ : Tuple_listèssqlê ­ Tuple_listètsqlê)
 			(table_contents‰s t) = in_new_scope(fn () =>
 			let	val ts = convertètable_specê t
 				val tn = convertètableSpecificationê ts
-				val (ti,ci,scs,rc,tcs) = getètable_infoê ts
+				val (ti,ci,scs,rc,tcs) = get‰t‰a‰b‰l‰e‰i‰n‰f‰o ts
 				fun (sel: TsqlCol ­ Select_valueètsqlê)
 					{sterling_name = name‰t n,
 					dinary_name=dn,
@@ -2031,7 +2042,7 @@ and 	(Ûtuple_listètypeêÝ : Tuple_listèssqlê ­ ExpType list)
 							| f (st,nullType) = (st,sterling)
 							| f (nullType,dt) = raise internalError
 							| f (st,dt) = (st,sterling)
-					in map f(map t(col_info(getètable_infoê(convertètable_specê ts))))
+					in map f(map t(col_info(get‰t‰a‰b‰l‰e‰i‰n‰f‰o(convertètable_specê ts))))
 					end
 =TEX
 =SML
@@ -2108,7 +2119,7 @@ and 	(Ûfrom_specèenterêÝ : From_specèssqlê ­ From_specètsqlê) fs =
 	|	(correlate_from‰s(name,t)) =>
 			let	val (tn,ti,scs,rc,tcs) = tuple_listèinfoê t
 				val tul = tuple_listèmakeê (t,rc,tcs)
-				val cor = enterècorr_tableê(name,tn,ti,scs,rc,tcs)
+				val cor = enter‰c‰o‰r‰r‰_‰t‰a‰b‰l‰e(name,tn,ti,scs,rc,tcs)
 				val cns = (case rc of
 						anonètcê => raise internalError
 					|	nameètcê s => [s]
@@ -2143,7 +2154,7 @@ and 	(Ûtuple_listèinfoêÝ : Tuple_listèssqlê ­ 	TableName  ¸ TableInfo ¸ SsqlCol 
 								¸ TsqlClassName ¸ TsqlCol list) 
 			(table_contents‰s t) = 
 				let 	val ts = convertètable_specê t
-					val (ti,ci,scs,rc,tcs) = getètable_infoê ts
+					val (ti,ci,scs,rc,tcs) = get‰t‰a‰b‰l‰e‰i‰n‰f‰o ts
 				in 	(nameètnê ts,ti,scs,rc,tcs)
 				end
 =TEX
@@ -2153,7 +2164,7 @@ and 	(Ûtuple_listèinfoêÝ : Tuple_listèssqlê ­ 	TableName  ¸ TableInfo ¸ SsqlCol 
 				in 	in_new_scope(fn () =>
 					let 	val fs = map from_specèenterê fr
 						val sli = select_listèinfoê sel
-					in	(anonètnê,fold lubètable_infoê tis,sli,
+					in	(anonètnê,fold lub‰t‰a‰b‰l‰e‰i‰n‰f‰o tis,sli,
 							fold lubètsql_class_nameê rcs,map col_target sli)
 					end)
 				end
@@ -2164,7 +2175,7 @@ and 	(Ûtuple_listèinfoêÝ : Tuple_listèssqlê ­ 	TableName  ¸ TableInfo ¸ SsqlCol 
 				in 	in_new_scope(fn () =>
 					let 	val fs = map from_specèenterê fr
 						val sli = select_listèinfoê sel
-					in	(anonètnê,fold lubètable_infoê tis,sli,
+					in	(anonètnê,fold lub‰t‰a‰b‰l‰e‰i‰n‰f‰o tis,sli,
 							fold lubètsql_class_nameê rcs,map col_target sli)
 					end)
 				end
@@ -2175,7 +2186,7 @@ and 	(Ûtuple_listèinfoêÝ : Tuple_listèssqlê ­ 	TableName  ¸ TableInfo ¸ SsqlCol 
 				in 	in_new_scope(fn () =>
 					let 	val fs = map from_specèenterê fr
 						val sli = select_listèinfoê sel
-					in	(anonètnê,fold lubètable_infoê tis,sli,
+					in	(anonètnê,fold lub‰t‰a‰b‰l‰e‰i‰n‰f‰o tis,sli,
 							fold lubètsql_class_nameê rcs,map col_target sli)
 					end)
 				end
@@ -2195,7 +2206,7 @@ and 	(Ûtuple_listèinfoêÝ : Tuple_listèssqlê ­ 	TableName  ¸ TableInfo ¸ SsqlCol 
 			if length tls = 1
 			then tuple_listèinfoê(hd tls)
 			else 	let	val (tts,tis,scss,rcs,tcss) = split5 (map tuple_listèinfoê tls)
-					val ti = fold lubètable_infoê tis
+					val ti = fold lub‰t‰a‰b‰l‰e‰i‰n‰f‰o tis
 					val scs = map(fold lubèssql_colê)(invert scss)
 					val rc = fold lubètsql_class_nameê rcs
 					val tcs = map(fold lubètsql_colê) (invert tcss)
@@ -2214,7 +2225,7 @@ and 	(Ûtuple_listèinfoêÝ : Tuple_listèssqlê ­ 	TableName  ¸ TableInfo ¸ SsqlCol 
 =SML
 and 	(Ûtuple_listèmakeêÝ : Tuple_listèssqlê ¸ TsqlClassName ¸ TsqlCol list ­ Tuple_listètsqlê ) 
 			(table_contents‰s t,to_rc,to_tcs) = 
-			let 	val (ti,ci,scs,rc,tcs) = getètable_infoê (convertètable_specê t)
+			let 	val (ti,ci,scs,rc,tcs) = get‰t‰a‰b‰l‰e‰i‰n‰f‰o (convertètable_specê t)
 				val tc = table_contents‰t(convertètableSpecificationê(convertètable_specê t))
 				fun (mk : TsqlName ¸ TsqlName ­ Valueètsqlê list)
 					(name‰t f,name‰t tn) = [contents‰t(denote_col_spec‰t f)]
@@ -2613,7 +2624,7 @@ and 	(Ûinternal_valueèclassêÝ : Valueèssqlê ­ InternalExpClass)
 =TEX
 =SML
 |	internal_valueèclassê	(count_all‰s t) = 
-				let val ti = fold lubètable_infoê(lookupèlocal_table_infoê())
+				let val ti = fold lub‰t‰a‰b‰l‰e‰i‰n‰f‰o(lookup‰l‰o‰c‰a‰l‰_‰t‰a‰b‰l‰e‰_‰i‰n‰f‰o())
 				in	case #row_class ti of
 						upb u =>
 						let	val c = fold(curry binop‰t lub_op)(map 
@@ -2692,7 +2703,7 @@ and 	(Ûinternal_valueèclassêÝ : Valueèssqlê ­ InternalExpClass)
 =TEX
 =SML
 |	internal_valueèclassê	joined_row_existence‰s = 	
-				let val ti = fold lubètable_infoê(lookupèlocal_table_infoê())
+				let val ti = fold lub‰t‰a‰b‰l‰e‰i‰n‰f‰o(lookup‰l‰o‰c‰a‰l‰_‰t‰a‰b‰l‰e‰_‰i‰n‰f‰o())
 				in  simple(constantèecê (#table_class ti))
 				end
 =TEX
@@ -2708,7 +2719,7 @@ and 	(Ûinternal_valueèclassêÝ : Valueèssqlê ­ InternalExpClass)
 				in simple(constantèecê class) 
 				end
 |	internal_valueèclassê	(parameter‰s name) = 	
-				let val (cv,class) = lookupèparam_dataê name
+				let val (cv,class) = lookup‰p‰a‰r‰a‰m‰_‰d‰a‰t‰a name
 				in simple(constantèecê class) 
 				end
 =TEX
@@ -2717,7 +2728,7 @@ and 	(Ûtuple_listèclassêÝ : Tuple_listèssqlê  ­ Tuple_listètsqlê )
 			(table_contents‰s t) = in_new_scope(fn () =>
 			let	val ts = convertètable_specê t
 				val tn = convertètableSpecificationê ts
-				val (ti,ci,scs,rc,tcs) = getètable_infoê ts
+				val (ti,ci,scs,rc,tcs) = get‰t‰a‰b‰l‰e‰i‰n‰f‰o ts
 				fun (sel: TsqlCol ­ Select_valueètsqlê)
 					{sterling_name = sn,
 					dinary_name=dn,
@@ -2908,7 +2919,7 @@ fun 	(Ûtuple_listèmake_outerêÝ : Tuple_listèssqlê ¸ bool ¸ TsqlClassName ¸ TsqlC
 						­ Tuple_listètsqlê ¸ Queryètsqlê list ) 
 			(table_contents‰s t,scw,to_rc,to_tcs) = 
 			let 	val ts = convertètable_specê t
-				val (ti,ci,scs,rc,tcs) = getètable_infoê ts
+				val (ti,ci,scs,rc,tcs) = get‰t‰a‰b‰l‰e‰i‰n‰f‰o ts
 				val where_class = denote_class‰t(query_constants_class())
 				val sl = (case scw of
 						true => [anonymous_value‰t where_class]
@@ -2960,7 +2971,7 @@ fun 	(Ûtuple_listèmake_outerêÝ : Tuple_listèssqlê ¸ bool ¸ TsqlClassName ¸ TsqlC
 							then where_v
 							else 	denote_true‰t
 				val max_rc = fold (op lub)(map upb_row_class
-								(lookupèlocal_table_infoê()))	
+								(lookup‰l‰o‰c‰a‰l‰_‰t‰a‰b‰l‰e‰_‰i‰n‰f‰o()))	
 				val rcs = map denote_name(lookup‰l‰o‰c‰a‰l‰_‰r‰o‰w‰_‰c‰l‰a‰s‰s‰e‰s())
 				val rvis = binop‰t(dom_op,(cc,fold(curry binop‰t lub_op)rcs))
 				val w = 	if client_clearance() dom max_rc
@@ -3030,7 +3041,7 @@ fun 	(Ûtuple_listèmake_outerêÝ : Tuple_listèssqlê ¸ bool ¸ TsqlClassName ¸ TsqlC
 							then where_v
 							else 	denote_true‰t
 				val max_rc = fold (op lub)(map upb_row_class
-								(lookupèlocal_table_infoê()))	
+								(lookup‰l‰o‰c‰a‰l‰_‰t‰a‰b‰l‰e‰_‰i‰n‰f‰o()))	
 				val rcs = map denote_name(lookup‰l‰o‰c‰a‰l‰_‰r‰o‰w‰_‰c‰l‰a‰s‰s‰e‰s())
 				val rvis = binop‰t(dom_op,(cc,fold(curry binop‰t lub_op)rcs))
 				val w = 	if client_clearance() dom max_rc
@@ -3101,7 +3112,7 @@ fun 	(Ûtuple_listèmake_outerêÝ : Tuple_listèssqlê ¸ bool ¸ TsqlClassName ¸ TsqlC
 							then where_v
 							else 	denote_true‰t
 				val max_rc = fold (op lub)(map upb_row_class
-								(lookupèlocal_table_infoê()))	
+								(lookup‰l‰o‰c‰a‰l‰_‰t‰a‰b‰l‰e‰_‰i‰n‰f‰o()))	
 				val rcs = map denote_name(lookup‰l‰o‰c‰a‰l‰_‰r‰o‰w‰_‰c‰l‰a‰s‰s‰e‰s())
 				val rvis = binop‰t(dom_op,(cc,fold(curry binop‰t lub_op)rcs))
 				val w = 	if client_clearance() dom max_rc
