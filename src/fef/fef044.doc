@@ -986,7 +986,119 @@ The simplest consistency proof is obtained by using a constant function as follo
 ‹		and	facs = MkFactorisation f0 f1 f2 f3
 ‹		in	MkFactoredMachine mach facs
 ∞
+A less trivial witness is given by the following factored machine, which copies its input to its output:
+πHOLCONST
+‹	€identity_witness› : 'State FactoredMachine
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹    identity_witness =
+‹	let next = Fst
+‹	and output = reqSsql o Snd 
+‹	and init = Arbitrary
+‹	and f0 = Ã c ob s ∑ ob
+‹	in	let (f1,f2,f3) = (f0,f0,f0)
+‹	in	let	mach = MkMachine next output init
+‹		and	facs = MkFactorisation f0 f1 f2 f3
+‹		in	MkFactoredMachine mach facs
+∞
 
+The following function is used in the proofs that the above two candidates are $label\_secure$.
+
+πHOLCONST
+‹	€purge_above_level› : Ó ≠ Class ≠ Obj ≠ Obj
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹(µc ob∑	purge_above_level 0 c ob = (FilterObj c ob)) ±
+‹(µn c d t os∑
+‹	purge_above_level (n + 1) c (MkObj(d, t, os)) =
+‹	MkObj(Arbitrary, Arbitrary, Map (purge_above_level n c) os))
+∞
+=SML
+push_consistency_goal¨purge_above_levelÆ;
+a(lemma_tac¨
+∂p:Ó ≠ Class ≠ Obj ≠ Obj∑
+(µob c∑	p 0 c ob = FilterObj c ob) ±
+(µn c tr∑
+	p (n + 1) c (MkTree tr) =
+	MkTree((Arbitrary, Arbitrary), Map (p n c) (Snd tr)))Æ
+	THEN1 MERGE_PCS_T ["'tree", "hol2"] prove_∂_tac);
+a(∂_tac¨pÆ THEN asm_rewrite_tac[get_spec¨MkObjÆ]);
+save_consistency_thm¨purge_above_levelÆ (pop_thm());
+=TEX
+=SML
+set_goal([], ¨µ n c ob∑
+		purge_above_level (n + 1) c ob = 
+		MkTree((Arbitrary, Arbitrary), Map (purge_above_level n c) (objectRefers ob))Æ);
+a(REPEAT strip_tac);
+a(strip_asm_tac(µ_elim¨obÆ mk_tree_onto_thm) THEN var_elim_nth_asm_tac 1);
+a(LEMMA_T¨MkTree x = MkObj(Fst (Fst x), Snd (Fst x), Snd x)Æ rewrite_thm_tac
+	THEN1 rewrite_tac[get_spec¨MkObjÆ]);
+a(rewrite_tac[get_spec¨purge_above_levelÆ]);
+a(rewrite_tac[get_spec¨MkObjÆ, mk_tree_one_one_thm]);
+val €purge_above_level_thm› = save_pop_thm"purge_above_level_thm";
+=TEX
+=SML
+set_goal([], ¨µ n c ob1 ob2∑
+	(ob1, ob2) ç same_at_c_below_level n c ¥
+		purge_above_level n c ob1 = purge_above_level n c ob2Æ);
+a(strip_tac);
+a(induction_tac¨nÆ);
+(* *** Goal "1" *** *)
+a(rewrite_tac(map get_spec[¨same_at_c_below_levelÆ, ¨purge_above_levelÆ]));
+a(rewrite_tac[identical_obj_filter_obj_thm]);
+(* *** Goal "2" *** *)
+a(rewrite_tac[ get_spec¨same_at_c_below_levelÆ, purge_above_level_thm ]);
+a(REPEAT strip_tac);
+a(LEMMA_T ¨Map (purge_above_level n c) (objectRefers ob1) =
+	Map (purge_above_level n c) (objectRefers ob2)Æ rewrite_thm_tac);
+a(all_asm_fc_tac[]);
+a(lemma_tac¨µ x1 x2∑
+	(x1, x2) ç Elems(Combine(objectRefers ob1) (objectRefers ob2))
+	¥ purge_above_level n c x1 = purge_above_level n c x2Æ);
+(* *** Goal "2.1" *** *)
+a(REPEAT strip_tac THEN all_asm_fc_tac[] THEN all_asm_fc_tac[]);
+(* *** Goal "2.2" *** *)
+a(all_fc_tac[elems_combine_map_thm1]);
+val €same_at_c_below_level_purge_above_level_thm1› =
+	save_pop_thm"same_at_c_below_level_purge_above_level_thm1";
+=TEX
+=SML
+set_goal([], ¨µ n c ob1 ob2∑
+	purge_above_level n c ob1 = purge_above_level n c ob2 ¥
+	(ob1, ob2) ç same_at_c_below_level n cÆ);
+a(strip_tac);
+a(induction_tac¨nÆ);
+(* *** Goal "1" *** *)
+a(rewrite_tac(map get_spec[¨same_at_c_below_levelÆ, ¨purge_above_levelÆ]));
+a(rewrite_tac[identical_obj_filter_obj_thm]);
+(* *** Goal "2" *** *)
+a(rewrite_tac[ get_spec¨same_at_c_below_levelÆ, purge_above_level_thm ]);
+a(REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(all_fc_tac[mk_tree_one_one_thm]);
+a(LEMMA_T¨	Length(Map(purge_above_level n c) (objectRefers ob1)) =
+		Length(Map(purge_above_level n c) (objectRefers ob2))Æ ante_tac
+	THEN1 asm_rewrite_tac[]);
+a(rewrite_tac[length_map_thm]);
+(* *** Goal "2.1" *** *)
+a(all_fc_tac[mk_tree_one_one_thm]);
+a(LEMMA_T¨	Length(Map(purge_above_level n c) (objectRefers ob1)) =
+		Length(Map(purge_above_level n c) (objectRefers ob2))Æ ante_tac
+	THEN1 asm_rewrite_tac[]);
+a(rewrite_tac[length_map_thm] THEN strip_tac);
+a(all_fc_tac[elems_combine_map_thm]);
+a(all_asm_fc_tac[]);
+val €same_at_c_below_level_purge_above_level_thm2› =
+	save_pop_thm"same_at_c_below_level_purge_above_level_thm2";
+=TEX
+=SML
+set_goal([], ¨µ n c ob1 ob2∑
+	(ob1, ob2) ç same_at_c_below_level n c §
+	purge_above_level n c ob1 = purge_above_level n c ob2Æ);
+a(REPEAT strip_tac THEN
+	all_fc_tac[same_at_c_below_level_purge_above_level_thm1,
+		same_at_c_below_level_purge_above_level_thm2]);
+val €same_at_c_below_level_purge_above_level_thm› =
+	save_pop_thm"same_at_c_below_level_purge_above_level_thm";
+=TEX
 =SML
 set_goal([],¨
 	machine simplest_witness =
@@ -996,102 +1108,63 @@ set_goal([],¨
 		(Ã c ob s ∑ Arbitrary) (Ã c ob s ∑ Arbitrary)
  Æ);
 a (rewrite_tac (let_def::(map get_spec [¨simplest_witnessÆ,¨machineÆ])));
-val lemma_043_1 = save_pop_thm "lemma_043_1";
+val €simple_witness_thm› = save_pop_thm "simple_witness_thm";
 =TEX
-set_labelled_goal "2";
-
-=IGN SML
-set_goal([],¨LiftRel (same_at_c_below_level 1) ç IndexedEquivÆ);
+=SML
+set_goal([],¨
+	machine identity_witness =
+		MkMachine Fst (reqSsql o Snd) Arbitrary
+ ±	factors identity_witness =
+		MkFactorisation (Ã c ob s ∑ ob) (Ã c ob s ∑ ob)
+		(Ã c ob s ∑ ob) (Ã c ob s ∑ ob)
+ Æ);
+a (rewrite_tac (let_def::(map get_spec [¨identity_witnessÆ,¨machineÆ])));
+val €identity_witness_thm› = save_pop_thm "identity_witness_thm";
+=TEX
+=SML
 set_goal([],¨µn c∑ (same_at_c_below_level n c) ç EquivalenceÆ);
-a (REPEAT strip_tac);
-a (induction_tac ¨nÆ);
-(* *** Goal "1" *** *)
-a (rewrite_tac (
-	(map get_spec [
-	¨same_at_c_below_levelÆ, ¨EquivalenceÆ, ¨ReflexiveÆ,
-	¨SymmetricÆ, ¨TransitiveÆ])
-	@
-	[identical_obj_refl_thm, identical_obj_sym_thm,
-	identical_obj_trans_thm]));
-(* *** Goal "2" *** *)
-a (asm_rewrite_tac (
-	(map get_spec [
-	¨same_at_c_below_levelÆ, ¨EquivalenceÆ])
-	@
-	[identical_obj_refl_thm, identical_obj_sym_thm,
-	identical_obj_trans_thm]));
-a (REPEAT strip_tac);
-(* *** Goal "2.1" *** *)
-a (rewrite_tac [get_spec ¨ReflexiveÆ]);
-a (REPEAT strip_tac
-	THEN all_fc_tac [elems_combine_thm]
-	THEN asm_rewrite_tac[]);
-a (DROP_NTH_ASM_T 4 ante_tac
-	THEN rewrite_tac (map get_spec [¨EquivalenceÆ, ¨ReflexiveÆ,
-	¨SymmetricÆ, ¨TransitiveÆ]));
-a (REPEAT strip_tac THEN asm_rewrite_tac[]);	
-(* *** Goal "2.2" *** *)
-a (rewrite_tac [get_spec ¨SymmetricÆ]);
-a (REPEAT_N 3 strip_tac
-	THEN asm_rewrite_tac[]);
-a (REPEAT strip_tac);
-a (DROP_NTH_ASM_T 4
-	(strip_asm_tac o
-	(rewrite_rule (map get_spec [¨EquivalenceÆ, ¨SymmetricÆ]))));
-a (all_asm_fc_tac[]);
-
-	THEN all_fc_tac [elems_combine_thm]
-	THEN asm_rewrite_tac[]);
-a (DROP_NTH_ASM_T 4 ante_tac
-	THEN rewrite_tac (map get_spec [¨EquivalenceÆ, ¨ReflexiveÆ,
-	¨SymmetricÆ, ¨TransitiveÆ]));
-a (REPEAT strip_tac THEN asm_rewrite_tac[]);	
-
-
-¨same_at_c_below_levelÆ,
-	THEN_TRY asm_rewrite_tac[identical_obj_rft_thm]);
-(* *** Goal "2" *** *)
+a(MERGE_PCS_T1 ["'bin_rel", "hol2"] rewrite_tac[get_spec¨EquivalenceÆ,
+	same_at_c_below_level_purge_above_level_thm]);
+a(PC_T1 "prop_eq" prove_tac[]);
+val €same_at_c_below_level_equiv_thm› = save_pop_thm "same_at_c_below_level_equiv_thm";
 =TEX
-=IGN SML
-set_goal([],¨LiftRel (same_at_c_below_level 2) ç IndexedEquivÆ);
+=SML
+set_goal([], ¨µn∑ LiftRel (same_at_c_below_level n) ç IndexedEquivÆ);
+a(strip_tac THEN bc_tac[lift_rel_indexed_equiv_thm]);
+a(rewrite_tac[same_at_c_below_level_equiv_thm]);
+val €lift_rel_same_at_c_below_level_indexed_equiv_thm› =
+	save_pop_thm "lift_rel_same_at_c_below_level_indexed_equiv_thm";
+=SML
+set_goal([], ¨µn C x∑ (x, x) ç LiftRel (same_at_c_below_level n) CÆ);
+a(REPEAT strip_tac);
+a(ante_tac(µ_elim¨nÆlift_rel_same_at_c_below_level_indexed_equiv_thm));
+a(rewrite_tac(map get_spec[¨IndexedEquivÆ, ¨EquivalenceÆ,  ¨ReflexiveÆ]));
+a(REPEAT strip_tac THEN asm_rewrite_tac[]);
+val €lift_rel_same_at_c_below_level_refl_thm› =
+	save_pop_thm "lift_rel_same_at_c_below_level_refl_thm";
 =TEX
-=IGN SML
-set_goal([],¨LiftRel (same_at_c_below_level 3) ç IndexedEquivÆ);
-=IGN SML
+=SML
 set_goal([],¨simplest_witness ç label_secureÆ);
 a (rewrite_tac ((map get_spec [
 	¨label_secureÆ , ¨label_secure_toÆ, ¨factor0Æ
-	])@[let_def, lemma_043_1]));
+	])@[let_def, simple_witness_thm]));
 a (rewrite_tac ([let_def, same_requests_indexed_equiv_thm]@(map get_spec [
 	¨ml_secureÆ,¨x_ml_secureÆ,¨special_machineÆ,¨machineÆ,¨NextÆ,¨$ªâfÆ])));
-=GFT
-(* *** Goal "" *** *)
-
-(* ?Ù *)  ¨(LiftRel (same_at_c_below_level 1) ç IndexedEquiv
-               ± (µ c iâ1 iâ2
-               ∑ (iâ1, iâ2) ç LiftRel sameRequests (c %downarrow%)
-                   ¥ (Arbitrary, Arbitrary)
-                     ç LiftRel (same_at_c_below_level 1) (c %downarrow%)))
-             ± (LiftRel (same_at_c_below_level 2) ç IndexedEquiv
-               ± (µ c iâ1 iâ2
-               ∑ (iâ1, iâ2) ç LiftRel sameRequests (c %downarrow%)
-                   ¥ (Arbitrary, Arbitrary)
-                     ç LiftRel (same_at_c_below_level 2) (c %downarrow%)))
-             ± LiftRel (same_at_c_below_level 3) ç IndexedEquiv
-             ± (µ c iâ1 iâ2
-             ∑ (iâ1, iâ2) ç LiftRel sameRequests (c %downarrow%)
-                 ¥ (Arbitrary, Arbitrary)
-                   ç LiftRel (same_at_c_below_level 3) (c %downarrow%))Æ
-=IGN SML
-(* *** Goal "1" *** *)
-(* a (REPEAT strip_tac);
-a (rewrite_tac [let_def]);
-a (rewrite_tac (map get_spec [¨LiftRelÆ]));
-a (rewrite_tac (map get_spec [¨lift_machineÆ]));
-*)
+a (rewrite_tac[lift_rel_same_at_c_below_level_indexed_equiv_thm,
+	lift_rel_same_at_c_below_level_refl_thm]);
+val €simplest_witness_label_secure_thm› = save_pop_thm "simplest_witness_label_secure_thm";
 =TEX
-
-
+=SML
+set_goal([],¨identity_witness ç label_secureÆ);
+a (rewrite_tac ((map get_spec [
+	¨label_secureÆ , ¨label_secure_toÆ, ¨factor0Æ
+	])@[let_def, identity_witness_thm]));
+a (rewrite_tac ([let_def, same_requests_indexed_equiv_thm]@(map get_spec [
+	¨ml_secureÆ,¨x_ml_secureÆ,¨special_machineÆ,¨machineÆ,¨NextÆ,¨$ªâfÆ])));
+a (rewrite_tac[lift_rel_same_at_c_below_level_indexed_equiv_thm,
+	lift_rel_same_at_c_below_level_refl_thm]);
+val €identity_witness_label_secure_thm› = save_pop_thm "identity_witness_label_secure_thm";
+=TEX
 \section{CLOSING DOWN}
 
 The following \Product{} instruction restores the previous proof context.
