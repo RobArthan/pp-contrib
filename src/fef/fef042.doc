@@ -8,8 +8,8 @@
 \TPPproject{DRA FRONT END FILTER PROJECT}  %% Mandatory field
 %\TPPvolume{}
 %\TPPpart{}
-\TPPtitle{Multi-Level SWORD}  %% Mandatory field
-\TPPref{DS/FMU/FEF/040}  %% Mandatory field
+\TPPtitle{Multi-Level Architectural Model}  %% Mandatory field
+\TPPref{DS/FMU/FEF/042}  %% Mandatory field
 \def\SCCSversion{$Revision$
 }
 \TPPissue{\SCCSversion}  %% Mandatory field
@@ -76,9 +76,9 @@ None.
 Phases 1 and 2 of the FEF project dealt exclusively with the formulation of the security policy defined in \cite{DS/FMU/FEF/003}.
 In that formulation SSQL queries are treated as containing information at a single security clearance.
 In phase 3, the intention is to generalise the policy to cater for queries which are structured objects containing components which may be at several different clearances.
-This document gives an attempt to give a model in HOL similar to the one in \cite{securityprops} but abstracting and/or simplifying away some of the detail.
+This document gives an attempt to give an architectural model in HOL similar to the one in \cite{securityprops} but abstracting and/or simplifying away some of the detail.
 
-It constitutes deliverable D17 of work package 7a, as described
+It constitutes part of deliverable D17 of work package 7c, as described
 in section 7 of the Proposal for Phase 3, \cite{DS/FMU/FEF/039}.
 
 \subsection{Introduction}
@@ -86,6 +86,28 @@ An index of the names used in the formal specification may be found in Section \
 A listing of the theory $fef042$ created by processing this document using \Product{}
 may be found at the end of this document.
 
+\Note{For the time being, the script of this document contains boths specs and proofs.
+The proofs are at the end of the script and aren't included in the printed document.}
+
+
+\subsection{The Specification}
+The HOL specification here represents an attempt to capture the key ideas from \cite[section 3]{securityprops}.
+The desire to make this uniform with \cite{DS/FMU/FEF/003} and \cite{DS/FMU/FEF/040} has led to some restructuring, principally to use functions from input sequences to output sequences rather than sets of sequences of input-output pairs.
+
+The following differences from \cite[section 3]{securityprops} are also noted:
+
+\begin{enumerate}
+\item
+For compatibity with the single-level policy treatment of \cite{DS/FMU/FEF/003} and its generalisation in \cite{DS/FMU/FEF/040}, we do not use the ``events'' of \cite{securityprops} here.
+\item
+We associate with each output of the system a clearance indicating whether or not the output is visible to a client.
+This accords with the discussion in \cite[section 2.3]{securityprops} if not with the formalisation in Z.
+\item
+There is a remark in \cite{securityprops} saying that ``if a client can observe an object which contains a reference to a second object then the classification of the second object can [always] be observed''.
+The treatment here of objects within other objects currently reflects this.
+However, the class at the top node of an object (e.g. in an output stream) is taken here to be an existence indicator for the object (as with input objects in \cite{securityprops}).
+(See also section \ref{REMARKS} below.)
+\end{enumerate}
 
 \subsection{Setting Up}
 The following \Product{} instructions set up the new theory $fef040$ and set the context 
@@ -95,11 +117,21 @@ The parent theory is the theory $fef040$ which contains some general material ab
 open_theory"fef040";
 (force_delete_theory "fef042" handle _ => ());
 new_theory Û"fef042"İ;
-new_parent Û"wrk057"İ;
-new_parent Û"fef036"İ;
-set_pc"hol";
+new_parent "wrk057";
+new_parent "fef036";
+push_pc"hol";
 =TEX
-\section{THE MULTI-LEVEL SSQL ABSTRACT MACHINE}\ref{MLSAM}
+\section{POLICY}\label{POLICY}
+It seems most convenient to view the treatment of SWORD in \cite{securityprops} in terms of a security policy on the DBMS as seen by the trusted clients.
+This is like the view taken in the single-level formulation of the policy given in \cite{DS/FMU/FEF/003}.
+Thus SWORD receives an input stream comprising clearance-query pairs and generates an output stream of multi-level objects.
+
+Internally, SWORD is constructed of an Abstract Machine like that described in section 3 of \cite{securityprops} composed with a filter which sanitises the output from the Abstract Machine.
+In order to consider properties like the result-labelling property, we need to be able to see this far inside the covers; however, that is not necessary to state the policy.
+To do this we use the ``generic'' policy of \cite{DS/FMU/FEF/040}.
+This requires us to define when we consider a pair of inputs or outputs to look the same at a given class.
+
+The remaining subsections of this section develop the necessary definitions starting with the multi-level objects which are the inputs and outputs to the system.
 
 
 \subsection{Objects}\label{Objects}
@@ -134,7 +166,7 @@ MkTree : î ¸ î TREE LIST ­  î TREE
 indicating that $MkTree$ takes as its argument a pair comprising a number (the label) and a list of trees (the children); $MkTree$ maps such an argument to the unique tree with the given label and children.
 A tree representing an SSQL object is to be labelled with the $objectClass$ and $objectContains$ values for the object.
 
-We will represent $TEXT$ values by HOL strings. 
+We will represent $TEXT$ values by HOL strings (although the internal details are not important, so we could also use a type variable). 
 Thus we make the following type abbreviations and definitions:
 
 =SML
@@ -142,14 +174,13 @@ declare_type_abbrev("Text", [], ”STRING®);
 declare_type_abbrev("Obj", [], ”(Class ¸ Text) TREE®);
 =TEX
 ¹HOLCONST
-Ü	MkObj : Class ¸ Text ¸ Obj LIST ­ Obj;
-Ü	objectClass : Obj ­ Class;
-Ü	objectContains : Obj ­ Text;
-Ü	objectRefers : Obj ­ Obj LIST
+Ü	ÛMkObjİ		: Class ¸ Text ¸ Obj LIST ­ Obj;
+Ü	ÛobjectClassİ		: Obj ­ Class;
+Ü	ÛobjectContainsİ	: Obj ­ Text;
+Ü	ÛobjectRefersİ		: Obj ­ Obj LIST
 ÷üüüüüüüüüüüüüüüüüüüü
-Üµc t os·
-Ü		MkObj (c, t, os)		= MkTree ((c, t), os)
-Ü	±	objectClass (MkObj(c, t, os))	= c
+Üµc t os·	MkObj (c, t, os)			= MkTree ((c, t), os)
+Ü	±	objectClass (MkObj(c, t, os))		= c
 Ü	±	objectContains (MkObj(c, t, os))	= t
 Ü	±	objectRefers (MkObj(c, t, os))	= os
 °
@@ -157,84 +188,20 @@ declare_type_abbrev("Obj", [], ”(Class ¸ Text) TREE®);
 \subsection{Requests}\label{Requests}
 A request is a pair comprising a clearance and an object representing an SSQL query.
 
-¹HOLLABPROD Reqüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
-Ü	reqClearance	: Class;
-Ü	reqSsql		: Obj
+¹HOLLABPROD ÛReqİüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü	ÛreqClearanceİ	: Class;
+Ü	ÛreqSsqlİ		: Obj
 °üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
-\subsection{Machines}\label{Machines}
-We do not want to settle on the representation of states here, so we use a type bariable $'State$ for these.
-
-¹HOLLABPROD Machineüüüüüüüüüüüüüüüüüüüüüüüüüüü
-Ü	Next	: 'State ¸ Req ­ 'State;
-Ü	Output	: 'State ¸ Req ­ Obj;
-Ü	Init	: 'State
-°üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
-
-
-\subsection{Events}\label{Events}
-An event is a pair comprising a request and an object.
-
-
-¹HOLLABPROD Eventüüüüüüüüüüüüüüüüüüüüüüüüüüü
-Ü	eventReq	: Req;
-Ü	eventResult	: Obj
-°üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
-
-
-\subsection{Histories}\label{Histories}
-Given, a list of requests, we can compute the state and the list of output objects resulting from executing the requests on a given machine starting in a given state.
-¹HOLCONST
-Ü	next_seq : 'State Machine ­ 'State ¸ Req LIST ­ 'State
-÷üüüüüüüüüüüüüüüüüüüüüü
-Üµmch s r rs·
-Ü	next_seq mch (s, []) = s
-Ü±	next_seq mch (s, Cons r rs) = next_seq mch (Next mch (s, r), rs)
-°
-¹HOLCONST
-Ü	output_seq : 'State Machine ­ 'State ¸ Req LIST ­ Obj LIST
-÷üüüüüüüüüüüüüüüüüüüüüü
-Üµmch s r rs·
-Ü	output_seq mch (s, []) = []
-Ü±	output_seq mch (s, Cons r rs) =
-Ü	Cons (Output mch (s, r)) (output_seq mch (Next mch (s, r), rs))
-°
-This enables us to define the set of all possible histories of a machine starting from its initial state.
-(The existential quantification implicit in the use of relational composition in the Z of \cite{security_props} is explicit here). 
-¹HOLCONST
-Ü	histories : 'State Machine ­ Event LIST ğ
-÷üüüüüüüüüüüüüüüüüüüüüü
-Üµmch·
-Ü	histories mch =
-Ü	{	es
-Ü	|	¶rs·	Map eventReq es = rs
-Ü		±	Map eventResult es = output_seq mch (Init mch, rs)}
-°
-For our formulation of the policy in section \ref{non-interference} below it is convenient to have the input/output behaviour of a machine.
-Moreover, we want to be able to detect which output objects belong to events whose occurrence a client is not cleared to know (so that they can be eliminated when two output sequences are compared).
-We do this by tacking the classifications from the input request onto the corresponding output object.
-
-¹HOLCONST
-Ü	class_output_seq : 'State Machine ­ 'State ¸ Req LIST ­ (Class ¸ Obj) LIST
-÷üüüüüüüüüüüüüüüüüüüüüü
-Üµmch s r rs·
-Ü	class_output_seq mch (s, []) = []
-Ü±	class_output_seq mch (s, Cons r rs) =
-Ü	Cons
-Ü	(objectClass (reqSsql r), Output mch (s, r))
-Ü	(class_output_seq mch (Next mch (s, r), rs))
-°
-The behavioural model of the machine is then given by:
-¹HOLCONST
-Ü	Behaviours : 'State Machine ­ Req LIST ­ (Class ¸ Obj) LIST
-÷üüüüüüüüüüüüüüüüüüüüüü
-Üµmch rs·
-Ü	Behaviours mch rs = class_output_seq mch (Init mch, rs)
-°
 
 \subsection{Coloured Spectacles}\label{spectacles}
-``\ldots two objects will appear identical if they have the same classification and either: 1. the clearance does not dominate this; or 2.  the clearance does dominate this and the contents of the objects are identical and any reference objects appear identical.''
+We will presently require two versions of the ``coloured spectacles'' which we use to view an object at a given class.
+The first version is like that of \cite[section 3]{securityprops}.
+It is appropriate to the input queries (and later to the data passed from the Abstract Machine and the Filter).
+As in \cite{securityprops}
+``\ldots two objects will appear identical if they have the same classification and either: 1. the clearance does not dominate this; or 2. the clearance does dominate this and the contents of the objects are identical and any reference objects appear identical.''
+
 ¹HOLCONST
-Ü	identicalObj : Class ­ (Obj ª Obj)
+Ü	ÛidenticalObjİ : Class ­ (Obj ª Obj)
 ÷üüüüüüüüüüüüüüüüüüüüüüüü
 Üµc·	identicalObj c =
 Ü	{	(o‰1, o‰2)
@@ -248,12 +215,12 @@ The behavioural model of the machine is then given by:
 Ü		±	Elems (Combine os‰1 os‰2)
 Ü		€	identicalObj c)}
 °
-Here, the library 	function $Elems$ maps a list into the set of its members (in this case pairs of objects) and $Combine$ makes a list of pairs (of objects) out of a pair of lists.
+Here, the library function $Elems$ maps a list into the set of its members (in this case pairs of objects) and $Combine$ makes a list of pairs (of objects) out of a pair of lists.
 Thus we are requiring in the last clause on the right-hand side of the implication that corresponding children of the two objects bear the identical object relation to one another at the given class, $c$.
 We use the same idiom in the lifting of $identicalObj$ to lists of objects and histories:
 
 ¹HOLCONST
-Ü	identicalObjs : Class ­ (Obj LIST ª Obj LIST)
+Ü	ÛidenticalObjsİ : Class ­ (Obj LIST ª Obj LIST)
 ÷üüüüüüüüüüüüüüüüüüüüüüüü
 Üµc·
 Ü	identicalObjs c =
@@ -261,32 +228,22 @@ We use the same idiom in the lifting of $identicalObj$ to lists of objects and h
 Ü	|	Length s‰1 = Length s‰2
 Ü	±	Elems (Combine s‰1 s‰2) € identicalObj c}
 °
-Note that, as in \cite{security_props}, the above comparisons ignore  the clearances of the requests.
-Again as in \cite{security_props} this is remedied by using the visibility condition:
-¹HOLCONST
-Ü	Visible : Class ­ Event ğ
-÷üüüüüüüüüüüüüüüüüüüüüüüü
-Üµc·
-Ü	Visible c = { e | c dominates objectClass(reqSsql(eventReq e)) }
-°
+
+Note that, as in \cite{securityprops}, the above comparisons do not admit the possibility that an object may need to be invisible to a client.
+Again as in \cite{securityprops} this is remedied by using a visibility condition.
 For our formulation of the policy in section \ref{non-interference} below it is convenient to have the coloured spectacles with the frames adjusted a little.
-In particular, with the visibility criteria wired in:
-¹HOLCONST
-Ü	VisibleReq : Class ­ Req ğ
-÷üüüüüüüüüüüüüüüüüüüüüüüü
-Üµc·
-Ü	VisibleReq c = { r | c dominates objectClass(reqSsql r) }
-°
+In particular, with the visibility criteria wired in.
 
 ¹HOLCONST
-Ü	VisibleOutput : Class ­ (Class ¸ Obj) ğ
+Ü	ÛVisibleReqİ : Class ­ Req ğ
 ÷üüüüüüüüüüüüüüüüüüüüüüüü
-Üµc·
-Ü	VisibleOutput c = { (d, ob) | c dominates d }
+Üµc·	VisibleReq c = { r | c dominates objectClass(reqSsql r) }
 °
 
+We now define the ``sameness'' relations for requests and lists of requests:
+
 ¹HOLCONST
-Ü	sameRequest : Class ­ (Req ª Req)
+Ü	ÛsameRequestİ : Class ­ (Req ª Req)
 ÷üüüüüüüüüüüüüüüüüüüüüüüü
 Üµc·	sameRequest c =
 Ü	{	(r‰1, r‰2)
@@ -294,7 +251,7 @@ In particular, with the visibility criteria wired in:
 °
 
 ¹HOLCONST
-Ü	sameRequests : Class ­ (Req LIST ª Req LIST)
+Ü	ÛsameRequestsİ : Class ­ (Req LIST ª Req LIST)
 ÷üüüüüüüüüüüüüüüüüüüüüüüü
 Üµc·
 Ü	sameRequests c =
@@ -304,38 +261,149 @@ In particular, with the visibility criteria wired in:
 Ü		in	#rs‰3 = #rs‰4
 Ü		±	Elems (Combine rs‰3 rs‰4) € sameRequest c}
 °
-Note that the classification part we have introduced into an output only determines its visibility and is not used when two outputs (assumed both visible) are compared.
-¹HOLCONST
-Ü	sameOutput : Class ­ ((Class ¸ Obj) ª (Class ¸ Obj))
-÷üüüüüüüüüüüüüüüüüüüüüüüü
-Üµc·	sameOutput c =
-Ü	{	((c‰1, o‰1), (c‰2, o‰2))
-Ü	|	 (o‰1, o‰2)  identicalObj c}
-°
+
+An individual output from SWORD will be considered to be invisible to a client for which the corresponding request is invisible.
+The class of the query will therefore be included as part of each output.
+We take it that this is the role of the class at the top of the tree (which is the same as for inputs).
+(This effect is achieved in \cite{securityprops} by considering events each of which comprises an input-output pair; however, this does not generalise the earlier single-level treatment.)
 
 ¹HOLCONST
-Ü	sameOutputs : Class ­ ((Class ¸ Obj) LIST ª (Class ¸ Obj) LIST)
+Ü	ÛVisibleOutputİ : Class ­ Obj ğ
+÷üüüüüüüüüüüüüüüüüüüüüüüü
+Üµc·
+Ü	VisibleOutput c = { ob | c dominates objectClass ob }
+°
+
+We consider two outputs which a client is cleared to see to be the same iff. they are actually equal.
+That is to say, we are assuming that when an output has been passed out of SWORD, the client will have full access to all its components if it can access the object at all.
+Two lists of outputs look the same to a client if, when we remove outputs which the client is not cleared to see, we end up with equal lists of outputs each pair of which are the same in the above sense.
+
+¹HOLCONST
+Ü	ÛsameOutputsİ : Class ­ (Obj LIST ª Obj LIST)
 ÷üüüüüüüüüüüüüüüüüüüüüüüü
 Üµc·
 Ü	sameOutputs c =
 Ü	{	(os‰1, os‰2)
+Ü	|	os‰1 ù VisibleOutput c = os‰2 ù VisibleOutput c}
+°
+
+\Note{Can one usefully make the above ``multi-level'' in some useful way?}
+
+\subsection{The Type of Systems}
+
+We consider the SWORD system to be given by its behavioural model which is a fucntion from lists of requests to lists of outputs:
+
+=SML
+declare_type_abbrev(Û"ML_BEHAVIOUR"İ, [], ”Req LIST ­ Obj LIST®);
+=TEX
+\subsubsection{Non-interference Policy}\label{non-interference}
+
+The relevant notion of non-interference is then obtained by instantiating the ``generic security policy'' from \cite{DS/FMU/FEF/040}.
+
+¹HOLCONST
+Ü	ÛSWORD_ml_secureİ : ML_BEHAVIOUR ğ
+÷üüüüüüüüüüüüüüüüüüü
+Ü	SWORD_ml_secure = ml_secure sameRequests sameOutputs
+°
+
+\section{SWORD SYSTEM CONSTRUCTION}\label{CONSTRUCTION}
+
+\subsection{The Multi-level SSQL Abstract Machine}\label{MLSAM}
+
+\subsubsection{Machines}\label{Machines}
+We do not want to settle on the representation of states here, so we use a type bariable $'State$ for these.
+
+¹HOLLABPROD ÛMachineİüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü	ÛNextİ		: 'State ¸ Req ­ 'State;
+Ü	ÛOutputİ	: 'State ¸ Req ­ Obj;
+Ü	ÛInitİ		: 'State
+°üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+
+
+\subsubsection{Histories}\label{Histories}
+Given, a list of requests, we can compute the list of output objects resulting from executing the requests on a given machine starting in a given state.
+
+¹HOLCONST
+Ü	Ûoutput_seqİ : 'State Machine ­ 'State ¸ Req LIST ­ Obj LIST
+÷üüüüüüüüüüüüüüüüüüüüüü
+Üµmch s r rs·
+Ü	output_seq mch (s, []) = []
+Ü±	output_seq mch (s, Cons r rs) =
+Ü	Cons
+Ü	(Output mch (s, r))
+Ü	(output_seq mch (Next mch (s, r), rs))
+°
+
+The behavioural model of the machine is then given by:
+¹HOLCONST
+Ü	ÛBehavioursİ : 'State Machine ­ Req LIST ­ Obj LIST
+÷üüüüüüüüüüüüüüüüüüüüüü
+Üµmch rs·
+Ü	Behaviours mch rs = output_seq mch (Init mch, rs)
+°
+
+
+\subsubsection{Filter}\label{Filter}
+The filter takes an object and a clearance and sanitises the object for a client at that clearance.
+¹HOLCONST
+Ü	ÛFilterObjİ : Class ­ Obj ­ Obj
+÷üüüüüüüüüüüüüüüüüüüüüüüü
+Üµc d t os·
+Ü	FilterObj c (MkObj(d, t, os)) =
+Ü	if	c dominates d
+Ü	then	MkObj(d, t, Map (FilterObj c) os)
+Ü	else	MkObj(d, Arbitrary, Arbitrary)
+°
+
+\subsection{System Construction}
+We construct a system from the Abstract Machine and the Filter by composing the output function of the machine with the filter and then forming the behavioural abstraction of the resulting machine.
+
+¹HOLCONST
+Ü	ÛSWORD_constructionİ : 'State Machine ­ ML_BEHAVIOUR
+÷üüüüüüüüüüüüüüüüüüüüüüüü
+Üµmch·	SWORD_construction mch =
+Ü	let	sec_output =
+Ü		Ì(st, r)· FilterObj (reqClearance r) (Output mch (st, r))
+Ü	in let	sec_mch = MkMachine (Next mch) sec_output (Init mch)
+Ü	in	Behaviours sec_mch
+°
+
+We now want to find conditions on the Abstract Machine which will ensure that the constructed system satisfies the policy of section \ref{non-interference}.
+To do this in a natural way we need a formulation of the coloured spectacles appropriate to examining the data which passes from the Abstract Machine to the Filter.
+
+¹HOLCONST
+Ü	ÛsameFilterInputsİ : Class ­ (Obj LIST ª Obj LIST)
+÷üüüüüüüüüüüüüüüüüüüüüüüü
+Üµc·
+Ü	sameFilterInputs c =
+Ü	{	(os‰1, os‰2)
 Ü	|	let	os‰3 = os‰1 ù VisibleOutput c
 Ü		in let	os‰4 = os‰2 ù VisibleOutput c
 Ü		in	#os‰3 = #os‰4
-Ü		±	Elems (Combine os‰3 os‰4) € sameOutput c}
+Ü		±	Elems (Combine os‰3 os‰4) € identicalObj c}
 °
 
-
-\subsection{Non-interference}\label{non-interference}
-We can now instantiate the ``generic'' security policy of \cite{DS/FMU/FEF/040}.
 ¹HOLCONST
-Ü	SWORD_ml_secure : 'State Machine ğ
-÷üüüüüüüüüüüüüüüüüüü
-Ü	SWORD_ml_secure =
+Ü	ÛFlowSecureMachineİ : 'State Machine ğ
+÷üüüüüüüüüüüüüüüüüüüüüüüü
+Ü	FlowSecureMachine  =
 Ü	{	mch
 Ü	|	Behaviours mch
-Ü		ml_secure (LiftRel sameRequests) (LiftRel sameOutputs)}
+Ü		ml_secure sameRequests sameFilterInputs}
 °
+=SML
+val Ûconj_042_1İ = ¬
+µmch·	mch  FlowSecureMachine ´ SWORD_construction mch  SWORD_ml_secure
+®;
+=TEX
+\section{REMARKS}\label{REMARKS}
+It is not immediately clear how much further one can usefully go without trying to reconcile the informal description of multi-level results in section 2.3 of \cite{securityprops} with the $identicalObjs$ function of section 3 of that document.
+
+It would certainly be possible to carry on the general trend of the above material by trying to strengthen the $sameOutputs$ function to make it more accurately reflect the multi-level nature of an output. However, there are probably many choices about how to do this and the informal description of the four levels of the outputs does not really accord with $identicalObjs$.
+
+In the description of the result-labelling property, what happens is, apparently, that one flattens out levels 2 and 3 of a tree to produce a list (or set?) of labelled components and then worries about information flows into an element of the result.
+How to formalise this is unclear to me (particularly in the light of the discussion of down-grading at the end of section 2.3 of \cite{securityprops}).
+
 \section{CLOSING DOWN}
 The following \Product{} instruction restores the previous proof context.
 =SML
@@ -346,7 +414,7 @@ output_theory{theory = "fef042",out_file = "fef042th.doc"};
 =TEX
 \newpage
 \HOLindexOff
-\input{fef040th.tex}
+\input{fef042th.tex}
 \HOLindexOn
 \newpage
 \twocolumn[\section{INDEX} \label{INDEX}]
@@ -440,39 +508,18 @@ val Ûobject_clausesİ = save_pop_thm"object_clauses";
 =SML
 =TEX
 =SML
-push_consistency_goal¬next_seq®;
-a(lemma_tac ¬¶ns : Req LIST ­ 'State Machine ­ 'State ­ 'State· µr rs mch s·
-	ns [] mch s = s
-±	ns (Cons r rs) mch s = ns rs mch (Next mch (s, r))®
-	THEN1 prove_¶_tac);
-a(¶_tac¬Ìmch (s, rs)· ns rs mch s®);
-a(asm_rewrite_tac[]);
-save_consistency_thm¬next_seq®(pop_thm());
-=TEX
-=SML
 push_consistency_goal¬output_seq®;
-a(lemma_tac ¬¶os : Req LIST ­ 'State Machine ­ 'State ­ Obj LIST· µr rs mch s·
-	os [] mch s = []
-±	os (Cons r rs) mch s =
-	Cons (Output mch (s, r)) (os rs mch (Next mch (s, r)))®
-	THEN1 prove_¶_tac);
-a(¶_tac¬Ìmch (s, rs)· os rs mch s®);
-a(asm_rewrite_tac[]);
-save_consistency_thm¬output_seq®(pop_thm());
-=TEX
-=SML
-push_consistency_goal¬class_output_seq®;
-a(lemma_tac ¬¶os : Req LIST ­ 'State Machine ­ 'State ­ (Class ¸ Obj) LIST·
+a(lemma_tac ¬¶os : Req LIST ­ 'State Machine ­ 'State ­ Obj LIST·
 	µr rs mch s·
 	os [] mch s = []
 ±	os (Cons r rs) mch s =
 	Cons
-	(objectClass (reqSsql r), Output mch (s, r))
+	(Output mch (s, r))
 	(os rs mch (Next mch (s, r)))®
 	THEN1 prove_¶_tac);
 a(¶_tac¬Ìmch (s, rs)· os rs mch s®);
 a(asm_rewrite_tac[]);
-save_consistency_thm¬class_output_seq®(pop_thm());
+save_consistency_thm¬output_seq®(pop_thm());
 =TEX
 Following is lengthy but not really difficult.
 The basic idea is to define a propositional function by primitive recursion over trees which represents the set function required for the witness.
@@ -574,6 +621,18 @@ a(lemma_tac¬µ x1 x2· (x1, x2)  Elems (Combine list2 os‰2) ´ io x1 c x2®
 	THEN1 (REPEAT strip_tac THEN all_asm_fc_tac[]));
 a(all_asm_fc_tac[]);
 save_consistency_thm¬identicalObj®(pop_thm());
-
+=TEX
+=SML
+push_consistency_goal¬FilterObj®;
+a(rewrite_tac[object_clauses]);
+a(lemma_tac ¬¶f : Class ­ Obj ­ Obj· µ c dtos·
+	f c (MkTree dtos) =
+	let (d, t) = Fst dtos
+	in	if c dominates d
+                   then MkTree ((d, t), Map (f c) (Snd dtos))
+                   else MkTree ((d, Arbitrary), Arbitrary)®
+	THEN1 prove_¶_tac);
+a(¶_tac¬f® THEN asm_rewrite_tac[let_def]);
+save_consistency_thm¬FilterObj®(pop_thm());
 
 
