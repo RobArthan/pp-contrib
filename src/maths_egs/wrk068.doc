@@ -78,7 +78,7 @@ doctex wrk068 wrk068.th; texdvi -b wrk068; texdvi wrk068; texdvi wrk068
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2004/05/04 16:54:07 $%
+\date{\FormatDate{$Date: 2004/05/04 17:40:11 $%
 }}
 
 \begin{document}
@@ -97,7 +97,7 @@ We exhibit a few examples of groups and show that the various abstract notions l
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK068; issue $Revision: 1.13 $%
+Reference: LEMMA1/HOL/WRK068; issue $Revision: 1.14 $%
 
 
 \end{centering}
@@ -558,19 +558,17 @@ For us, a homomorphism is given by a total function  whose behaviour outside the
 ∞
 
 One only needs to specify that a homomorphism preserves the multiplication, since a homomorphism in that sense will automatically preserve the unit element and inverses as shown by the first two theorems in the following block.
-The third is just an extract from the definition of a homomorphism and is provided for uniformity.
+The third and fourth are just extracts from the definition of a homomorphism that are technically useful.
 
-\ThmsIII{%
+\ThmsII{%
 =GFT
 homomorphism_one_thm
-=TEX
-}{%
-=GFT
 homomorphism_inverse_thm
 =TEX
 }{%
 =GFT
 homomorphism_times_thm
+homomorphism_ç_car_thm
 =TEX
 }
 
@@ -719,6 +717,49 @@ kernel_right_coset_thm
 =TEX
 }
 
+\subsection{Images of Homomorphisms}
+
+The notion of the image of a set under a function is purely set-theoretic.
+
+πHOLCONST
+‹ €Image› : ('a ≠ 'b) ≠ 'a SET ≠ 'b GROUP  ≠ 'b GROUP
+˜¸¸¸¸¸¸
+‹ µ f X G∑ Image f X G = ({y | ∂x∑x ç X ± y = f x}, (Ãx y∑ (x.y)G), One G, (Ãx∑ (x õ~)G))
+∞
+
+The theorem we want is that the image of a group homomorphism is a subgroup of the range of the homomorphism:
+
+\ThmsII{%
+=GFT
+image_subgroup_thm
+=TEX
+}{%
+\relax
+}
+
+\subsection{Isomorphisms}
+
+An isomorphism is a one-to-one onto homomorphism
+πHOLCONST
+‹ €Isomorphism› : 'a GROUP ∏ 'b GROUP ≠ ('a ≠ 'b) SET
+˜¸¸¸¸¸¸
+‹ µ G H f∑
+‹	f ç Isomorphism(G, H)
+‹ §	f ç Homomorphism(G, H)
+‹ ±	(µx y∑ x ç Car G ± y ç Car G ± f x = f y ¥ x = y)
+‹ ±	(µz∑ z ç Car H ¥ ∂x∑x ç Car G ± f x = z)
+∞
+
+
+The theorem we want is that the image of a group homomorphism is a subgroup of the range of the homomorphism:
+
+\ThmsII{%
+=GFT
+iequiv_right_congruent_kernel_thm
+=TEX
+}{%
+\relax
+}
 
 \newpage
 \section{Examples of Groups}\label{groupegs}
@@ -1100,6 +1141,8 @@ val €normal_subgroup_def› = get_spec¨NormalSubgroupÆ;
 val €kernel_def› = get_spec¨KernelÆ;
 val €right_congruent_def› = get_spec¨RightCongruentÆ;
 val €right_coset_def› = get_spec¨RightCosetÆ;
+val €image_def› = get_spec¨ImageÆ;
+val €isomorphism_def› = get_spec¨IsomorphismÆ;
 =TEX
 =SML
 set_goal([], ¨
@@ -1455,6 +1498,16 @@ a(rewrite_tac[homomorphism_def,
 		REPEAT strip_tac);
 a(ALL_ASM_FC_T rewrite_tac[]);
 val €homomorphism_times_thm› = save_pop_thm "homomorphism_times_thm";
+=TEX
+=SML
+set_goal([], ¨
+	µG : 'a GROUP; H : 'b GROUP; f : 'a ≠ 'b; x : 'a ∑
+	G ç Group ± H ç Group ± f ç Homomorphism(G, H) ± x ç Car G
+¥	f x ç Car H
+Æ);
+a(rewrite_tac[homomorphism_def] THEN REPEAT strip_tac);
+a(all_asm_fc_tac[]);
+val €homomorphism_ç_car_thm› = save_pop_thm "homomorphism_ç_car_thm";
 =TEX
 =SML
 set_goal([], ¨
@@ -1886,6 +1939,148 @@ a(GET_NTH_ASM_T  2 (strip_asm_tac o rewrite_rule[subgroup_def1]));
 a(asm_rewrite_tac[]);
 val €kernel_right_coset_thm› = save_pop_thm "kernel_right_coset_thm";
 =TEX
+=SML
+set_goal([], ¨
+	µG : 'a GROUP; H : 'b GROUP; f : 'a ≠ 'b∑
+	G ç Group ± H ç Group ± f ç Homomorphism(G, H)
+¥	Image f (Car G)  H ç Subgroup H
+Æ);
+a(REPEAT strip_tac THEN rewrite_tac[image_def, subgroup_def, group_ops_def]
+	THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(PC_T1 "sets_ext1" REPEAT strip_tac);
+a(all_var_elim_asm_tac1 THEN all_fc_tac[homomorphism_ç_car_thm]);
+(* *** Goal "2" *** *)
+a(LIST_GET_NTH_ASM_T [1, 2] (MAP_EVERY ante_tac));
+a(rewrite_tac[homomorphism_def, group_def, group_ops_def] THEN REPEAT strip_tac
+	THEN_TRY all_var_elim_asm_tac1);
+(* *** Goal "2.1" *** *)
+a(∂_tac¨(x'.x'')GÆ);
+a(group_ç_tac THEN REPEAT strip_tac THEN ALL_ASM_FC_T rewrite_tac[]);
+(* *** Goal "2.2" *** *)
+a(all_fc_tac[homomorphism_ç_car_thm] THEN group_eq_tac THEN REPEAT strip_tac);
+(* *** Goal "2.3" *** *)
+a(∂_tac¨One GÆ);
+a(group_ç_tac THEN REPEAT strip_tac THEN ALL_FC_T rewrite_tac[homomorphism_one_thm]);
+(* *** Goal "2.4" *** *)
+a(all_fc_tac[homomorphism_ç_car_thm] THEN group_eq_tac THEN REPEAT strip_tac);
+(* *** Goal "2.5" *** *)
+a(all_fc_tac[homomorphism_ç_car_thm] THEN group_eq_tac THEN REPEAT strip_tac);
+(* *** Goal "2.6" *** *)
+a(∂_tac¨(x' õ~)GÆ);
+a(group_ç_tac THEN REPEAT strip_tac THEN ALL_FC_T rewrite_tac[homomorphism_inverse_thm]);
+(* *** Goal "2.7" *** *)
+a(all_fc_tac[homomorphism_ç_car_thm]);
+a(group_eq_tac THEN REPEAT strip_tac);
+(* *** Goal "2.8" *** *)
+a(all_fc_tac[homomorphism_ç_car_thm]);
+a(group_eq_tac THEN REPEAT strip_tac);
+val €image_subgroup_thm› = save_pop_thm "image_subgroup_thm";
+=TEX
+=SML
+set_goal([], ¨
+	µG : 'a GROUP; H : 'b GROUP; f : 'a ≠ 'b∑
+	G ç Group ± H ç Group ± f ç Homomorphism(G, H)
+¥	Equiv(Car G, RightCongruent (Kernel f (G, H))  G)
+Æ);
+a(REPEAT strip_tac THEN bc_thm_tac right_congruent_equiv_thm);
+a(REPEAT strip_tac THEN all_fc_tac [kernel_normal_subgroup_thm]);
+a(POP_ASM_T ante_tac THEN rewrite_tac[normal_subgroup_def] THEN taut_tac);
+val €equiv_right_congruent_kernel_thm› = save_pop_thm "equiv_right_congruent_kernel_thm";
+=TEX
+=SML
+set_goal([], ¨
+	µG : 'a GROUP; H : 'b GROUP; f : 'a ≠ 'b∑
+	G ç Group ± H ç Group ± f ç Homomorphism(G, H)
+¥	(f Respects RightCongruent (Kernel f (G, H))  G)  (Car G)
+Æ);
+a(rewrite_tac[respects_def, right_congruent_def, group_ops_def]
+	THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+a(all_fc_tac[kernel_normal_subgroup_thm]);
+a(POP_ASM_T (strip_asm_tac  o rewrite_rule[normal_subgroup_def]));
+a(POP_ASM_T (ante_tac o list_µ_elim[¨((x õ~) G . y) GÆ, ¨(x õ~)GÆ]));
+a(asm_rewrite_tac[] THEN group_ç_tac THEN asm_rewrite_tac[kernel_def, group_ops_def]);
+a(group_eq_tac THEN REPEAT strip_tac);
+a(all_fc_tac[homomorphism_ç_car_thm]);
+a(conv_tac eq_sym_conv THEN ALL_FC_T1 fc_§_canon rewrite_tac[group_eq_thm]);
+a(DROP_NTH_ASM_T 4 ante_tac);
+a(lemma_tac¨(x õ~)G ç Car GÆ THEN1 (group_ç_tac THEN REPEAT strip_tac));
+a(GET_NTH_ASM_T 10 (strip_asm_tac o rewrite_rule[homomorphism_def]));
+a(rename_tac[] THEN ALL_ASM_FC_T rewrite_tac[homomorphism_inverse_thm]);
+val €homomorphism_respects_right_congruent_kernel_thm› =
+	save_pop_thm "homomorphism_respects_right_congruent_kernel_thm";
+=TEX
+=SML
+set_goal([], ¨
+	µG : 'a GROUP; H : 'a GROUP∑
+	G ç Group ± H ç NormalSubgroup G
+¥	Car (G//H) = Car G // RightCongruent H G
+Æ);
+a(REPEAT strip_tac THEN ALL_FC_T rewrite_tac[quotient_group_def]);
+a(rewrite_tac[quotient_set_def]);
+a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_var_elim_asm_tac1 THEN ∂_tac¨x'Æ THEN REPEAT strip_tac);
+a(DROP_NTH_ASM_T 2 (strip_asm_tac o rewrite_rule[normal_subgroup_def]));
+a(ALL_FC_T rewrite_tac[right_coset_equiv_class_thm]);
+(* *** Goal "2" *** *)
+a(all_var_elim_asm_tac1 THEN ∂_tac¨x'Æ THEN REPEAT strip_tac);
+a(DROP_NTH_ASM_T 2 (strip_asm_tac o rewrite_rule[normal_subgroup_def]));
+a(ALL_FC_T rewrite_tac[right_coset_equiv_class_thm]);
+val €car_quotient_group_thm› = save_pop_thm "car_quotient_group_thm";
+=TEX
+=SML
+set_goal([], ¨
+	µG : 'a GROUP; H : 'b GROUP; f : 'a ≠ 'b∑
+	G ç Group ± H ç Group ± f ç Homomorphism(G, H)
+¥	∂g∑
+		(µx∑x  ç Car G ¥ g (RightCoset (Kernel f (G, H)) G x) = f  x)
+	±	g ç Isomorphism((G // Kernel f (G, H)), Image f (Car G) H)
+Æ);
+a(REPEAT strip_tac);
+a(lemma_tac ¨∂g∑µx∑x  ç Car G ¥ g (RightCoset (Kernel f (G, H)) G x) = f  xÆ);
+(* *** Goal "1" *** *)
+a(REPEAT strip_tac THEN all_fc_tac[
+	equiv_right_congruent_kernel_thm,
+	homomorphism_respects_right_congruent_kernel_thm]);
+a(all_fc_tac[arb_gen induced_fun_∂_thm, kernel_normal_subgroup_thm]);
+a(∂_tac¨gÆ THEN REPEAT strip_tac);
+a(DROP_NTH_ASM_T 2 bc_thm_tac);
+a(ALL_FC_T rewrite_tac[conv_rule (ONCE_MAP_C eq_sym_conv) car_quotient_group_thm]);
+a(ALL_FC_T rewrite_tac[quotient_group_def]);
+a(REPEAT strip_tac THEN1 ∂_tac¨xÆ THEN REPEAT strip_tac);
+a(GET_NTH_ASM_T 2 (strip_asm_tac o rewrite_rule[normal_subgroup_def]));
+a(ALL_FC_T rewrite_tac[right_coset_equiv_class_thm, equiv_class_ç_thm]);
+(* *** Goal "2" *** *)
+a(∂_tac¨gÆ THEN asm_rewrite_tac[isomorphism_def, homomorphism_def, image_def]);
+a(all_fc_tac[kernel_normal_subgroup_thm]);
+a(ALL_FC_T rewrite_tac[quotient_group_def] THEN rewrite_tac[group_ops_def]);
+a(REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(all_var_elim_asm_tac1);
+a(∂_tac¨x'Æ THEN ALL_ASM_FC_T asm_rewrite_tac[]);
+(* *** Goal "2.2" *** *)
+a(all_var_elim_asm_tac1);
+a(ALL_FC_T rewrite_tac[quotient_group_def]);
+a(lemma_tac¨(x' . x'') G ç Car GÆ THEN1 (group_ç_tac THEN REPEAT strip_tac));
+a(ALL_ASM_FC_T asm_rewrite_tac[homomorphism_times_thm]);
+(* *** Goal "2.3" *** *)
+a(all_var_elim_asm_tac1 THEN POP_ASM_T ante_tac);
+a(GET_NTH_ASM_T 3 (strip_asm_tac o rewrite_rule[normal_subgroup_def]));
+a(ALL_ASM_FC_T1 fc_§_canon rewrite_tac[right_coset_eq_thm]);
+a(rewrite_tac[right_congruent_def, kernel_def, group_ops_def]);
+a(group_ç_tac THEN REPEAT strip_tac);
+a(lemma_tac¨(x' õ~) G ç Car GÆ THEN1 (group_ç_tac THEN REPEAT strip_tac));
+a(ALL_FC_T rewrite_tac[homomorphism_inverse_thm, homomorphism_times_thm]);
+a(all_fc_tac[homomorphism_ç_car_thm]);
+a(asm_rewrite_tac[] THEN group_eq_tac THEN REPEAT strip_tac);
+(* *** Goal "2.4" *** *)
+a(all_var_elim_asm_tac1);
+a(∂_tac¨RightCoset (Kernel f (G, H)) G xÆ);
+a(ALL_ASM_FC_T asm_rewrite_tac[]);
+a(∂_tac¨xÆ THEN REPEAT strip_tac);
+val first_isomorphism_thm = save_pop_thm "first_isomorphism_thm";
+=TEX
 %%%%
 %%%%
 %%%%
@@ -1957,3 +2152,5 @@ output_theory{out_file="wrk0683.th.doc", theory="group_egs"};
 =TEX
 \end{document}
 =IGN
+open_theory"groups";
+set_merge_pcs["basic_hol1", "'sets_alg"];
