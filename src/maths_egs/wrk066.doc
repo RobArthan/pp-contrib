@@ -3082,7 +3082,8 @@ fun aux1 (fv_map : (TERM * TERM) list)
 	else	Nil
 );
 fun aux2 (fv_map : (TERM * TERM) list) 
-	(bv_map : (TERM * TERM) list)   (ltm : TERM) (rtm : TERM) : (TERM * TERM) list OPT =
+	(bv_map : (TERM * TERM) list)
+	(ltm : TERM) (rtm : TERM) : (TERM * TERM) list OPT =
 (
 	case dest_simple_term rtm of
 		Var _ => (
@@ -3294,31 +3295,34 @@ fun simple_deriv_step (fixed : TERM list)
 	end
 );
 =TEX
-Putting this all together gives the core algorithm:
+Putting this all together gives the core algorithm which calculates the derivative of a 
+term denoting a function at a given argument:
 =SML
 val var_y = ¬y:¯®;
-val var_z = ¬z:¯®;
-fun simple_deriv_rule (thms : THM list) : TERM -> THM = (
+fun simple_deriv_rule (thms : THM list) : TERM -> TERM -> THM = (
 	let	val infos = deriv_preprocess thms;
 		fun go fixed thm = (
 			case simple_deriv_step fixed infos thm of
 				Value thm' => go fixed thm'
 			|	Nil => thm
 		);
-	in	fn tm =>
-		let	val fixed = frees tm;
-			val vs = list_variant fixed [var_y, var_z];
-			val gl = mk_deriv(tm, hd vs, hd(tl vs));
+	in	fn tm => fn arg =>
+		let	val fixed = frees arg term_union frees tm;
+			val df = variant fixed var_y;
+			val gl = mk_deriv(tm, df,  arg);
 		in	go fixed (asm_rule gl)
 		end
 	end
 );
 =TEX
 We now define interface to the core algorithm, which invokes it, and then turns the resulting
-theorem into a universally closed implication with no $\beta$-redexes or $\eta$-redexes
+theorem into a universally quantified implication with no $\beta$-redexes or $\eta$-redexes
 and with hypotheses that are unique by dint of the uniqueness theorem for derivatives
 identified. $\eta$-reduction is only done for functions from reals to reals to avoid
-rendering terms involving binders unreadable. Before defining the interface we give
+rendering terms involving binders unreadable. The conclusion of the theorem
+is universally quantified over all variables that do not appear free in the term whose
+derivative we are calculating.
+Before defining the interface we give
 rules to do the various simplifications:
 
 The following rule conjoins all the assumptions of a theorem into one.
@@ -3386,17 +3390,18 @@ fun deriv_dup_elim_rule (thm : THM) : THM = (
 	end
 );
 =TEX
-Now the promised interface to the simple derivative rule (which just composes the
+Now the promised interface to the simple derivative rule (which essentially just composes the
 rules above in the right order):
 =SML
-fun deriv_rule (thms : THM list) : TERM -> THM = (
+fun deriv_rule (thms : THM list) : TERM -> TERM -> THM = (
 	let	val rule = simple_deriv_rule thms;
-	in	fn tm =>
-		let	val thm1 = rule tm;
+	in	fn tm => fn arg =>
+		let	val thm1 = rule tm arg;
 			val thm2 = conv_rule(TRY_C (Â_¯_È_elim_conv)) thm1;
 			val thm3 = deriv_dup_elim_rule(asm_Â_È_elim_rule thm2);
 			val thm4 = all_´_intro (asm_±_intro_rule thm3);
-			val thm5 = all_µ_intro thm4;
+			val bvs = frees (concl thm4) term_diff (arg::frees tm);
+			val thm5 = list_µ_intro bvs thm4;
 		in	thm5
 		end
 	end
@@ -3407,8 +3412,8 @@ A tactical packaging for the rule:
 fun DERIV_T (thms : THM list) (ttac : THM -> TACTIC) : TACTIC = (
 	let	val rule = deriv_rule thms;
 	in	fn gl as (_, conc) =>
-		let	val (f, _, _) = dest_deriv conc;
-			val thm = rule f;
+		let	val (f, _, arg) = dest_deriv conc;
+			val thm = rule f arg;
 		in	ttac thm gl
 		end
 	end
@@ -3459,9 +3464,9 @@ val tms = [
 	 ¬  (Ìx:¯· î¯ 1 ›-›1 + î¯ 2 ›-›1 * x^2 + î¯ 6 ›-›1 * x^3  ) ®
 ];
 
-map (conv_rule (TRY_C(ONCE_MAP_C ¯_anf_conv))) (map rat_deriv_rule tms);
-rat_deriv_rule ¬ Ìx:¯· f x + f x : ¯®;
-simple_deriv_rule rat_deriv_thms ¬ Ìx:¯· f x + f x : ¯®;
+map (conv_rule (TRY_C(ONCE_MAP_C ¯_anf_conv))) (map (switch rat_deriv_rule ¬X:¯®) tms);
+rat_deriv_rule ¬ Ìx:¯· f x + f x : ¯® ¬Y:¯®;
+simple_deriv_rule rat_deriv_thms ¬ Ìx:¯· f x + f x : ¯® ¬Y:¯®;
 
 =TEX
 %%%%
@@ -4253,6 +4258,27 @@ a(lemma_tac¬x <  z ² z < x® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]
 	THEN all_fc_tac[deriv_0_thm1]);
 a(asm_rewrite_tac[]);
 val Ûderiv_0_thmÝ = save_pop_thm"deriv_0_thm";
+=TEX
+In applications it is very common to prove a function is constant by proving its
+derivative vanishes everywhere:
+%%%%
+%%%%
+=SML
+set_goal([], ¬µfx y·
+	(µx·(f HasDeriv î¯ 0) x)
+´	(f x = f y)®);
+a(REPEAT strip_tac);
+a(lemma_tac ¬¶c·µx·f x = c® THEN_LIST [id_tac, asm_rewrite_tac[]]);
+a(¶_tac¬f(î¯ 0)® THEN REPEAT strip_tac);
+a(lemma_tac¬¶a b·a < x ± a < î¯ 0 ± x < b ± î¯ 0 < b®
+	THEN1
+	(¶_tac¬~(Abs x) + ~(î¯ 1)® THEN ¶_tac¬Abs x + î¯ 1®
+	THEN cases_tac¬î¯ 0 ¼ x® THEN asm_rewrite_tac[¯_abs_def]
+	THEN PC_T1 "¯_lin_arith" asm_prove_tac[]));
+a(LEMMA_T ¬¶c·µx· a < x ± x < b ´  f x = c® strip_asm_tac
+	THEN1 bc_thm_tac deriv_0_thm THEN REPEAT strip_tac
+	THEN ALL_ASM_FC_T asm_rewrite_tac[]);
+val Ûderiv_0_thm2Ý = save_pop_thm"deriv_0_thm2";
 =TEX
 %%%%
 %%%%
@@ -8188,27 +8214,136 @@ val Ûtrans_deriv_thmsÝ = [
 ] @ rat_deriv_thms;
 val ÛTRANS_DERIV_TÝ = DERIV_T trans_deriv_thms;  
 =TEX
+With the aid of these it is very easy to follow the ``axiomatic'' development of
+the basic properties of the sine and cosine functions. The idea is to use the
+defining properties to derive some basic algebraic properties and then use
+the mean value theorem to show that sine and cosine are periodic with a
+period that can be taken as the definition of $2\pi$.
+We give what I consider to be a slight improvement on the treatment in Mitchell: for the algebraic
+facts we follow Mitchel fairly closely, we then use them to show that if $x$ is such that
+$\Sin{x} = \Cos{x}$, then $\Sin{2x} = 1$ and $\Cos{x} = 0$. That there is a least such positive $x$
+follows with a little work from the mean value theorem. This $x$ is $\pi/4$
 %%%%
 %%%%
 =SML
 set_goal([], ¬µx· Cos x ^ 2 + Sin x ^ 2 = î¯ 1®);
 a(REPEAT strip_tac);
-a(lemma_tac¬¶a b·a < x ± a < î¯ 0 ± x < b ± î¯ 0 < b®
-	THEN1
-	(¶_tac¬~(Abs x) + ~(î¯ 1)® THEN ¶_tac¬Abs x + î¯ 1®
-	THEN cases_tac¬î¯ 0 ¼ x® THEN asm_rewrite_tac[¯_abs_def]
-	THEN PC_T1 "¯_lin_arith" asm_prove_tac[]));
-a(LEMMA_T ¬¶c·µx· a < x ± x < b ´ (Ìx· Cos x ^ 2 + Sin x ^ 2)  x = c®
-		(strip_asm_tac o rewrite_rule[])
-	THEN1 bc_thm_tac deriv_0_thm THEN REPEAT strip_tac);
+a(LEMMA_T ¬ (Ìx· Cos x ^ 2 + Sin x ^ 2)  x =  (Ìx· Cos x ^ 2 + Sin x ^ 2) (î¯ 0)® ante_tac
+	THEN1 (bc_thm_tac deriv_0_thm2 THEN REPEAT strip_tac));
 (* *** Goal "1" *** *)
 a(TRANS_DERIV_T (rewrite_thm_tac o conv_rule(ONCE_MAP_C ¯_anf_conv)));
 (* *** Goal "2" *** *)
-a(all_asm_fc_tac[]);
-a(POP_ASM_T rewrite_thm_tac);
-a(POP_ASM_T ante_tac THEN rewrite_tac[sin_def]);
-a(STRIP_T (accept_tac o eq_sym_rule));
+a(rewrite_tac[sin_def]);
 val Ûcos_squared_plus_sin_squared_thmÝ = save_pop_thm "cos_squared_plus_sin_squared_thm";
+=TEX
+We depart a little from Mitchell here by calculating the right hand sides of the following
+equation explicitly now, rather than after the next theorem.
+%%%%
+%%%%
+=SML
+set_goal([], ¬µf g x· 
+	(µx·(f HasDeriv g x) x)
+±	(µx· (g HasDeriv ~(f x)) x)
+´	Cos x * g x + Sin x * f x = g(î¯ 0)
+±	Cos x * f x - Sin x * g x = f(î¯ 0)
+®);
+a(rewrite_tac[] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(PC_T1 "predicates" lemma_tac¬¶h·h = Ìx· Cos x * g x + Sin x * f x® THEN1 prove_¶_tac);
+a(LEMMA_T¬h x = h (î¯ 0)® ante_tac THEN_LIST
+	[bc_thm_tac deriv_0_thm2 THEN strip_tac, asm_rewrite_tac[sin_def]]);
+a(POP_ASM_T (rewrite_thm_tac));
+a(TRANS_DERIV_T ante_tac);
+a(STRIP_T (ante_tac o list_µ_elim[¬~(f x)®, ¬g x®]) THEN asm_rewrite_tac[]);
+a(conv_tac(ONCE_MAP_C ¯_anf_conv) THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(PC_T1 "predicates" lemma_tac¬¶h·h = Ìx· Cos x * f x + ~(Sin x * g x)® THEN1 prove_¶_tac);
+a(LEMMA_T¬h x = h (î¯ 0)® ante_tac THEN_LIST
+	[bc_thm_tac deriv_0_thm2 THEN strip_tac, asm_rewrite_tac[sin_def]]);
+a(POP_ASM_T (rewrite_thm_tac));
+a(TRANS_DERIV_T ante_tac);
+a(STRIP_T (ante_tac o list_µ_elim[¬g x®, ¬~(f x)®]) THEN asm_rewrite_tac[]);
+a(conv_tac(ONCE_MAP_C ¯_anf_conv) THEN REPEAT strip_tac);
+val Ûsin_cos_unique_lemma1Ý = save_pop_thm "sin_cos_unique_lemma1";
+=TEX
+Pleasingly, the algebra in the next step is easy given the explicit formula on
+the right-hand sides of the equations in the previous theorem.
+%%%%
+%%%%
+=SML
+set_goal([], ¬µf g x· 
+	(µx·(f HasDeriv g x) x)
+±	(µx· (g HasDeriv ~(f x)) x)
+´	f x = f(î¯ 0) * Cos x + g(î¯ 0) * Sin x
+±	g x = g(î¯ 0) * Cos x - f(î¯ 0) * Sin x
+®);
+a(rewrite_tac[] THEN REPEAT µ_tac THEN ´_tac);
+(* *** Goal "1" *** *)
+a(ALL_FC_T (rewrite_tac o map (conv_rule(ONCE_MAP_C eq_sym_conv)))
+	[sin_cos_unique_lemma1]);
+a(conv_tac(ONCE_MAP_C ¯_anf_conv));
+a(strip_asm_tac (µ_elim¬x® cos_squared_plus_sin_squared_thm));
+a(LEMMA_T ¬µa b·a = b ´ a * f x = b * f x  ± a * g x = b * g x®
+	(fn th => all_fc_tac[th]) THEN1
+	(contr_tac THEN all_var_elim_asm_tac1));
+a(POP_ASM_T ante_tac THEN POP_ASM_T ante_tac);
+a(pure_rewrite_tac[prove_rule[]¬2 = (0 + 1) + 1®] THEN pure_rewrite_tac[¯_î_exp_def]);
+a(PC_T1 "¯_lin_arith" asm_prove_tac[]);
+val Ûsin_cos_unique_lemma2Ý = save_pop_thm "sin_cos_unique_lemma2";
+=TEX
+This gives us the uniqueness theorem \ldots
+%%%%
+%%%%
+=SML
+set_goal([], ¬µf g x· 
+	f(î¯ 0) = î¯ 0
+±	g(î¯ 0) = î¯ 1
+±	(µx·(f HasDeriv g x) x)
+±	(µx· (g HasDeriv ~(f x)) x)
+´	f x = Sin x
+±	g x = Cos x
+®);
+a(REPEAT µ_tac THEN ´_tac);
+a(ALL_FC_T once_rewrite_tac[sin_cos_unique_lemma2]);
+a(asm_rewrite_tac[]);
+val Ûsin_cos_unique_thmÝ = save_pop_thm "sin_cos_unique_thm";
+=TEX
+\ldots and the rules for sums:
+%%%%
+%%%%
+=SML
+set_goal([], ¬µx y· 
+	Sin (x + y) = Sin x * Cos y + Cos x * Sin y
+±	Cos(x + y) = Cos x * Cos y - Sin x * Sin y
+®);
+a(REPEAT µ_tac);
+a(PC_T1 "predicates" lemma_tac¬¶f g· f = (Ìx·Sin(x + y)) ± g = Ìx·(Cos(x + y))®
+	THEN1 prove_¶_tac);
+a(lemma_tac¬(µx·(f HasDeriv g x) x) ± (µx· (g HasDeriv ~(f x)) x)® THEN1
+	(REPEAT strip_tac THEN asm_rewrite_tac[] THEN TRANS_DERIV_T ante_tac
+	THEN rewrite_tac[]));
+a(ALL_FC_T (MAP_EVERY ante_tac)[sin_cos_unique_lemma2]);
+a(LIST_DROP_NTH_ASM_T [3, 4] rewrite_tac);
+a(REPEAT strip_tac THEN asm_rewrite_tac[] THEN PC_T1 "¯_lin_arith" prove_tac[]);
+val Ûsin_cos_plus_thmÝ = save_pop_thm "sin_cos_plus_thm";
+=TEX
+So far we have followed Mitchell fairly closely, we now go via a rather different path.
+First we show that if the sine and cosine functions are equal at $x$ then $\Sin{2x} = 1$
+and $\Cos{2x} = 0$.
+%%%%
+%%%%
+=SML
+set_goal([], ¬µx·
+	Sin x = Cos x
+´	Sin (î¯ 2 * x) = î¯ 1
+ ±	Cos(î¯ 2 * x) = î¯ 0
+®);
+a(REPEAT µ_tac THEN ´_tac);
+a(pure_once_rewrite_tac[pc_rule1 "¯_lin_arith" prove_rule[]¬î¯ 2 * x = x + x®]);
+a(ante_tac(µ_elim¬x® cos_squared_plus_sin_squared_thm));
+a(pure_rewrite_tac[prove_rule[]¬2 = (0 + 1) + 1®] THEN pure_rewrite_tac[¯_î_exp_def]);
+a(asm_rewrite_tac[sin_cos_plus_thm]);
+val Ûsin_eq_cos_sin_cos_twice_thmÝ = save_pop_thm "sin_eq_cos_sin_cos_twice_thm";
 =TEX
 %%%%
 %%%%
