@@ -63,10 +63,10 @@ DRA front end filter project RSRE 1C/6130.}
 
 \subsection{Changes History}
 \begin{description}
-\item[Issue 1.1] First draft version.
-\item[Issue 1.2] Name of proof context $pair1$ changed to $'pair1$.
 \item[Issue \SCCSversion(\FormatDate{$Date$
-})] Removed partial function axioms for $TableSpecs$, $State$ and $R\_Data$.
+})] Changes made due to new type $State$, see DS/FMU/FEF/004. 
+Library results moved to DS/FMU/FEF/LIB1.
+
 \end{description}
 
 \subsection{Changes Forecast}
@@ -98,6 +98,16 @@ In this document, we give a proof of
 	?Ù 	hide ç secureHide
 =TEX
 
+First, we define a property $secureHideR$ on the representation type, and then prove
+
+=GFT
+
+	?Ù 	hideR ç secureHideR
+=TEX
+
+We then prove that $hideR$ maintains the state invariant. From these two results, we prove
+that hide is secure.
+
 \section{PRELIMINARIES}
 The following ICL HOL instructions set up the new theory $fef010$.
 
@@ -106,163 +116,6 @@ open_theory "fef009";
 new_theory€"fef010"›;
 push_merge_pcs["hol","fefhol","'pair1"] ;
 =TEX
-\section{AUXILIARY RESULTS}
-Two theorems about lists.
-=SML
-push_goal([],¨µf l ∑ (Map f l = [] § l = []) ± ([] = Map f l § l = [])Æ);
-a(REPEAT µ_tac);
-a(list_induction_tac¨lÆ THEN rewrite_tac[map_def]);
-val €map_null_thm› = save_pop_thm"map_null_thm";
-=TEX
-=GFT
-map_null_thm = Ù µ f l∑ (Map f l = [] § l = []) ± ([] = Map f l § l = [])
-=TEX
-=SML
-push_goal([],¨µ l x ∑ ≥ (Cons x l = l)Æ);
-a µ_tac;
-a(list_induction_tac¨lÆ THEN rewrite_tac[]);
-a(REPEAT strip_tac);
-a(DROP_NTH_ASM_T 2(strip_asm_tac o µ_elim¨xÆ));
-val €≥_cons_thm› = save_pop_thm"≥_cons_thm";
-=TEX
-=GFT
-≥_cons_thm= Ù µ l x∑ ≥ Cons x l = l
-=TEX
-Two theorems which state that any subset of the empty set must be empty.
-=SML
-val €Ä_ö_thm› = pc_rule"hol1"(prove_rule[]) ¨µ s ∑ s Ä {} § s = {}Æ;
-=TEX
-=SML
-val €Ä_ö_thm1› = pc_rule"hol1"(prove_rule[]) ¨µ s ∑ s Ä {}
- § {} = sÆ;
-=TEX
-=GFT
-Ä_ö_thm =	Ù µ s∑ s Ä {} § s = {}
-Ä_ö_thm1 =	Ù µ s∑ s Ä {} § {} = s
-=TEX
-An equivalent to $sets\_ext\_clauses$ for relations.
-=SML
-push_goal([],¨µ a b∑(a Ä b § (µ x y∑ (x,y) ç a ¥ (x,y) ç b))
-      ± (a = b § (µ x y∑ (x,y)ç a § (x,y) ç b))Æ);
-a(rewrite_tac[sets_ext_clauses] THEN REPEAT strip_tac THEN_TRY asm_rewrite_tac[]);
-(* *** Goal "1" *** *)
-a(DROP_NTH_ASM_T 2 (strip_asm_tac o µ_elim¨(x, y)Æ));
-(* *** Goal "2" *** *)
-a(POP_ASM_T ante_tac);
-a(LEMMA_T¨x = (Fst x,Snd x)Æpure_once_rewrite_thm_tac 
-	THEN_LIST[rewrite_tac[],¥_T asm_tac THEN basic_res_tac1 1 []]); 
-(* *** Goal "3" *** *)
-a(DROP_NTH_ASM_T 2 (strip_asm_tac o µ_elim¨(x, y)Æ));
-(* *** Goal "4" *** *)
-a(POP_ASM_T ante_tac);
-a(LEMMA_T¨x = (Fst x,Snd x)Æpure_once_rewrite_thm_tac 
-	THEN_LIST[rewrite_tac[],¥_T asm_tac THEN basic_res_tac1 1 []]); 
-(* *** Goal "5" *** *)
-a(POP_ASM_T ante_tac);
-a(LEMMA_T¨x = (Fst x,Snd x)Æpure_once_rewrite_thm_tac 
-	THEN_LIST[rewrite_tac[],¥_T asm_tac THEN basic_res_tac1 1 []]); 
-val €rel_ext_clauses› = save_pop_thm"rel_ext_clauses";
-=TEX
-
-=GFT
-rel_ext_clauses = 
-Ù µ a b
-  ∑ (a Ä b § (µ x y∑ (x, y) ç a ¥ (x, y) ç b))
-      ± (a = b § (µ x y∑ (x, y) ç a § (x, y) ç b))
-=TEX
-A result about equality of pairs.
-=SML
-push_goal([],¨µ x y ∑ (Fst x = Fst y) ± (Snd x = Snd y) § (x = y)Æ);
-a(REPEAT strip_tac THEN_TRY asm_rewrite_tac[]);
-a(LEMMA_T¨(x = (Fst x,Snd x)) ± (y = (Fst y,Snd y))Æ 
-	pure_once_rewrite_thm_tac THEN_LIST[rewrite_tac[],asm_rewrite_tac[]]);
-val €pair_eq_thm› = save_pop_thm"pair_eq_thm";
-=TEX
-
-=GFT
-pair_eq_thm = Ù µ x y∑ Fst x = Fst y ± Snd x = Snd y § x = y
-=TEX
-Four relation results .
-
-=SML
-val €Ú_thm› = prove_rule[Ú_def]¨µ x s r ∑x ç s Ú r § Fst x ç s ± x ç rÆ;
-=TEX
-
-=SML
-val €í_thm› = prove_rule[í_def]¨µ x y s r ∑(x,y) ç r í s § y ç s ± (x,y) ç rÆ;
-=TEX
-
-
-=SML
-val €graph_thm› = prove_rule[graph_def]¨µ x f ∑ x ç Graph f § Snd x = f (Fst x)Æ;
-=TEX
-
-=SML
-val €r_ª_r_thm› = prove_rule[r_ª_r_def]
-	¨µ x y r s ∑ (x,y) ç r ª s § ∂ z∑ (x, z) ç r ± (z, y) ç sÆ;
-=TEX
-=GFT
-Ú_thm =		Ù µ x s r∑ x ç s Ú r § Fst x ç s ± x ç r
-í_thm =		Ù µ x y s r∑ (x, y) ç r í s § y ç s ± (x, y) ç r
-graph_thm =	Ù µ x f∑ x ç Graph f § Snd x = f (Fst x)
-r_ª_r_thm = 	Ù µ x y r s∑ (x, y) ç r ª s § (∂ z∑ (x, z) ç r ± (z, y) ç s)
-=TEX
-
-A tactic for introducing universals.
-=SML
-fun €intro_µ_tac› ((t1, x) : (TERM * TERM)) : TACTIC = (fn (seqasms, conc) =>
-	let	val t' = subst[(x, t1)] conc;
-	in	if t' =$ conc
-		then	term_fail "intro_µ_tac" 28082 [t1]
-		else	([(seqasms, mk_simple_µ(x, t'))],
-			(fn [thm] => simple_µ_elim t1 thm | _ => bad_proof "intro_µ_tac"))
-	end handle ex => (
-		let val area = area_of ex;
-		in	if area = "subst" orelse area = "mk_simple_µ"
-			then reraise ex "intro_µ_tac" 
-			else raise ex
-		end
-	)
-);
-=TEX
-A result about equality of relational composition.
-=SML
-push_goal([],¨µ r râ1 a b 
-           ∑ (a ª Graph r = b ª Graph r
-              ±    (µx xâ1 ∑ r x = r xâ1 ¥ râ1 x = râ1 xâ1))
-               ¥ a ª Graph râ1 = b ª Graph râ1Æ);
-a(rewrite_tac[r_ª_r_thm,rel_ext_clauses,graph_thm] THEN REPEAT strip_tac);
-(* *** Goal "1" *** *)
-a(DROP_NTH_ASM_T 4 (asm_tac o list_µ_elim[¨xÆ,¨r zÆ]));
-a(LEMMA_T¨∂ z'∑ (x, z') ç a ± r z = r z'Æasm_tac);
-(* *** Goal "1.1" *** *)
-a(∂_tac¨zÆ THEN asm_rewrite_tac[]);
-(* *** Goal "1.2" *** *)
-a(DROP_NTH_ASM_T 2 ante_tac THEN POP_ASM_T rewrite_thm_tac);
-a ¥_tac;
-a(DROP_NTH_ASM_T 5(strip_asm_tac o list_µ_elim[¨zÆ,¨z'Æ]));
-a(∂_tac¨z'Æ THEN asm_rewrite_tac[]);
-=TEX
-=SML
-(* *** Goal "2" *** *)
-a(DROP_NTH_ASM_T 4 (asm_tac o list_µ_elim[¨xÆ,¨r zÆ]));
-a(LEMMA_T¨∂ z'∑ (x, z') ç b ± r z = r z'Æasm_tac);
-(* *** Goal "2.1" *** *)
-a(∂_tac¨zÆ THEN asm_rewrite_tac[]);
-(* *** Goal "2.2" *** *)
-a(DROP_NTH_ASM_T 2 ante_tac THEN POP_ASM_T rewrite_thm_tac);
-a ¥_tac;
-a(DROP_NTH_ASM_T 5(strip_asm_tac o list_µ_elim[¨zÆ,¨z'Æ]));
-a(∂_tac¨z'Æ THEN asm_rewrite_tac[]);
-val €rel_thm› = save_pop_thm"rel_thm";
-=TEX
-=GFT
-rel_thm = 
-Ù µ r râ1 a b
-  ∑ a ª Graph r = b ª Graph r ± (µ x xâ1∑ r x = r xâ1 ¥ râ1 x = râ1 xâ1)
-      ¥ a ª Graph râ1 = b ª Graph râ1
-=TEX
-
 \section{SETTING UP FOR THE SECURITY PROOF}
 \subsection{Consistency Proof for $dominates$}
 We prove the consistency of $dominates$ and retrieve the definiton of $dominates$ with
@@ -282,9 +135,30 @@ val €dominates_trans› = prove_rule[dominates_def]
 =GFT
 dominates_trans = Ù µ x y z∑ x dominates y ± y dominates z ¥ x dominates z 
 =TEX
+\subsection{Consistency Proof for $repState$ and $absState$}
+We prove the consistency of $repState$ and $absState$ and retrieve their definitons  with
+the consistency obligation satisfied.
+=SML
+push_consistency_goal¨repStateÆ;
+a(strip_asm_tac (simple_¥_match_mp_rule type_lemmas_thm state_type_def));
+a(∂_tac¨(rep,abs)Æ THEN asm_rewrite_tac[]);
+a ±_tac;
+=TEX
+=SML
+(* *** Goal "1" *** *)
+a(REPEAT strip_tac THEN_TRY asm_rewrite_tac[]);
+a(POP_ASM_T (ante_tac o app_fun_rule¨absÆ) THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(REPEAT µ_tac THEN ¥_tac);
+a(REPEAT strip_tac THEN_TRY asm_rewrite_tac[]);
+a(POP_ASM_T (ante_tac o app_fun_rule¨repÆ) THEN asm_rewrite_tac[]);
+save_consistency_thm¨repStateÆ(top_thm());
+val €repState_absState_def› = get_spec¨repStateÆ;
+=TEX
 \subsection{Retrieving the Remaining Definitions of Constants}
 =SML
 val €hide_def› = get_spec¨hideÆ;
+val €hideR_def› = get_spec¨hideRÆ;
 val €secureHide_def› = get_spec¨secureHideÆ;
 val €cleanDirectory_def› = get_spec¨cleanDirectoryÆ;
 val €cleanTable_def› = conv_rule(MAP_C let_conv)(get_spec¨cleanTableÆ);
@@ -404,10 +278,93 @@ val data_components =
 Ù µ dâ1 dâ2
   ∑ dâ1 = dâ2 § Dat_class dâ1 = Dat_class dâ2 ± Dat_item dâ1 = Dat_item dâ2 
 =TEX
-\section{PROOF OF SECURITY OF $hide$}
+\section{PROOF OF SECURITY OF $hide$} 
+\subsection{Proof Strategy}\label{STRATEGY}
+
+First we define $secureHideR$ a property on things of type 
+=INLINEFT
+Class ∏ StateR ≠ StateR
+=TEX
+
+πHOLCONST
+‹	€secureHideR› : (Class ∏ StateR ≠ StateR) 
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µ h : Class ∏ StateR ≠ StateR ∑ 
+‹		h ç secureHideR
+‹		§
+‹		µcâ1 câ2 : Class; sâ1 sâ2 : StateR ∑	
+‹			h(câ1,sâ1) = h(câ1,sâ2)
+‹			±
+‹			câ1 dominates câ2	
+‹			¥
+‹			h(câ2,sâ1) = h(câ2,sâ2)
+∞
+
+We simplify some of the properties of the representation and abstraction functions.
+=SML
+val isState_lemma = all_µ_intro(nth 4 (strip_±_rule(all_µ_elim repState_absState_def)));
+=TEX
+
+=GFT
+isState_lemma = Ù µ s∑ isState (repState s)
+=TEX
+
+=SML
+val isState_lemma1 = all_µ_intro(nth 1 (strip_±_rule(all_µ_elim repState_absState_def)));
+=TEX
+
+=GFT
+isState_lemma1 = Ù isState r ¥ repState (absState r) = r
+=TEX
+
+=SML
+val isState_lemma2 = all_µ_intro(nth 3 (strip_±_rule(all_µ_elim repState_absState_def)));
+=TEX
+
+=GFT
+isState_lemma2 =  
+Ù µ râ1 râ2
+  ∑ isState râ1 ± isState râ2 ¥ (absState râ1 = absState râ2 § râ1 = râ2)
+=TEX
+
+
+Next, we prove that if $hideR$ is a member of $secureHideR$ and $hideR$ maintains the invariant
+on the representation state, then $hide$ is a member of $secureHide$.
+=SML
+push_goal([],¨(hideR ç secureHideR ± µ clear s ∑ isState s ¥ isState(hideR(clear,s))) 
+	¥ hide ç secureHideÆ);
+a(rewrite_tac[secureHide_def,hide_def,get_spec¨secureHideRÆ] THEN REPEAT strip_tac);
+a(DROP_NTH_ASM_T 4 (ante_tac o list_µ_elim[¨câ1Æ,¨câ2Æ,¨repState sâ1Æ,¨repState sâ2Æ]));
+a(asm_rewrite_tac[] THEN ¥_T asm_tac);
+a(GET_NTH_ASM_T 4 (asm_tac o rewrite_rule[isState_lemma] o 
+	list_µ_elim[¨câ1Æ,¨repState sâ1Æ]));
+a(GET_NTH_ASM_T 5 (asm_tac o rewrite_rule[isState_lemma] o 
+	list_µ_elim[¨câ1Æ,¨repState sâ2Æ]));
+a(strip_asm_tac (list_µ_elim[¨hideR (câ1, repState sâ1)Æ,¨hideR (câ1, repState sâ2)Æ]
+	isState_lemma2));
+a(DROP_NTH_ASM_T 4 ante_tac THEN asm_rewrite_tac[] THEN ¥_tac);
+a(GET_NTH_ASM_T 7 (asm_tac o rewrite_rule[isState_lemma] o 
+	list_µ_elim[¨câ2Æ,¨repState sâ1Æ]));
+a(GET_NTH_ASM_T 8 (asm_tac o rewrite_rule[isState_lemma] o 
+	list_µ_elim[¨câ2Æ,¨repState sâ2Æ]));
+a(strip_asm_tac (list_µ_elim[¨hideR (câ2, repState sâ1)Æ,¨hideR (câ2, repState sâ2)Æ]
+	isState_lemma2));
+val hideR_hide_lemma = save_pop_thm"hideR_hide_lemma";
+=TEX
+
+=GFT
+hideR_hide_lemma =
+Ù hideR ç secureHideR
+      ± (µ clear s∑ isState s ¥ isState (hideR (clear, s)))
+    ¥ hide ç secureHide  
+=TEX
+
+\subsection{Proof of Security of $hideR$} \label{HIDER}
+
+
 The proof is broken down into a series of lemmas.
 
-\subsection{$replaceData$ Lemma}
+\subsubsection{$replaceData$ Lemma}
 
 =SML
 push_goal([],¨µ câ1 câ2 ∑ câ1 dominates câ2
@@ -460,7 +417,7 @@ replaceData_lemma =
       ∑ replaceData câ1 dâ1 = replaceData câ1 dâ2
           ¥ replaceData câ2 dâ1 = replaceData câ2 dâ2)
 =TEX
-\subsection{$cleanColCons$ Lemma}
+\subsubsection{$cleanColCons$ Lemma}
 =SML
 push_goal([],¨µ câ1 câ2 tâ1 tâ2 ∑
 	(câ1 dominates câ2
@@ -511,8 +468,8 @@ cleanColCons_lemma =
   ∑ câ1 dominates câ2 ± cleanColCons câ1 tâ1 = cleanColCons câ1 tâ2
       ¥ cleanColCons câ2 tâ1 = cleanColCons câ2 tâ2
 =TEX
-\subsection{$cleanRow$ Lemma}
-First, two lemmas about $cleanColCons$.
+\subsubsection{$cleanRow$ Lemma}
+First, two results about $cleanColCons$.
 =SML
 push_goal([],¨µ câ1 câ2 t∑ câ1 dominates câ2
 	¥ (Fst(cleanColCons câ2 t) Ä Fst(cleanColCons câ1 t)
@@ -615,7 +572,7 @@ cleanRow_lemma =
 =TEX
 
 
-\subsection{$cleanTable$ Lemma}
+\subsubsection{$cleanTable$ Lemma}
 =SML
 push_goal([],¨µ câ1 câ2 ∑ câ1 dominates câ2 ¥ µ tâ1 tâ2 ∑ 
 	cleanTable câ1 tâ1 = cleanTable câ1 tâ2 ¥ cleanTable câ2 tâ1 = cleanTable câ2 tâ2Æ);
@@ -869,7 +826,7 @@ cleanTable_lemma =
       ∑ cleanTable câ1 tâ1 = cleanTable câ1 tâ2
           ¥ cleanTable câ2 tâ1 = cleanTable câ2 tâ2)
 =TEX
-\subsection{$cleanDirectory$ Lemma}
+\subsubsection{$cleanDirectory$ Lemma}
 
 =SML
 push_goal([],¨µ câ1 câ2 ∑ câ1 dominates câ2 ¥ µ dâ1 dâ2 ∑ 
@@ -936,7 +893,7 @@ cleanDirectory_lemma =
       ∑ cleanDirectory câ1 dâ1 = cleanDirectory câ1 dâ2
           ¥ cleanDirectory câ2 dâ1 = cleanDirectory câ2 dâ2)
 =TEX
-\subsection{$hide$ Lemma}
+\subsubsection{$hideR$ Lemma}
 First, two lemmas about directories.
 =SML
 push_goal([],¨µ câ1 câ2 s x y ∑ câ1 dominates câ2 ¥ 
@@ -971,11 +928,11 @@ dir_class_preserved_lemma =
         ± (x, zâ1) ç sâ1 í {dir|c dominates Dir_exist dir}
       ¥ (x, zâ1) ç sâ1 í {dir|câ1 dominates Dir_exist dir}
 =TEX
-Now the main result that $hide$ is a member of $secureHide$.
+Now the main result of this section that $hideR$ is a member of $secureHideR$.
 
 =SML
-push_goal([],¨hide ç secureHideÆ);
-a(rewrite_tac[hide_def,secureHide_def]);
+push_goal([],¨hideR ç secureHideRÆ);
+a(rewrite_tac[get_spec¨hideRÆ,get_spec¨secureHideRÆ]);
 a(REPEAT strip_tac);
 a(strip_asm_tac(list_µ_elim[¨câ1Æ,¨câ2Æ]cleanDirectory_lemma));
 a(DROP_NTH_ASM_T 3 ante_tac);
@@ -995,7 +952,8 @@ a(DROP_NTH_ASM_T 2 ante_tac THEN POP_ASM_T rewrite_thm_tac);
 a ¥_tac;
 a(DROP_NTH_ASM_T 6(strip_asm_tac o list_µ_elim[¨zÆ,¨z'Æ]));
 a(∂_tac¨z'Æ THEN asm_rewrite_tac[]);
-a(strip_asm_tac (list_µ_elim[¨câ1Æ,¨câ2Æ,¨sâ1Æ,¨sâ2Æ,¨xÆ,¨zÆ,¨z'Æ]dir_class_preserved_lemma));
+a(strip_asm_tac (list_µ_elim[¨câ1Æ,¨câ2Æ,¨sâ1Æ,¨sâ2Æ,¨xÆ,¨zÆ,¨z'Æ]
+	dir_class_preserved_lemma));
 (* *** Goal "2" *** *)
 a(strip_asm_tac (list_µ_elim[¨câ1Æ,¨câ2Æ,¨sâ2Æ,¨xÆ,¨zÆ]Ä_dir_lemma));
 a(DROP_NTH_ASM_T 4 (asm_tac o list_µ_elim[¨xÆ,¨cleanDirectory câ1 zÆ]));
@@ -1011,12 +969,177 @@ a(DROP_NTH_ASM_T 2 ante_tac THEN POP_ASM_T rewrite_thm_tac);
 a ¥_tac;
 a(DROP_NTH_ASM_T 6(strip_asm_tac o list_µ_elim[¨zÆ,¨z'Æ]));
 a(∂_tac¨z'Æ THEN asm_rewrite_tac[]);
-a(strip_asm_tac (list_µ_elim[¨câ1Æ,¨câ2Æ,¨sâ2Æ,¨sâ1Æ,¨xÆ,¨zÆ,¨z'Æ]dir_class_preserved_lemma));
-val €secureHide_lemma› = save_pop_thm"secureHide_lemma";
+a(strip_asm_tac (list_µ_elim[¨câ1Æ,¨câ2Æ,¨sâ2Æ,¨sâ1Æ,¨xÆ,¨zÆ,¨z'Æ]
+	dir_class_preserved_lemma));
+val €secureHideR_lemma› = save_pop_thm"secureHideR_lemma";
 =TEX
+=GFT
+secureHideR_lemma = Ù hideR ç secureHideR
+=TEX
+
+\subsection{Proof that the Invariant on the State is Maintained} \label{INVARIANT}
+We need a series of auxiliary results of the form $replaceData$  etc, are partial.
+
+=SML
+push_goal([],¨µ clear ∑ Graph (cleanDirectory clear) ç FunctionalÆ);
+a(rewrite_tac[cleanDirectory_def,graph_thm,functional_def,dir_components,
+	get_spec¨MkDirectoryÆ] THEN REPEAT strip_tac THEN asm_rewrite_tac[]);
+val cleanDir_fun_thm = save_pop_thm"cleanDir_fun_thm";
+=TEX
+=GFT
+cleanDir_fun_thm = Ù µ clear∑ Graph (cleanDirectory clear) ç Functional
+=TEX
+=SML
+push_goal([],¨µ clear ∑ Graph (replaceData clear) ç FunctionalÆ);
+a(rewrite_tac[replaceData_def,graph_thm,functional_def,data_components,get_spec¨MkDataÆ]
+	THEN  REPEAT strip_tac THEN asm_rewrite_tac[]);
+val replaceData_fun_thm = save_pop_thm"replaceData_fun_thm";
+=TEX
+=GFT
+replaceData_fun_thm = Ù µ clear∑ Graph (replaceData clear) ç Functional
+=TEX
+=SML
+push_goal([],¨µ clear tab ∑ TS_cons tab ç Functional 
+	¥ Fst (cleanColCons clear tab) ç FunctionalÆ);
+a(rewrite_tac[cleanColCons_def,functional_def,í_thm]THEN REPEAT strip_tac);
+a(DROP_NTH_ASM_T 5 (strip_asm_tac o list_µ_elim[¨xÆ,¨wÆ,¨zÆ]));
+val cleanColCons_fun_thm = save_pop_thm"cleanColCons_fun_thm";
+=TEX
+
+=GFT
+cleanColCons_fun_thm =
+Ù µ clear tab
+  ∑ TS_cons tab ç Functional ¥ Fst (cleanColCons clear tab) ç Functional
+=TEX
+=SML
+push_goal([],¨µ clear  dir∑ Dir_tables dir ç Functional
+             ¥ Dir_tables (cleanDirectory clear dir) ç FunctionalÆ);
+a(rewrite_tac[cleanDirectory_def,functional_def]THEN REPEAT strip_tac);
+a(POP_ASM_T ante_tac THEN POP_ASM_T ante_tac 
+	THEN rewrite_tac[get_spec¨MkDirectoryÆ]);
+a(cases_tac¨clear dominates Dir_class dirÆ THEN asm_rewrite_tac[]);
+a(rewrite_tac[r_ª_r_thm,graph_thm]);
+a(REPEAT strip_tac);
+a(DROP_NTH_ASM_T 6 (strip_asm_tac o list_µ_elim[¨xÆ,¨z'Æ,¨z''Æ]));
+a(asm_rewrite_tac[]);
+val tables_fun_thm = save_pop_thm"tables_fun_thm";
+=TEX
+
+
+
+=GFT
+tables_fun_thm =
+Ù µ clear dir
+  ∑ Dir_tables dir ç Functional
+      ¥ Dir_tables (cleanDirectory clear dir) ç Functional
+=TEX
+Now the main result of this section that $hideR$ preserves the invariant on states.
+=SML
+push_goal([],¨µ clear s ∑ isState s ¥ isState(hideR(clear,s))Æ);
+a(rewrite_tac[get_spec¨hideRÆ] THEN REPEAT µ_tac);
+a(rewrite_tac[get_spec¨isStateÆ,get_spec¨StateSÆ,ﬂ_def,°_def] THEN strip_tac);
+a(lemma_tac¨(s í {dir|clear dominates Dir_exist dir}) ª Graph (cleanDirectory clear)
+               ç FunctionalÆ);
+(* *** Goal "1" *** *)
+a(strip_asm_tac(list_µ_elim[¨{dir|clear dominates Dir_exist dir}Æ,¨sÆ]í_fun_thm));
+a(strip_asm_tac(µ_elim¨clearÆcleanDir_fun_thm));
+a(strip_asm_tac(list_µ_elim[¨(s í {dir|clear dominates Dir_exist dir})Æ,
+	¨cleanDirectory clearÆ]ª_fun_thm));
+=TEX
+=SML
+(* *** Goal "2" *** *)
+a(TOP_ASM_T rewrite_thm_tac);
+a(DROP_NTH_ASM_T 3 ante_tac THEN rewrite_tac[™_def,get_spec¨IdeLÆ,
+	get_spec¨DirectorySÆ,°_def,∏_def,get_spec¨UniverseÆ,dom_def,
+	í_thm,r_ª_r_thm,graph_thm,rel_ext_clauses,get_spec¨$Æ]);
+a(REPEAT strip_tac);
+a(asm_rewrite_tac[]);
+a(DROP_NTH_ASM_T 4(strip_asm_tac o list_µ_elim[¨xÆ,¨zÆ]));
+a(POP_ASM_T ante_tac THEN rewrite_tac[ﬂ_def,°_def] THEN strip_tac);
+a(strip_asm_tac(list_µ_elim[¨clearÆ,¨zÆ]tables_fun_thm));
+a(POP_ASM_T rewrite_thm_tac);
+a(DROP_NTH_ASM_T 2 ante_tac);
+=TEX
+=SML
+a(DROP_NTH_ASM_T 2 ante_tac 
+	THEN rewrite_tac[cleanDirectory_def,get_spec¨MkDirectoryÆ]	
+	THEN cases_tac¨clear dominates Dir_class zÆ
+	THEN asm_rewrite_tac[™_def,∏_def] THEN strip_tac);
+a(rewrite_tac[ç_in_clauses,rel_ext_clauses,get_spec¨TableSpecSÆ,
+	get_spec¨IdeÆ,ﬂ_def,°_def,r_ª_r_thm,graph_thm,cleanTable_def] 
+	THEN conv_tac(MAP_C let_conv)THEN strip_tac THEN strip_tac 
+	THEN strip_tac THEN strip_tac);
+a(DROP_NTH_ASM_T 3(strip_asm_tac o list_µ_elim[¨x'Æ,¨z'Æ]));
+a(DROP_NTH_ASM_T 4 ante_tac THEN cases_tac¨clear dominates TS_class z'Æ
+	THEN asm_rewrite_tac[stubTable_def,tab_components,get_spec¨MkTableSpecÆ]
+	THEN strip_tac 
+	THEN asm_rewrite_tac[™_def,∏_def,prove_rule[functional_def]¨{} ç FunctionalÆ]);
+=TEX
+=SML
+a(PC_T1 "hol1"rewrite_tac[get_spec¨ColConSÆ,get_spec¨NumÆ]);
+a(strip_asm_tac (list_µ_elim[¨clearÆ,¨z'Æ]cleanColCons_fun_thm));
+a(POP_ASM_T rewrite_thm_tac);
+a(µ_tac THEN rewrite_tac[cleanRows_def]);
+a(DROP_NTH_ASM_T 7 ante_tac);
+a(rewrite_tac[get_spec¨RowSÆ]THEN conv_tac(MAP_C let_conv) 
+	THEN PC_T1 "hol1"rewrite_tac[™_def,∏_def,get_spec¨NumÆ,get_spec¨DataSÆ,ﬂ_def]);
+a(lemma_tac¨∂ l ∑ TS_rows z' = lÆTHEN_LIST
+	[prove_∂_tac,POP_ASM_T rewrite_thm_tac]);
+=TEX
+=SML
+a(LIST_INDUCTION_T¨lÆasm_tac);
+(* *** Goal "2.1" *** *)
+a(rewrite_tac[˘_def,map_def,map_null_thm,çâl_def]);
+(* *** Goal "2.2" *** *)
+a(µ_tac THEN rewrite_tac[map_def,˘_def,çâl_def]);
+a strip_tac;
+a(lemma_tac¨µ r∑ r çâl l ¥ R_data r ç FunctionalÆ);
+(* *** Goal "2.2.1" *** *)
+a(REPEAT strip_tac);
+a(cases_tac¨r' = x''Æ);
+=TEX
+=SML
+(* *** Goal "2.2.1.1" *** *)
+a(DROP_NTH_ASM_T 3(ante_tac o µ_elim¨x''Æ) THEN asm_rewrite_tac[]);
+(* *** Goal "2.2.1.2" *** *)
+a(DROP_NTH_ASM_T 3(ante_tac o µ_elim¨r'Æ) THEN asm_rewrite_tac[]);
+(* *** Goal "2.2.2" *** *)
+a(cases_tac¨clear dominates R_exist x''ÆTHEN asm_rewrite_tac[map_def,çâl_def] 
+	THEN strip_tac );
+(* *** Goal "2.2.2.1" *** *)
+a(POP_ASM_T rewrite_thm_tac THEN 
+	rewrite_tac[cleanRow_def,row_components,get_spec¨MkRowÆ]);
+a(lemma_tac¨filterRow (Snd (cleanColCons clear z')) (R_data x'') ç FunctionalÆ);
+(* *** Goal "2.2.2.1.1" *** *)
+a(DROP_NTH_ASM_T 3 (ante_tac o µ_elim¨x''Æ));
+a(rewrite_tac[functional_def] THEN strip_tac);
+a(strip_tac THEN rewrite_tac[filterRow_def,cleanColCons_def,í_thm,Ú_thm,dom_def]);
+a(REPEAT strip_tac);
+a(DROP_NTH_ASM_T 9 (strip_asm_tac o list_µ_elim[¨x'''Æ,¨wÆ,¨z''Æ]));
+(* *** Goal "2.2.2.1.2" *** *)
+a(strip_asm_tac(µ_elim¨clearÆreplaceData_fun_thm));
+a(strip_asm_tac(list_µ_elim[¨filterRow (Snd (cleanColCons clear z')) (R_data x'')Æ,
+	¨replaceData clearÆ]ª_fun_thm));
+=TEX
+=SML
+(* *** Goal "2.2.2.2" *** *)
+a(DROP_NTH_ASM_T 5 ante_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2.2.2.3" *** *)
+a(DROP_NTH_ASM_T 5 ante_tac THEN asm_rewrite_tac[]);
+val hideR_lemma = save_pop_thm"hideR_lemma";
+=TEX
+\subsection{$hide$ Lemma}
+
+We now use the results of sections \ref{STRATEGY}, \ref{HIDER} and \ref{INVARIANT} to  prove that $hide$ is a member of $SecureHide$.
+
+=SML
+val secureHide_lemma = rewrite_rule[secureHideR_lemma,hideR_lemma]hideR_hide_lemma;
+=TEX
+
 =GFT
 secureHide_lemma = Ù hide ç secureHide
 =TEX
+
 \section{CLOSING DOWN}
 The following ICL HOL instruction restores the previous proof context.
 =SML
