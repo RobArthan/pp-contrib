@@ -63,7 +63,7 @@ DRA front end filter project RSRE 1C/6130.}
 \subsection{Changes History}
 \begin{description}
 \item[Issue \SCCSversion ({\FormatDate{$Date$
-}})]  New parent; definitions from DS/FMU/FEF/014 removed.
+}})]  Assumed `internalError' cannot happen.
 \end{description}
 
 \subsection{Changes Forecast}
@@ -79,34 +79,14 @@ This document gives a formal specification in \ProductHOL{} of the SWORD front e
 open_theory"fef015";
 new_theory"fef024";
 =TEX
-Some functions (similar to those in \cite{DS/FMU/FEF/014}) for dealing with
-errors are required.
-
-¹HOLCONST
-Ü	$ÛCons‰eİ : ('x + 'Error) ­ ('x LIST + 'Error) ­ ('x LIST + 'Error)
-÷üüüüüüüüüüüüüüüüüüüüüüü
-Ü	µ x xl · (Cons‰e x xl) =
-Ü	if 	isVal x
-Ü		then	if	isVal xl
-Ü			then	giveVal(Cons(destVal x) (destVal xl))
-Ü			else	giveError (destError xl)
-Ü	else	giveError (destError x)
-°
-
-¹HOLCONST
-Ü	ÛMap‰eİ : ('x ­ 'y + 'Error) ­ ('x LIST­ 'y LIST + 'Error) 
-÷üüüüüüüüüüüüüüüüüüüüüüü
-Ü	µ f  · Map‰e f [] = giveVal[]
-Ü±	(µ h f list · Map‰e f (Cons h list) = (Cons‰e (f h) (Map‰e f list))) 	
-°
 
 
 \section{FILTER FUNCTIONS FOR SELECT QUERIES}
-The type of the data is left as generic. The function 
-$class\_of\_data$ returns the classification of a piece of data that is to
+The type of values is left as generic. The function 
+$class\_of\_value$ returns the classification of a  value that is to
  be treated as a classification.
 ¹HOLCONST
-Ü	Ûclass_of_dataİ: 'DATA  ­ Class
+Ü	Ûclass_of_valueİ: 'Value  ­ Class
 ÷üüüüüüüüüüüüüü
 Ü	T
 °
@@ -114,91 +94,75 @@ $class\_of\_data$ returns the classification of a piece of data that is to
 The user's clearance is supplied as parameter to the following functions.
 
 
-The function $filter\_where\_row$ takes a data list whose 
+The function $filter\_where\_row$ takes a non-empty  list of values whose 
  first element is the classification 
 of the where clause, removes the classification 
 of the where clause from the head of the list and also 
-returns a boolean which is $true$ if the user is not cleared to see the where clause. An error is returned if the data 
-list is empty.
+returns a boolean which is $true$ if the user is not cleared to see the where clause. 
+
+We have chosen to model the filter in such a way that it only receives `possible' inputs i.e.
+ an $internalError$ cannot be raised.
 
 ¹HOLCONST
-Ü	Ûfilter_where_rowİ: 'DATA LIST ¸ Class  ­ ('DATA LIST  ¸ BOOL) + STRING
+Ü	Ûfilter_where_rowİ: 'Value LIST ¸ Class  ­ 'Value LIST  ¸ BOOL
 ÷üüüüüüüüüüüüüü
-Ü	µ d ds uc ·
-Ü	filter_where_row 	([],uc) = giveError "internalError"
-Ü±	filter_where_row 	(Cons d ds,uc) = giveVal (ds, ³(uc dominates (class_of_data d)))
+Ü	µ v vs uc ·
+Ü	filter_where_row 	(Cons v vs,uc) = (vs, ³(uc dominates (class_of_value v)))
 °
-The function $filter\_where$ discards rows  where the user is not cleared to see the where clause and also returns a boolean $true$ if any rows have been discarded. An error is returned if any of the data 
-lists are empty.
+The function $filter\_where$ discards rows  where the user is not cleared to see the where clause and also returns a boolean $true$ if any rows have been discarded. 
 
 ¹HOLCONST
-Ü	Ûfilter_whereİ: 'DATA LIST LIST ¸ Class  
-					­ ('DATA LIST LIST ¸ BOOL) + STRING
+Ü	Ûfilter_whereİ: 'Value LIST LIST ¸ Class  
+Ü					­ 'Value LIST LIST ¸ BOOL
 ÷üüüüüüüüüüüüüü
-Ü	µ ds dss uc ·
-Ü	filter_where ([],uc) = giveVal([],F)
-Ü±	filter_where 	(Cons ds dss,uc) = 	
-Ü		if isVal (filter_where_row(ds,uc)) ± isVal (filter_where(dss,uc))
-Ü		then 	let (fds,msg) = destVal(filter_where_row(ds,uc))
-Ü			in 
-Ü			let (fdss,msgs) = destVal(filter_where(dss,uc))
-Ü			in 	if msg then giveVal(fdss,T)
-Ü				else giveVal(Cons fds fdss,msgs)
-Ü		else giveError "internalError"
+Ü	µ vs vss uc ·
+Ü	filter_where ([],uc) = ([],F)
+Ü±	filter_where 	(Cons vs vss,uc) = 	
+Ü		let (fvs,msg) = filter_where_row(vs,uc)
+Ü		in 
+Ü		let (fvss,msgs) = filter_where(vss,uc)
+Ü		in 	if msg then (fvss,T)
+Ü			else (Cons fvs fvss,msgs)
 °
-If the user is not cleared to see the data in a particular field, the string $not\_cleared$ is returned.
+If the user is not cleared to see the value in a particular field, the string $not\_cleared$ is returned. We have modelled $filter\_cols$ on the assumption that  the input lists of value and `class' pair and boolean 
+are the same length.
 ¹HOLCONST
-Ü	Ûfilter_colsİ: Class ­ ('DATA LIST ¸ BOOL LIST)  
-					­ (('DATA + STRING) LIST) + STRING
+Ü	Ûfilter_colsİ: Class ­ (('Value ¸ 'Value) LIST ¸ BOOL LIST)  
+Ü					­ ('Value + STRING) LIST
 ÷üüüüüüüüüüüüüü
-Ü	µ d b ds bs uc ·
-Ü	filter_cols uc ([],[]) = giveVal[]
-Ü±	filter_cols uc (Cons d ds,Cons b bs) = 
-Ü		(if  b then 
-Ü			(if ³ ds = []
-Ü			then 	(let fd = 	
-					if uc dominates class_of_data (Hd ds)
-Ü					then giveVal d
+Ü	µ vc b vcs bs uc ·
+Ü	filter_cols uc ([],[]) = []
+Ü±	(filter_cols uc (Cons vc vcs,Cons b bs) = 
+Ü		if  b then 
+Ü			(let fv = 	if uc dominates class_of_value (Snd vc)
+Ü					then giveVal (Fst vc)
 Ü					else giveError"not_cleared"
-Ü				in 	if isVal(filter_cols uc (Tl ds,bs))
-					then giveVal(Cons fd (destVal(filter_cols uc (Tl ds,bs))))
-				else giveError"internalError")
-Ü			else giveError"internalError")
-Ü		else	(if isVal(filter_cols uc (ds,bs))
-			then giveVal((Cons(giveVal d)(destVal(filter_cols uc (ds,bs)))))
-			else giveError"internalError"))
-Ü±	filter_cols uc ([],Cons b bs) = giveError"internalError"
-Ü±	filter_cols uc (Cons d ds,[]) = giveError"internalError"
+Ü			in 	Cons fv (filter_cols uc (vcs,bs)))
+Ü		else	Cons(giveVal (Fst vc))(filter_cols uc (vcs,bs)))
 °
 
 The boolean parameter to the function $filter\_select$ 
  is $true$ 
-if the lists of data contain the class of the where clause 
+if the lists of values contain the class of the where clause 
 as first elements. The boolean list parameter provides 
 information as to whether it is necessary to check if the 
-user's clearance dominates the classification of the data
-selected. $filter\_select$ returns the filtered data 
+user's clearance dominates the classification of the value
+selected. $filter\_select$ returns the filtered value 
 together with a boolean which determine whether or not the 
 $mayNotBeComplete$ 
 message should be issued.
 ¹HOLCONST
-Ü	Ûfilter_selectİ: (BOOL ¸ BOOL LIST ¸ 'DATA LIST LIST ¸ Class)
-Ü			  ­ (('DATA + STRING) LIST LIST ¸ BOOL) + STRING
+Ü	Ûfilter_selectİ: (BOOL ¸ BOOL LIST ¸ ('Value  ¸ 'Value) LIST LIST ¸ Class)
+Ü			  ­ ('Value + STRING) LIST LIST ¸ BOOL
 ÷üüüüüüüüüüüüüü
-Ü	µ b cls dss uc ·
-Ü	filter_select (b,cls ,dss ,uc) = 
+Ü	µ b cls vcss uc ·
+Ü	filter_select (b,cls ,vcss ,uc) = 
 Ü	if b then
-Ü		(if isVal (filter_where(dss,uc))
-Ü		then 	let (fdss,nc) =  destVal(filter_where(dss,uc))
-Ü			in 
-Ü			let d_or_e = Map‰e (filter_cols uc)(Combine fdss (seq (# fdss) cls))
-Ü			in	if isVal d_or_e then giveVal(destVal d_or_e,nc)
-Ü				else giveError "internalError"
-Ü		else giveError "internalError")
+Ü		let (fvcss,nc) =  filter_where(vcss,uc)
+Ü		in 
+Ü		(Map (filter_cols uc)(Combine fvcss (seq (# fvcss) cls)),nc)
 Ü	else  
-Ü		(let d_or_e = Map‰e (filter_cols uc)(Combine dss (seq (# dss) cls))
-Ü		in	if isVal d_or_e then giveVal(destVal d_or_e,F)
-Ü			else giveError "internalError")
+Ü		(Map (filter_cols uc)(Combine vcss (seq (# vcss) cls)),F)
 °
 
 
