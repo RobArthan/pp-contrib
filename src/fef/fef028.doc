@@ -17,7 +17,7 @@
 \TPPstatus{Draft}			%% Mandatory field
 \TPPtype{Specification}
 \TPPkeywords{}
-\TPPauthor{G.~M.~Prout & WIN01}  %% Mandatory field
+\TPPauthor{R.D.~Arthan & WIN01}  %% Mandatory field
 %\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
 \TPPauthorisation{R.B.~Jones & HAT Manager}
 \TPPabstract{Preliminaries to a HOL specification of the SSQL Query Transformations  for the
@@ -123,13 +123,13 @@ We will use the HOL types $BOOL$, $ONE$, $LIST$ and $STRING$ where appropriate.
 
 The primitive types of \cite{trans} may mostly be borrowed from
 the SSQL semantics of \cite{DS/FMU/FEF/004}.
-However, $Enum$ is not given in \cite{DS/FMU/FEF/004} and $Integer$ is
+However, $Enum$ and $Fixed$ are not given in \cite{DS/FMU/FEF/004} and $Integer$ is
 called $Int$ there.
-For the time being, we take $Enum$ and $Integer$ to be the same as $Int$.
+For the time being, we take $Enum$, $Integer$  and $Fixed$ to be the same as $Int$.
 =SML
 declare_type_abbrev("Enum", [], ”Int®);
 declare_type_abbrev("Integer", [], ”Int®);
-
+declare_type_abbrev("Fixed", [], ”Int®);
 =TEX
 The values of type $Op$ are taken from \cite{DS/FMU/FEF/004}.
 =TEX
@@ -170,7 +170,21 @@ and turns out to have a slightly more general type).
 °
 =TEX
 The library function $Combine$ does for the  function $combine2$
-of \cite{DS/FMU/FEF/019}.
+of \cite{DS/FMU/FEF/019} and may easily be used for $combine3$, $combine4$
+etc. Some of the idioms used in \cite{DS/FMU/FEF/020} are most neatly
+expressed in HOL using a variant of $Combine$ which truncates the longer
+of the two lists if necessary, we call this $splice$ (to suggest rope, which
+can be cut):
+¹HOLCONST
+Ü	Ûspliceİ : 'a LIST ­ 'b LIST ­ ('a ¸ 'b) LIST
+÷üüüüüüüüüüüüüüüüü
+Üµh1 h2 list1 list2·
+Ü	splice [] [] = []
+Ü±	splice [] (Cons h2 list2) = []
+Ü±	splice (Cons h1 list1) [] = []
+Ü±	splice (Cons h1 list1) (Cons h2 list2) = Cons (h1, h2) (splice list1 list2)
+°
+
 =TEX
 Now we define the function $at2$ (and $at3$ and $at4$) ($@$ in \cite{trans}) 
 which turns a function taking a sequence of pairs (triples,..) into 
@@ -293,6 +307,39 @@ declare_type_abbrev(Û"WHEN_CONST"İ, ["'abs", "'a"], ”'a ­ 'abs ­ 'a OPT®);
 °
 =TEX
 The use of these will be illustrated and explained in subsequent sections.
+
+The following material is used to represent the treatment of exceptions
+in \cite{DS/FMU/FEF/029}. It is a variant of the treatment of data types
+used in later sections, which gives more mnemonic names for the constructors
+etc.
+
+=SML
+declare_type_abbrev(Û"RESULT"İ, ["'a"], ”'a + Errors®);
+¹HOLCONST
+Ü	(ÛOkİ, ÛOkValueİ) :
+Ü		('a, 'a RESULT) MK_DEST;
+Ü	(ÛExceptionİ, ÛExceptionValueİ) :
+Ü		(Errors, 'a RESULT) MK_DEST
+÷üüüüüü
+Ü	Ok		= InL
+Ü±	Exception	= InR
+Ü±	OkValue		= OutL
+Ü±	ExceptionValue	= OutR
+°
+=SML
+declare_binder"WHEN_ok";
+declare_binder"WHEN_exception";
+¹HOLCONST
+Ü	$ÛWHEN_okİ :
+Ü		('a, 'a RESULT, 'b) WHEN;
+Ü	$ÛWHEN_exceptionİ :
+Ü		(Errors, 'a RESULT, 'b) WHEN
+÷üüüüüü
+Ü	$WHEN_ok = Lift (Ok, OkValue)
+Ü±	$WHEN_exception = Lift (Exception, ExceptionValue)
+°
+
+=TEX
 \subsection{Types}
 =TEX
 The definition of a (non-recursive) data type now follows a standard
@@ -790,7 +837,8 @@ declare_type_abbrev(Û"TableName"İ, [], ”
 Ü±	dest_name‰t‰n		= OutR
 °
 =SML
-declare_binder"WHEN_name‰s";
+declare_binder"WHEN_anon‰t‰n";
+declare_binder"WHEN_name‰t‰n";
 =TEX
 ¹HOLCONST
 Ü	$ÛWHEN_anon‰t‰nİ : (TableName, 'a) WHEN_CONST;
@@ -807,7 +855,7 @@ declare_binder"WHEN_name‰s";
 Ü	Ûtd_corrNameİ		:	SsqlName;
 Ü	Ûtd_genCorrİ		:	STRING;
 Ü	Ûtd_infoİ		:	TableInfo;
-Ü	Ûtd_ci_indexİ		:	SsqlCol LIST;
+Ü	Ûtd_columnsİ		:	SsqlCol LIST;
 Ü	Ûtd_rowClassİ		:	TsqlClassName;
 Ü	Ûtd_implementationİ	:	TsqlCol LIST;
 Ü	Ûtd_constraintsİ	:	ConstraintInfo
@@ -835,9 +883,13 @@ is used instead of $ConstantValue$.
 °üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
 =TEX
 The state accessed by the symbol table routines has the following two
-components
+components. It is managed as a stack using the functions
+$new\_scope$ of \cite{DS/FMU/FEF/029} (corresponding to the ``block-structured''
+use of $enter\_scope$ and $leave\_scope$ in \cite{trans}). The
+$enter\_ldots$ functions of \cite{DS/FMU/FEF/029} operate by updating
+the top of the stack.
 =TEX
-¹HOLLABPROD ÛST_STATEİüüüüüüüüüüüüüüüüüüü
+¹HOLLABPROD ÛST_STACKİüüüüüüüüüüüüüüüüüüü
 Ü	ÛsymbolTableİ		:	Scope LIST;
 Ü	ÛparameterTableİ	:	ParamInfo LIST
 °üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
