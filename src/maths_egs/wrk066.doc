@@ -7,6 +7,7 @@ doctex dyadic dyadic.th; texdvi dyadic
 \documentclass[10pt,a4paper]{article}
 \usepackage{latexsym}
 \usepackage{ProofPower}
+\ftlinepenalty=9999
 \usepackage{A4}
 \def\N{\mathbb{N}}
 \def\D{\mathbb{D}}
@@ -14,7 +15,7 @@ doctex dyadic dyadic.th; texdvi dyadic
 \def\R{\mathbb{R}}
 \def\Z{\mathbb{Z}}
 \def\Q{\mathbb{Q}}
-\title{$\Z[\sqrt2]$}
+\title{$Basic Analysis$}
 \author{Rob Arthan}
 \makeindex
 \begin{document}
@@ -49,7 +50,7 @@ of functions containing the constant functions and the identity function
 and closed under (point-wise) addition and multiplication.
 \subsection{Polynomials}
 πHOLCONST
-‹ $€PolyFunc› : (Ø ≠ Ø) SET
+‹ €PolyFunc› : (Ø ≠ Ø) SET
 ˜¸¸¸¸¸¸
 ‹ PolyFunc = •
 ‹	{	A
@@ -72,7 +73,7 @@ function it represents.
 We now define the operations on lists of coefficients that
 correspond to addition of polynomials \ldots
 πHOLCONST
-‹ $€PlusCoeffs› : Ø LIST ≠ Ø LIST ≠ Ø LIST
+‹ €PlusCoeffs› : Ø LIST ≠ Ø LIST ≠ Ø LIST
 ˜¸¸¸¸¸¸
 ‹ 	(µl∑ PlusCoeffs [] l = l)
 ‹±	(µl∑ PlusCoeffs l [] = l)
@@ -82,13 +83,26 @@ correspond to addition of polynomials \ldots
 ∞
 \ldots and to multiplication of one polynomial by another.
 πHOLCONST
-‹ $€TimesCoeffs› : Ø LIST ≠ Ø LIST ≠ Ø LIST
+‹ €TimesCoeffs› : Ø LIST ≠ Ø LIST ≠ Ø LIST
 ˜¸¸¸¸¸¸
 ‹ 	(µl∑ TimesCoeffs [] l = [])
 ‹±	(µc l1 l2∑
 ‹	TimesCoeffs (Cons c l1) l2 =
 ‹	PlusCoeffs (Cons (ÓØ 0) (TimesCoeffs l1 l2)) (Map (Ãx∑c * x) l2) )
 ∞
+The following is useful in forming polynomials whose list
+of coefficients is given by a function:
+=SML
+declare_infix(310, "To");
+
+πHOLCONST
+‹ $€To› : (Ó ≠ 'a) ≠ Ó ≠ 'a LIST
+˜¸¸¸¸¸¸
+‹ 	(µf∑ f To 0 = [])
+‹±	(µf n∑ f To (n+1) = f To n @ [f n])
+∞
+
+
 \subsection{Limits}
 We will write $s {-}{-}{>} x$ to indicate that the sequence $s_n$, indexed by
 natural numbers, tends to the limit $x$ as $n$ tends to infinity:
@@ -114,7 +128,6 @@ declare_infix(200, "CtsAt");
 ˜¸¸¸¸¸¸
 ‹ µf x∑ f CtsAt x § µe∑ÓØ 0 < e ¥ ∂d∑ÓØ 0 < d ± µy∑ Abs(y - x) < d ¥ Abs(f y - f x) < e
 ∞
-
 \section{THEOREMS}
 \subsection{The Definitions and Their Consistency}
 We give bindings for the definitions and discharge any consistency
@@ -141,8 +154,13 @@ a(list_induction_tac¨lÆ THEN asm_rewrite_tac[]);
 val _ = save_consistency_thm ¨PlusCoeffsÆ (pop_thm());
 val €plus_coeffs_def› = get_spec¨PlusCoeffsÆ;
 val €times_coeffs_def› = get_spec¨TimesCoeffsÆ;
+val €to_def› = get_spec¨$ToÆ;
 val €lim_seq_def› = get_spec¨$-->Æ;
 val €cts_at_def› = get_spec¨$CtsAtÆ;
+=TEX
+The next one is an omission in {\Product} V2.5.1:
+=SML
+val €Ø_Ó_exp_def› = get_spec¨$^âNÆ;
 =TEX
 \subsection{Polynomials}
 Now we will show that any polynomial can be represented by a list of coefficients.
@@ -278,6 +296,252 @@ set_goal([], ¨PolyFunc = {f | ∂l∑ f = PolyEval l}Æ);
 a(rewrite_tac[poly_Ä_poly_eval_thm, poly_eval_Ä_poly_thm,
 	pc_rule1 "sets_ext1" prove_rule[] ¨µa b∑a = b § a Ä b ± b Ä aÆ]);
 val €poly_func_eq_poly_eval_thm› = save_pop_thm "poly_func_eq_poly_eval_thm";
+=TEX
+For convenience, it is useful to have the theorems that say that the
+different kinds of polynomial construction do lead to polynomial functions:
+=SML
+set_goal([], ¨µc∑(Ãx∑c) ç PolyFuncÆ);
+a(pure_rewrite_tac[const_eval_thm, poly_func_eq_poly_eval_thm]);
+a(PC_T1 "sets_ext1" prove_tac[]);
+val €const_poly_func_thm› = save_pop_thm "const_poly_func_thm";
+=TEX
+=SML
+set_goal([], ¨(Ãx∑x) ç PolyFuncÆ);
+a(pure_rewrite_tac[id_eval_thm, poly_func_eq_poly_eval_thm]);
+a(PC_T1 "sets_ext1" prove_tac[]);
+val €id_poly_func_thm› = save_pop_thm "id_poly_func_thm";
+=TEX
+=SML
+set_goal([], ¨µf g∑ f ç PolyFunc ± g ç PolyFunc ¥ (Ãx∑f x + g x) ç PolyFuncÆ);
+a(pure_rewrite_tac[poly_func_eq_poly_eval_thm] THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+a(all_var_elim_asm_tac1 THEN pure_rewrite_tac[plus_eval_thm]
+	THEN PC_T1 "predicates" prove_tac[]);
+val €plus_poly_func_thm› = save_pop_thm "plus_poly_func_thm";
+=TEX
+=SML
+set_goal([], ¨µf g∑ f ç PolyFunc ± g ç PolyFunc ¥ (Ãx∑f x * g x) ç PolyFuncÆ);
+a(pure_rewrite_tac[poly_func_eq_poly_eval_thm] THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+a(all_var_elim_asm_tac1 THEN pure_rewrite_tac[times_eval_thm]
+	THEN PC_T1 "predicates" prove_tac[]);
+val €times_poly_func_thm› = save_pop_thm "times_poly_func_thm";
+=TEX
+=SML
+set_goal([], ¨µf g∑ f ç PolyFunc ± g ç PolyFunc ¥ (Ãx∑f(g x)) ç PolyFuncÆ);
+a(REPEAT strip_tac THEN POP_ASM_T ante_tac);
+a(intro_µ_tac(¨gÆ, ¨gÆ) THEN poly_induction_tac¨fÆ);
+(* *** Goal "1" *** *)
+a(rewrite_tac[const_poly_func_thm]);
+(* *** Goal "2" *** *)
+a(rewrite_tac[»_axiom]);
+(* *** Goal "3" *** *)
+a(REPEAT strip_tac THEN all_asm_fc_tac[]);
+a(rewrite_tac[] THEN ALL_FC_T (MAP_EVERY ante_tac) [plus_poly_func_thm]);
+a(rewrite_tac[] THEN taut_tac);
+(* *** Goal "4" *** *)
+a(REPEAT strip_tac THEN all_asm_fc_tac[]);
+a(rewrite_tac[] THEN ALL_FC_T (MAP_EVERY ante_tac) [times_poly_func_thm]);
+a(rewrite_tac[] THEN taut_tac);
+val €comp_poly_func_thm› = save_pop_thm "comp_poly_thm";
+=TEX
+=SML
+set_goal([], ¨
+	µl1 l2 x∑ PolyEval (l1 @ l2) x = PolyEval l1 x + x^Length l1 * PolyEval l2 x
+Æ);
+a(REPEAT strip_tac THEN list_induction_tac¨l1:Ø LISTÆ THEN
+	asm_rewrite_tac[rev_def, poly_eval_def, length_def, Ø_Ó_exp_def, append_def]);
+a(PC_T1 "Ø_lin_arith" prove_tac[]);
+val €poly_eval_append_thm› = save_pop_thm "poly_eval_append_thm";
+=TEX
+We are now going to prove various identities for polynomials.
+We need a few general lemmas about lists first:
+=SML
+set_goal([], ¨
+	(µl1 l2 : 'a LIST∑ Length(l1 @ l2) = Length l1 + Length l2)
+±	(µl:'a LIST∑ Length(Rev l) = Length l)
+Æ);
+a(once_rewrite_tac[taut_rule¨µp q∑ p ± q § p ± (p ¥ q)Æ]);
+a(±_tac THEN1 (REPEAT strip_tac THEN list_induction_tac¨l1:'a LISTÆ THEN
+	asm_rewrite_tac[rev_def, length_def, append_def] THEN PC_T1 "lin_arith" prove_tac[]));
+a(REPEAT strip_tac THEN list_induction_tac¨l:'a LISTÆ THEN
+	asm_rewrite_tac[rev_def, length_def] THEN PC_T1 "lin_arith" prove_tac[]);
+val €length_rev_append_thm› = pop_thm();
+=TEX
+=SML
+set_goal([], ¨
+	µl1 l2 l3∑ (l1 @ l2) @ l3 = l1 @ l2 @ l3
+Æ);
+a(REPEAT strip_tac THEN list_induction_tac¨l1:'a LISTÆ THEN
+	asm_rewrite_tac[append_def]);
+val €append_assoc_thm› = pop_thm();
+=TEX
+=SML
+set_goal([], ¨
+	µl∑ [] @ l = l ± l @ [] = l
+Æ);
+a(rewrite_tac[append_def]
+	THEN REPEAT strip_tac THEN list_induction_tac¨l:'a LISTÆ THEN
+	asm_rewrite_tac[append_def]);
+val €append_empty_thm› = pop_thm();
+=TEX
+=SML
+set_goal([], ¨
+	µl1 l2 ∑ Rev (l1 @ l2) = Rev l2 @ Rev l1
+Æ);
+a(REPEAT strip_tac THEN list_induction_tac¨l1:'a LISTÆ THEN
+	asm_rewrite_tac[rev_def, append_def, append_assoc_thm, append_empty_thm]);
+val €rev_append_thm› = pop_thm();
+=TEX
+=SML
+set_goal([], ¨
+	µl1 l2 ∑ l1 @ l2 = [] § l1 = [] ± l2 = []
+Æ);
+a(µ_tac THEN list_induction_tac¨l1: 'a LISTÆ THEN asm_rewrite_tac[append_def]);
+val €append_eq_empty_thm› = pop_thm();
+=TEX
+=SML
+set_goal([], ¨
+	µl ∑ Rev l = [] § l = []
+Æ);
+a(µ_tac THEN list_induction_tac¨l: 'a LISTÆ THEN asm_rewrite_tac[append_eq_empty_thm, rev_def]);
+val €rev_eq_empty_thm› = pop_thm();
+=TEX
+=SML
+set_goal([], ¨
+	µl ∑ Rev(Rev l) = l
+Æ);
+a(µ_tac THEN list_induction_tac¨l: 'a LISTÆ THEN
+	asm_rewrite_tac[rev_def, rev_append_thm, append_empty_thm, append_def]);
+val €rev_rev_thm› = pop_thm();
+=TEX
+=SML
+set_goal([], ¨
+	(µf n∑ Length(f To n) = n)
+Æ);
+a(REPEAT strip_tac THEN induction_tac¨n:ÓÆ THEN
+	asm_rewrite_tac[length_rev_append_thm, length_def, to_def]);
+val €length_to_thm› = pop_thm();
+=TEX
+=SML
+set_goal([], ¨
+	(µf:'a ≠ 'b; l∑ Length(Map f l) = Length l)
+Æ);
+a(REPEAT strip_tac THEN list_induction_tac¨l:'a LISTÆ THEN
+	asm_rewrite_tac[length_def, map_def]);
+val €length_map_thm› = pop_thm();
+=TEX
+The next result gives the rule for evaluating a polynomial starting with the
+leading term.
+=SML
+set_goal([], ¨
+	(µx∑ PolyEval (Rev []) x = ÓØ 0)
+±	(µc l x∑ PolyEval (Rev (Cons c l)) x = c*x^Length l + PolyEval (Rev l) x)
+Æ);
+a(REPEAT strip_tac THEN1 rewrite_tac[rev_def, poly_eval_def]);
+a(intro_µ_tac(¨cÆ, ¨cÆ) THEN list_induction_tac¨lÆ);
+(* *** Goal "1" *** *)
+a(rewrite_tac[rev_def, poly_eval_def, length_def, Ø_Ó_exp_def, append_def]);
+(* *** Goal "2" *** *)
+a(asm_rewrite_tac[]);
+a(rewrite_tac[rev_def, poly_eval_def, length_def, Ø_Ó_exp_def, append_def,
+	poly_eval_append_thm, length_rev_append_thm]);
+a(PC_T1 "Ø_lin_arith" prove_tac[]);
+val €poly_eval_rev_thm› = save_pop_thm "poly_eval_rev_thm";
+=TEX
+The following is the identity for the difference of two like powers:
+\[
+(x-y)(x^n + yx^{n-1} + \ldots + y^jx^{n-j} + \ldots y^n) = x^{n+1} - y^{n+1}
+\]
+=SML
+set_goal([], ¨
+	µn x y∑ (x - y)*PolyEval (Rev((Ãm∑y^m) To (n+1))) x = x^(n+1) - y^(n+1)
+Æ);
+a(REPEAT strip_tac THEN induction_tac¨n:ÓÆ);
+(* *** Goal "1" *** *)
+a(pure_rewrite_tac[to_def, Ø_Ó_exp_def, append_def, poly_eval_def, rev_def]);
+a(rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(pure_once_rewrite_tac[to_def, Ø_Ó_exp_def]);
+a(pure_asm_rewrite_tac[rev_append_thm, rev_def, poly_eval_append_thm,
+	append_empty_thm, Ø_times_plus_distrib_thm, length_def, Ø_Ó_exp_def,
+	µ_elim¨x * ÓØ 1Æ Ø_times_order_thm]);
+a(rewrite_tac[poly_eval_def, Ø_Ó_exp_def]);
+a(PC_T1 "Ø_lin_arith" prove_tac[]);
+val €poly_diff_powers_thm› = save_pop_thm "poly_diff_powers_thm";
+=TEX
+=SML
+set_goal([], ¨
+	µl1 l2∑ Length(PlusCoeffs l1 l2) = if Length l2 < Length l1 then Length l1 else Length l2
+Æ);
+a(µ_tac THEN list_induction_tac¨l1:Ø LISTÆ THEN1 rewrite_tac[length_def, plus_coeffs_def]);
+a(REPEAT strip_tac THEN list_induction_tac¨l2:Ø LISTÆ THEN
+	 asm_rewrite_tac[length_def, plus_coeffs_def]);
+a(cases_tac¨Length l2 < Length l1Æ THEN asm_rewrite_tac[]);
+val €length_plus_coeffs_thm› = save_pop_thm "length_plus_coeffs_thm";
+=TEX
+The following is the special case of polynomial division in which the divisor
+is linear. In this special case, we do not need the notion of the degree of
+a polynomial to state the result (which is very fortunate, since we plan to
+use this in deriving the theory of polynomial degrees).
+
+The proof below follows a slightly different pattern from the text book
+proof, which works by induction on the degree of the dividend (to divide
+$f = a_{n+1}x^{n+1} + a_{n}x^{n} + \ldots + a_0$ by $x - c$, one has
+$f - a_nx^{n}(x-c) = g$ where $g$ has degree less than that of $f$ and
+one proceeds by induction on the degrees). Here, we use list induction
+on the list of coefficients (reversed, i.e., leading coefficient first).
+If $f =a_{n+1}x^n + a_{n}x^{n} + \ldots + a_0$, then by a list induction,
+we can write $h = a_{n}x^{n} + \ldots + a_0$ as $(x-c)h_1 + r_1$
+where the list of coefficients for $h_1$ is shorter than that for
+$h$ and we can write $a_{n+1}x^{n+1}$ as $a_{n+1}(x - c)(x^n + cx^{n-1} + \ldots + c^n) + a_{n+1}c^{n+1}$, by the identity for the difference of two like powers. Adding
+these representations for $h$ and $a_{n+1}x^{n+1}$ gives the required representation
+for $f$. There is not much to choose between the two approaches except that this one
+involves less fiddling around with lists of coefficients given the tools we have to hand.
+
+=SML
+set_goal([], ¨
+	µl1 c∑ ≥l1 = []
+¥	∂l2 r∑
+		Length l2 < Length l1 
+	±	(Ãx∑ PolyEval l1 x) = (Ãx∑ (x - c)*PolyEval l2 x + r)
+Æ);
+a(lemma_tac¨
+	µl1 c∑ ≥l1 = []
+¥	∂l2 r∑
+		Length l2 < Length l1 
+	±	(Ãx∑ PolyEval (Rev l1) x) = (Ãx∑ (x - c)*PolyEval l2 x + r)Æ);
+(* *** Goal "1" *** *)
+a(REPEAT µ_tac THEN list_induction_tac¨l1 : Ø LISTÆ THEN1 rewrite_tac[]);
+(* *** Goal "1.1" *** *)
+a(all_var_elim_asm_tac1 THEN REPEAT strip_tac);
+a(∂_tac¨[]Æ THEN ∂_tac¨xÆ THEN
+	rewrite_tac[length_def, rev_def, poly_eval_def, append_empty_thm]);
+(* *** Goal "1.2" *** *)
+a(pure_rewrite_tac[poly_eval_rev_thm]);
+a(REPEAT strip_tac);
+a(lemma_tac¨∂m∑m + 1 = Length l1Æ THEN1
+	(GET_NTH_ASM_T 3 ante_tac THEN rewrite_tac[less_def, º_def]
+	THEN REPEAT strip_tac THEN ∂_tac¨Length l2 + iÆ
+	THEN PC_T1 "lin_arith" asm_prove_tac[]));
+a(∂_tac¨PlusCoeffs(Map (Ãt∑x*t) (Rev ((Ã j∑ c ^ j) To (m + 1)))) l2Æ
+	THEN ∂_tac¨x*c^(m+1) + rÆ);
+a(REPEAT strip_tac THEN1
+	asm_rewrite_tac[length_to_thm, length_plus_coeffs_thm,
+		length_rev_append_thm, length_def, length_map_thm]);
+a(pure_rewrite_tac (map (conv_rule (ONCE_MAP_C eq_sym_conv))
+		[const_times_eval_thm, plus_eval_thm]));
+a(GET_NTH_ASM_T 3 (pure_rewrite_thm_tac o rewrite_rule[]));
+a(PC_T1 "predicates" rewrite_tac[]);
+a(pure_asm_rewrite_tac[µ_elim¨xÆØ_times_order_thm,
+	Ø_times_plus_distrib_thm, poly_diff_powers_thm]);
+a(PC_T1 "Ø_lin_arith" prove_tac[]);
+(* *** Goal "2" *** *)
+a(REPEAT strip_tac);
+a(lemma_tac¨≥Rev l1 = []Æ THEN1 asm_rewrite_tac[rev_eq_empty_thm]);
+a(list_spec_nth_asm_tac 3 [¨Rev l1Æ, ¨cÆ]);
+a(DROP_NTH_ASM_T 2 (asm_tac o rewrite_rule[length_rev_append_thm]));
+a(DROP_NTH_ASM_T 2 (asm_tac o rewrite_rule[rev_rev_thm]));
+a(∂_tac ¨l2Æ THEN ∂_tac ¨rÆ THEN asm_rewrite_tac[]);
+val €poly_linear_div_thm› = save_pop_thm "poly_linear_div_thm";
 =TEX
 \subsection{Limits and Continuity}
 \subsubsection{Lemmas about the Absolute Value Function Etc.}
@@ -512,7 +776,7 @@ a(rewrite_tac[pc_rule1 "Ø_lin_arith" prove_rule[]¨µx y∑x*e*t*y = e*(x*t)*yÆ]);
 a(lemma_tac¨≥ ÓØ 2 * t = ÓØ 0Æ THEN1
 	(strip_asm_tac(µ_elim¨xÆ Ø_0_º_abs_thm) THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
 a(ALL_FC_T rewrite_tac[Ø_times_recip_thm]);
-val €times_lim_seq_lemma› = pop_thm ();
+val €times_lim_seq_thm› = pop_thm ();
 =TEX
 Now we can prove that the product of two sequences each of which has a limit has
 the product of the limits as its limit:
@@ -534,7 +798,7 @@ a(all_asm_fc_tac[] THEN REPEAT strip_tac);
 a(∂_tac¨n+n'Æ THEN REPEAT strip_tac);
 a(lemma_tac¨n º m ± n' º mÆ THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
 a(LIST_GET_NTH_ASM_T[6, 7] all_fc_tac);
-a(bc_thm_tac (rewrite_rule[]times_lim_seq_lemma));
+a(bc_thm_tac (rewrite_rule[]times_lim_seq_thm));
 a(∂_tac¨b + Abs c2Æ THEN asm_rewrite_tac[]);
 a(spec_nth_asm_tac 13 ¨mÆ THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 val €times_lim_seq_thm› = save_pop_thm "times_lim_seq_thm";
