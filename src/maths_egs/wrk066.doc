@@ -3500,6 +3500,144 @@ a(LIST_GET_NTH_ASM_T [6, 7] all_fc_tac);
 a(cases_tac¨ÓØ 0 º s m + ~xÆ THEN asm_rewrite_tac[Ø_abs_def]
 	THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 val €cauchy_seq_lim_seq_thm ›= save_pop_thm "cauchy_seq_lim_seq_thm";
+=TEX
+Any (non-strict) monotone increasing sequence with an upper bound converges (to the supremum of
+the set of values taken by the sequence), moreover the terms of the sequence are all no smaller than
+the limit.
+We prove this first of all giiving the explicit value for the limit.
+=SML
+set_goal([], ¨µs: Ó ≠ Ø; ub∑
+	(µm∑s m º ub ± s m º s (m+1))
+¥	(s --> Sup{t | ∂m∑t = s m} ± (µm∑s m º Sup{t | ∂m∑t = s m} ))
+Æ);
+a(rewrite_tac[lim_seq_def] THEN REPEAT µ_tac THEN ¥_tac);
+a(lemma_tac ¨µ m n∑ s m º s (m + n)Æ THEN1
+	(bc_thm_tac Ø_mono_inc_seq_thm THEN asm_rewrite_tac[]));
+a(LEMMA_T¨
+	≥{t | ∂m∑t = s m} = {}
+±	(∂a∑ µx∑x ç {t | ∂m∑t = s m} ¥ x º a)Æ (±_THEN asm_tac)  THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(PC_T1 "sets_ext" REPEAT strip_tac THEN ∂_tac¨s mÆ THEN rewrite_tac[]);
+a(∂_tac¨mÆ THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(∂_tac ¨ubÆ THEN REPEAT strip_tac THEN asm_rewrite_tac[]);
+(* *** Goal "3" *** *)
+a(lemma_tac¨µm∑s m º (Sup {t|∂ m∑ t = s m})Æ THEN1
+	(strip_tac THEN bc_thm_tac Ø_º_sup_bc_thm THEN
+	asm_rewrite_tac[] THEN REPEAT strip_tac));
+(* *** Goal "3.1" *** *)
+a(POP_ASM_T bc_thm_tac THEN ∂_tac¨mÆ THEN REPEAT strip_tac);
+(* *** Goal "3.2" *** *)
+a(lemma_tac¨µm∑ÓØ 0 º Sup {t|∂ m∑ t = s m} + ~(s m)Æ THEN1
+	(REPEAT strip_tac THEN spec_nth_asm_tac 1 ¨m:ÓÆ
+	THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(once_rewrite_tac[pc_rule1"Ø_lin_arith" prove_rule[]¨µa b:Ø ∑a + ~b = ~(b + ~a)Æ]);
+a(rewrite_tac[Ø_abs_minus_thm] THEN asm_rewrite_tac[Ø_abs_def]);
+a(ante_tac (µ_elim¨{t|∂ m∑ t = s m}Æ Ø_less_sup_thm) THEN asm_rewrite_tac[] THEN REPEAT strip_tac);
+a(contr_tac THEN LEMMA_T¨Sup {t|∂ m∑ t = s m} + ~e < Sup {t|∂ m∑ t = s m}Æ ante_tac
+	THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(pure_asm_rewrite_tac[] THEN REPEAT strip_tac);
+a(spec_nth_asm_tac 3 ¨mÆ THEN all_var_elim_asm_tac1);
+a(DROP_NTH_ASM_T 2 ante_tac THEN rewrite_tac[º_def] THEN contr_tac
+	THEN all_var_elim_asm_tac1);
+a(lemma_tac¨s m º s (m + i)Æ THEN1 asm_rewrite_tac[]);
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "4" *** *)
+a(bc_thm_tac Ø_º_sup_bc_thm THEN asm_rewrite_tac[] THEN REPEAT strip_tac);
+a(POP_ASM_T bc_thm_tac THEN ∂_tac ¨mÆ THEN REPEAT strip_tac);
+val €lim_seq_mono_inc_sup_thm ›= save_pop_thm "lim_seq_mono_inc_sup_thm";
+=TEX
+Now we give the pure existence version:
+=SML
+set_goal([], ¨µs: Ó ≠ Ø; ub∑
+	(µm∑s m º ub ± s m º s (m+1))
+¥	∂x∑ s --> x ± (µm∑s m º x )
+Æ);
+a(REPEAT strip_tac THEN ∂_tac¨Sup {t|∂ m:Ó∑ t = s m}Æ THEN all_fc_tac[lim_seq_mono_inc_sup_thm]
+	THEN asm_rewrite_tac[]);
+val €lim_seq_mono_inc_thm ›= save_pop_thm "lim_seq_mono_inc_thm";
+=TEX
+And similarly for a  (non-strict) monotone decreasing sequence with a lower bound:
+=SML
+set_goal([], ¨µs: Ó ≠ Ø; lb∑
+	(µm∑lb º s m ± s (m+1) º s m)
+¥	∂x∑ s --> x ± (µm∑x º s m )
+Æ);
+a(REPEAT strip_tac);
+a(lemma_tac ¨∂u∑µm∑u m = ~(s m)Æ THEN1 prove_∂_tac);
+a(lemma_tac¨µm∑u m º ~lb  ± u m º u (m+1)Æ THEN1
+	asm_rewrite_tac[pc_rule1"Ø_lin_arith" prove_rule[]¨µa b:Ø∑~a º ~b §b º aÆ]);
+a(all_fc_tac[lim_seq_mono_inc_thm] THEN ∂_tac¨~ x:ØÆ);
+a(ante_tac minus_cts_thm THEN rewrite_tac[cts_lim_seq_thm]);
+a(REPEAT µ_tac THEN (STRIP_T (fn th => all_fc_tac[th])));
+a(POP_ASM_T ante_tac THEN asm_rewrite_tac[»_axiom,
+	pc_rule1"Ø_lin_arith" prove_rule[]¨µa : Ø; f m∑~a º f m § ~(f m) º aÆ]);
+a(POP_ASM_T ante_tac THEN asm_rewrite_tac[] THEN taut_tac);
+val €lim_seq_mono_dec_thm ›= save_pop_thm "lim_seq_mono_dec_thm";
+=SML
+=TEX
+Any sequence bounded below and above has an {\em upper bound} or
+$\mbox{\sf lim}\;\mbox{\sf sup}$.
+=SML
+set_goal([], ¨µs: Ó ≠ Ø; lb ub∑
+	(µm∑lb º s m ± s m º ub)
+¥	∂lim_sup∑ µe∑ ÓØ 0 < e ¥
+		(∂n∑ µm∑n º m ¥ s m < lim_sup + e)
+	±	(µn∑∂m∑ n º m ± lim_sup < s m + e)
+Æ);
+a(REPEAT strip_tac);
+a(lemma_tac¨∂U∑µm∑U m = Sup{t | ∂n∑m º n ± t =s n}Æ THEN1 prove_∂_tac);
+a(lemma_tac¨µm∑
+	≥{t | ∂n∑m º n ± t =s n} = {}
+±	(∂a∑ µx∑x ç {t | ∂n∑m º n ± t =s n} ¥ x º a)Æ THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(PC_T1 "sets_ext" REPEAT strip_tac THEN ∂_tac¨s mÆ THEN rewrite_tac[]);
+a(∂_tac¨mÆ THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(∂_tac ¨ubÆ THEN REPEAT strip_tac THEN asm_rewrite_tac[]);
+(* *** Goal "3" *** *)
+a(lemma_tac¨µm∑lb º U m ± U (m+1) º U mÆ THEN REPEAT strip_tac);
+(* *** Goal "3.1" *** *)
+a(asm_rewrite_tac[] THEN bc_thm_tac Ø_º_sup_bc_thm
+	THEN asm_rewrite_tac[] THEN REPEAT strip_tac);
+a(bc_thm_tac Ø_º_trans_thm THEN ∂_tac¨s mÆ THEN REPEAT strip_tac
+	THEN1 asm_rewrite_tac[]);
+a(POP_ASM_T bc_thm_tac THEN ∂_tac¨mÆ THEN REPEAT strip_tac);
+(* *** Goal "3.2" *** *)
+a(asm_rewrite_tac[] THEN bc_thm_tac Ø_Ä_sup_thm THEN asm_rewrite_tac[]);
+a(PC_T1 "sets_ext" REPEAT strip_tac);
+a(∂_tac ¨nÆ THEN asm_rewrite_tac[] THEN PC_T1 "lin_arith" asm_prove_tac[]);
+(* *** Goal "3.3" *** *)
+a(all_fc_tac[lim_seq_mono_dec_thm]);
+a(DROP_NTH_ASM_T 2 (strip_asm_tac o rewrite_rule[lim_seq_def]));
+a(∂_tac¨xÆ THEN REPEAT strip_tac);
+(* *** Goal "3.3.1" *** *)
+a(lemma_tac¨ÓØ 0 < (1/2)*eÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(DROP_NTH_ASM_T 2 discard_tac THEN all_asm_fc_tac[]);
+a(∂_tac¨nÆ THEN REPEAT strip_tac);
+a(bc_thm_tac Ø_º_less_trans_thm THEN ∂_tac¨U mÆ  THEN REPEAT strip_tac THEN1 asm_rewrite_tac[]);
+(* *** Goal "3.3.1.1" *** *)
+a(bc_thm_tac Ø_º_sup_bc_thm THEN asm_rewrite_tac[] THEN REPEAT strip_tac);
+a(POP_ASM_T bc_thm_tac THEN ∂_tac ¨mÆ THEN REPEAT strip_tac);
+(* *** Goal "3.3.1.2" *** *)
+a(DROP_NTH_ASM_T 8 discard_tac);
+a(DROP_NTH_ASM_T 3 (fn th => all_asm_fc_tac[] THEN asm_tac th));
+a(lemma_tac¨ÓØ 0 º U m + ~ xÆ THEN1
+	(spec_nth_asm_tac 6 ¨mÆ THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(DROP_NTH_ASM_T 3 ante_tac THEN asm_rewrite_tac[Ø_abs_def]
+	THEN_TRY PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "3.3.2" *** *)
+a(contr_tac THEN POP_ASM_T (strip_asm_tac o
+	rewrite_rule[taut_rule¨µp q∑≥(p ± q) § p ¥ ≥qÆ,
+		pc_rule1"Ø_lin_arith" prove_rule[] ¨µa b:Ø∑≥a < b § b º aÆ]));
+a(LEMMA_T¨≥x º U nÆ (fn th => ante_tac th THEN asm_rewrite_tac[]));
+a(rewrite_tac[pc_rule1 "Ø_lin_arith" prove_rule[] ¨µa b:Ø∑≥a  º b § b < aÆ]);
+a(asm_rewrite_tac[] THEN bc_thm_tac Ø_sup_less_bc_thm THEN asm_rewrite_tac[]);
+a(∂_tac¨x + ~ (1/2)* eÆ THEN REPEAT strip_tac THEN_LIST
+	[all_var_elim_asm_tac1, PC_T1 "Ø_lin_arith" asm_prove_tac[]]);
+a(spec_nth_asm_tac 2 ¨n'Æ);
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+val €lim_sup_thm ›= save_pop_thm "lim_sup_thm";
 =SML
 set_goal([], ¨µs∑
 	(∂x∑s --> x)
