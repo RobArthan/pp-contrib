@@ -111,12 +111,6 @@ open_theory "fef012";
 new_theory€"fef013"›;
 push_merge_pcs["hol","fefhol","fefrel","'pair1"] ;
 =TEX
-\section{AUXILIARY RESULTS}
-=SML
-val €´_null_thm2› = save_thm("´_null_thm2",prove_rule[´_def,·_def,rel_ext_clauses]
-	¨µf ∑ f ´ {} = fÆ);
-
-=TEX
 \section{PROOF OF CONJUNCT 2}
 
 
@@ -1302,7 +1296,8 @@ a(REPEAT strip_tac);
 a(POP_ASM_T ante_tac THEN POP_ASM_T ante_tac THEN rewrite_tac[updateRow_def]);
 =TEX
 =SML
-a(cases_tac¨((RelCombine u (R_data râ1)
+a(cases_tac¨≥ u ç FunctionalÆ THEN
+	cases_tac¨((RelCombine u (R_data râ1)
                                      ª Graph (updateField câ2 (TS_class t)))
                                    í {x|isError x})
                                  ª Graph destError = {}Æ
@@ -1312,6 +1307,7 @@ a(cases_tac¨((RelCombine u (R_data râ1)
                                  ª Graph destError = {}Æ
 	THEN asm_rewrite_tac[≥isVal_giveError_thm,giveVal_eq_thm]);
 a(¥_T (fn _ => id_tac) THEN ¥_T (fn _ => id_tac) THEN rewrite_tac[destVal_def]);
+a(DROP_NTH_ASM_T 3 (fn _ => id_tac));
 a(DROP_NTH_ASM_T 3 ante_tac THEN rewrite_tac[cleanRow_def,filterRow_def,
 	get_spec¨MkRowÆ,row_components,rel_ext_clauses,rel_combine_def,´_thm]
 	THEN REPEAT ¥_tac THEN strip_tac THEN_TRY asm_rewrite_tac[]);
@@ -1514,10 +1510,10 @@ a(POP_ASM_T ante_tac THEN pure_once_rewrite_tac[prove_rule[]¨z'' = (Fst z'',Snd 
 	THEN ¥_tac); 
 a(fc_tac[replaceData_updateField_lemma]
 	THEN asm_fc_tac[] THEN asm_fc_tac[] THEN asm_rewrite_tac[]);
-val €cleanRow_updateRow_lemma› = save_pop_thm"cleanRow_updateRow_lemma";
+val €cleanRow_updateRow_lemma1› = save_pop_thm"cleanRow_updateRow_lemma1";
 =TEX
 =GFT HOL output
-cleanRow_updateRow_lemma =
+cleanRow_updateRow_lemma1 =
 Ù µ câ1 câ2 râ1 râ2 t u
   ∑ câ1 dominates câ2
         ± Dom u Ä {n|∂ c'∑ c' ç visibleCols câ2 t ± CS_posn c' = n}
@@ -1596,9 +1592,9 @@ inUpdates_lemma =
 Now the main theorem of this section.
 =SML
 push_goal([],¨µ câ1 câ2 tâ1 tâ2 us ∑ 
-	Dom (ﬁ (Ran us)) Ä {n
-                             |∂ c
-                               ∑ c ç Snd (cleanColCons câ2 tâ2) ± CS_posn c = n}
+	us ç Functional
+	±
+	Dom (ﬁ (Ran us)) Ä {n|∂ c ∑ c ç Snd (cleanColCons câ2 tâ2) ± CS_posn c = n}
 	±
 	((RelCombine
                      (InvRel (revealRow câ2 tâ1) ª us)
@@ -1809,7 +1805,8 @@ a(LEMMA_T¨câ1 dominates R_exist
                          (destVal (updateRow câ2 (TS_class tâ2) (up, last)))Æasm_rewrite_thm_tac);
 (* *** Goal "1.2.2.1.1.1.2.1" *** *)
 a(POP_ASM_T ante_tac THEN POP_ASM_T ante_tac THEN rewrite_tac[updateRow_def]);
-a(cases_tac¨((RelCombine up (R_data last')
+a(cases_tac¨≥ up ç FunctionalÆ THEN
+	cases_tac¨((RelCombine up (R_data last')
                                  ª Graph (updateField câ2 (TS_class tâ2)))
                                í {x|isError x})
                              ª Graph destError
@@ -1822,7 +1819,7 @@ a(cases_tac¨((RelCombine up (R_data last')
 	THEN asm_rewrite_tac[≥isVal_giveError_thm,destVal_def,get_spec¨MkRowÆ,
 	row_components]THEN REPEAT strip_tac);
 (* *** Goal "1.2.2.1.1.1.2.2" *** *)
-a(bc_tac[rewrite_rule[cleanColCons_def]cleanRow_updateRow_lemma]THEN asm_rewrite_tac[]);
+a(bc_tac[rewrite_rule[cleanColCons_def]cleanRow_updateRow_lemma1]THEN asm_rewrite_tac[]);
 =TEX
 =SML
 (* *** Goal "1.2.2.1.1.2" *** *)
@@ -1897,7 +1894,9 @@ a(DROP_NTH_ASM_T 4 ante_tac THEN asm_rewrite_tac[]);
 (* *** Goal "1.2.2.1.1.2.2.1.2" *** *)
 a(rewrite_tac[rel_combine_one_lemma]);
 (* *** Goal "1.2.2.1.1.2.2.2" *** *)
-a(asm_rewrite_tac[conjunct1_ax1]);
+a(strip_asm_tac(list_µ_elim[¨lâ1Æ,¨last'Æ,¨câ2Æ,¨usÆ,¨tâ2Æ]conjunct1_ax1));
+a(strip_asm_tac(list_µ_elim[¨lâ2Æ,¨lastÆ,¨câ2Æ,¨usÆ,¨tâ2Æ]conjunct1_ax1));
+a(asm_rewrite_tac[]);
 =TEX
 =SML
 (* *** Goal "1.2.2.1.2" *** *)
@@ -1925,7 +1924,10 @@ a(REPEAT ¥_tac THEN fc_tac[rel_combine_null_lemma]);
 a(DROP_NTH_ASM_T 14(ante_tac o µ_elim¨lâ2Æ) 
 	THEN DROP_NTH_ASM_T 13(fn _ => id_tac) 	
 	THEN asm_rewrite_tac[] THEN ¥_tac);
-a(asm_rewrite_tac[list_rel_Î_í_ax,rel_combine_one_lemma,conjunct1_ax1]);
+a(asm_rewrite_tac[list_rel_Î_í_ax,rel_combine_one_lemma]);
+a(strip_asm_tac(list_µ_elim[¨lâ1Æ,¨last'Æ,¨câ2Æ,¨usÆ,¨tâ2Æ]conjunct1_ax1));
+a(strip_asm_tac(list_µ_elim[¨lâ2Æ,¨lastÆ,¨câ2Æ,¨usÆ,¨tâ2Æ]conjunct1_ax1));
+a(asm_rewrite_tac[]);
 =TEX
 =SML
 (* *** Goal "1.2.2.2" *** *)
@@ -1939,7 +1941,9 @@ a(DROP_NTH_ASM_T 12(ante_tac o µ_elim¨lâ2 Î [last]Æ)
 	THEN DROP_NTH_ASM_T 11(fn _ => id_tac) 	
 	THEN asm_rewrite_tac[size_list_rel_Î_í_ax] THEN ¥_tac);
 a(POP_ASM_T (rewrite_thm_tac o eq_sym_rule));
-a(asm_rewrite_tac[list_rel_Î_í_ax,rel_combine_one_lemma,conjunct1_ax1]);
+a(asm_rewrite_tac[list_rel_Î_í_ax,rel_combine_one_lemma]);
+a(strip_asm_tac(list_µ_elim[¨lâ1Æ,¨last'Æ,¨câ2Æ,¨usÆ,¨tâ2Æ]conjunct1_ax1));
+a(asm_rewrite_tac[]);
 =TEX
 =SML
 (* *** Goal "1.2.2.3" *** *)
@@ -1953,7 +1957,9 @@ a(DROP_NTH_ASM_T 12(fn _ => id_tac)
 	THEN DROP_NTH_ASM_T 11(ante_tac o µ_elim¨last'Æ) 	
 	THEN asm_rewrite_tac[size_list_rel_Î_í_ax] THEN ¥_tac);
 a(POP_ASM_T rewrite_thm_tac);
-a(asm_rewrite_tac[list_rel_Î_í_ax,rel_combine_one_lemma,conjunct1_ax1]);
+a(asm_rewrite_tac[list_rel_Î_í_ax,rel_combine_one_lemma]);
+a(strip_asm_tac(list_µ_elim[¨lâ2Æ,¨lastÆ,¨câ2Æ,¨usÆ,¨tâ2Æ]conjunct1_ax1));
+a(asm_rewrite_tac[]);
 =TEX
 =SML
 (* *** Goal "1.2.2.4" *** *)
@@ -1966,7 +1972,10 @@ a(asm_rewrite_tac[size_list_rel_Î_í_ax] THEN REPEAT ¥_tac
 a(DROP_NTH_ASM_T 13(ante_tac o µ_elim¨lâ2Æ) 
 	THEN DROP_NTH_ASM_T 12(fn _ => id_tac) 	
 	THEN asm_rewrite_tac[size_list_rel_Î_í_ax] THEN ¥_tac);
-a(asm_rewrite_tac[list_rel_Î_í_ax,rel_combine_one_lemma,conjunct1_ax1]);
+a(asm_rewrite_tac[list_rel_Î_í_ax,rel_combine_one_lemma]);
+a(strip_asm_tac(list_µ_elim[¨lâ1Æ,¨last'Æ,¨câ2Æ,¨usÆ,¨tâ2Æ]conjunct1_ax1));
+a(strip_asm_tac(list_µ_elim[¨lâ2Æ,¨lastÆ,¨câ2Æ,¨usÆ,¨tâ2Æ]conjunct1_ax1));
+a(asm_rewrite_tac[]);
 val €cleanTable_updateRows_lemma› = save_pop_thm"cleanTable_updateRows_lemma";
 =TEX
 =GFT HOL output
@@ -2057,6 +2066,26 @@ tabExists_cleanTable_lemma1 =
           ¥ cleanTable c (getTable i (repState sâ1))
             = cleanTable c (getTable i (repState sâ2))) 
 =TEX
+=SML
+push_goal([],¨µ c tâ1 tâ2 ∑ 
+	c dominates TS_class tâ1 
+	± c dominates TS_class tâ2 
+	± cleanTable c tâ1 = cleanTable c tâ2
+	¥ colDefaults c tâ1 = colDefaults c tâ2Æ);
+a(REPEAT strip_tac);
+a(POP_ASM_T ante_tac THEN asm_rewrite_tac
+	[cleanTable_def,get_spec¨MkTableSpecÆ,tab_components]THEN strip_tac);
+a(asm_rewrite_tac[ext_thm,colDefaults_def,visibleCols_def]);
+val €colDefaults_lemma› = save_pop_thm"colDefaults_lemma";
+=TEX
+=GFT HOL output
+colDefaults_lemma = Ù µ c tâ1 tâ2
+  ∑ c dominates TS_class tâ1
+        ± c dominates TS_class tâ2
+        ± cleanTable c tâ1 = cleanTable c tâ2
+      ¥ colDefaults c tâ1 = colDefaults c tâ2 
+=TEX
+
 
 =SML
 push_goal([],¨µ câ1 câ2 sâ1 sâ2 e
@@ -2141,7 +2170,13 @@ a(LIST_DROP_NTH_ASM_T[4,6,7,8](MAP_EVERY (fn _ => id_tac))
 a(LEMMA_T¨i = (Fst i,Snd i)Æ pure_once_asm_rewrite_thm_tac 
 	THEN_LIST[rewrite_tac[],asm_rewrite_tac[hideR_def,insertQuery_def,changeSpec_def]]);
 a(DROP_NTH_ASM_T 23(strip_asm_tac o rewrite_rule[hideR_def,rel_ext_clauses]));
-a(REPEAT strip_tac);
+a(REPEAT µ_tac);
+a(strip_asm_tac(list_µ_elim[¨câ2Æ,¨y'''Æ,¨y'Æ]colDefaults_lemma));
+a(TOP_ASM_T rewrite_thm_tac);
+a(cases_tac¨≥ Elems (Map (MkRow câ2 o colDefaults câ2 y')
+		(Snd i)) Ä RowSÆ
+	THEN asm_rewrite_tac[]);
+a(POP_ASM_T (fn _ => id_tac) THEN REPEAT strip_tac);
 =TEX
 =SML
 (* *** Goal "3.2.1.1" *** *)
@@ -2150,7 +2185,7 @@ a(CASES_T¨x = Front (Fst i)Æasm_tac);
 (* *** Goal "3.2.1.1.1" *** *)
 a(DROP_NTH_ASM_T 3(strip_asm_tac o rewrite_rule
 	[´_single,get_spec¨MkDirectoryÆ,dir_components]));
-a(DROP_NTH_ASM_T 7(asm_tac o list_µ_elim[¨Front(Fst i)Æ,¨cleanDirectory câ1 y''Æ]));
+a(DROP_NTH_ASM_T 8(asm_tac o list_µ_elim[¨Front(Fst i)Æ,¨cleanDirectory câ1 y''Æ]));
 a(LEMMA_T¨(∂ z
              ∑ (câ1 dominates Dir_exist z ± (Front (Fst i), z) ç repState sâ1)
                  ± cleanDirectory câ1 y'' = cleanDirectory câ1 z)Æasm_tac);
@@ -2163,7 +2198,7 @@ a(lemma_tac¨z' = yÆ);
 =TEX
 =SML
 (* *** Goal "3.2.1.1.1.2.1" *** *)
-a(DROP_NTH_ASM_T 25(asm_tac o rewrite_rule[functional_def]));
+a(DROP_NTH_ASM_T 26(asm_tac o rewrite_rule[functional_def]));
 a(POP_ASM_T (strip_asm_tac o list_µ_elim[¨Front (Fst i)Æ,¨z'Æ,¨yÆ]));
 (* *** Goal "3.2.1.1.1.2.2" *** *)
 a(DROP_NTH_ASM_T 2 ante_tac THEN POP_ASM_T rewrite_thm_tac);
@@ -2200,7 +2235,7 @@ a(DROP_NTH_ASM_T 2 strip_asm_tac);
 a(∂_tac¨replaceRows y' (TS_rows y' Î Map (MkRow câ2 o colDefaults câ2 y') (Snd i))Æ
 	THEN asm_rewrite_tac[]);
 a(fc_tac[cleanTable_insertRows_lemma]THEN asm_fc_tac[]); 
-a(spec_nth_asm_tac 7 ¨Snd iÆ);
+a(DROP_NTH_ASM_T 7 (ante_tac o µ_elim¨Snd iÆ) THEN asm_rewrite_tac[]);
 (* *** Goal "3.2.1.1.1.2.2.1.2" *** *)
 a(DROP_NTH_ASM_T 2 strip_asm_tac);
 a(DROP_NTH_ASM_T 4 (asm_tac o list_µ_elim[¨x'Æ,¨cleanTable câ1 z''Æ]));
@@ -2220,7 +2255,8 @@ a(DROP_NTH_ASM_T 2 strip_asm_tac);
 a(∂_tac¨replaceRows y''' (TS_rows y''' Î Map (MkRow câ2 o colDefaults câ2 y''') (Snd i))Æ
 	THEN asm_rewrite_tac[]);
 a(fc_tac[cleanTable_insertRows_lemma]THEN asm_fc_tac[]); 
-a(spec_nth_asm_tac 7 ¨Snd iÆTHEN asm_rewrite_tac[]);
+a(DROP_NTH_ASM_T 7 (ante_tac o µ_elim¨Snd iÆ) THEN asm_rewrite_tac[] 
+	THEN ¥_T rewrite_thm_tac);
 (* *** Goal "3.2.1.1.1.2.2.2.2" *** *)
 a(DROP_NTH_ASM_T 2 strip_asm_tac);
 a(∂_tac¨z''ÆTHEN asm_rewrite_tac[]);
@@ -2229,7 +2265,7 @@ a(∂_tac¨z''ÆTHEN asm_rewrite_tac[]);
 (* *** Goal "3.2.1.1.2" *** *)
 a(DROP_NTH_ASM_T 3(strip_asm_tac o rewrite_rule
 	[´_single,get_spec¨MkDirectoryÆ,dir_components]));
-a(DROP_NTH_ASM_T 5(asm_tac o list_µ_elim[¨xÆ,¨cleanDirectory câ1 zÆ]));
+a(DROP_NTH_ASM_T 6(asm_tac o list_µ_elim[¨xÆ,¨cleanDirectory câ1 zÆ]));
 a(LEMMA_T¨∂ z'
              ∑ (câ1 dominates Dir_exist z' ± (x, z') ç repState sâ1)
                  ± cleanDirectory câ1 z = cleanDirectory câ1 z'Æasm_tac);
@@ -2246,7 +2282,7 @@ a(CASES_T¨x = Front (Fst i)Æasm_tac);
 (* *** Goal "3.2.1.2.1" *** *)
 a(DROP_NTH_ASM_T 3(strip_asm_tac o rewrite_rule
 	[´_single,get_spec¨MkDirectoryÆ,dir_components]));
-a(DROP_NTH_ASM_T 7(asm_tac o list_µ_elim[¨Front(Fst i)Æ,¨cleanDirectory câ1 y''Æ]));
+a(DROP_NTH_ASM_T 8(asm_tac o list_µ_elim[¨Front(Fst i)Æ,¨cleanDirectory câ1 y''Æ]));
 a(LEMMA_T¨(∂ z
              ∑ (câ1 dominates Dir_exist z ± (Front (Fst i), z) ç repState sâ1)
                  ± cleanDirectory câ1 y'' = cleanDirectory câ1 z)Æasm_tac);
@@ -2259,7 +2295,7 @@ a(lemma_tac¨z' = yÆ);
 =TEX
 =SML
 (* *** Goal "3.2.1.2.1.2.1" *** *)
-a(DROP_NTH_ASM_T 25(asm_tac o rewrite_rule[functional_def]));
+a(DROP_NTH_ASM_T 26(asm_tac o rewrite_rule[functional_def]));
 a(POP_ASM_T (strip_asm_tac o list_µ_elim[¨Front (Fst i)Æ,¨z'Æ,¨yÆ]));
 (* *** Goal "3.2.1.2.1.2.2" *** *)
 a(DROP_NTH_ASM_T 2 ante_tac THEN POP_ASM_T rewrite_thm_tac);
@@ -2296,7 +2332,8 @@ a(DROP_NTH_ASM_T 2 strip_asm_tac);
 a(∂_tac¨replaceRows y''' (TS_rows y''' Î Map (MkRow câ2 o colDefaults câ2 y''') (Snd i))Æ
 	THEN asm_rewrite_tac[]);
 a(fc_tac[cleanTable_insertRows_lemma]THEN asm_fc_tac[]); 
-a(spec_nth_asm_tac 7 ¨Snd iÆ THEN asm_rewrite_tac[]);
+a(DROP_NTH_ASM_T 7 (ante_tac o µ_elim¨Snd iÆ) THEN asm_rewrite_tac[] 
+	THEN ¥_T rewrite_thm_tac);
 (* *** Goal "3.2.1.2.1.2.2.1.2" *** *)
 a(DROP_NTH_ASM_T 2 strip_asm_tac);
 a(∂_tac¨z''ÆTHEN asm_rewrite_tac[]);
@@ -2309,7 +2346,7 @@ a(DROP_NTH_ASM_T 2 strip_asm_tac);
 a(∂_tac¨replaceRows y' (TS_rows y' Î Map (MkRow câ2 o colDefaults câ2 y') (Snd i))Æ
 	THEN asm_rewrite_tac[]);
 a(fc_tac[cleanTable_insertRows_lemma]THEN asm_fc_tac[]); 
-a(spec_nth_asm_tac 7 ¨Snd iÆ);
+a(DROP_NTH_ASM_T 7 (ante_tac o µ_elim¨Snd iÆ) THEN asm_rewrite_tac[]);
 (* *** Goal "3.2.1.2.1.2.2.2.2" *** *)
 a(DROP_NTH_ASM_T 2 strip_asm_tac);
 a(DROP_NTH_ASM_T 4 (asm_tac o list_µ_elim[¨x'Æ,¨cleanTable câ1 z''Æ]));
@@ -2325,7 +2362,7 @@ a(∂_tac¨z'''ÆTHEN asm_rewrite_tac[]);
 (* *** Goal "3.2.1.2.2" *** *)
 a(DROP_NTH_ASM_T 3(strip_asm_tac o rewrite_rule
 	[´_single,get_spec¨MkDirectoryÆ,dir_components]));
-a(DROP_NTH_ASM_T 5(asm_tac o list_µ_elim[¨xÆ,¨cleanDirectory câ1 zÆ]));
+a(DROP_NTH_ASM_T 6(asm_tac o list_µ_elim[¨xÆ,¨cleanDirectory câ1 zÆ]));
 a(LEMMA_T¨∂ z'
              ∑ (câ1 dominates Dir_exist z' ± (x, z') ç repState sâ2)
                  ± cleanDirectory câ1 z = cleanDirectory câ1 z'Æasm_tac);
@@ -2632,7 +2669,8 @@ a(DROP_NTH_ASM_T 27 (asm_tac o rewrite_rule[hideR_def]));
 a(LEMMA_T¨u = (Fst u,Snd u)Æ pure_once_asm_rewrite_thm_tac THEN_LIST[rewrite_tac[],
 	asm_rewrite_tac[hideR_def,updateQuery_def,changeSpec_def,visibleCols_def]]);
 a(conv_tac (MAP_C let_conv));
-a(cases_tac¨≥ Dom (ﬁ (Ran (Snd u)))
+a(cases_tac¨≥ Snd u ç FunctionalÆ THEN
+	cases_tac¨≥ Dom (ﬁ (Ran (Snd u)))
                              Ä {n
                              |∂ c
                                ∑ c ç Snd (cleanColCons câ2 y') ± CS_posn c = n}Æ
@@ -2640,7 +2678,7 @@ a(cases_tac¨≥ Dom (ﬁ (Ran (Snd u)))
 a(ante_tac (rewrite_rule[visibleCols_def]
 	(list_µ_elim[¨câ2Æ,¨y'Æ,¨y'''Æ,¨Snd uÆ]cleanRows_errors_or_vals_lemma)) 
 	THEN asm_rewrite_tac[] THEN REPEAT strip_tac THEN asm_rewrite_tac[]);
-a(DROP_NTH_ASM_T 4(asm_tac o rewrite_rule[rel_ext_clauses]));
+a(DROP_NTH_ASM_T 5(asm_tac o rewrite_rule[rel_ext_clauses]));
 a(rewrite_tac[rel_ext_clauses]THEN REPEAT strip_tac);
 =TEX
 =SML
@@ -2661,7 +2699,7 @@ a(fc_tac[dominates_trans] THEN asm_fc_tac[]);
 a(DROP_NTH_ASM_T 2 ante_tac THEN POP_ASM_T rewrite_thm_tac THEN ¥_tac);
 a(lemma_tac¨z' = yÆ);
 (* *** Goal "3.2.3.1.1.2.1" *** *)
-a(DROP_NTH_ASM_T 32(asm_tac o rewrite_rule[functional_def]));
+a(DROP_NTH_ASM_T 33(asm_tac o rewrite_rule[functional_def]));
 a(POP_ASM_T (strip_asm_tac o list_µ_elim[¨Front (Fst u)Æ,¨z'Æ,¨yÆ]));
 =TEX
 =SML
@@ -2777,7 +2815,7 @@ a(fc_tac[dominates_trans] THEN asm_fc_tac[]);
 a(DROP_NTH_ASM_T 2 ante_tac THEN POP_ASM_T rewrite_thm_tac THEN ¥_tac);
 a(lemma_tac¨z' = yÆ);
 (* *** Goal "3.2.3.2.1.2.1" *** *)
-a(DROP_NTH_ASM_T 32(asm_tac o rewrite_rule[functional_def]));
+a(DROP_NTH_ASM_T 33(asm_tac o rewrite_rule[functional_def]));
 a(POP_ASM_T (strip_asm_tac o list_µ_elim[¨Front (Fst u)Æ,¨z'Æ,¨yÆ]));
 =TEX
 =SML

@@ -9,10 +9,10 @@
 %\TPPpart{}
 \TPPtitle{Proof of Security (IIb)}  %% Mandatory field
 \TPPref{DS/FMU/FEF/011}  %% Mandatory field
-\def\SCCSversion{$Revision$
+\def\SCCSversion{1.3
 }
 \TPPissue{\SCCSversion}  %% Mandatory field
-\TPPdate{\FormatDate{$Date$
+\TPPdate{\FormatDate{92/10/20
 }}  %% Mandatory field (with sensible default)
 \TPPstatus{Draft}			%% Mandatory field
 \TPPtype{Specification}
@@ -64,8 +64,8 @@ DRA front end filter project RSRE 1C/6130.}
 
 \subsection{Changes History}
 \begin{description}
-\item[Issue \SCCSversion(\FormatDate{$Date$
-})] Product name changed. $top\_thm$ should be $pop\_thm$.
+\item[Issue \SCCSversion(\FormatDate{92/10/20
+})] Changes made to $insertQuery$ and $updateQuery$.
 \end{description}
 
 \subsection{Changes Forecast}
@@ -189,6 +189,7 @@ val €tabExists_def› = get_spec¨tabExistsÆ;
 val €colDefaults_def› = get_spec¨colDefaultsÆ;
 val €visibleCols_def› = get_spec¨visibleColsÆ;
 val €revealRow_def› = conv_rule(MAP_C let_conv)(get_spec¨revealRowÆ);
+val €insertQuery_def› = conv_rule(MAP_C let_conv)(get_spec¨insertQueryÆ);
 val €updateRow_def› = conv_rule(MAP_C let_conv)(get_spec¨updateRowÆ);
 val €updateField_def› = get_spec¨updateFieldÆ;
 val €updateStateR_def› = conv_rule(MAP_C let_conv)(get_spec¨updateStateRÆ);
@@ -381,6 +382,37 @@ tabExists_lemma =
 =TEX
 
 =SML
+push_goal([],¨µ c tâ1 tâ2 sâ1 sâ2 i ∑ (c dominates TS_class tâ1 ± c dominates TS_class tâ2 
+	± cleanTable c tâ1 = cleanTable c tâ2)
+	¥ Snd (insertQuery (c, i, sâ1,tâ1)) = Snd (insertQuery (c, i, sâ2,tâ2))Æ);
+=TEX
+=SML
+a(REPEAT strip_tac);
+a(POP_ASM_T ante_tac THEN asm_rewrite_tac
+	[cleanTable_def,get_spec¨MkTableSpecÆ,tab_components] THEN strip_tac);
+a(lemma_tac¨colDefaults c tâ1 = colDefaults c tâ2Æ);
+(* *** Goal "1" *** *)
+a(asm_rewrite_tac[ext_thm,colDefaults_def,visibleCols_def]);
+(* *** Goal "2" *** *)
+a(LEMMA_T¨i = (Fst i,Snd i)Æ pure_once_asm_rewrite_thm_tac 
+	THEN_LIST[rewrite_tac[],asm_rewrite_tac[insertQuery_def]]);
+a(cases_tac¨≥ Elems
+                           (Map
+                               (MkRow c o colDefaults c tâ2)
+                               (Snd i))
+                         Ä RowSÆTHEN asm_rewrite_tac[]);
+val €cleanTable_insertQuery_lemma› = save_pop_thm"cleanTable_insertQuery_lemma";
+=TEX
+=GFT HOL output
+cleanTable_insertQuery_lemma =
+Ù µ c tâ1 tâ2 sâ1 sâ2 i
+  ∑ c dominates TS_class tâ1
+        ± c dominates TS_class tâ2
+        ± cleanTable c tâ1 = cleanTable c tâ2
+      ¥ Snd (insertQuery (c, i, sâ1, tâ1))
+        = Snd (insertQuery (c, i, sâ2, tâ2))
+=TEX
+=SML
 push_goal([],¨µ c tâ1 tâ2 ∑ cleanTable c tâ1 = cleanTable c tâ2 ¥ 	
 	((c dominates (TS_class tâ1) ± c dominates (TS_class tâ2))
 	¥ updateRow c (TS_class tâ1) = updateRow c (TS_class tâ2))Æ);
@@ -451,6 +483,7 @@ a(DROP_NTH_ASM_T 5 ante_tac THEN DROP_NTH_ASM_T 4 ante_tac
 	THEN rewrite_tac[updateRow_def]);
 =TEX
 =SML
+a(cases_tac¨≥ u ç FunctionalÆ THEN asm_rewrite_tac[]);
 a(cases_tac¨((RelCombine u (R_data râ1)
                                      ª Graph (updateField c (TS_class t)))
                                    í {x|isError x})
@@ -478,14 +511,14 @@ a(lemma_tac¨((RelCombine u (R_data râ1)
 a(rewrite_tac[rel_ext_clauses,r_ª_r_thm,rel_combine_def,graph_thm,í_thm]);
 a(REPEAT strip_tac);
 (* *** Goal "1.1" *** *)
-a(DROP_NTH_ASM_T 8 (asm_tac o µ_elim¨xÆ));
+a(DROP_NTH_ASM_T 9 (asm_tac o µ_elim¨xÆ));
 a(LEMMA_T¨∂y∑ (x, y) ç uÆasm_tac);
 (* *** Goal "1.1.1" *** *)
 a(∂_tac¨Fst z'Æ THEN asm_rewrite_tac[]);
 (* *** Goal "1.1.2" *** *)
 a(DROP_NTH_ASM_T 2 ante_tac THEN POP_ASM_T rewrite_thm_tac 
 	THEN ¥_T asm_tac);
-a(DROP_NTH_ASM_T 7 (asm_tac o rewrite_rule[rel_ext_clauses,filterRow_def,
+a(DROP_NTH_ASM_T 8 (asm_tac o rewrite_rule[rel_ext_clauses,filterRow_def,
 	r_ª_r_thm,graph_thm,Ú_thm]));
 a(POP_ASM_T (asm_tac o list_µ_elim[¨xÆ,¨replaceData c (Snd z')Æ]));
 a(LEMMA_T¨∂z∑ ((∂ c'∑ c' ç Snd (cleanColCons c t) ± CS_posn c' = x)
@@ -506,14 +539,14 @@ a(asm_rewrite_tac[]);
 =TEX
 =SML
 (* *** Goal "1.2" *** *)
-a(DROP_NTH_ASM_T 8 (asm_tac o µ_elim¨xÆ));
+a(DROP_NTH_ASM_T 9 (asm_tac o µ_elim¨xÆ));
 a(LEMMA_T¨∂y∑ (x, y) ç uÆasm_tac);
 (* *** Goal "1.2.1" *** *)
 a(∂_tac¨Fst z'Æ THEN asm_rewrite_tac[]);
 (* *** Goal "1.2.2" *** *)
 a(DROP_NTH_ASM_T 2 ante_tac THEN POP_ASM_T rewrite_thm_tac 
 	THEN ¥_T asm_tac);
-a(DROP_NTH_ASM_T 7 (asm_tac o rewrite_rule[rel_ext_clauses,filterRow_def,
+a(DROP_NTH_ASM_T 8 (asm_tac o rewrite_rule[rel_ext_clauses,filterRow_def,
 	r_ª_r_thm,graph_thm,Ú_thm]));
 a(POP_ASM_T (asm_tac o list_µ_elim[¨xÆ,¨replaceData c (Snd z')Æ]));
 a(LEMMA_T¨∂z∑ ((∂ c'∑ c' ç Snd (cleanColCons c t) ± CS_posn c' = x)
@@ -558,7 +591,8 @@ a(DROP_NTH_ASM_T 2 (strip_asm_tac o rewrite_rule
 a(DROP_NTH_ASM_T 4 ante_tac THEN rewrite_tac[updateRow_def]);
 =TEX
 =SML
-a(cases_tac¨((RelCombine u (R_data râ1)
+a(cases_tac¨≥ u ç FunctionalÆ
+	THEN cases_tac¨((RelCombine u (R_data râ1)
                                      ª Graph (updateField c (TS_class t)))
                                    í {x|isError x})
                                  ª Graph destError = {}Æ
@@ -578,10 +612,10 @@ a(rewrite_tac[rel_ext_clauses,r_ª_r_thm,rel_combine_def,graph_thm,í_thm]);
 a(REPEAT strip_tac);
 a(swap_nth_asm_concl_tac 5);
 a(REPEAT strip_tac);
-a(DROP_NTH_ASM_T 6 (asm_tac o rewrite_rule
+a(DROP_NTH_ASM_T 7 (asm_tac o rewrite_rule
 	[rel_ext_clauses,filterRow_def,r_ª_r_thm,graph_thm,Ú_thm]));
 a(POP_ASM_T(asm_tac o list_µ_elim[¨xÆ,¨replaceData c (Snd z')Æ]));
-a(DROP_NTH_ASM_T 8 (asm_tac o µ_elim¨xÆ));
+a(DROP_NTH_ASM_T 9 (asm_tac o µ_elim¨xÆ));
 a(LEMMA_T¨∂z∑ ((∂ c'∑ c' ç Snd (cleanColCons c t) ± CS_posn c' = x)
                    ± (x, z) ç R_data râ2)
                  ± replaceData c (Snd z') = replaceData c zÆasm_tac); 
@@ -1155,7 +1189,8 @@ a(POP_ASM_T ante_tac THEN POP_ASM_T ante_tac);
 a(LEMMA_T¨u = (Fst u,Snd u)Æ pure_once_asm_rewrite_thm_tac 
 	THEN_LIST[rewrite_tac[],rewrite_tac[updateQuery_def]]);
 a(conv_tac(ONCE_MAP_C let_conv)THEN asm_rewrite_tac[visibleCols_def]);
-a(cases_tac¨Dom (ﬁ (Ran (Snd u))) Ä 
+a(cases_tac¨Snd u ç FunctionalÆ THEN
+	cases_tac¨Dom (ﬁ (Ran (Snd u))) Ä 
 	{n |∂ c' ∑ c' ç Snd (cleanColCons c tâ2) ± CS_posn c' = n}Æ
 	THEN asm_rewrite_tac[]);
 a(conv_tac(MAP_C let_conv));
@@ -1815,7 +1850,17 @@ a(EVERY[strip_asm_tac(µ_elim ¨Fst eÆ query_type),
 	asm_rewrite_tac[],
 	cases_tac¨≥ Snd e = []Æ,
 	asm_rewrite_tac[]]);
-(* Select Delete and Insert automatically proven *)
+=TEX
+=SML
+(* Select and Delete automatically proven *)
+(* *** Goal "3.2.1" *** *)
+(* *** Insert *** *)
+a(strip_asm_tac(list_µ_elim[¨cÆ,¨getTable (tabFromEffect (Fst e)) (repState sâ1)Æ,
+	¨getTable (tabFromEffect (Fst e)) (repState sâ2)Æ,
+	¨repState sâ1Æ,¨repState sâ2Æ,¨destInsert (Fst e)Æ]cleanTable_insertQuery_lemma));
+=TEX
+=SML
+(* *** Goal "3.2.2" *** *)
 (* *** Update *** *)
 a(strip_asm_tac(list_µ_elim[¨cÆ,¨getTable (tabFromEffect (Fst e)) (repState sâ1)Æ,
 	¨getTable (tabFromEffect (Fst e)) (repState sâ2)Æ,
