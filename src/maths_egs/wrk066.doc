@@ -1481,6 +1481,18 @@ a(SPEC_NTH_ASM_T 1 ¬n+i® ante_tac THEN
 	REPEAT strip_tac);
 val Ûlim_seq_shift_thmÝ = save_pop_thm "lim_seq_shift_thm";
 =TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬µx d· î¯ 0 < d ´ ¶s· s -> x ± (µm·Abs(s m - x) <  d ± ³s m = x)®);
+a(REPEAT strip_tac);
+a(strip_asm_tac (µ_elim¬x® lim_seq_³_eq_thm));
+a(GET_NTH_ASM_T 2 (fn th => all_fc_tac[rewrite_rule[lim_seq_def]th]));
+a(¶_tac¬Ìp·s(n + p)® THEN asm_rewrite_tac[]);
+a(strip_tac THEN1 bc_thm_tac lim_seq_shift_thm THEN REPEAT strip_tac);
+a(TOP_ASM_T bc_thm_tac THEN REPEAT strip_tac);
+val Ûlim_seq_³_eq_thm1Ý = save_pop_thm "lim_seq_³_eq_thm1";
+=TEX
 A sequences that converges to a non-zero limit can have
 at most finitely many zero values:
 %%%%
@@ -4220,25 +4232,19 @@ val Ûpoly_lim_fun_thmÝ = save_pop_thm "poly_lim_fun_thm";
 %%%%
 %%%%
 =SML
-(*
-set_goal([], ¬µu a b c d· a < x ± x < b ± (µy·a ¼ y ± y ¼ b ± ³y = x ´ u y ¼  c) ± (u --> d) x  ´ d ¼ c®);
-a(rewrite_tac[lim_fun_def] THEN REPEAT strip_tac);
-a(contr_tac THEN POP_ASM_T (strip_asm_tac o rewrite_rule[¯_³_¼_less_thm]));
-a(lemma_tac ¬î¯ 0 < d + ~c® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
-a(LIST_DROP_NTH_ASM_T [3] all_fc_tac);
-a(DROP_NTH_ASM_T 3 discard_tac THEN all_fc_tac [axbd_thm]);
-a(DROP_NTH_ASM_T  4 (ante_tac o µ_elim¬x + (1/2)*c'®));
-a(rewrite_tac[pc_rule1 "¯_lin_arith" prove_rule[] ¬µx y:¯·(x + y) + ~x = y®]);
-a(LEMMA_T ¬î¯ 0 ¼ (1/2) * c' ± ³ 1 / 2 * c' = î¯ 0 ± (1 / 2) * c' < d'®
-	(fn th => conv_tac (RAND_C(LEFT_C (rewrite_conv[ th, ¯_abs_def]))))
-	THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
-a(rewrite_tac[]);
-
-a(POP_ASM_T ante_tac THEN spec_nth_asm_tac 3 ¬n®);
-a(LEMMA_T¬³î¯ 0 ¼ s n + ~c® (fn th => rewrite_tac[th, ¯_abs_def]) THEN
-	PC_T1 "¯_lin_arith" asm_prove_tac[]);
+set_goal([], ¬µu d c t·
+	î¯ 0 < d
+±	(µy·Abs(y - x) <  d ± ³y = x´ u y ¼  c) ± (u --> t) x
+´	t ¼ c®);
+a(rewrite_tac[lim_fun_lim_seq_thm] THEN REPEAT strip_tac);
+a(strip_asm_tac(list_µ_elim[¬x®, ¬d®](rewrite_rule[]lim_seq_³_eq_thm1)));
+a(bc_thm_tac lim_seq_upper_bound_thm);
+ a(¶_tac¬Ìm·u (s m)® THEN rewrite_tac[] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(DROP_NTH_ASM_T 4 bc_thm_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(DROP_NTH_ASM_T 3 bc_thm_tac THEN asm_rewrite_tac[]);
 val Ûlim_fun_upper_bound_thmÝ = save_pop_thm "lim_fun_upper_bound_thm";
-*)
 =TEX
 %%%%
 %%%%
@@ -4551,18 +4557,21 @@ a(¶_tac¬Abs ((u m y + ~ (u (n' + m) y)) + (u (n' + m) y + ~ (f y)))®
 a(conv_tac(ONCE_MAP_C ¯_anf_conv) THEN REPEAT strip_tac);
 val Ûcauchy_seq_unif_lim_seq_thm Ý= save_pop_thm "cauchy_seq_unif_lim_seq_thm";
 =TEX
-The following is theorem 7.11 from Rudin (p. 149):
+The following is theorem 7.11 from Rudin (p. 149) with the restriction (for
+minor technical convenience) that the point $x$ of interest is
+in the interior of an open interval. (The result is also true for $x$ a limit point
+of a closed interval, but the internal machinations are more tedious).
 %%%%
 %%%%
 =SML
-(*
 set_goal([], ¬µu f a b x s·
 	(u ---> f) (a, b)
-±	a ¼ x ± x ¼ b
+±	a < x ± x < b
 ±	(µm· (u m --> s m) x)
 ´	¶c· (f --> c) x ± s -> c
 ®);
 a(REPEAT strip_tac THEN lemma_tac¬¶c·s -> c®);
+(* *** Goal "1" *** *)
 a(rewrite_tac[lim_seq_¤_cauchy_seq_thm] THEN REPEAT strip_tac);
 a(lemma_tac¬î¯ 0 < (1/2)*e® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
 a(DROP_NTH_ASM_T 2 discard_tac THEN all_fc_tac[unif_lim_seq_cauchy_seq_thm]);
@@ -4577,14 +4586,45 @@ a(lemma_tac¬((Ìz· (Ìz·u k z) z + (Ìz·~(u m z)) z) -->  s k + ~(s m)) x® THEN1
 a(LEMMA_T¬( (Ìz·Abs((Ìz· (Ìz·u k z) z + (Ìz·~(u m z)) z)z)) -->  Abs(s k + ~(s m)) ) x® ante_tac THEN1
 	(bc_thm_tac comp_lim_fun_thm
 	THEN asm_rewrite_tac[abs_cts_thm]));
-a(rewrite_tac[] THEN strip_tac);
-
-
-a(rewrite_tac[lim_seq_def, lim_fun_def, unif_lim_seq_def] THEN REPEAT strip_tac);
-
-
-val Ûunif_lim_seq_deriv_thmÝ = save_pop_thm "unif_lim_seq_deriv_thm";
-*)
+a(rewrite_tac[] THEN strip_tac THEN all_fc_tac[axbd_thm]);
+a(bc_thm_tac ¯_¼_less_trans_thm THEN ¶_tac¬(1/2)*e® THEN REPEAT strip_tac
+	THEN_LIST[id_tac, PC_T1 "¯_lin_arith" asm_prove_tac[]]);
+a(bc_thm_tac lim_fun_upper_bound_thm);
+a(¶_tac¬Ì z· Abs (u k z + ~ (u m z))® THEN ¶_tac¬x® THEN ¶_tac¬c®);
+a(asm_rewrite_tac[] THEN REPEAT strip_tac);
+a(rewrite_tac[¯_¼_def] THEN ²_left_tac);
+a(DROP_NTH_ASM_T 9 bc_thm_tac);
+a(rewrite_tac[¯_¼_def] THEN ALL_ASM_FC_T rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(¶_tac¬c® THEN asm_rewrite_tac[lim_fun_def] THEN REPEAT strip_tac);
+a(POP_ASM_T (fn th => lemma_tac¬î¯ 0 < (1/3)*e® THEN1
+	(ante_tac th THEN PC_T1 "¯_lin_arith" asm_prove_tac[])));
+a(DROP_NTH_ASM_T 6 (fn th => all_fc_tac[rewrite_rule[unif_lim_seq_def]th]));
+a(DROP_NTH_ASM_T 3 (fn th => all_fc_tac[rewrite_rule[lim_seq_def]th]));
+a(DROP_NTH_ASM_T 4 (fn th => all_fc_tac[rewrite_rule[lim_fun_def](µ_elim¬n+n'®th)]));
+a(POP_ASM_T (strip_asm_tac o list_µ_elim[¬n®, ¬n'®]));
+a(DROP_NTH_ASM_T 5 discard_tac THEN all_fc_tac[axbd_thm]);
+a(¶_tac¬c'® THEN REPEAT strip_tac);
+a(bc_thm_tac ¯_¼_less_trans_thm THEN ¶_tac ¬
+	Abs(f y - u  (n+n') y) + Abs(u (n+n') y - s (n+n')) + Abs(s(n+n') - c)®
+	THEN rewrite_tac[rewrite_rule[]abs_abcd_thm] THEN REPEAT strip_tac);
+a(lemma_tac ¬Abs(f y + ~(u (n+n') y)) < (1/3)*e
+	± Abs(u (n+n') y + ~(s(n+n'))) < (1/3)*e
+	± Abs(s(n+n') + ~c) < (1/3)*e®
+	THEN_LIST [id_tac, PC_T1 "¯_lin_arith" asm_prove_tac[]]);
+a(REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(LEMMA_T ¬f y + ~ (u (n + n') y) =~ ((u (n + n') y) + ~(f y))®
+	(fn th => pure_rewrite_tac[th, ¯_abs_minus_thm]) THEN1
+	PC_T1 "¯_lin_arith" prove_tac[]);
+a(DROP_NTH_ASM_T 9 bc_thm_tac);
+a(rewrite_tac[¯_¼_def] THEN ALL_ASM_FC_T rewrite_tac[]);
+(* *** Goal "2.2" *** *)
+a(DROP_NTH_ASM_T 6 bc_thm_tac THEN REPEAT strip_tac);
+a(PC_T1"¯_lin_arith" asm_prove_tac[]);
+(* *** Goal "2.3" *** *)
+a(DROP_NTH_ASM_T 8 bc_thm_tac THEN REPEAT strip_tac);
+val Ûlim_fun_lim_seq_interchange_thmÝ = save_pop_thm "lim_fun_lim_seq_interchange_thm";
 =TEX
 The following is theorem 7.17 from Rudin (p. 152).
 %%%%
