@@ -1264,6 +1264,16 @@ val Û¯_î_exp_³_eq_0_thmÝ = save_pop_thm "¯_î_exp_³_eq_0_thm";
 %%%%
 %%%%
 =SML
+set_goal([], ¬µx:¯; m n· x^(m+n) = x^m * x^n®);
+a(REPEAT strip_tac THEN induction_tac¬n:î® THEN
+	asm_rewrite_tac[¯_î_exp_def, plus_assoc_thm1]);
+a(PC_T1 "¯_lin_arith" prove_tac[]);
+val Û¯_î_exp_plus_thmÝ = save_pop_thm "¯_î_exp_plus_thm";
+=TEX
+
+%%%%
+%%%%
+=SML
 set_goal([], ¬µx y:¯; m· (x*y)^m = x^m * y^m®);
 a(REPEAT strip_tac THEN induction_tac¬m:î® THEN rewrite_tac[¯_î_exp_def]);
 a(asm_rewrite_tac[] THEN PC_T1 "¯_lin_arith" prove_tac[]);
@@ -1311,6 +1321,14 @@ a(bc_thm_tac ¯_times_mono_thm THEN REPEAT strip_tac);
 val Û¯_î_exp_less_1_mono_thmÝ = save_pop_thm "¯_î_exp_less_1_mono_thm";
 =TEX
 
+%%%%
+%%%%
+=SML
+set_goal([], ¬µx m·î¯ 0 < x ´ î¯ 0 < x^m ®);
+a(REPEAT strip_tac THEN induction_tac¬m:î® THEN asm_rewrite_tac[¯_î_exp_def]);
+a(bc_thm_tac ¯_0_less_0_less_times_thm THEN REPEAT strip_tac);
+val Û¯_î_exp_less_mono_thmÝ = save_pop_thm "¯_î_exp_less_mono_thm";
+=TEX
 %%%%
 %%%%
 =SML
@@ -1710,6 +1728,23 @@ a(bc_thm_tac ¯_less_recip_less_thm THEN
 	PC_T1 "¯_lin_arith" prove_tac[]);
 val Ûrecip_lim_seq_thmÝ = save_pop_thm "recip_lim_seq_thm";
 =TEX
+The following conversions are useful in applying some of the previous results (and later
+ones) which require the matrix of a $\lambda$-abstraction to be converted
+into a suitable form by introducing $\beta$-redexes.
+%%%%
+%%%%
+=SML
+fun Ûun_Â_convÝ (v : TERM) : CONV = (fn tm =>
+	let	val lhs = mk_app(mk_Ì(v, tm), v);
+	in	eq_sym_rule (Â_conv lhs)
+	end
+);
+val ÛÌ_un_Â_rands_convÝ : CONV = (fn tm =>
+	let	val (v, _) = dest_Ì tm;
+	in	SIMPLE_Ì_C (RANDS_C (un_Â_conv v)) tm
+	end
+);
+=TEX
 Some further generalities about sequences are useful.
 The following theorem says that an arbitrary interleaving of two
 sequences that converge to the same limit itself converges to that limit:
@@ -1844,6 +1879,18 @@ a(rewrite_tac[]);
 a(cases_tac¬î¯ 0 ¼ (s (n' + n) + ~c)® THEN cases_tac ¬î¯ 0 ¼ s (n' + n) + ~b® THEN
 	asm_rewrite_tac[¯_abs_def] THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
 val Ûlim_seq_unique_thmÝ = save_pop_thm "lim_seq_unique_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬µs c· s -> c ´ (Ìm· s(m+1) - s m) -> î¯ 0®);
+a(REPEAT strip_tac);
+a(TOP_ASM_T (strip_asm_tac o once_rewrite_rule[µ_elim¬1®lim_seq_shift_thm]));
+a(rewrite_tac[] THEN conv_tac(LEFT_C Ì_un_Â_rands_conv));
+a(pure_once_rewrite_tac[prove_rule[]¬î¯ 0 = c + ~c®]);
+a(bc_thm_tac plus_lim_seq_thm THEN REPEAT strip_tac);
+a(bc_thm_tac minus_lim_seq_thm THEN REPEAT strip_tac);
+val Ûlim_seq_diffs_tend_to_0_thmÝ = save_pop_thm "lim_seq_diffs_tend_to_0_thm";
 =TEX
 %%%%
 %%%%
@@ -2075,20 +2122,6 @@ set_goal([], ¬µt· Abs CtsAt t®);
 a(rewrite_tac[cts_lim_seq_thm] THEN REPEAT strip_tac);
 a(all_fc_tac[abs_lim_seq_thm]);
 val Ûabs_cts_thmÝ = save_pop_thm "abs_cts_thm";
-=TEX
-%%%%
-%%%%
-=SML
-fun Ûun_Â_convÝ (v : TERM) : CONV = (fn tm =>
-	let	val lhs = mk_app(mk_Ì(v, tm), v);
-	in	eq_sym_rule (Â_conv lhs)
-	end
-);
-val ÛÌ_un_Â_rands_convÝ : CONV = (fn tm =>
-	let	val (v, _) = dest_Ì tm;
-	in	SIMPLE_Ì_C (RANDS_C (un_Â_conv v)) tm
-	end
-);
 =TEX
 %%%%
 %%%%
@@ -5400,6 +5433,22 @@ val Ûseries_power_series_thmÝ = save_pop_thm "series_power_series_thm";
 %%%%
 %%%%
 =SML
+set_goal([], ¬µs1 s2· Series (Ìm·s1 m + s2 m) = (Ìn· Series s1 n + Series s2 n)®);
+a(REPEAT strip_tac THEN induction_tac¬x:î® THEN asm_rewrite_tac[series_def]);
+a(PC_T1 "¯_lin_arith" prove_tac[]);
+val Ûplus_series_thmÝ = save_pop_thm "plus_series_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬µs c· Series (Ìm·c * s m) = (Ìn·c * Series s n)®);
+a(REPEAT strip_tac THEN induction_tac¬x:î® THEN asm_rewrite_tac[series_def]);
+a(PC_T1 "¯_lin_arith" prove_tac[]);
+val Ûconst_times_series_thmÝ = save_pop_thm "const_times_series_thm";
+=TEX
+%%%%
+%%%%
+=SML
 set_goal([], ¬(Ìm· î¯ (m+1) ›-›1) -> î¯ 0®);
 a(rewrite_tac[lim_seq_def] THEN REPEAT strip_tac);
 a(all_fc_tac[¯_archimedean_recip_thm]);
@@ -5520,15 +5569,40 @@ a(bc_thm_tac minus_lim_seq_thm);
 a(bc_thm_tac( rewrite_rule[]
 	(once_rewrite_rule[µ_elim¬1® lim_seq_shift_thm] lim_seq_¯_î_exp_eq_0_thm)));
 a(REPEAT strip_tac);
-val Ûgeometric_series_lim_seq_thmÝ = save_pop_thm "geometric_series_lim_seq_thm";
+val Ûgeometric_series_thmÝ = save_pop_thm "geometric_series_thm";
 =TEX
-A bounded sequence for which the difference between successive terms tends to
-zero is convergent.
+A simpler formula for a geometric series is often useful:
 %%%%
 %%%%
 =SML
 set_goal([], ¬
-	µu X s· 
+	µx· (Ìn· PowerSeries (Ìm·î¯ 1) n x) = Series (Ìm·x^m)
+®);
+a(REPEAT strip_tac THEN rewrite_tac[power_series_def]);
+a(induction_tac¬x':î® THEN rewrite_tac[series_def, poly_eval_def, to_def]);
+a(asm_rewrite_tac [poly_eval_append_thm, length_to_thm, poly_eval_def]);
+val Ûgeometric_series_series_thmÝ = save_pop_thm "geometric_series_series_thm";
+=TEX
+The theorem about the convergence of a geometric series then simplifies:
+%%%%
+%%%%
+=SML
+set_goal([], ¬
+	µx· 
+	~(î¯ 1) < x ± x < î¯ 1
+´	Series (Ìm·x^m) -> î¯ 1 / (î¯ 1 - x)
+®);
+a(ante_tac geometric_series_thm THEN rewrite_tac[geometric_series_series_thm]);
+val Ûgeometric_series_thm1Ý = save_pop_thm "geometric_series_thm1";
+=TEX
+The Weierstrass uniform convergence test: a series of functions with absolute
+values dominated by a convergent series on some set of values converges uniformly
+to a limit function on that set.
+%%%%
+%%%%
+=SML
+set_goal([], ¬
+	µu X s c· 
 	(µm x·x  X ´ Abs(u m x) ¼ s m)
 ±	(Series s -> c)
 ´	¶f· ((Ìm·Ìx·Series (Ìm·u m x) m) ---> f) X
@@ -5585,6 +5659,212 @@ a(LIST_DROP_NTH_ASM_T [2] (ALL_FC_T rewrite_tac));
 a(GET_NTH_ASM_T 3 bc_thm_tac THEN REPEAT strip_tac);
 val Ûweierstrass_test_thmÝ = save_pop_thm "weierstrass_test_thm";
 =TEX
+The comparison test: a series whose absolute values are dominated by a convergent
+series is convergent (this is often stated in the special case when the dominated series
+is a series of non-negative values, but the general case is just as easy in the present context):
+%%%%
+%%%%
+=SML
+set_goal([], ¬
+	µs1 s2 c2· 
+	(µm·Abs(s1 m) ¼ s2 m)
+±	(Series s2 ->  c2)
+´	¶c1· Series s1 -> c1
+®);
+a(REPEAT strip_tac);
+a(ante_tac (list_µ_elim [¬Ìm; x:¯·s1 m®, ¬Universe:¯ SET®, ¬s2®, ¬c2®] weierstrass_test_thm));
+a(asm_rewrite_tac[lim_seq_def, unif_lim_seq_def, µ_elim¬s1® È_axiom] THEN REPEAT strip_tac);
+a(¶_tac¬f x® THEN REPEAT strip_tac);
+a(LIST_DROP_NTH_ASM_T [2] all_fc_tac);
+a(¶_tac¬n® THEN REPEAT strip_tac);
+a(DROP_NTH_ASM_T 2 bc_thm_tac THEN REPEAT strip_tac);
+val Ûcomparison_test_thmÝ = save_pop_thm "comparison_test_thm";
+=TEX
+The next theorem gives the identity relating a series to a trailing subseries:
+%%%%
+%%%%
+=SML
+set_goal([], ¬
+	µn s· (Series (Ìm· s (m + n))  = Ìm·Series s (m+n) - Series s n)
+®);
+a(REPEAT strip_tac);
+a(induction_tac¬x:î®);
+(* *** Goal "1" *** *)
+a(rewrite_tac[series_def]);
+(* *** Goal "2" *** *)
+a(asm_rewrite_tac[series_def]);
+a(rewrite_tac[pc_rule1"lin_arith" prove_rule[]¬(x+1)+n=(x+n)+1®, series_def]);
+a(PC_T1 "¯_lin_arith" asm_prove_tac[]);
+val Ûseries_shift_thmÝ = save_pop_thm "series_shift_thm";
+=TEX
+A series is convergent iff. some trailing subseries is convergent.
+We first state and prove this with an explicit formula for the limit:
+%%%%
+%%%%
+=SML
+set_goal([], ¬
+	µn s x· 
+	(Series s ->  x)
+¤	(Series (Ìm· s (m + n)) -> x - Series s n)
+®);
+a(REPEAT µ_tac);
+a(rewrite_tac[series_shift_thm]);
+a(conv_tac(LEFT_C(once_rewrite_conv[µ_elim¬n® lim_seq_shift_thm])));
+a(rewrite_tac[lim_seq_def]);
+a(rewrite_tac[pc_rule1"¯_lin_arith" prove_rule[]¬µa b c:¯· (a + ~b) + c + b = a + c®]);
+val Ûlim_series_shift_thmÝ = save_pop_thm "lim_series_shift_thm";
+=TEX
+As a technical convenience it is also useful to have a pure existence version of
+the above theorem:
+%%%%
+%%%%
+=SML
+set_goal([], ¬
+	µn s· 
+	(¶x·Series s ->  x)
+¤	(¶x· Series (Ìm· s (m + n)) -> x)
+®);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(¶_tac¬x - Series s n®);
+a(bc_thm_tac lim_series_shift_thm THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(¶_tac¬x + Series s n®);
+a(once_rewrite_tac[µ_elim¬n® lim_series_shift_thm]);
+a(conv_tac (ONCE_MAP_C ¯_anf_conv) THEN REPEAT strip_tac);
+val Ûlim_series_shift_¶_thmÝ = save_pop_thm "lim_series_shift_¶_thm";
+=TEX
+The root test without tears (or roots!). This is usually phrased in terms of the lim sup
+of the $n$-th roots of the terms of the sequence. The form given below is just as
+easy to use in most applications (and better captures the essence of what is actually going
+on, in my opinion). The result has two parts: the first gives the sufficient condition
+for convergence:
+%%%%
+%%%%
+=SML
+set_goal([], ¬
+	µs b m· 
+	î¯ 0 < b ± b  < î¯ 1
+±	(µn·m ¼ n ´ Abs(s n) ¼ b^n)
+´	¶c· Series s -> c
+®);
+a(REPEAT strip_tac);
+a(once_rewrite_tac[µ_elim¬m®lim_series_shift_¶_thm]);
+a(bc_thm_tac comparison_test_thm);
+a(¶_tac¬(î¯ 1 / (î¯ 1 + ~ b)) *  b^m® THEN ¶_tac ¬Ìk·b ^(k + m)® THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(rewrite_tac[] THEN POP_ASM_T bc_thm_tac THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(rewrite_tac[¯_î_exp_plus_thm]);
+a(once_rewrite_tac[¯_times_comm_thm]);
+a(rewrite_tac[
+	conv_rule(ONCE_MAP_C Â_conv)(µ_elim¬Ìk·b^k® const_times_series_thm)]);
+a(conv_tac (LEFT_C Ì_un_Â_rands_conv));
+a(bc_thm_tac times_lim_seq_thm);
+a(rewrite_tac[const_lim_seq_thm]);
+a(lemma_tac¬~(î¯ 1) < b® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(rewrite_tac[µ_elim¬Series (Ì k· b ^ k)®È_axiom]);
+a(ALL_FC_T rewrite_tac[rewrite_rule[]geometric_series_thm1]);
+val Ûroot_test_thmÝ = save_pop_thm "root_test_thm";
+=TEX
+The second part of our version of the root test is the partial converse
+of the first part.
+%%%%
+%%%%
+=SML
+set_goal([], ¬
+	µs c· 
+	Series s -> c
+´	¶b m· î¯ 0 < b ± b ¼ î¯ 1
+±	(µn·m ¼ n ´ Abs(s n) ¼ b^n)
+®);
+a(REPEAT strip_tac);
+a(all_fc_tac[lim_seq_diffs_tend_to_0_thm]);
+a(POP_ASM_T ante_tac THEN POP_ASM_T discard_tac);
+a(rewrite_tac[series_def] THEN conv_tac(ONCE_MAP_C ¯_anf_conv));
+a(rewrite_tac[lim_seq_def] THEN REPEAT strip_tac);
+a(POP_ASM_T (strip_asm_tac o µ_elim¬î¯ 1®));
+a(¶_tac¬î¯ 1® THEN ¶_tac¬n® THEN REPEAT strip_tac);
+a(rewrite_tac[¯_î_exp_0_1_thm]);
+a(rewrite_tac[¯_¼_def] THEN ²_left_tac);
+a(DROP_NTH_ASM_T 2 bc_thm_tac THEN REPEAT strip_tac);
+val Ûroot_test_thm1Ý = save_pop_thm "root_test_thm1";
+=TEX
+The ratio test (again without tears, but with ratios!): this is generally formulated
+using lim sups or even limits, but neither is necessary: we just need to know that
+the ratios are eventually all bounded below 1.
+%%%%
+%%%%
+=SML
+set_goal([], ¬
+	µs b n·
+	(µm·³s m = î¯ 0)
+±	î¯ 0 < b ± b < î¯ 1
+±	(µm·n ¼ m ´ Abs(s (m+1) / s m) < b)
+´	¶c · Series s -> c
+®);
+a(REPEAT strip_tac);
+a(lemma_tac¬µi·î¯ 0 < Abs(s i)®);
+(* *** Goal "1" *** *)
+a(REPEAT strip_tac);
+a(strip_asm_tac (µ_elim¬s i® ¯_0_¼_abs_thm));
+a(DROP_NTH_ASM_T 5 (strip_asm_tac o µ_elim¬i®));
+a(lemma_tac¬³Abs(s i ) = î¯ 0® THEN1 asm_rewrite_tac[¯_abs_eq_0_thm]);
+a(PC_T1 "¯_lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a( lemma_tac¬µm i·n ¼ m ´ Abs(s(m + i)) ¼ b^i*Abs(s m)®);
+(* *** Goal "2.1" *** *)
+a(REPEAT strip_tac THEN induction_tac¬i:î® THEN rewrite_tac[¯_î_exp_def]);
+a(rewrite_tac[¯_¼_def] THEN ²_left_tac);
+a(lemma_tac¬n ¼ m + i® THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(DROP_NTH_ASM_T 5 (ante_tac o µ_elim¬m + i®));
+a(DROP_NTH_ASM_T 7 (strip_asm_tac o µ_elim¬m + i®));
+a(rewrite_tac[plus_assoc_thm]);
+a(ALL_FC_T rewrite_tac[¯_over_times_recip_thm]);
+a(rewrite_tac[¯_abs_times_thm, ¯_times_assoc_thm]);
+a(ALL_FC_T rewrite_tac[¯_abs_recip_thm] THEN REPEAT strip_tac);
+a(bc_thm_tac ¯_less_¼_trans_thm THEN ¶_tac¬b*(Abs(s(m+i)))® THEN REPEAT strip_tac);
+(* *** Goal "2.1.1" *** *)
+a(lemma_tac¬³Abs(s(m+i) ) = î¯ 0® THEN1 asm_rewrite_tac[¯_abs_eq_0_thm]);
+a(DROP_NTH_ASM_T 7 (strip_asm_tac o µ_elim¬m + i®));
+a(lemma_tac¬î¯ 0 < Abs(s(m+i))›-›1® THEN1 all_fc_tac[¯_0_less_0_less_recip_thm]);
+a(ALL_FC_T1 fc_¤_canon once_rewrite_tac
+	[µ_elim¬Abs(s(m+i))›-›1® ¯_times_mono_¤_thm]);
+a(once_rewrite_tac[pc_rule1"¯_lin_arith" prove_rule[]
+	¬µa b c d e:¯·a * b < c * d * e ¤ b * a < d * c * e®]);
+a(ALL_FC_T asm_rewrite_tac[¯_recip_clauses]);
+(* *** Goal "2.1.2" *** *)
+a(bc_thm_tac ¯_¼_times_mono_thm THEN REPEAT strip_tac);
+a(asm_rewrite_tac[¯_¼_def]);
+(* *** Goal "2.2" *** *)
+a(lemma_tac¬¶i·Abs(s (n+i)) ¼ î¯ 1®);
+(* *** Goal "2.2.1" *** *)
+a(DROP_NTH_ASM_T 1 (strip_asm_tac o rewrite_rule[] o µ_elim¬n®));
+a(DROP_NTH_ASM_T 2 (strip_asm_tac o µ_elim¬n®));
+a(lemma_tac¬î¯ 0 < Abs(s n)›-›1® THEN1 all_fc_tac[¯_0_less_0_less_recip_thm]);
+a(lemma_tac¬¶j·b ^ j < Abs(s n)›-›1® THEN1 
+	(bc_thm_tac ¯_î_exp_tends_to_0_thm THEN REPEAT strip_tac));
+a(¶_tac ¬j® THEN REPEAT strip_tac);
+a(bc_thm_tac ¯_¼_trans_thm THEN ¶_tac¬b^j*Abs(s n)® THEN asm_rewrite_tac[]);
+a(lemma_tac ¬³Abs(s n) = î¯ 0® THEN1 asm_rewrite_tac[¯_abs_eq_0_thm]);
+a(LEMMA_T ¬î¯ 1 = Abs(s n)›-›1 * Abs(s n)® rewrite_thm_tac
+	THEN1 ALL_FC_T rewrite_tac[¯_recip_clauses]);
+a(once_rewrite_tac [¯_times_comm_thm] THEN bc_thm_tac ¯_¼_times_mono_thm);
+a(asm_rewrite_tac[¯_¼_def]);
+(* *** Goal "2.2.2" *** *)
+a(once_rewrite_tac[µ_elim¬n+i® lim_series_shift_¶_thm]);
+a(bc_thm_tac root_test_thm);
+a(¶_tac¬0® THEN ¶_tac¬b® THEN rewrite_tac[] THEN REPEAT strip_tac);
+a(LIST_SPEC_NTH_ASM_T 2 [¬n+i®, ¬n'®] ante_tac);
+a(rewrite_tac[pc_rule1 "lin_arith" prove_rule[]¬(n + i) + n' = n' + n + i®]);
+a(REPEAT strip_tac THEN bc_thm_tac ¯_¼_trans_thm THEN
+	¶_tac¬b^n' * Abs(s(n+i))® THEN REPEAT strip_tac);
+a(conv_tac(RIGHT_C (once_rewrite_conv[prove_rule[]¬b^n' = b^n'* î¯ 1®])));
+a(bc_thm_tac ¯_¼_times_mono_thm);
+a(REPEAT strip_tac THEN asm_rewrite_tac[¯_¼_def]);
+a(ALL_FC_T rewrite_tac[¯_î_exp_less_mono_thm]);
+val Ûratio_test_thmÝ = save_pop_thm "ratio_test_thm";
+=TEX
 \subsection{Epilogue}
 =TEX
 %%%%
@@ -5596,5 +5876,3 @@ output_theory{out_file="analysis.th.doc", theory="-"};
 {\small\printindex}
 \end{document}
 =IGN
-conv_rule(TRY_C (ONCE_MAP_C ¯_anf_conv))
-	(rewrite_conv[deriv_coeffs_def, plus_coeffs_def]¬DerivCoeffs[x1; x2; x3; x4]®);
