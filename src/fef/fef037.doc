@@ -85,19 +85,18 @@ lists of ".doc" and ".tex" files.
 #	order for the files.  From this list we derive the
 #	lists of ".doc" and ".tex" files.
 
-LIBSMLFILES =	dtd071.sml \
-		imp071.sml \
-		dtd072.sml \
-		imp072.sml \
-		dtd073.sml \
-		imp073.sml \
-		dtd074.sml \
-		imp074.sml
 
-SMLFILES =	fef003.sml \
+SMLFILES =	feflib1.sml \
+		fef003.sml \
 		fef004.sml \
 		fef005.sml \
-		fef006.sml 
+		fef006.sml \
+		fef007.sml \
+		fef009.sml \
+		fef010.sml \
+		fef011.sml \
+		fef012.sml \
+		fef013.sml
 
 
 
@@ -111,7 +110,7 @@ ARCH:sh = echo `arch`
 HOLDB = $(ARCH)hol.db
 FEFDB = $(ARCH)fef.db
 DIR	= /hat/projects/fef
-MLDBASE = $(DIR)/build/ML_dbase
+MLDBASE = $(DIR)/from_ied/poly_2.04/ML_dbase
 SDIR	= $(DIR)/SCCS
 SCCSGET	= sccs -d $(DIR) get
 
@@ -120,6 +119,9 @@ SCCSGET	= sccs -d $(DIR) get
 #	Pattern matching rules
 
 .SUFFIXES: .doc .sml .tex .sh .dvi 
+%th.tex: %.doc
+	hol_list -d $(FEFDB) $* > $*th.doc
+	doctex $*th
 
 %.tex: %.doc
 	doctex $*
@@ -128,10 +130,12 @@ SCCSGET	= sccs -d $(DIR) get
 	docsml $*
 
 %.dvi: %.tex
+	$(MAKE) -f fef.mkf $*th.tex 
 	texdvi $*
 	- bibtex $*
 	texdvi $*
 	texdvi $*
+
 
 
 #######################################
@@ -192,10 +196,11 @@ $(SMLFILES:.sml=) : $$@.tex
 #	Form the fef database from the source files
 
 $(FEFDB) : $(SMLFILES) makefef.sh
+	- chmod u+w $(HOLDB)
+	- changeParent $(HOLDB) $(MLDBASE)
+	hol_make_database -f -p hol#fin_set fef
 	- chmod u+w $(FEFDB)
-	cp $(HOLDB) $(FEFDB)
-	- changeParent $(FEFDB) $(MLDBASE)
-	makefef.sh -w -d $(FEFDB) -s "Built by makefile" $(LIBSMLFILES) $(SMLFILES)
+	makefef.sh -w -d $(FEFDB) -s "Built by makefile"  $(SMLFILES)
 	- discgarb $(FEFDB)
 	chmod -w $(FEFDB)
 
@@ -263,7 +268,7 @@ system.  The following options are provided.
 \end{description}
 
 Note that we direct standard error to standard output when we run
-poly.  This is because it checks that the three standard streams are in
+poly (via script hol).  This is because it checks that the three standard streams are in
 working order whenever it is called. With the redirection we can run
 this script off-line, provided the standard output is redirected.
 
@@ -347,8 +352,8 @@ do
 		);
 EOF
 	fi
-	echo "$command; PolyML.commit(); PolyML.quit();"
-	) | poly `pwd`'/'$database 2>&1
+	echo "$command; save_and_quit();"
+	) | hol -d $database -i fef_initialisation.sml 2>&1
 
 	cat .makefef.log_file >> .makefef.compile_summary
 
@@ -358,7 +363,7 @@ done
 #	If this is an incremental build then the tie-off code is
 #	only wanted if the "-t" option was given.
 
-#       Here we build an input stream for "poly" over several lines of
+#       Here we build an input stream for "poly" (embedded in script "hol") over several lines of
 #	shell script, delimited by "##Start" and "##End".
 
 (	##Start
@@ -376,7 +381,7 @@ done
 
 	echo "rev(!fefversions); save_and_quit();"
 	##End
-) | poly `pwd`'/'$database 2>&1
+) | hol -d $database -i fef_initialisation.sml 2>&1
 
 if test $collect = "y"
 then
@@ -404,7 +409,10 @@ rm -f .makefef.compile_summary .makefef.log_file
 =SH
 chmod +x makefef.sh
 =TEX
-
+Initialisation script to reload local proof contexts:
+=DUMP fef_initialisation.sml
+use_string("reload_local_proof_contexts ();") handle _ => ();
+=TEX
 
 \twocolumn[\section{INDEX} \label{INDEX}]
 \small
