@@ -1,8 +1,12 @@
     $Date$ $Id$ %Z% 
-sccs get fef037.doc pp_compile load_fef_files.sml
-chmod u+x pp_compile
+% first time do this:
+sccs get fef037.doc
 sieve sml < fef037.doc
-cp fef.mkf makefile
+make Makefile
+
+% when updating the makefile just:
+sccs get fef037.doc
+make Makefile
 =TEX
 \documentstyle[hol1,11pt,TQ]{article}
 \ftlinepenalty=9999
@@ -83,12 +87,12 @@ This document contains the literate script of a makefile.
 
 To produce the makefile, enter 
 =GFT
-sccs get fef037.doc pp_compile load_fef_files.sml
-chmod u+x pp_compile
+sccs get fef037.doc
 sieve sml < fef037.doc
+make Makefile
 =TEX
 
-=DUMP fef.mkf
+=DUMP Makefile
 # $Id$ %Z%
 # Built from fef037.doc
 #
@@ -98,7 +102,7 @@ sieve sml < fef037.doc
 =TEX
 
 This list of options will be dumped to the screen if the
-makefile $fef.mkf$ is called with no arguments. 
+makefile $Makefile$ is called with no arguments. 
 
 =DUMP mkf.help
 
@@ -110,7 +114,7 @@ f.prt		print "f.dvi" using pstex
 f.th		creates a theory in a hol database using file f.sml
 fef.db	build the initial fef database
 fefsml.db	load the SML query transformations and output filter
-makefile	extracts fef.mkf and copies to "makefile"
+Makefile	extracts makefile from fef037.doc
 allth		make all hol theories for phase 1 and 2
 fef009.th	make all hol theories up to phase 1 unwinding result	
 fef015.th	make all phase 1 hol theories 	
@@ -119,9 +123,8 @@ alldvi	make all .dvi files
 allprt	print all .dvi files
 all		allth  alldvi
 listall	produces a dvi file of a complete theory listing
-fef.mkf	extracts makefile from fef037.doc as fef.mkf
 =TEX
-=DUMPMORE fef.mkf
+=DUMPMORE Makefile
 €default› : 
 	cat mkf.help
 =TEX
@@ -129,7 +132,7 @@ fef.mkf	extracts makefile from fef037.doc as fef.mkf
 \subsection{Definitions}
 
 
-=DUMPMORE fef.mkf
+=DUMPMORE Makefile
 # files for which no theory will be created
 FEFDOCS		= fef001.doc fef002.doc fef037.doc fef016.doc fef018.doc \
 				fef041.doc fef045.doc fef046.doc fef047.doc
@@ -146,14 +149,17 @@ FEFTHYDOCS	= fef003.doc fef004.doc fef005.doc fef014.doc fef006.doc \
 XWRKDOCS		= wrk044.doc wrk046.doc
 # work files which are not part of PP 0.4
 WRKDOCS		= wrk049.doc wrk057.doc
+# other files to be obtained from SCCS
+OTHERSCCS		= pp_compile load_fef_files.sml
 ALLFEFDOCS 	= $(FEFDOCS) $(FEFSMLDOCS) $(FEFTHYDOCS)
 # all fef sml files 
 FEFSMLFILES 	= $(FEFTHYDOCS:.doc=.sml) $(FEFSMLDOCS:.doc=.sml)
 # all files which may be printed by this makefile
 PRTFILES 		= $(ALLFEFDOCS:.doc=.prt)   
 # files which will be kept under sccs control
-SCCSFILES		= $(ALLFEFDOCS) $(WRKDOCS) \
-			 fef030.doc fef030_slides.doc fef017.doc fef.bib
+SCCSFILES		= $(ALLFEFDOCS) $(WRKDOCS) $(OTHERSCCS) \
+			 fef030.doc fef030_slides.doc fef017.doc fef.bib \
+			 README
 
 # Set the make variable INSTALLDIR to the environment variable $INSTALLDIR
 # which should be set to the pp installation directory before calling make.
@@ -167,7 +173,7 @@ FEF 			= fef
 HOLDB 		= $(ARCH)hol.db
 FEFDB 		= $(ARCH)fef.db
 WDIR:sh		= echo `pwd`
-DIR			= /hat/projects/fef
+DIR			= $(WDIR)/..
 SDIR			= $(DIR)/SCCS
 SCCSGET		= sccs -d $(DIR) get
 =TEX
@@ -175,7 +181,7 @@ SCCSGET		= sccs -d $(DIR) get
 \subsection{Processing Documents Which Have No Associated Theory Listing}
 
 These documents will only be processed by \LaTeX.
-=DUMPMORE fef.mkf
+=DUMPMORE Makefile
 FEFTEX = $(FEFSMLDOCS:.doc=.tex) $(FEFDOCS:.doc=.tex)
 FEFDVI = $(FEFSMLDOCS:.doc=.dvi) $(FEFDOCS:.doc=.dvi)
 FEFDVIO = $(ALLFEFDOCS:.doc=.dvio)
@@ -183,7 +189,7 @@ FEFDVIO = $(ALLFEFDOCS:.doc=.dvio)
 $(FEFTEX) : $$(@:.tex=.doc)
 	doctex $(@:.tex=)
 
-%.dvi : $$(@:.dvi=.tex) fef.bib
+$(FEFDVI) : $$(@:.dvi=.tex) fef.bib
 	texdvi $(@:.dvi=)
 	- bibtex $(@:.dvi=)
 	texdvi $(@:.dvi=)
@@ -197,7 +203,7 @@ $(FEFDVIO) : $$(@:.dvio=.tex) fef.bib
 \subsection{Processing Theory Documents}
 These documents all create SML files. Those which create hol
 theories create theory listings to be included in the \LaTeX{} processing.
-=DUMPMORE fef.mkf
+=DUMPMORE Makefile
 ALLSML = $(FEFSMLFILES) $(XWRKDOCS:.doc=.sml) $(WRKDOCS:.doc=.sml)
 THYTEX = $(FEFTHYDOCS:.doc=.tex) 
 
@@ -220,11 +226,9 @@ $(THYDVI) : $$(@:.dvi=.tex) fef.bib $$(@:.dvi=th.doc)
 
 \subsection{Fetching External Documents}
 
-The work files wrk044.doc and wrk046.doc are to be found in the installation directory,
-not in the fef SCCS directory.
+The work files wrk044.doc and wrk046.doc are to be found in the installation directory, not in the fef SCCS directory.
 
-=DUMPMORE fef.mkf
-
+=DUMPMORE Makefile
 wrk044.doc : 
 	cp $(INSTALLDIR)/docs/wrk044.doc $(WDIR)
 
@@ -235,14 +239,14 @@ wrk046.doc :
 
 Pattern matching rules.
 
-=DUMPMORE fef.mkf
+=DUMPMORE Makefile
 .SUFFIXES: .prt  
 
 %.prt: %.dvi
 	pstex $*
 =TEX
 Produce a theory listing.
-=DUMPMORE fef.mkf
+=DUMPMORE Makefile
 %th.doc: %.th
 	hol_list -d $(FEF) $* > $*th.doc
 	
@@ -256,24 +260,20 @@ Produce a theory listing.
 Get any necessary files from SCCS control.
 Note that the SCCS directory is the project directory, not necessarily "./SCCS".
 
-=DUMPMORE fef.mkf
+=DUMPMORE Makefile
 $(SCCSFILES) : $(DIR)/SCCS/s.$$@
 	$(SCCSGET) $@
 =TEX
 
 \subsection{Makefile}
 
-Extract a new version of fef.mkf from fef037.doc. 
+Extract a new version of Makefile from fef037.doc. 
 
-=DUMPMORE fef.mkf
-€fef.mkf› : fef037.doc pp_compile load_fef_files.sml
+=DUMPMORE Makefile
+€Makefile› : fef037.doc pp_compile load_fef_files.sml
 	chmod u+x pp_compile
 	sieve sml < fef037.doc
 
-# copy the makefile $fef.mkf$ to $makefile$
-
-€makefile› : fef.mkf
-	cp fef.mkf makefile
 =TEX
 
 \subsection{Making Databases}
@@ -284,7 +284,7 @@ corresponding work file documents
 and loaded into a \ProductHOL\ database. ($db\_made$ acts as a flag
 signalling whether the initial fef database has been created.)
 
-=DUMPMORE fef.mkf
+=DUMPMORE Makefile
 db_made : wrk044.sml wrk046.sml wrk049.sml
 	pp_make_database -f -p $(HOL)#fin_set $(FEF)#cache_thms
 	pp_compile -d $(FEF) -i load_fef_files -c wrk044.sml,wrk046.sml,wrk049.sml
@@ -299,7 +299,7 @@ This entry loads the SML  specifications
 of the SSQL query transformations and output filter into
 a \ProductHOL\ database.
 
-=DUMPMORE fef.mkf
+=DUMPMORE Makefile
 # Create a database with just the SML query transformations and output filter
 smldb_made :  fef019.sml fef020.sml fef023.sml
 	pp_make_database -f -p $(HOL) fefsml 
@@ -315,7 +315,7 @@ smldb_made :  fef019.sml fef020.sml fef023.sml
 \subsection{Creating Theories}
 
 This section records dependencies between theories.
-=DUMPMORE fef.mkf
+=DUMPMORE Makefile
 fef003.th: fef003.sml db_made
 	pp_compile -d $(FEF) -i load_fef_files -c fef003.sml
 	touch fef003.th
@@ -441,7 +441,7 @@ wrk057.th: wrk057.sml db_made
 
 \subsection{Making Documents}
 
-=DUMPMORE fef.mkf
+=DUMPMORE Makefile
 
 fef045.dvi:	wrk057th.tex fef040th.tex fef042th.tex fef043th.tex
 	doctex $(@:.dvi=)th
@@ -456,7 +456,7 @@ fef045.dvi:	wrk057th.tex fef040th.tex fef042th.tex fef043th.tex
 
 In general the entry {\tt}all {\it suffix} causes all files with suffix {\it suffix} to be created.
 
-=DUMPMORE fef.mkf
+=DUMPMORE Makefile
 €allth›	: $(FEFTHYDOCS:.doc=.th)
 €allsml›	: $(ALLSML)
 €alldoc›	: $(ALLFEFDOCS)
@@ -470,7 +470,7 @@ In general the entry {\tt}all {\it suffix} causes all files with suffix {\it suf
 Documents $fef030.doc$ and $fef030\_slides.doc$ create slides which
 were produced for a presentation on the Phase I formal treatment.
 
-=DUMPMORE fef.mkf
+=DUMPMORE Makefile
 €fef030.dvi› : fef030.doc fef030_slides.doc
 	doctex fef030 fef030_slides
 	slitex fef030
@@ -478,7 +478,7 @@ were produced for a presentation on the Phase I formal treatment.
 \subsection{Complete $fef$ Theory Listing}
 Produce a dvi file which is a listing of all \Product{} and fef theories. 
 This may be viewed by $dvipage\ fef017$.
-=DUMPMORE fef.mkf
+=DUMPMORE Makefile
 €listall› : fef017.doc
 	hol_list -d fef `hol_list -d fef` > ! all_theories.doc&
 	doctex all_theories
@@ -503,7 +503,7 @@ Rule $allclean$ removes all recreatable files, i.e., those which can be
 derived from the SCCS directory or the installation directory, which 
 is all of the above files.
 
-=DUMPMORE fef.mkf
+=DUMPMORE Makefile
 €allclean›: texclean sccsclean workclean derivedclean
 
 €texclean› :
