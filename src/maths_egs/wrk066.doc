@@ -1494,6 +1494,38 @@ a(rewrite_tac [ÓØ_less_thm]);
 a(PC_T1 "lin_arith" prove_tac[]);
 val €Ø_archimedean_times_thm› = save_pop_thm "Ø_archimedean_times_thm";
 =TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µx y∑ÓØ 0 < d ± ÓØ 0 º y ¥ ∂q r∑ y = ÓØ q * d + r ± ÓØ 0 º r ± r < dÆ);
+a(REPEAT strip_tac);
+a(lemma_tac¨µm y∑ÓØ 0 º  y ± y < ÓØ m * d ¥ ∂q r∑ y = ÓØ q * d + r ± ÓØ 0 º r ± r < dÆ);
+(* *** Goal "1" *** *)
+a(POP_ASM_T discard_tac THEN strip_tac THEN induction_tac¨m:ÓÆ);
+(* *** Goal "1.1" *** *)
+a(rewrite_tac[] THEN REPEAT strip_tac THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "1.2" *** *)
+a(REPEAT strip_tac);
+a(cases_tac¨y < dÆ);
+(* *** Goal "1.2.1" *** *)
+a(∂_tac¨0Æ THEN ∂_tac¨yÆ THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "1.2.2" *** *)
+a(DROP_NTH_ASM_T 2 (strip_asm_tac o rewrite_rule[ÓØ_plus_homomorphism_thm]));
+a(lemma_tac¨ÓØ 0 º y + ~d Æ	THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(all_fc_tac[pc_rule1 "Ø_lin_arith" prove_rule[]¨µa ∑ y < (a + ÓØ 1) * d ¥ y + ~d< a * dÆ]);
+a(LIST_DROP_NTH_ASM_T [6] all_fc_tac);
+a(∂_tac¨q + 1Æ THEN ∂_tac¨rÆ THEN
+	rewrite_tac[ÓØ_plus_homomorphism_thm, Ø_times_plus_distrib_thm]
+	THEN REPEAT strip_tac);
+(* *** Goal "1.2.2.1" *** *)
+a(all_fc_tac[pc_rule1 "Ø_lin_arith" prove_rule[]¨µa ∑ y + ~d  = a *d + r¥y = (a*d+d)+rÆ]);
+(* *** Goal "2" *** *)
+a(lemma_tac ¨∂m∑ y < ÓØ m * dÆ THEN1
+	(bc_thm_tac Ø_archimedean_times_thm THEN REPEAT strip_tac));
+a(LIST_DROP_NTH_ASM_T [2] all_fc_tac);
+a(∂_tac¨qÆ THEN ∂_tac¨rÆ THEN REPEAT strip_tac);
+val €Ø_archimedean_division_thm› = save_pop_thm "Ø_archimedean_division_thm";
+=TEX
 \subsection{Further Miscellanea}
 =TEX
 %%%%
@@ -6384,8 +6416,9 @@ a(REPEAT strip_tac THEN bc_thm_tac unif_lim_seq_unique_thm);
 a(∂_tac¨OpenInterval (~b) bÆ THEN ∂_tac¨PowerSeries sÆ THEN asm_rewrite_tac[]);
 val €power_series_main_thm› = save_pop_thm "power_series_main_thm";
 =TEX
-The main theorem has the following useful consequence for power series that
-are convergent for all positive values of their argument:
+The main theorem has the following useful consequences for power series that
+are convergent for all positive values of their argument. Thefirst consequence
+gives information about uniform convergence:
 %%%%
 %%%%
 =SML
@@ -6406,14 +6439,76 @@ a(all_fc_tac[power_series_main_thm]);
 a(∂_tac¨fÆ THEN ∂_tac¨dfÆ THEN asm_rewrite_tac[]);
 val €power_series_main_thm1› = save_pop_thm "power_series_main_thm1";
 =TEX
+The second consequence of the main theorem just gives information about pointwise convergence.
+It is just what is wanted to justify definitions of functions by differential equation like
+that of the exponential function.
+%%%%
+%%%%
+=SML
+set_goal([], ¨
+	µs∑
+	(µx∑ ÓØ 0 < x ¥ ∂c∑ (Ãm∑ PowerSeries (Ãm∑Abs(s m)) m x) ->  c)
+¥	∂f df∑
+	(µx∑ (Ãm∑PowerSeries s m x) ->  f x)
+±	(µx∑ (Ãm∑PowerSeries (Ãm∑(ÓØ (m+1))*s(m+1)) m x) ->  df x) 
+±	(µx∑ (f HasDeriv df x) x)
+±	f (ÓØ 0) = s 0
+Æ);
+a(REPEAT strip_tac);
+a(lemma_tac¨µz∑∂b∑ÓØ 0 < b ± z ç OpenInterval (~b) bÆ THEN1
+	(strip_tac THEN ∂_tac¨Abs z + ÓØ 1Æ THEN cases_tac¨ÓØ 0 º zÆ THEN
+		asm_rewrite_tac[Ø_abs_def, open_interval_def] THEN
+			PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(lemma_tac¨(∂f∑µy∑ (Ãm∑ PowerSeries s m y) -> f y)
+±	(∂df∑ µy∑ (Ãm∑PowerSeries (Ãm∑(ÓØ (m+1))*s(m+1)) m y) ->  df y) 
+Æ THEN1 (REPEAT strip_tac THEN prove_∂_tac THEN REPEAT strip_tac));
+(* *** Goal "1" *** *)
+a(spec_nth_asm_tac 1 ¨y'Æ  THEN all_asm_fc_tac[power_series_main_thm1]);
+a(∂_tac¨f y'Æ );
+a(all_fc_tac[ unif_lim_seq_pointwise_lim_seq_thm]);
+(* *** Goal "2" *** *)
+a(spec_nth_asm_tac 1 ¨y'Æ  THEN all_asm_fc_tac[power_series_main_thm1]);
+a(∂_tac¨df y'Æ );
+a(all_fc_tac[ unif_lim_seq_pointwise_lim_seq_thm]);
+(* *** Goal "3" *** *)
+a(∂_tac¨fÆ THEN ∂_tac¨dfÆ THEN REPEAT strip_tac);
+(* *** Goal "3.1" *** *)
+a(asm_rewrite_tac[]);
+(* *** Goal "3.2" *** *)
+a(asm_rewrite_tac[]);
+(* *** Goal "3.3" *** *)
+a(spec_nth_asm_tac 3  ¨xÆ  THEN all_asm_fc_tac[power_series_main_thm1]);
+a(bc_thm_tac deriv_local_thm);
+a(∂_tac¨f'Æ THEN ∂_tac¨bÆ THEN ∂_tac¨~bÆ THEN rewrite_tac[
+	prove_rule[open_interval_def] ¨µA B Y∑A < Y ± Y <  B § Y ç OpenInterval A  BÆ]);
+a(GET_NTH_ASM_T 5 (rewrite_thm_tac o rewrite_rule[open_interval_def]));
+a(REPEAT strip_tac);
+(* *** Goal "3.3.1" *** *)
+a(conv_tac eq_sym_conv THEN bc_thm_tac unif_lim_seq_pointwise_unique_thm);
+a(∂_tac¨OpenInterval(~b) bÆ THEN ∂_tac¨PowerSeries sÆ THEN asm_rewrite_tac[]);
+(* *** Goal "3.3.2" *** *)
+a(LIST_DROP_NTH_ASM_T [2] all_fc_tac);
+a(LEMMA_T ¨df x = df' xÆ asm_rewrite_thm_tac);
+a(conv_tac eq_sym_conv THEN bc_thm_tac unif_lim_seq_pointwise_unique_thm);
+a(∂_tac¨OpenInterval(~b) bÆ THEN
+	∂_tac¨PowerSeries  (Ã m∑ ÓØ (m + 1) * s (m + 1))Æ THEN asm_rewrite_tac[]);
+(* *** Goal "3.4" *** *)
+a(POP_ASM_T discard_tac THEN POP_ASM_T (strip_asm_tac o µ_elim¨ÓØ 0Æ));
+a(strip_asm_tac (µ_elim¨sÆ power_series_limit_0_thm));
+a(all_fc_tac[lim_seq_unique_thm]);
+val €power_series_main_thm2› = save_pop_thm "power_series_main_thm2";
+=TEX
 %%%%
 %%%%
 %%%%
 %%%%
 \subsection{Some Special Functions}
 =TEX
-The main theorem has the following useful consequence for power series that
-are convergent for all positive values of their argument:
+We begin our investigation of the exponential function by proving a (very) few elementary
+properties of the factorial function. 
+All we need to know really is that it is always positive and that the ratio $m!/(m+1)!$
+is $1/(m+1$.The following lemma gives a weak lower bound on the growth of the
+factorial function and shows that is always positive.
 %%%%
 %%%%
 =SML
@@ -6434,8 +6529,8 @@ a(bc_thm_tac Ø_º_times_mono_thm THEN REPEAT strip_tac);
 a(rewrite_tac[Ø_º_def, ÓØ_less_thm, ÓØ_one_one_thm]);
 val €factorial_linear_estimate_thm› = save_pop_thm "factorial_linear_estimate_thm";
 =TEX
-The main theorem has the following useful consequence for power series that
-are convergent for all positive values of their argument:
+
+The next lemma says explicitly that factorials are always positive:
 %%%%
 %%%%
 =SML
@@ -6445,7 +6540,7 @@ a(REPEAT strip_tac THEN bc_thm_tac Ø_less_º_trans_thm
 	THEN REPEAT strip_tac);
 val €factorial_0_less_thm› = save_pop_thm "factorial_0_less_thm";
 =TEX
-The following algebraic lemma is the one that will show that the exponential function
+Finally the following lemma is the one that will show that the exponential function
 is its own derivative:
 %%%%
 %%%%
@@ -6461,7 +6556,7 @@ a(rewrite_tac[Ø_times_assoc_thm1]);
 a(ALL_FC_T rewrite_tac[Ø_recip_clauses]);
 val €exp_deriv_lemma› = save_pop_thm "exp_deriv_lemma";
 =TEX
-We can now show using tjhe ratio test and some calculations that the usual series
+We can now show using the ratio test and some calculations that the usual series
 for the exponential converges for all positive arguments:
 %%%%
 %%%%
@@ -6544,83 +6639,28 @@ a(bc_thm_tac times_lim_seq_thm THEN rewrite_tac[const_lim_seq_thm]);
 a(rewrite_tac[rewrite_rule[](µ_elim¨ÓØ 0Æ lim_seq_recip_Ó_thm)]);
 val €exp_series_convergence_thm› = save_pop_thm "exp_series_convergence_thm";
 =TEX
-The main theorem justifying the consistency of the definition by the differential equations
+The main theorem justifying the consistency of the definition by the differential equation
 of the exponential function:
 %%%%
 %%%%
-=SML
-set_goal([], ¨
-	µs b∑
-	ÓØ 0 <  b
-¥	∂f∑
-	(PowerSeries (Ãm∑ m ! õ-õ1) ---> f) (OpenInterval (~b) b)
-±	(µy∑ y ç OpenInterval (~b) b ¥ (f HasDeriv f y) y)
-±	f (ÓØ 0) = ÓØ 1
-Æ);
-a(REPEAT strip_tac);
-a(ante_tac exp_series_convergence_thm);
-a(pure_once_rewrite_tac[ prove_rule[]¨µm∑
-	m ! õ-õ1 = (Ãm∑ m ! õ-õ1) m
-Æ]);
-a(REPEAT strip_tac);
-a(all_fc_tac[power_series_main_thm1]);
-a(DROP_NTH_ASM_T 2 ante_tac THEN rewrite_tac[exp_deriv_lemma]);
-a(REPEAT strip_tac THEN ∂_tac¨fÆ THEN REPEAT strip_tac);
-(* *** Goal "1" *** *)
-a(all_fc_tac[unif_lim_seq_unique_thm]);
-a(POP_ASM_T discard_tac THEN asm_rewrite_tac[]);
-a(DROP_NTH_ASM_T 4  bc_thm_tac THEN REPEAT strip_tac);
-(* *** Goal "2" *** *)
-a(lemma_tac¨ÓØ 0 ç OpenInterval (~b) bÆ THEN1
-	(rewrite_tac[open_interval_def] THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
-a(all_fc_tac[unif_lim_seq_pointwise_lim_seq_thm]);
-a(ante_tac (µ_elim ¨Ã m∑ m ! õ-õ1Æ power_series_limit_0_thm));
-a(rewrite_tac[factorial_def] THEN REPEAT strip_tac);
-a(all_fc_tac[lim_seq_unique_thm]);
-val €exp_series_main_thm› = save_pop_thm "exp_series_main_thm";
-=TEX
-The following just extracts what we need for the consistency goal:
-%%%%
-%%%%
+
 =SML
 set_goal([], ¨
 	∂f∑
 	(µy∑ (f HasDeriv f y) y)
 ±	f (ÓØ 0) = ÓØ 1
 Æ);
-a(lemma_tac¨µz∑∂b∑ÓØ 0 < b ± z ç OpenInterval (~b) bÆ THEN1
-	(strip_tac THEN ∂_tac¨Abs z + ÓØ 1Æ THEN cases_tac¨ÓØ 0 º zÆ THEN
-		asm_rewrite_tac[Ø_abs_def, open_interval_def] THEN
-			PC_T1 "Ø_lin_arith" asm_prove_tac[]));
-a(lemma_tac¨∂f∑µy∑ (Ãm∑ PowerSeries (Ã m∑ m ! õ-õ1)  m y) -> f yÆ);
-(* *** Goal "1" *** *)
-a(prove_∂_tac THEN REPEAT strip_tac);
-a(spec_nth_asm_tac 1 ¨y'Æ  THEN all_fc_tac[exp_series_main_thm]);
-a(∂_tac¨f y'Æ );
-a(all_fc_tac[ unif_lim_seq_pointwise_lim_seq_thm]);
-(* *** Goal "2" *** *)
-a(∂_tac¨fÆ THEN REPEAT strip_tac);
-(* *** Goal "2.1" *** *)
-a(spec_nth_asm_tac 2 ¨yÆ  THEN all_fc_tac[exp_series_main_thm]);
-a(LIST_DROP_NTH_ASM_T [2] all_fc_tac);
-a(lemma_tac ¨µz∑ z ç OpenInterval (~b) b ¥ f' z = f zÆ);
-(* *** Goal "2.1.1" *** *)
-a(REPEAT strip_tac THEN bc_thm_tac unif_lim_seq_pointwise_unique_thm);
-a(∂_tac ¨OpenInterval (~b) bÆ THEN ∂_tac¨PowerSeries (Ã m∑ m ! õ-õ1) Æ
-	THEN asm_rewrite_tac[]);
-(* *** Goal "2.1.2" *** *)
-a(bc_thm_tac deriv_local_thm);
-a(∂_tac¨f'Æ THEN ∂_tac¨bÆ THEN ∂_tac¨~bÆ THEN rewrite_tac[
-	prove_rule[open_interval_def] ¨µA B Y∑A < Y ± Y <  B § Y ç OpenInterval A  BÆ]);
-a(GET_NTH_ASM_T 5 (rewrite_thm_tac o rewrite_rule[open_interval_def]));
-a(REPEAT strip_tac THEN1 ALL_ASM_FC_T rewrite_tac[]);
-a(POP_ASM_T (fn  th => ALL_FC_T asm_rewrite_tac[conv_rule(ONCE_MAP_C eq_sym_conv) th]));
-(* *** Goal "2.2" *** *)
-a(POP_ASM_T (strip_asm_tac o µ_elim¨ÓØ 0Æ));
-a(ante_tac (µ_elim¨Ã m∑ m ! õ-õ1Æ power_series_limit_0_thm));
-a(rewrite_tac[factorial_def] THEN REPEAT strip_tac);
-a(all_fc_tac[lim_seq_unique_thm]);
-val €exp_consistency_lemma› = save_pop_thm "exp_consistency_lemma";
+a(ante_tac exp_series_convergence_thm);
+a(pure_once_rewrite_tac[prove_rule[]¨µm∑ m ! õ-õ1 = (Ãm∑ m ! õ-õ1) mÆ]);
+a(strip_tac THEN all_fc_tac[power_series_main_thm2]);
+a(POP_ASM_T (strip_asm_tac o rewrite_rule[factorial_def]));
+a(DROP_NTH_ASM_T 3 ante_tac);
+a(rewrite_tac[exp_deriv_lemma] THEN REPEAT strip_tac);
+a(∂_tac¨fÆ  THEN REPEAT strip_tac);
+a(LEMMA_T¨f y = df yÆ asm_rewrite_thm_tac);
+a(bc_thm_tac lim_seq_unique_thm);
+a(∂_tac¨ (Ã m∑ PowerSeries (Ã m∑ m ! õ-õ1) m y)Æ THEN asm_rewrite_tac[]);
+val €exp_consistency_thm› = save_pop_thm "exp_consistency_thm";
 =TEX
 
 Et, voil\'a!
@@ -6629,7 +6669,7 @@ Et, voil\'a!
 =TEX
 =SML
 push_consistency_goal¨ExpÆ;
-a(strip_asm_tac exp_consistency_lemma);
+a(strip_asm_tac exp_consistency_thm);
 a(∂_tac ¨fÆ THEN asm_rewrite_tac[]);
 val _ = save_consistency_thm ¨ExpÆ (pop_thm());
 val €exp_def› = get_spec¨ExpÆ;
