@@ -1,0 +1,579 @@
+=TEX
+% TQtemplate.tex
+\documentstyle[hol1,11pt,TQ]{article}
+\def\Hide#1{}
+\def\Bool{``$\it{:}bool\,$''}
+\def\Note#1{{\small\bf[Note: #1]}}
+\makeindex
+\TPPproject{DRA FRONT END FILTER PROJECT}  %% Mandatory field
+%\TPPvolume{}
+%\TPPpart{}
+\TPPtitle{Multi-Level SWORD}  %% Mandatory field
+\TPPref{DS/FMU/FEF/040}  %% Mandatory field
+\def\SCCSversion{$Revision$
+}
+\TPPissue{\SCCSversion}  %% Mandatory field
+\TPPdate{\FormatDate{$Date$
+}}  %% Mandatory field (with sensible default)
+\TPPstatus{Draft}			%% Mandatory field
+\TPPtype{Specification}
+\TPPkeywords{}
+\TPPauthor{R.~D.~Arthan & WIN01}  %% Mandatory field
+%\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
+\TPPauthorisation{R.B.~Jones & HAT Manager}
+\TPPabstract{A formulation of a somewhat simplified model of the multi-level SWORD database.
+(for DRA Front End Filter project RSRE 1C/6130.)}
+%\TPPabstractB{}
+%\TPPabstractC{}
+%\TPPabstractD{}
+%\TPPabstractE{}
+%\TPPabstractF{}
+\TPPdistribution{\parbox[t]{4.0in}{%
+	HAT FEF File \\
+	Simon Wiseman
+}}
+%\TPPclass{CLASSIFICATION}
+\newfont{\icllogo}{icllogo50}
+\def\TPPheadlhs{$\vcenter{\halign{##\cr\icllogo ICL\cr}}$}
+%\def\TPPheadlhs{}
+%\def\TPPheadcentre{}
+%def\TPPheadrhs{}
+%\def\TPPfootlhs{}
+%\def\TPPfootcentre{}
+%\def\TPPfootrhs{}
+
+\begin{document}
+\TPPsetsizes
+\makeTPPfrontpage
+
+\vfill
+\begin{centering}
+
+%\bf Copyright \copyright\ : International Computers Ltd \number\year
+
+\end{centering}
+
+\newpage
+\section {DOCUMENT CONTROL}
+\subsection{Contents List}
+\tableofcontents
+\subsection{Document Cross References}
+\bibliographystyle{fmu}
+\bibliography{fmu,fef}
+
+\subsection{Changes History}
+\begin{description}
+\item[Issue \SCCSversion ({\FormatDate{$Date$
+}}) ] First draft. 
+
+\end{description}
+
+\subsection{Changes Forecast}
+None.
+\pagebreak
+\section{GENERAL}
+\subsection{Scope}
+Phases 1 and 2 of the FEF project dealt exclusively with the formulation of the security policy defined in \cite{DS/FMU/FEF/003}.
+In that formulation SSQL queries are treated as containing information at a single security clearance.
+In phase 3, the intention is to generalise the policy to cater for queries which are structured objects containing components which may be at several different clearances.
+This document gives an attempt to give a model in HOL similar to the one in \cite{securityprops} but abstracting and/or simplifying away some of the detail.
+
+It constitutes deliverable D17 of work package 7a, as described
+in section 7 of the Proposal for Phase 3, \cite{DS/FMU/FEF/039}.
+
+\subsection{Introduction}
+An index of the names used in the formal specification may be found in Section \ref{INDEX}. 
+A listing of the theory $fef042$ created by processing this document using \Product{}
+may be found at the end of this document.
+
+
+\subsection{Setting Up}
+The following \Product{} instructions set up the new theory $fef040$ and set the context 
+for the proof tools.
+The parent theory is the theory $fef040$ which contains some general material about multi-level security policies of the sort we are interested in.
+=SML
+open_theory"fef040";
+(force_delete_theory "fef042" handle _ => ());
+new_theory €"fef042"›;
+new_parent €"wrk057"›;
+new_parent €"fef036"›;
+set_pc"hol";
+=TEX
+\section{THE MULTI-LEVEL SSQL ABSTRACT MACHINE}\ref{MLSAM}
+
+
+\subsection{Objects}\label{Objects}
+The Z specification in \cite{securityprops} starts (in section 3 of that document) with a formalisation of the classified, structured objects with which the SSQL abstract machine is to deal.
+The classification and the structure of an object are given there by positing the existence of three functions as follows:
+=GFT Informal Z
+objectClass : OBJ ≠ CLASS
+objectContains : OBJ ≠ TEXT
+objectRefers : OBJ ≠ (LOC ﬂ OBJ)
+∞
+Here, $objectRefers$ is there because objects may have ``a number of locations that contain references to other objects''.
+In HOL we will take an object to be a tree, each node of which is labelled with the corresponding classification and text.
+The locations then become implicit: the objects referred to by an object are just its children in the tree.
+This is perhaps closer to the discussion in section 2 of \cite{securityprops}. 
+
+
+
+The {\Product} example script \cite{DS/FMU/IED/WRK057} introduces a type of labels trees suitable for our purpose.
+The type is parameterised by the type of the labels. 
+These trees are characterised by a polymorphic constructor function $MkTree$.
+For example, the instance,
+=INLINEFT
+Ó TREE
+=TEX
+\ of the type\footnote{%
+Note that HOL type constructors such as $TREE$ are written after their parameter.%
+}, represents trees with numeric labels, and the signature of the corresponding instance $MkTree$ has signature:
+
+=GFT Example HOL
+MkTree : Ó ∏ Ó TREE LIST ≠  Ó TREE
+=TEX
+indicating that $MkTree$ takes as its argument a pair comprising a number (the label) and a list of trees (the children); $MkTree$ maps such an argument to the unique tree with the given label and children.
+A tree representing an SSQL object is to be labelled with the $objectClass$ and $objectContains$ values for the object.
+
+We will represent $TEXT$ values by HOL strings. 
+Thus we make the following type abbreviations and definitions:
+
+=SML
+declare_type_abbrev("Text", [], îSTRINGÆ);
+declare_type_abbrev("Obj", [], î(Class ∏ Text) TREEÆ);
+=TEX
+πHOLCONST
+‹	MkObj : Class ∏ Text ∏ Obj LIST ≠ Obj;
+‹	objectClass : Obj ≠ Class;
+‹	objectContains : Obj ≠ Text;
+‹	objectRefers : Obj ≠ Obj LIST
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹µc t os∑
+‹		MkObj (c, t, os)		= MkTree ((c, t), os)
+‹	±	objectClass (MkObj(c, t, os))	= c
+‹	±	objectContains (MkObj(c, t, os))	= t
+‹	±	objectRefers (MkObj(c, t, os))	= os
+∞
+
+\subsection{Requests}\label{Requests}
+A request is a pair comprising a clearance and an object representing an SSQL query.
+
+πHOLLABPROD Req¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	reqClearance	: Class;
+‹	reqSsql		: Obj
+∞¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+\subsection{Machines}\label{Machines}
+We do not want to settle on the representation of states here, so we use a type bariable $'State$ for these.
+
+πHOLLABPROD Machine¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	Next	: 'State ∏ Req ≠ 'State;
+‹	Output	: 'State ∏ Req ≠ Obj;
+‹	Init	: 'State
+∞¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+
+
+\subsection{Events}\label{Events}
+An event is a pair comprising a request and an object.
+
+
+πHOLLABPROD Event¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	eventReq	: Req;
+‹	eventResult	: Obj
+∞¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+
+
+\subsection{Histories}\label{Histories}
+Given, a list of requests, we can compute the state and the list of output objects resulting from executing the requests on a given machine starting in a given state.
+πHOLCONST
+‹	next_seq : 'State Machine ≠ 'State ∏ Req LIST ≠ 'State
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹µmch s r rs∑
+‹	next_seq mch (s, []) = s
+‹±	next_seq mch (s, Cons r rs) = next_seq mch (Next mch (s, r), rs)
+∞
+πHOLCONST
+‹	output_seq : 'State Machine ≠ 'State ∏ Req LIST ≠ Obj LIST
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹µmch s r rs∑
+‹	output_seq mch (s, []) = []
+‹±	output_seq mch (s, Cons r rs) =
+‹	Cons (Output mch (s, r)) (output_seq mch (Next mch (s, r), rs))
+∞
+This enables us to define the set of all possible histories of a machine starting from its initial state.
+(The existential quantification implicit in the use of relational composition in the Z of \cite{security_props} is explicit here). 
+πHOLCONST
+‹	histories : 'State Machine ≠ Event LIST 
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹µmch∑
+‹	histories mch =
+‹	{	es
+‹	|	∂rs∑	Map eventReq es = rs
+‹		±	Map eventResult es = output_seq mch (Init mch, rs)}
+∞
+For our formulation of the policy in section \ref{non-interference} below it is convenient to have the input/output behaviour of a machine.
+Moreover, we want to be able to detect which output objects belong to events whose occurrence a client is not cleared to know (so that they can be eliminated when two output sequences are compared).
+We do this by tacking the classifications from the input request onto the corresponding output object.
+
+πHOLCONST
+‹	class_output_seq : 'State Machine ≠ 'State ∏ Req LIST ≠ (Class ∏ Obj) LIST
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹µmch s r rs∑
+‹	class_output_seq mch (s, []) = []
+‹±	class_output_seq mch (s, Cons r rs) =
+‹	Cons
+‹	(objectClass (reqSsql r), Output mch (s, r))
+‹	(class_output_seq mch (Next mch (s, r), rs))
+∞
+The behavioural model of the machine is then given by:
+πHOLCONST
+‹	Behaviours : 'State Machine ≠ Req LIST ≠ (Class ∏ Obj) LIST
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹µmch rs∑
+‹	Behaviours mch rs = class_output_seq mch (Init mch, rs)
+∞
+
+\subsection{Coloured Spectacles}\label{spectacles}
+``\ldots two objects will appear identical if they have the same classification and either: 1. the clearance does not dominate this; or 2.  the clearance does dominate this and the contents of the objects are identical and any reference objects appear identical.''
+πHOLCONST
+‹	identicalObj : Class ≠ (Obj ™ Obj)
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹µc∑	identicalObj c =
+‹	{	(oâ1, oâ2)
+‹	|	∂ câ1 tâ1 osâ1 câ2 tâ2 osâ2∑
+‹		oâ1 = MkObj (câ1, tâ1, osâ1)
+‹	±	oâ2 = MkObj (câ2, tâ2, osâ2)
+‹	±	câ1 = câ2
+‹	±	(	c dominates câ1
+‹		¥	tâ1 = tâ2
+‹		±	Length osâ1 = Length osâ2
+‹		±	Elems (Combine osâ1 osâ2)
+‹		Ä	identicalObj c)}
+∞
+Here, the library 	function $Elems$ maps a list into the set of its members (in this case pairs of objects) and $Combine$ makes a list of pairs (of objects) out of a pair of lists.
+Thus we are requiring in the last clause on the right-hand side of the implication that corresponding children of the two objects bear the identical object relation to one another at the given class, $c$.
+We use the same idiom in the lifting of $identicalObj$ to lists of objects and histories:
+
+πHOLCONST
+‹	identicalObjs : Class ≠ (Obj LIST ™ Obj LIST)
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹µc∑
+‹	identicalObjs c =
+‹	{	(sâ1, sâ2)
+‹	|	Length sâ1 = Length sâ2
+‹	±	Elems (Combine sâ1 sâ2) Ä identicalObj c}
+∞
+Note that, as in \cite{security_props}, the above comparisons ignore  the clearances of the requests.
+Again as in \cite{security_props} this is remedied by using the visibility condition:
+πHOLCONST
+‹	Visible : Class ≠ Event 
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹µc∑
+‹	Visible c = { e | c dominates objectClass(reqSsql(eventReq e)) }
+∞
+For our formulation of the policy in section \ref{non-interference} below it is convenient to have the coloured spectacles with the frames adjusted a little.
+In particular, with the visibility criteria wired in:
+πHOLCONST
+‹	VisibleReq : Class ≠ Req 
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹µc∑
+‹	VisibleReq c = { r | c dominates objectClass(reqSsql r) }
+∞
+
+πHOLCONST
+‹	VisibleOutput : Class ≠ (Class ∏ Obj) 
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹µc∑
+‹	VisibleOutput c = { (d, ob) | c dominates d }
+∞
+
+πHOLCONST
+‹	sameRequest : Class ≠ (Req ™ Req)
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹µc∑	sameRequest c =
+‹	{	(râ1, râ2)
+‹	|	 (reqSsql râ1, reqSsql râ2) ç identicalObj c}
+∞
+
+πHOLCONST
+‹	sameRequests : Class ≠ (Req LIST ™ Req LIST)
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹µc∑
+‹	sameRequests c =
+‹	{	(rsâ1, rsâ2)
+‹	|	let	rsâ3 = rsâ1 ˘ VisibleReq c
+‹		in let	rsâ4 = rsâ2 ˘ VisibleReq c
+‹		in	#rsâ3 = #rsâ4
+‹		±	Elems (Combine rsâ3 rsâ4) Ä sameRequest c}
+∞
+Note that the classification part we have introduced into an output only determines its visibility and is not used when two outputs (assumed both visible) are compared.
+πHOLCONST
+‹	sameOutput : Class ≠ ((Class ∏ Obj) ™ (Class ∏ Obj))
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹µc∑	sameOutput c =
+‹	{	((câ1, oâ1), (câ2, oâ2))
+‹	|	 (oâ1, oâ2) ç identicalObj c}
+∞
+
+πHOLCONST
+‹	sameOutputs : Class ≠ ((Class ∏ Obj) LIST ™ (Class ∏ Obj) LIST)
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹µc∑
+‹	sameOutputs c =
+‹	{	(osâ1, osâ2)
+‹	|	let	osâ3 = osâ1 ˘ VisibleOutput c
+‹		in let	osâ4 = osâ2 ˘ VisibleOutput c
+‹		in	#osâ3 = #osâ4
+‹		±	Elems (Combine osâ3 osâ4) Ä sameOutput c}
+∞
+
+
+\subsection{Non-interference}\label{non-interference}
+We can now instantiate the ``generic'' security policy of \cite{DS/FMU/FEF/040}.
+πHOLCONST
+‹	SWORD_ml_secure : 'State Machine 
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	SWORD_ml_secure =
+‹	{	mch
+‹	|	Behaviours mch
+‹	ç	ml_secure (LiftRel sameRequests) (LiftRel sameOutputs)}
+∞
+\section{CLOSING DOWN}
+The following \Product{} instruction restores the previous proof context.
+=SML
+pop_pc();
+=TEX
+=IGN
+output_theory{theory = "fef042",out_file = "fef042th.doc"};
+=TEX
+\newpage
+\HOLindexOff
+\input{fef040th.tex}
+\HOLindexOn
+\newpage
+\twocolumn[\section{INDEX} \label{INDEX}]
+\small
+\printindex
+
+\end{document}
+=SML
+(delete_pc"'tree" handle Fail _ => ());
+new_pc"'tree";
+set_∂_cd_thms[tree_prim_rec_thm] "'tree";
+set_merge_pcs ["'tree", "hol"];
+=SML
+push_goal([], ¨µx y∑ MkTree x = MkTree y ¥ x = yÆ);
+a(REPEAT strip_tac);
+a(lemma_tac¨∂f∑ µz∑ f(MkTree z) = zÆ THEN1 prove_∂_tac);
+a(lemma_tac¨y = f(MkTree x)Æ THEN1
+	(GET_NTH_ASM_T 2 rewrite_thm_tac THEN POP_ASM_T rewrite_thm_tac));
+a(POP_ASM_T rewrite_thm_tac THEN POP_ASM_T rewrite_thm_tac);
+val €mk_tree_one_one_thm› = save_pop_thm"mk_tree_one_one_thm";
+=TEX
+=SML
+push_goal([], ¨µt∑ ∂x∑ t = MkTree xÆ);
+a(REPEAT strip_tac);
+a(gen_induction_tac tree_induction_thm ¨tÆ);
+a(∂_tac¨xÆ THEN REPEAT strip_tac);
+val €mk_tree_onto_thm› = save_pop_thm"mk_tree_onto_thm";
+=TEX
+=SML
+push_consistency_goal¨MkObjÆ;
+a(lemma_tac¨∂mk_obj∑µ c: Class; t : Text; os : Obj LIST∑
+	mk_obj (c, t, os) = MkTree ((c, t), os)Æ
+	THEN1 prove_∂_tac);
+a(lemma_tac¨∂object_class object_text object_refers∑
+	µctos: (Class ∏ Text) ∏ Obj LIST∑
+	object_class (MkTree (ctos)) = Fst (Fst ctos)
+±	object_text (MkTree (ctos)) = Snd(Fst ctos)
+±	object_refers (MkTree (ctos)) = Snd ctosÆ
+	THEN1 prove_∂_tac);
+a(∂_tac ¨(mk_obj, object_class, object_text, object_refers)Æ);
+a(asm_rewrite_tac[]);
+save_consistency_thm¨MkObjÆ(pop_thm());
+=TEX
+=SML
+push_goal([], ¨µ d∑ ∂â1 h∑ µ c t os∑
+	h (MkObj (c, t, os)) = d c t (Map h os)Æ);
+a(REPEAT strip_tac);
+a(strip_asm_tac (µ_elim ¨(Ãx:(Class ∏ Text) ∏ Obj LIST; y∑
+	d (Fst(Fst x)) (Snd(Fst x)) y)Æ tree_prim_rec_thm));
+a(∂â1_tac¨hÆ THEN asm_rewrite_tac[get_spec¨MkObjÆ]);
+a(REPEAT strip_tac);
+a(lemma_tac¨µ ctos∑ h' (MkTree ctos) =
+		d (Fst (Fst ctos)) (Snd (Fst ctos)) (Map h' (Snd ctos))Æ
+	THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(LEMMA_T¨ctos = ((Fst (Fst ctos), Snd (Fst ctos)), Snd ctos)Æ
+	once_rewrite_thm_tac THEN1 rewrite_tac[]);
+a(TOP_ASM_T pure_rewrite_thm_tac);
+a(rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(lemma_tac¨µ x
+           ∑ h' (MkTree x)
+               = (Ã x y∑ d (Fst (Fst x)) (Snd (Fst x)) y) x (Map h' (Snd x))Æ
+	THEN1 asm_rewrite_tac[]);
+a(all_asm_fc_tac[]);
+val €obj_prim_rec_thm› = save_pop_thm"obj_prim_rec_thm";
+=TEX
+=SML
+push_goal([], ¨
+(µ x∑ MkObj x = MkTree ((Fst x, Fst(Snd x)), Snd(Snd x))) ±
+µ ctos∑	objectClass(MkTree ctos) = Fst (Fst ctos)
+±	 objectContains(MkTree ctos) = Snd (Fst ctos)
+±	 objectRefers(MkTree ctos) = Snd ctos
+Æ);
+a(lemma_tac ¨µ x∑ MkObj x = MkTree ((Fst x, Fst(Snd x)), Snd(Snd x))Æ);
+(* *** Goal "1" *** *)
+a(strip_tac);
+a(LEMMA_T ¨x = (Fst x, (Fst(Snd x)), Snd(Snd x))Æ once_rewrite_thm_tac
+	THEN1 rewrite_tac[]);
+a(pure_rewrite_tac[get_spec¨MkObjÆ]);
+a(rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(ante_tac (get_spec¨MkObjÆ) THEN asm_rewrite_tac[]);
+a(strip_tac THEN strip_tac);
+a(LEMMA_T ¨ctos = ((Fst (Fst ctos), Snd (Fst ctos)), Snd ctos)Æ once_rewrite_thm_tac
+	THEN1 rewrite_tac[]);
+a(pure_asm_rewrite_tac[]);
+a(rewrite_tac[]);
+val €object_clauses› = save_pop_thm"object_clauses";
+=TEX
+=SML
+=TEX
+=SML
+push_consistency_goal¨next_seqÆ;
+a(lemma_tac ¨∂ns : Req LIST ≠ 'State Machine ≠ 'State ≠ 'State∑ µr rs mch s∑
+	ns [] mch s = s
+±	ns (Cons r rs) mch s = ns rs mch (Next mch (s, r))Æ
+	THEN1 prove_∂_tac);
+a(∂_tac¨Ãmch (s, rs)∑ ns rs mch sÆ);
+a(asm_rewrite_tac[]);
+save_consistency_thm¨next_seqÆ(pop_thm());
+=TEX
+=SML
+push_consistency_goal¨output_seqÆ;
+a(lemma_tac ¨∂os : Req LIST ≠ 'State Machine ≠ 'State ≠ Obj LIST∑ µr rs mch s∑
+	os [] mch s = []
+±	os (Cons r rs) mch s =
+	Cons (Output mch (s, r)) (os rs mch (Next mch (s, r)))Æ
+	THEN1 prove_∂_tac);
+a(∂_tac¨Ãmch (s, rs)∑ os rs mch sÆ);
+a(asm_rewrite_tac[]);
+save_consistency_thm¨output_seqÆ(pop_thm());
+=TEX
+=SML
+push_consistency_goal¨class_output_seqÆ;
+a(lemma_tac ¨∂os : Req LIST ≠ 'State Machine ≠ 'State ≠ (Class ∏ Obj) LIST∑
+	µr rs mch s∑
+	os [] mch s = []
+±	os (Cons r rs) mch s =
+	Cons
+	(objectClass (reqSsql r), Output mch (s, r))
+	(os rs mch (Next mch (s, r)))Æ
+	THEN1 prove_∂_tac);
+a(∂_tac¨Ãmch (s, rs)∑ os rs mch sÆ);
+a(asm_rewrite_tac[]);
+save_consistency_thm¨class_output_seqÆ(pop_thm());
+=TEX
+Following is lengthy but not really difficult.
+The basic idea is to define a propositional function by primitive recursion over trees which represents the set function required for the witness.
+The proof is then just a check that the formula defining the propositional function is essentially the same as the one the witness is required to satisfy.
+This involves (inter alia) two inductive proofs of two little lemmas about the formulae which are used to ``combine the recursive applications''.
+=SML
+push_consistency_goal¨identicalObjÆ;
+a(lemma_tac ¨∂io : Obj ≠ Class ≠ Obj ≠ BOOL∑ µctos c oâ2∑
+	io (MkTree ctos) c oâ2 §
+	∂ câ1 tâ1 osâ1 câ2 tâ2 osâ2∑
+		(MkTree ctos) = MkObj (câ1, tâ1, osâ1)
+	±	oâ2 = MkObj (câ2, tâ2, osâ2)
+	±	câ1 = câ2
+	±	(	c dominates câ1
+		¥	tâ1 = tâ2
+		±	Length osâ1 = Length osâ2
+		±	µp o2∑ (p, o2) ç
+			Elems (Combine (Map io (Snd ctos)) osâ2)
+			¥	p c o2)Æ
+	THEN1 prove_∂_tac);
+a(∂_tac¨Ãc∑ {(o1, o2) | io o1 c o2}Æ THEN
+	PC_T1 "sets_ext1" asm_rewrite_tac[object_clauses]);
+a(PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(strip_asm_tac(µ_elim¨x1Æ mk_tree_onto_thm) THEN var_elim_nth_asm_tac 1);
+a(strip_asm_tac(µ_elim¨x2Æ mk_tree_onto_thm) THEN var_elim_nth_asm_tac 1);
+a(MAP_EVERY ∂_tac[
+	¨Fst(Fst x)Æ, ¨Snd(Fst x)Æ, ¨Snd xÆ,
+	¨Fst(Fst x')Æ, ¨Snd(Fst x')Æ, ¨Snd x'Æ]
+	THEN rewrite_tac[]);
+a(POP_ASM_T ante_tac THEN asm_rewrite_tac[object_clauses]);
+a(strip_tac);
+(* *** Goal "1.1" *** *)
+a(all_fc_tac[mk_tree_one_one_thm]);
+a(MAP_EVERY var_elim_nth_asm_tac [1,1,2]);
+a(asm_rewrite_tac[]);
+(* *** Goal "1.2" *** *)
+a(all_fc_tac[mk_tree_one_one_thm]);
+a(MAP_EVERY var_elim_nth_asm_tac [1,1,3,3]);
+a(POP_ASM_T ante_tac THEN asm_rewrite_tac[]);
+a(POP_ASM_T ante_tac);
+a(intro_µ_tac(¨osâ1Æ, ¨osâ1Æ));
+a(list_induction_tac¨osâ2Æ);
+(* *** Goal "1.2.1" *** *)
+a(rewrite_tac[get_spec¨LengthÆ, length_0_thm]);
+a(REPEAT_N 2 strip_tac THEN asm_rewrite_tac(map get_spec
+	[¨CombineÆ, ¨MapÆ, ¨ElemsÆ]));
+(* *** Goal "1.2.2" *** *)
+a(rewrite_tac[get_spec¨LengthÆ, length_0_thm]);
+a(REPEAT µ_tac);
+a(strip_asm_tac(µ_elim¨osâ1Æ list_cases_thm) THEN var_elim_nth_asm_tac 1
+	THEN rewrite_tac[get_spec¨LengthÆ]);
+a(PC_T1 "sets_ext1" rewrite_tac(map get_spec [¨CombineÆ, ¨MapÆ, ¨ElemsÆ]));
+a(REPEAT strip_tac);
+(* *** Goal "1.2.2.1" *** *)
+a(MAP_EVERY var_elim_nth_asm_tac [1,1]);
+a(list_spec_nth_asm_tac 2 [¨io x'Æ, ¨xÆ]);
+(* *** Goal "1.2.2.2" *** *)
+a(lemma_tac¨µ p o2∑ (p, o2) ç Elems (Combine (Map io list2) osâ2) ¥ p c o2Æ
+	THEN1 (REPEAT strip_tac THEN all_asm_fc_tac[]));
+a(all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(asm_rewrite_tac[]);
+a(rename_tac[] THEN rewrite_tac[object_clauses]);
+a(MAP_EVERY ∂_tac[
+	¨câ1Æ, ¨tâ1Æ, ¨osâ1Æ,
+	¨câ2Æ, ¨tâ2Æ, ¨osâ2Æ]
+	THEN asm_rewrite_tac[]);
+(* *** Goal "3" *** *)
+a(asm_rewrite_tac[]);
+a(MAP_EVERY ∂_tac[
+	¨câ2Æ, ¨tâ2Æ, ¨osâ1Æ,
+	¨câ2Æ, ¨tâ2Æ, ¨osâ2Æ]
+	THEN asm_rewrite_tac[]);
+a(rewrite_tac[object_clauses]);
+a(REPEAT strip_tac);
+a(LIST_DROP_NTH_ASM_T [1,3,4] (MAP_EVERY ante_tac));
+a(LIST_DROP_NTH_ASM_T [1,2,3,4,5,6] discard_tac);
+a(intro_µ_tac(¨osâ1Æ, ¨osâ1Æ));
+a(list_induction_tac¨osâ2Æ);
+(* *** Goal "3.1" *** *)
+a(rewrite_tac[get_spec¨LengthÆ, length_0_thm]);
+a(REPEAT µ_tac);
+a(strip_asm_tac(µ_elim¨osâ1Æ list_cases_thm) THEN var_elim_nth_asm_tac 1
+	THEN rewrite_tac[get_spec¨LengthÆ]);
+a(PC_T1 "sets_ext1" rewrite_tac(map get_spec [¨CombineÆ, ¨MapÆ, ¨ElemsÆ]));
+(* *** Goal "3.2" *** *)
+a(rewrite_tac[get_spec¨LengthÆ, length_0_thm]);
+a(REPEAT µ_tac);
+a(strip_asm_tac(µ_elim¨osâ1Æ list_cases_thm) THEN var_elim_nth_asm_tac 1
+	THEN rewrite_tac[get_spec¨LengthÆ]);
+a(PC_T1 "sets_ext1" rewrite_tac(map get_spec [¨CombineÆ, ¨MapÆ, ¨ElemsÆ]));
+a(REPEAT strip_tac);
+(* *** Goal "3.2.1" *** *)
+a(MAP_EVERY var_elim_nth_asm_tac [1,1]);
+a(list_spec_nth_asm_tac 1 [¨x'Æ, ¨xÆ]);
+(* *** Goal "3.2.2" *** *)
+a(lemma_tac¨µ x1 x2∑ (x1, x2) ç Elems (Combine list2 osâ2) ¥ io x1 c x2Æ
+	THEN1 (REPEAT strip_tac THEN all_asm_fc_tac[]));
+a(all_asm_fc_tac[]);
+save_consistency_thm¨identicalObjÆ(pop_thm());
+
+
+
