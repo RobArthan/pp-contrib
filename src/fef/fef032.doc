@@ -536,6 +536,7 @@ to perform and the expression which computes the operand.
 Ü	in	(c, f v)
 °
 \subsection{Binary}\label{BinOp}
+
 The logical binary operators are treated specially. In particular, iterated
 $and$s and $or$s are effectively treated by $simplify\sb{ands}$ and
 $simplify\sb{ors}$in \cite{trans} as composite operators
@@ -570,44 +571,64 @@ We use the following to compute iterated conjunctions and disjunctions:
 Ü±	(ListOr (Cons b bs) ¤ b ² ListOr bs)
 °
 Now, we define $BinOpAnd$ which embodies the algorithm of $simplify\sb{ands}$.
-As described in \cite{trans}, the idea is that if the expression evaluates
-to $true$, then the client knows that all the operands are $true$ and the class
-is the l.u.b. of the classes of all the operands, whereas if the expression evaluates
-to $false$ then the client knows that some operand is $false$ and the class
-can be taken to be the l.u.b. of the classes of the operands which are
-$false$.
+as described in \cite{trans}, subject to some modifications agreed with DRA
+after various discussions.
+$BinOpAnd$ itself detects whether or not the client
+is cleared to know the value of the expression, which permits a more
+lenient classification label to be computed in some useful cases.
+
+The idea is that if any operand that the client is cleared to see is
+false, then the client is cleared to know that the result is false,
+and the classification label can be taken to be the l.u.b. of the
+classifications of the false
+operands that the client is cleared to see. If the client is not
+cleared to see any false operands, then the client must be cleared to
+see all the operands to see the result (which will be true if the client
+is cleared to see it) and the classification label is taken to be
+the l.u.b. of all the operand classifications.
+So that we can reuse the algorithm in $SetFuncAllAnd$, we separate out
+in the following function:
 ¹HOLCONST
-Ü	ÛBinOpAndİ	: VALUE_COMP LIST ­ VALUE_COMP
+Ü	ÛComputeAndİ	: Class ­ (Class ¸ Item) LIST ­ (Class ¸ Item)
 ÷üüüüüüüüüüüüüüüüüü
-Üµel·	BinOpAnd el =
-Ü	Ìtl rl r·
-Ü	let	cvl = Map (Ìe·e tl rl r) el
-Ü	in let	v = ListAnd(Map (ItemBool o Snd) cvl)
+Üµcc cil·	ComputeAnd cc cil =
+Ü	let	hcil = cil ù {(c, i) | cc dominates c ± ³ItemBool i}
+Ü	in let	v = ListAnd(Map (ItemBool o Snd) cil)
 Ü	in let	makecase(c, u) = if  ItemBool u  then  lattice_bottom  else  c
-Ü	in	((if  v  then  lubl(Map Fst cvl)  else  lubl(Map makecase cvl)),
-Ü		 BoolItem v)
+Ü	in	if	hcil = []
+Ü		then	(lubl(Map Fst cil), BoolItem v)
+Ü		else	(lubl(Map makecase hcil), BoolItem false)
 °
-
-Now $BinOpOr$ which embodies the algorithm of $simplify\sb{ors}$.
-This is ``dual'' to $BinOpAnd$: if the expression evaluates
-to $false$, then the client knows that all the operands are $false$ and the class
-is the l.u.b. of the classes of the operands, whereas if the expression evaluates
-to $true$ then the client knows that some operand is $true$ and the class
-can be taken to be the l.u.b. of the classes of the operands which are
-$true$.
 ¹HOLCONST
-Ü	ÛBinOpOrİ	: VALUE_COMP LIST ­ VALUE_COMP
+Ü	ÛBinOpAndİ	: Class ­ VALUE_COMP LIST ­ VALUE_COMP
 ÷üüüüüüüüüüüüüüüüüü
-Üµel·	BinOpOr el =
+Üµcc el·	BinOpAnd cc el =
 Ü	Ìtl rl r·
-Ü	let	cvl = Map (Ìe·e tl rl r) el
-Ü	in let	v = ListOr(Map (ItemBool o Snd) cvl)
-Ü	in let	makecase(c, u) =
-Ü		if ItemBool u then c else lattice_bottom
-Ü	in	((if  v  then  lubl(Map makecase cvl)  else  lubl(Map Fst cvl)),
-Ü		 BoolItem v)
+Ü	ComputeAnd cc (Map (Ìe·e tl rl r) el)
 °
 
+Now $BinOpOr$ which embodies the algorithm of $simplify\sb{ors}$,
+again subject to some agreed modifications.
+The algorithm is ``dual'' to that of $BinOpAnd$.
+
+¹HOLCONST
+Ü	ÛComputeOrİ	: Class ­ (Class ¸ Item) LIST ­ (Class ¸ Item)
+÷üüüüüüüüüüüüüüüüüü
+Üµcc cil·	ComputeOr cc cil =
+Ü	let	hcil = cil ù {(c, i) | cc dominates c ± ItemBool i}
+Ü	in let	v = ListOr(Map (ItemBool o Snd) cil)
+Ü	in let	makecase(c, u) = if  ³ItemBool u  then  lattice_bottom  else  c
+Ü	in	if	hcil = []
+Ü		then	(lubl(Map Fst cil), BoolItem v)
+Ü		else	(lubl(Map makecase hcil), BoolItem true)
+°
+¹HOLCONST
+Ü	ÛBinOpOrİ	: Class ­ VALUE_COMP LIST ­ VALUE_COMP
+÷üüüüüüüüüüüüüüüüüü
+Üµcc el·	BinOpOr cc el =
+Ü	Ìtl rl r·
+Ü	ComputeOr cc (Map (Ìe·e tl rl r) el)
+°
 
 The other binary forms use an unoptimised treatment of
 classifications and are parameterised by the actual item computation
@@ -788,35 +809,23 @@ of case expression.
 
 
 \subsection{Set Functions}\label{SetFunctions}
-The logical set functions are treated in a similar fashion to
+The logical set functions are treated in a very similar fashion to
 the logical binary operators.
 
 ¹HOLCONST
-Ü	ÛSetFuncAllAndİ		: VALUE_COMP ­ VALUE_COMP
+Ü	ÛSetFuncAllAndİ		: Class ­ VALUE_COMP ­ VALUE_COMP
 ÷üüüüüüüüüüüüüüüüüü
-Üµe ·	SetFuncAllAnd e =
+Üµcc e ·	SetFuncAllAnd cc e =
 Ü	Ìtl rl r·
-Ü	let	cil = Map (e tl rl) rl
-Ü	in let	(cl, il) = Split cil
-Ü	in let	ri = ListAnd (Map ItemBool il)
-Ü	in let	makecase (c, u) = if ItemBool u then lattice_bottom else c
-Ü	in	if	ri
-Ü		then	(lubl cl, BoolItem ri)
-Ü		else	(lubl (Map makecase cil), BoolItem ri)
+Ü	ComputeAnd cc (Map (e tl rl) rl)
 °
 
 ¹HOLCONST
-Ü	ÛSetFuncAllOrİ		: VALUE_COMP ­ VALUE_COMP
+Ü	ÛSetFuncAllOrİ		: Class ­ VALUE_COMP ­ VALUE_COMP
 ÷üüüüüüüüüüüüüüüüüü
-Üµe ·	SetFuncAllOr e =
+Üµcc e ·	SetFuncAllOr cc e =
 Ü	Ìtl rl r·
-Ü	let	cil = Map (e tl rl) rl
-Ü	in let	(cl, il) = Split cil
-Ü	in let	ri = ListOr (Map ItemBool il)
-Ü	in let	makecase (c, u) = if ItemBool u then c else lattice_bottom
-Ü	in	if	ri
-Ü		then	(lubl (Map makecase cil), BoolItem ri)
-Ü		else	(lubl cl, BoolItem ri)
+Ü	ComputeOr cc (Map (e tl rl) rl)
 °
 
 
@@ -907,8 +916,13 @@ of $tuple\_list\sb{max\_row\_class}$ from \cite{trans}.
 Ü	let	(c, t) = te tl
 Ü	in let	trl = DT_rows t ù
 Ü			{r | cc dominates DTR_row r ± cc dominates DTR_where r}
-Ü	in	(c lub lubl (Map DTR_row trl), BoolItem (³trl = []))
+Ü	in	if	cc dominates c
+Ü		then	(lubl (Map DTR_row trl), BoolItem (³trl = []))
+Ü		else	(c, Arbitrary)
 °
+(Above used $lattice\_top$ instead of the very last $c$ in an earlier 
+version discussed on the 'phone with DRA. $c$ is probably still not the
+ideal label for information purposes.)
 \subsection{$SingleValue$}\label{SingleValue}
 This construct is parameterised by a table expression to compute
 the operand and the client clearance (to allow rows whose existence
@@ -928,11 +942,13 @@ known upper bound on the class of the single column in the table).
 Ü			{r | cc dominates DTR_row r ± cc dominates DTR_where r}
 Ü	in let	cil = DTR_cols (Hd trl)
 Ü	in let	(ic, ii) = Hd cil
-Ü	in	if	Length trl = 1 ± Length cil = 1
-Ü		then	(c lub ic, ii)
+Ü	in	if	cc dominates c
+Ü		then	if Length trl = 1 ± Length cil = 1
+Ü			then	(ic, ii)
+Ü			else	(c, Arbitrary)
 Ü		else	(c, Arbitrary)
 °
-
+(As with $ExistsTuples$ the information label could probably do better here.)
 \subsection{Contents}\label{Contents}
 Since we have not upgraded to the new SSQL specification we only supply
 one contents operator rather than separate sterling and dinary ones.
@@ -1389,6 +1405,10 @@ Now we give the definition, which is long but straightforward in
 its derivation from the various semantic functions. Note that the
 last two clauses are commented out, since the relevant semantic functions
 as currently formulated above are known not to be secure.
+
+The order of the clauses below is a rearrangement of the order in \cite{trans}
+to bring semantic functions with similar signatures together.
+
 \ftlinepenalty=9999
 ¹HOLCONST
 Ü	ÛTableComputationsİ : Class ­ TABLE_COMP SET;
@@ -1405,8 +1425,8 @@ as currently formulated above are known not to be secure.
 Ü	±	(µf e· e  es ´ MonOp f e  es)
 Ü	±	(µf e1 e2· e1  es ± e2  es ´ BinOp f e1 e2  es)
 Ü	±	(µf e1 e2 e3· e1  es ± e2  es ± e3  es ´ TriOp f e1 e2 e3  es)
-Ü	±	(µel· Elems el € es ´ BinOpAnd el  es)
-Ü	±	(µel· Elems el € es ´ BinOpOr el  es)
+Ü	±	(µcc el· Elems el € es ´ BinOpAnd cc el  es)
+Ü	±	(µcc el· Elems el € es ´ BinOpOr cc el  es)
 Ü
 Ü	±	(µcc te cel ee· te  es ± Elems(Map Fst cel) € es ±
 Ü				Elems(Map Snd cel) € es ± ee  es ´
@@ -1415,8 +1435,8 @@ as currently formulated above are known not to be secure.
 Ü				Elems(Map Snd cel) € es ± ee  es ´
 Ü					Case cc cel ee  es)
 Ü
-Ü	±	(µe· e  es ´ SetFuncAllAnd e  es)
-Ü	±	(µe· e  es ´ SetFuncAllOr e  es)
+Ü	±	(µcc e· e  es ´ SetFuncAllAnd cc e  es)
+Ü	±	(µcc e· e  es ´ SetFuncAllOr cc e  es)
 Ü	±	(µe· e  es ´ CountNonNull e  es)
 Ü	±	(µe· e  es ´ CountDistinct e  es)
 Ü	±	(µe· e  es ´ CommonValue e  es)

@@ -135,8 +135,8 @@ for the data in the column ($CS\_min$, $CS\_max$). This information
 is not represented in the TSQL state (as modelled here, although in
 practice, it will be held in a TSQL table); however, it is used in
 the transformations of \cite{filter} in order to optimise the representation,
-so that, for example, the row existence class column is omitted if
-$TS\_maxRow = TS\_class$.
+so that, for example, the classification column is omitted for SSQL columns
+for which $CS\_min = CS\_max$.
 
 The management of the optimisations discussed above and of the variable
 scoping rules of the query language make a significant contribution to the
@@ -151,7 +151,7 @@ handled separately in a formal treatment.
 Most of the complexity of the TSQL and SSQL semantics is in the $SELECT$
 query. Indeed, at least in $TSQL$, the $DELETE$, $INSERT$ and $UPDATE$
 queries can be modelled as a $SELECT$ query to compute a new table
-followed by an assignment or a merge of the new table into an existing one table.
+followed by an assignment or a merge of the new table into an existing table.
 
 The security checks which apply to a $SELECT$ query are best understood
 if we think of execution of the query as returning a {\em derived table}, which
@@ -207,8 +207,11 @@ $DTS\_colSpecs$ &
 The column specifications for the table \\\hline
 $DTR\_where$ &
 The classification in this row of a $WHERE$
-clause used to construct this table (taken equal to the client clearance
-initially) \\\hline
+clause used to construct this table.
+This information is only used during execution of transformed
+queries and by the output filter; it is not stored in the state and is
+taken as $lattice\_bottom$ for tables extracted directly from the
+state. \\\hline
 $DTR\_row$ &
 The existence classification of this row
 (taken from the SSQL state initially) \\\hline
@@ -274,7 +277,7 @@ returned to the client (as is the class of the $WHERE$ clause).%
 }.
 
 \paragraph{Example 2}
-For a more complex SSQL query classifications in the derived table
+For a more complex SSQL query, classifications in the derived table
 which represents its output are computed during execution of
 the TSQL query. For example, consider:
 
@@ -291,17 +294,24 @@ query and the transformed query might have the form:
 	FROM table‰t
 	WHERE (col1‰s < col2‰s OR NOT cc DOM (col1‰c LUB col2‰c)) AND cc DOM rc
 =TEX
-Here the transformations have arranged to include in the derived table
-passed to the filter, rows for which either the SSQL $WHERE$ clause is true
-or the client is not cleared to compute the $WHERE$ clause. The filter
-can then discard rows for which the $WHERE$ clause computation is a possible
-covert channel. The classification associated with each computed data value
+Here, the classification associated by the transformations
+with each computed data value
 =INLINEFT
 col2‰s + col3‰s
 =TEX
 \ in each row is the least upper bound of the classifications for
 $col2$ and $col3$ in that row, since the result of the addition reveals
-information about both of its operands. 
+information about both of its operands.
+
+Note that in the derived table
+passed to the filter, rows for which either the SSQL $WHERE$ clause is true
+or the client is not cleared to compute the $WHERE$ clause are included.
+I.e. the transformed query takes the $WHERE$ clause as $true$ for rows where the
+$WHERE$ clause computation is a possible covert channel. From the security
+point of view the $WHERE$ clause could equally well be taken as $false$ for
+such rows, however, part of the desired filter functionality is to inform the
+client when such rows have been detected. What the filter then does is to
+issue a ``may-not-be-complete'' message and to delete the offending rows.
 
 \paragraph{Example 3}
 In the above examples, there is no need for a check query since the
@@ -311,12 +321,14 @@ when the query includes a $GROUP$ $BY$ clause, e.g. consider the following
 query:
 
 =GFT SSQL Example
-	SELECT col1, COUNT * FROM table WHERE col2 > 0 GROUP BY col1
+	SELECT col1, COUNT (*) FROM table WHERE col2 > 0 GROUP BY col1
 =TEX
 
 This is intended to return a table showing, for each value of $col1$
-appearing in $table$, the number of rows having that $col1$ value
-and a positive $col2$ value. The query must not be allowed to reveal information
+appearing in $table$ in a row having a positive $col2$ value,
+the number of rows having that $col1$ value and a positive $col2$ value.
+
+The query must not be allowed to reveal information
 about rows whose $col1$
 value the client is not cleared to see. This will result in a check query
 as follows:
@@ -361,17 +373,26 @@ features of the transformations, with the following exceptions:
 The more complex variants of a single select query,
 e.g. the $HAVING$ clause.
 \item
-The details of the computation of the classification of
-the result of an expression (cf. example 2 above where for each row,
+More complex cases of the computation of the classification of
+the result of an expression. Example 2 above shows one of
+the simpler cases, where for each row,
 the expression $col2 + col3$ is assigned a classification which
 is the least upper bound of the classifications of $col2$ and $col3$ in that
 row).
+In other examples, e.g., the $and$ and $or$ expression forms, the result
+classification used depends on the actual values of (some of) the operands
+as well as on the classifications associated with them.
 \item
 The details of the mapping of the SSQL name space onto the TSQL name space.
 \item
 The handling of nested $SELECT$ queries and the management of the
 scope of the name spaces within them.
 \end{enumerate}
+
+The formal treatment in this document and in \cite{DS/FMU/FEF/032} is intended
+to address all of these issues, however the treatment of naming issues
+is somewhat simplified, bringing out the semantic issues but not all the
+syntactic ones.
 
 \section{EXECUTION MODEL (PART 1)}\label{EXECUTIONMODELI}
 In order to simplify the handling both of nested $SELECT$s and
@@ -641,11 +662,16 @@ to state the information flow constraints which apply to computations on them.
 Ü			(DTR_row r)
 Ü			(Map hc (DTR_cols r))
 °
+Note that in the following, rows which the client is not cleared
+to evaluate the $WHERE$ clause are left in. Although such rows are
+eliminated by the Output Filter they may occur as intermediate results
+in the table computations of \cite{DS/FMU/FEF/032}, e.g., in inner $SELECT$s.
+
 ¹HOLCONST
 Ü	ÛHideDerTableDataÝ : Class ­ DerTableRow LIST ­ DerTableRow LIST
 ÷üüüüüüüüüüüüüü
 Ü	µcc rs·	HideDerTableData cc rs
-Ü	=	let	okr = {r|cc dominates (DTR_row r lub DTR_where r)}
+Ü	=	let	okr = {r|cc dominates DTR_row r}
 Ü		in 	Map (HideDerTableRow cc) (rs ù okr)
 °
 ¹HOLCONST
