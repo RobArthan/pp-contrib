@@ -9,7 +9,7 @@
 %\TPPpart{}
 \TPPtitle{Proof of Security (IIb)}  %% Mandatory field
 \TPPref{DS/FMU/FEF/011}  %% Mandatory field
-\def\SCCSversion{1.3
+\def\SCCSversion{$Revision$
 }
 \TPPissue{\SCCSversion}  %% Mandatory field
 \TPPdate{\FormatDate{92/10/20
@@ -64,8 +64,8 @@ DRA front end filter project RSRE 1C/6130.}
 
 \subsection{Changes History}
 \begin{description}
-\item[Issue \SCCSversion(\FormatDate{92/10/20
-})] Changes made to $insertQuery$ and $updateQuery$.
+\item[Issue \SCCSversion(\FormatDate{$Date$
+})] Axioms for $query\_type$ etc. replaced by theorems.
 \end{description}
 
 \subsection{Changes Forecast}
@@ -196,28 +196,7 @@ val ÛupdateStateR_defÝ = conv_rule(MAP_C let_conv)(get_spec¬updateStateR®);
 val ÛupdateState_defÝ = conv_rule(MAP_C let_conv)(get_spec¬updateState®);
 =TEX
 
-\subsection{$Query$, $Val$ and $Update$ Axioms}
-
-=SML
-val Ûquery_typeÝ = new_axiom(["query_type"],
-	¬µq· (isInsert q ± ³(isDelete q ² isUpdate q ² isSelect q))
-	² (isDelete q ± ³(isInsert q ² isUpdate q ² isSelect q))		
-	² (isUpdate q ± ³(isInsert q ² isDelete q ² isSelect q))
-	² (isSelect q ± ³(isInsert q ² isDelete q ² isUpdate q))®);
-=TEX
-=SML
-val Ûupdate_typeÝ = new_axiom(["update_type"],
-	¬µu· (isItem u ± ³(isClass u ² isData u))
-	² (isClass u ± ³(isItem u ² isData u))		
-	² (isData u ± ³(isItem u  ² isClass u))®);
-=TEX
-=SML
-val Ûval_or_error_typeÝ = new_axiom(["val_or_error_type"],
-	¬µv· (isVal v ± ³ isError v)
-	² (isError v ± ³ isVal v)®);
-=TEX
-
-
+\section{AUXILIARY THEOREMS}
 =SML
 val ÛgiveVal_eq_thmÝ = save_thm("giveVal_eq_thm",prove_rule[giveVal_def]
 	¬µ x y · giveVal x = giveVal y ¤ x = y®);
@@ -238,6 +217,197 @@ giveError_eq_thm = ô µ x y· giveError x = giveError y ¤ x = y
 isVal_def = ô µ ve· isVal ve ¤ (¶ v‰1· ve = giveVal v‰1)
 isError_def = ô µ ve· isError ve ¤ (¶ e‰1· ve = giveError e‰1)
 =TEX
+=SML
+val thm1 = (push_goal([],¬µ x y z · ³((z = InL x) ± (z = InR y))®);
+a(REPEAT strip_tac THEN asm_rewrite_tac[]);
+pop_thm());
+=TEX
+=SML
+push_goal([],¬µq· (isInsert q ± ³(isDelete q ² isUpdate q ² isSelect q))
+	² (isDelete q ± ³(isInsert q ² isUpdate q ² isSelect q))		
+	² (isUpdate q ± ³(isInsert q ² isDelete q ² isSelect q))
+	² (isSelect q ± ³(isInsert q ² isDelete q ² isUpdate q))®);
+a(rewrite_tac[isInsert_def,InsertEffect_def]);
+a(µ_tac THEN strip_tac THEN strip_tac);
+=TEX
+=SML
+(* *** Goal "1" *** *)
+a(prove_tac[] THEN_TRY asm_rewrite_tac[]);
+(* *** Goal "1.1" *** *)
+a(strip_asm_tac(µ_elim¬q®sum_cases_thm));
+(* *** Goal "1.1.1" *** *)
+a(asm_fc_tac[]);
+(* *** Goal "1.1.2" *** *)
+a(strip_asm_tac(µ_elim¬z®sum_cases_thm));
+(* *** Goal "1.1.2.1" *** *)
+a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[]);
+(* *** Goal "1.1.2.2" *** *)
+a(strip_asm_tac(µ_elim¬z'®sum_cases_thm));
+(* *** Goal "1.1.2.2.1" *** *)
+a(DROP_NTH_ASM_T 3 ante_tac THEN  asm_rewrite_tac[]);
+(* *** Goal "1.1.2.2.2" *** *)
+a(¶_tac¬z''®THEN asm_rewrite_tac[]);
+=TEX
+=SML
+(* *** Goal "1.2" *** *)
+a(asm_fc_tac[]);
+(* *** Goal "1.3" *** *)
+a(asm_fc_tac[]);
+(* *** Goal "1.4" *** *)
+a(asm_fc_tac[]);
+(* *** Goal "1.5" *** *)
+a(asm_fc_tac[]);
+(* *** Goal "1.6" *** *)
+a(asm_fc_tac[]);
+(* *** Goal "1.7" *** *)
+a(asm_fc_tac[]);
+(* *** Goal "1.8" *** *)
+a(DROP_NTH_ASM_T 3 ante_tac THEN asm_rewrite_tac[]);
+(* *** Goal "1.9" *** *)
+a(DROP_NTH_ASM_T 3 ante_tac THEN asm_rewrite_tac[]);
+(* *** Goal "1.10" *** *)
+a(DROP_NTH_ASM_T 3 ante_tac THEN asm_rewrite_tac[]);
+=TEX
+=SML
+(* *** Goal "2" *** *)
+a(asm_prove_tac[] THEN_TRY asm_rewrite_tac[]);
+(* *** Goal "2.1" *** *)
+a(fc_tac[thm1] THEN asm_fc_tac[]);
+(* *** Goal "2.2" *** *)
+a(fc_tac[thm1] THEN asm_fc_tac[]);
+(* *** Goal "2.3" *** *)
+a(fc_tac[thm1] THEN asm_fc_tac[]);
+(* *** Goal "2.4" *** *)
+a(fc_tac[thm1] THEN asm_fc_tac[]);
+(* *** Goal "2.5" *** *)
+a(fc_tac[thm1] THEN asm_fc_tac[]);
+(* *** Goal "2.6" *** *)
+a(fc_tac[thm1] THEN asm_fc_tac[]);
+=TEX
+=SML
+(* *** Goal "2.7" *** *)
+a(fc_tac[thm1] THEN asm_fc_tac[]);
+(* *** Goal "2.8" *** *)
+a(fc_tac[thm1] THEN asm_fc_tac[]);
+(* *** Goal "2.9" *** *)
+a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2.10" *** *)
+a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2.11" *** *)
+a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2.12" *** *)
+a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[]);
+=TEX
+=SML
+(* *** Goal "3" *** *)
+a(asm_prove_tac[] THEN_TRY asm_rewrite_tac[]);
+(* *** Goal "3.1" *** *)
+a(fc_tac[thm1] THEN asm_fc_tac[]);
+(* *** Goal "3.2" *** *)
+a(fc_tac[thm1] THEN asm_fc_tac[]);
+(* *** Goal "3.3" *** *)
+a(fc_tac[thm1] THEN asm_fc_tac[]);
+(* *** Goal "3.4" *** *)
+a(fc_tac[thm1] THEN asm_fc_tac[]);
+(* *** Goal "3.5" *** *)
+a(fc_tac[thm1] THEN asm_fc_tac[]);
+(* *** Goal "3.6" *** *)
+a(fc_tac[thm1] THEN asm_fc_tac[]);
+=TEX
+=SML
+(* *** Goal "3.7" *** *)
+a(fc_tac[thm1] THEN asm_fc_tac[]);
+(* *** Goal "3.8" *** *)
+a(fc_tac[thm1] THEN asm_fc_tac[]);
+(* *** Goal "3.9" *** *)
+a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[]);
+(* *** Goal "3.10" *** *)
+a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[]);
+(* *** Goal "3.11" *** *)
+a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[]);
+(* *** Goal "3.12" *** *)
+a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[]);
+=TEX
+=SML
+(* *** Goal "4" *** *)
+a(asm_prove_tac[] THEN_TRY asm_rewrite_tac[]);
+(* *** Goal "4.1" *** *)
+a(fc_tac[thm1] THEN asm_fc_tac[]);
+(* *** Goal "4.2" *** *)
+a(fc_tac[thm1] THEN asm_fc_tac[]);
+(* *** Goal "4.3" *** *)
+a(fc_tac[thm1] THEN asm_fc_tac[]);
+(* *** Goal "4.4" *** *)
+a(fc_tac[thm1] THEN asm_fc_tac[]);
+(* *** Goal "4.5" *** *)
+a(fc_tac[thm1] THEN asm_fc_tac[]);
+(* *** Goal "4.6" *** *)
+a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[]);
+(* *** Goal "4.7" *** *)
+a(fc_tac[thm1] THEN asm_fc_tac[]);
+(* *** Goal "4.8" *** *)
+a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[]);
+val Ûquery_typeÝ = save_pop_thm"query_type";
+=TEX
+=GFT HOL output
+query_type = ô µ q
+  · isInsert q ± ³ (isDelete q ² isUpdate q ² isSelect q)
+      ² isDelete q ± ³ (isInsert q ² isUpdate q ² isSelect q)
+      ² isUpdate q ± ³ (isInsert q ² isDelete q ² isSelect q)
+      ² isSelect q ± ³ (isInsert q ² isDelete q ² isUpdate q)
+=TEX
+
+=SML
+push_goal([],¬µu· (isItem u ± ³(isClass u ² isData u))
+	² (isClass u ± ³(isItem u ² isData u))		
+	² (isData u ± ³(isItem u  ² isClass u))®);
+a(rewrite_tac[get_spec¬isItem®,get_spec¬ItemUpdate®]);
+a(prove_tac[] THEN_TRY asm_rewrite_tac[]);
+(* *** Goal "1" *** *)
+a(strip_asm_tac(µ_elim¬u®sum_cases_thm));
+(* *** Goal "1.1" *** *)
+a(asm_fc_tac[]);
+(* *** Goal "1.2" *** *)
+a(strip_asm_tac(µ_elim¬z®sum_cases_thm));
+(* *** Goal "1.2.1" *** *)
+a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[]);
+(* *** Goal "1.2.2" *** *)
+a(¶_tac¬z'®THEN asm_rewrite_tac[]);
+=TEX
+=SML
+(* *** Goal "2" *** *)
+a(fc_tac[thm1] THEN asm_fc_tac[]);
+(* *** Goal "3" *** *)
+a(fc_tac[thm1] THEN asm_fc_tac[]);
+(* *** Goal "4" *** *)
+a(fc_tac[thm1] THEN asm_fc_tac[]);
+val Ûupdate_typeÝ = save_pop_thm"update_type";
+=TEX
+=GFT HOL output
+update_type = 
+ô µ u
+  · isItem u ± ³ (isClass u ² isData u)
+      ² isClass u ± ³ (isItem u ² isData u)
+      ² isData u ± ³ (isItem u ² isClass u)
+=TEX
+
+=SML
+push_goal([],¬µv· (isVal v ± ³ isError v)
+	² (isError v ± ³ isVal v)®);
+a(rewrite_tac[isVal_def,isError_def,giveVal_def]);
+a(REPEAT strip_tac THEN_TRY asm_rewrite_tac[]);
+(* *** Goal "1" *** *)
+a(fc_tac[sum_cases_thm]);
+a(¶_tac¬z®THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(¶_tac¬e‰1®THEN asm_rewrite_tac[]);
+val Ûval_or_error_typeÝ = save_pop_thm"val_or_error_type";
+=TEX
+=GFT HOL output
+val_or_error_type = 
+ô µ v· isVal v ± ³ isError v ² isError v ± ³ isVal v
+=TEX
+
 
 \section{PROOF OF SECURITY OF CRITICAL COMPONENTS}
 \subsection{Proof of Conjunct 4}
@@ -1889,3 +2059,14 @@ pop_pc();
 \printindex
 
 \end{document}
+push_goal([],¬µv· (isVal v ± ³ isError v)
+	² (isError v ± ³ isVal v)®);
+a(rewrite_tac[isVal_def,isError_def,giveVal_def]);
+a(REPEAT strip_tac THEN_TRY asm_rewrite_tac[]);
+(* *** Goal "1" *** *)
+a(fc_tac[sum_cases_thm]);
+a(¶_tac¬z®THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(¶_tac¬e‰1®THEN asm_rewrite_tac[]);
+val Ûval_or_error_typeÝ = save_pop_thm"val_or_error_type";
+

@@ -65,7 +65,9 @@ DRA front end filter project RSRE 1C/6130.}
 \subsection{Changes History}
 \begin{description}
 \item[Issue \SCCSversion(\FormatDate{$Date$
-})] Product name changed. $top\_thm$ should be $pop\_thm$.
+})] Axioms $conjunct1\_ax1$ and $conjunct1\_ax2$ replaced
+by lemmas which are proven in terms of $rel\_list\_´\_ax1$
+ and $rel\_list\_´\_ax2$.
 \end{description}
 
 \subsection{Changes Forecast}
@@ -148,73 +150,6 @@ deleteQuery_def =
                       ° {i|R_exist (Nth (TS_rows ts) i) = clear})
                 (TS_rows ts))) s
 =TEX
-
-\subsection{Axioms}
-
-=SML
-val €conjunct1_ax1› =  new_axiom(["conjunct1_ax1"],
-	¨µ l last c (u : Ó ™ (Ó ™ Update)) t ∑
-	u ç Functional
-	¥
-	RelList (ListRel (l Î [last])
-                         ´ (RelCombine
-                             (InvRel
-                                   (Squash
-                                       (Id
-                                           (Dom
-                                               (ListRel l
-                                                   í {r|c dominates R_exist r}))))
-                                 ª u)
-                             (ListRel l)
-                           ª Graph (updateRow c (TS_class t))) ª Graph destVal)
-	= RelList (ListRel l ´ (RelCombine
-                             (InvRel
-                                   (Squash
-                                       (Id
-                                           (Dom
-                                               (ListRel l
-                                                   í {r|c dominates R_exist r}))))
-                                 ª u)
-                             (ListRel l)
-                           ª Graph (updateRow c (TS_class t))) ª Graph destVal) Î [last]Æ);
-=TEX
-=SML
-val €conjunct1_ax2› =  new_axiom(["conjunct1_ax2"],
-	¨µ c last l u us t ∑ 
-		(us ç Functional
-		± c dominates R_exist last 
-		± (#(Squash (Id (Dom(ListRel (l Î [last])
-                                   í {r|c dominates R_exist r})))),u) ç us) 
-	¥
-		RelList
-                     (ListRel (l Î [last])
-                         ´ (RelCombine
-                             (InvRel
-                                   (Squash
-                                       (Id
-                                           (Dom
-                                               (ListRel (l Î [last])
-                                                   í {r|c dominates R_exist r}))))
-                                 ª us)
-                             (ListRel (l Î [last]))
-                           ª Graph (updateRow c (TS_class t)))
-                         ª Graph destVal) = RelList
-                       (ListRel l
-                           ´ (RelCombine
-                               (InvRel
-                                     (Squash
-                                         (Id
-                                             (Dom
-                                                 (ListRel l
-                                                     í {r
-                                                     |c dominates R_exist r}))))
-                                   ª us)
-                               (ListRel l)
-                             ª Graph (updateRow c (TS_class t)))
-                           ª Graph destVal) Î [destVal(updateRow c (TS_class t)(u,last))]Æ);
-=TEX
-
-
 
 \subsection{Auxiliary Theorems}
 =SML
@@ -339,7 +274,322 @@ rel_combine_null_lemma =
           ª Graph destError
         = {}
 =TEX
+=SML
+push_goal([],¨µ l s (u : Ó ™ (Ó ™ Update)) c t∑ 
+	Dom((RelCombine(InvRel(Squash(Id(Dom
+		(ListRel l í {r|c dominates R_exist r})))) ª u)
+		(ListRel l)
+                	ª Graph (updateRow c (TS_class t))) ª Graph destVal)
+	Ä Dom(ListRel l)Æ);
+a(REPEAT µ_tac);
+a(rewrite_tac[enumerate_def,r_ª_r_thm,inv_rel_def,dom_def,id_def,squash_def,
+	rel_combine_def,list_rel_def,í_thm,Ú_thm,dot_dot_def,sets_ext_clauses]);
+a(rename_tac[]); (* to eliminate duplicate variable names *)
+a(REPEAT strip_tac);
+a(prove_∂_tac THEN asm_rewrite_tac[]);
+val €dom_rel_combine_null_Ä_lemma› = save_pop_thm"dom_rel_combine_null_Ä_lemma";
+=GFT HOL output
+dom_rel_combine_null_Ä_lemma = 
+Ù µ l s u c t
+  ∑ Dom
+        ((RelCombine
+                (InvRel
+                      (Squash
+                          (Id (Dom (ListRel l í {r|c dominates R_exist r}))))
+                    ª u)
+                (ListRel l)
+              ª Graph (updateRow c (TS_class t)))
+            ª Graph destVal)
+      Ä Dom (ListRel l)
+=TEX
+=SML
+val €destVal_fun_thm› = save_thm("destVal_fun_thm",
+	tac_proof(([],¨Graph (destVal: Row + Errors ≠ Row) ç FunctionalÆ),
+	rewrite_tac[functional_def]THEN REPEAT strip_tac THEN asm_rewrite_tac[]));
+=TEX
+=SML
+val €updateRow_fun_thm› = save_thm("updateRow_fun_thm",
+	tac_proof(([],¨µ c t ∑ Graph (updateRow c (TS_class t)) ç FunctionalÆ),
+	rewrite_tac[functional_def]THEN REPEAT strip_tac THEN asm_rewrite_tac[]));
+=TEX
 
+=SML
+push_goal([],¨µ l s (u : Ó ™ (Ó ™ Update)) c t∑
+	u ç Functional
+	¥
+	(RelCombine(InvRel(Squash(Id(Dom
+		(ListRel l í {r|c dominates R_exist r})))) ª u)
+		(ListRel l)
+                	ª Graph (updateRow c (TS_class t))) ª Graph destVal ç FunctionalÆ);
+a(REPEAT strip_tac);
+a(lemma_tac¨RelCombine (InvRel (Squash (Id (Dom
+	 (ListRel l í {r|c dominates R_exist r})))) ª u)
+                   (ListRel l) ç FunctionalÆ);
+=TEX
+=SML
+(* *** Goal "1" *** *)
+a(lemma_tac¨InvRel(Squash(Id(Dom
+	(ListRel l í {r|c dominates R_exist r})))) ç FunctionalÆ);
+(* *** Goal "1.1" *** *)
+a(rewrite_tac[squash_id_ax,enumerate_ax,inv_rel_def,
+	functional_def] THEN REPEAT strip_tac);
+a(DROP_NTH_ASM_T 4 (rewrite_thm_tac o eq_sym_rule) 
+	THEN POP_ASM_T (rewrite_thm_tac o eq_sym_rule));
+(* *** Goal "1.2" *** *)
+a(bc_tac[rel_combine_fun_thm] THEN bc_tac[ª_fun_thm1]
+	THEN asm_rewrite_tac[list_rel_fun_ax]);
+=TEX
+=SML
+(* *** Goal "2" *** *)
+a(bc_tac[ª_fun_thm] THEN bc_tac[ª_fun_thm] THEN 
+	asm_rewrite_tac[destVal_fun_thm,updateRow_fun_thm]);
+val €conjunct1_fun_lemma› = save_pop_thm"conjunct1_fun_lemma";
+=TEX
+=GFT HOL output
+conjunct1_fun_lemma = 
+Ù µ l s u c t
+  ∑ u ç Functional
+      ¥ (RelCombine
+              (InvRel
+                    (Squash
+                        (Id (Dom (ListRel l í {r|c dominates R_exist r}))))
+                  ª u)
+              (ListRel l)
+            ª Graph (updateRow c (TS_class t)))
+          ª Graph destVal
+        ç Functional
+=TEX
+=SML
+push_goal([],¨µ l last c (u : Ó ™ (Ó ™ Update)) t ∑
+	u ç Functional
+	¥
+	RelList (ListRel (l Î [last])
+                         ´ (RelCombine
+                             (InvRel
+                                   (Squash
+                                       (Id
+                                           (Dom
+                                               (ListRel l
+                                                   í {r|c dominates R_exist r}))))
+                                 ª u)
+                             (ListRel l)
+                           ª Graph (updateRow c (TS_class t))) ª Graph destVal)
+	= RelList (ListRel l ´ (RelCombine
+                             (InvRel
+                                   (Squash
+                                       (Id
+                                           (Dom
+                                               (ListRel l
+                                                   í {r|c dominates R_exist r}))))
+                                 ª u)
+                             (ListRel l)
+                           ª Graph (updateRow c (TS_class t))) ª Graph destVal) Î [last]Æ);
+=TEX
+=SML
+a(REPEAT strip_tac);
+a(bc_tac[rel_list_´_ax1]);
+(* *** Goal "1" *** *)
+a(bc_tac[conjunct1_fun_lemma] THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(rewrite_tac[dom_rel_combine_null_Ä_lemma]);
+val €conjunct1_lemma1› = save_pop_thm"conjunct1_lemma1";
+=TEX
+=GFT HOL output
+conjunct1_lemma1 = Ù µ l last c u t
+  ∑ u ç Functional
+      ¥ RelList
+          (ListRel (l Î [last])
+              ´ (RelCombine
+                  (InvRel
+                        (Squash
+                            (Id
+                                (Dom
+                                    (ListRel l
+                                        í {r|c dominates R_exist r}))))
+                      ª u)
+                  (ListRel l)
+                ª Graph (updateRow c (TS_class t)))
+              ª Graph destVal)
+        = RelList
+            (ListRel l
+                ´ (RelCombine
+                    (InvRel
+                          (Squash
+                              (Id
+                                  (Dom
+                                      (ListRel l
+                                          í {r|c dominates R_exist r}))))
+                        ª u)
+                    (ListRel l)
+                  ª Graph (updateRow c (TS_class t)))
+                ª Graph destVal)
+          Î [last]
+=TEX
+=SML
+push_goal([],¨µ c last l u us t ∑ 
+		(us ç Functional
+		± c dominates R_exist last 
+		± (#(Squash (Id (Dom(ListRel (l Î [last])
+                                   í {r|c dominates R_exist r})))),u) ç us) 
+	¥
+		RelList
+                     (ListRel (l Î [last])
+                         ´ (RelCombine
+                             (InvRel
+                                   (Squash
+                                       (Id
+                                           (Dom
+                                               (ListRel (l Î [last])
+                                                   í {r|c dominates R_exist r}))))
+                                 ª us)
+                             (ListRel (l Î [last]))
+                           ª Graph (updateRow c (TS_class t)))
+                         ª Graph destVal) = RelList
+                       (ListRel l
+                           ´ (RelCombine
+                               (InvRel
+                                     (Squash
+                                         (Id
+                                             (Dom
+                                                 (ListRel l
+                                                     í {r
+                                                     |c dominates R_exist r}))))
+                                   ª us)
+                               (ListRel l)
+                             ª Graph (updateRow c (TS_class t)))
+                           ª Graph destVal) Î [destVal(updateRow c (TS_class t)(u,last))]Æ);
+=TEX
+=SML
+a(REPEAT strip_tac);
+a(LEMMA_T¨(RelCombine
+                       (InvRel
+                             (Squash
+                                 (Id
+                                     (Dom
+                                         (ListRel (l Î [last])
+                                             í {r
+                                             |c
+                                                 dominates R_exist
+           r}))))
+                           ª us)
+                       (ListRel (l Î [last]))
+                     ª Graph (updateRow c (TS_class t)))
+                   ª Graph destVal
+	=
+	((RelCombine
+                         (InvRel
+                               (Squash
+                                   (Id
+                                       (Dom
+                                           (ListRel l
+                                               í {r
+                                               |c
+           dominates R_exist r}))))
+                             ª us)
+                         (ListRel l)
+                       ª Graph (updateRow c (TS_class t)))
+                     ª Graph destVal) ¿
+	{(#l + 1,destVal(updateRow c (TS_class t)(u,last)))}Æ
+	rewrite_thm_tac);
+=TEX
+=SML
+(* *** Goal "1" *** *)
+a(asm_rewrite_tac[squash_Î_ax,inv_rel_single,rel_combine_one_lemma]);
+a(LEMMA_T¨((RelCombine
+                     ({(Length l + 1,
+                             Size
+                                   (Squash
+                                       (Id
+                                           (Dom
+                                               (ListRel l
+           í {r|c dominates R_exist r}))))
+                                 + 1)}
+                         ª us)
+                     (ListRel (l Î [last]))
+                   ª Graph (updateRow c (TS_class t)))
+                 ª Graph destVal) =
+	{(Length l + 1,
+                   destVal
+                       (updateRow c (TS_class t) (u, last)))}Ærewrite_thm_tac);
+a(rewrite_tac[rel_combine_def,r_ª_r_thm,rel_ext_clauses]);
+a(REPEAT strip_tac);
+=TEX
+=SML
+(* *** Goal "1.1" *** *)
+a(strip_asm_tac(list_µ_elim[¨lÆ,¨lastÆ,¨{r|c dominates R_exist r}Æ]size_squash_plus1_lemma));
+a(DROP_NTH_ASM_T 8 ante_tac THEN POP_ASM_T rewrite_thm_tac);
+a(DROP_NTH_ASM_T 5 (rewrite_thm_tac o eq_sym_rule)THEN ¥_tac);
+a(lemma_tac¨u = Fst z'Æ);
+(* *** Goal "1.1.1" *** *)
+a(DROP_NTH_ASM_T 8 (asm_tac o rewrite_rule[functional_def]));
+a(POP_ASM_T (strip_asm_tac o list_µ_elim[¨z''Æ,¨uÆ,¨Fst z'Æ]));
+(* *** Goal "1.1.2" *** *)
+a(lemma_tac¨last = Snd z'Æ);
+(* *** Goal "1.1.2.1" *** *)
+a(DROP_NTH_ASM_T 5 ante_tac THEN asm_rewrite_tac[list_rel_Î_thm]
+	THEN REPEAT strip_tac THEN_TRY asm_rewrite_tac[]);
+a(swap_nth_asm_concl_tac 1);
+a(rewrite_tac[list_rel_def,dot_dot_def]);
+(* *** Goal "1.1.2.2" *** *)
+a(asm_rewrite_tac[]);
+=TEX
+=SML
+(* *** Goal "1.2" *** *)
+a(∂_tac¨(updateRow c (TS_class t)(u, last))Æ THEN asm_rewrite_tac[]);
+a(∂_tac¨(u,last)Æ THEN rewrite_tac[list_rel_Î_thm,¿_def]);
+a(prove_∂_tac);
+a(strip_asm_tac(list_µ_elim[¨lÆ,¨lastÆ,¨{r|c dominates R_exist r}Æ]size_squash_plus1_lemma));
+a(POP_ASM_T (rewrite_thm_tac o eq_sym_rule)THEN asm_rewrite_tac[]);
+=TEX
+=SML
+(* *** Goal "2" *** *)
+a(bc_tac[rel_list_´_ax2]);
+(* *** Goal "2.1" *** *)
+a(bc_tac[conjunct1_fun_lemma] THEN asm_rewrite_tac[]);
+(* *** Goal "2.2" *** *)
+a(rewrite_tac[dom_rel_combine_null_Ä_lemma]);
+val €conjunct1_lemma2› = save_pop_thm"conjunct1_lemma2";
+=TEX
+=GFT HOL output
+conjunct1_lemma2 = 
+Ù µ c last l u us t
+  ∑ us ç Functional
+        ± c dominates R_exist last
+        ± (Size
+                (Squash
+                    (Id
+                        (Dom
+                            (ListRel (l Î [last])
+                                í {r|c dominates R_exist r})))), u)
+          ç us
+      ¥ RelList
+          (ListRel (l Î [last])
+              ´ (RelCombine
+                  (InvRel
+                        (Squash
+                            (Id
+                                (Dom
+                                    (ListRel (l Î [last])
+                                        í {r|c dominates R_exist r}))))
+                      ª us)
+                  (ListRel (l Î [last]))
+                ª Graph (updateRow c (TS_class t)))
+              ª Graph destVal)
+        = RelList
+            (ListRel l
+                ´ (RelCombine
+                    (InvRel
+                          (Squash
+                              (Id
+                                  (Dom
+                                      (ListRel l
+                                          í {r|c dominates R_exist r}))))
+                        ª us)
+                    (ListRel l)
+                  ª Graph (updateRow c (TS_class t)))
+                ª Graph destVal)
+          Î [destVal (updateRow c (TS_class t) (u, last))]
+=TEX
 
 \section{PROOF OF SECURITY OF CRITICAL COMPONENTS}
 The main proof of this section is built up from a series of lemmas.
@@ -1192,7 +1442,7 @@ a(cases_tac¨câ2 dominates R_exist lastÆTHEN
 a(cases_tac¨∂ up ∑ (#(Squash (Id (Dom (ListRel (l Î [last])
                                                    í {r|câ1 dominates R_exist r})))),up) ç usÆ);
 (* *** Goal "2.1.1" *** *)
-a(strip_asm_tac(list_µ_elim[¨câ1Æ,¨lastÆ,¨lÆ,¨upÆ,¨usÆ,¨tÆ]conjunct1_ax2)
+a(strip_asm_tac(list_µ_elim[¨câ1Æ,¨lastÆ,¨lÆ,¨upÆ,¨usÆ,¨tÆ]conjunct1_lemma2)
 	THEN POP_ASM_T rewrite_thm_tac);
 a(lemma_tac¨isVal(updateRow câ1 (TS_class t) (up, last))Æ);
 (* *** Goal "2.1.1.1" *** *)
@@ -1274,19 +1524,19 @@ a(DROP_NTH_ASM_T 5 ante_tac THEN DROP_NTH_ASM_T 3 ante_tac
 (* *** Goal "2.1.2.1.2" *** *)
 a(rewrite_tac[rel_combine_one_lemma]);
 (* *** Goal "2.1.2.2" *** *)
-a(strip_asm_tac(list_µ_elim[¨lÆ,¨lastÆ,¨câ1Æ,¨usÆ,¨tÆ]conjunct1_ax1));
+a(strip_asm_tac(list_µ_elim[¨lÆ,¨lastÆ,¨câ1Æ,¨usÆ,¨tÆ]conjunct1_lemma1));
 a(asm_rewrite_tac[]);
 =TEX
 =SML
 (* *** Goal "2.2" *** *)
 a(asm_rewrite_tac[rel_combine_one_lemma,squash_Î_ax]);
-a(strip_asm_tac(list_µ_elim[¨lÆ,¨lastÆ,¨câ1Æ,¨usÆ,¨tÆ]conjunct1_ax1));
+a(strip_asm_tac(list_µ_elim[¨lÆ,¨lastÆ,¨câ1Æ,¨usÆ,¨tÆ]conjunct1_lemma1));
 a(asm_rewrite_tac[]);
 (* *** Goal "2.3" *** *)
 a(cases_tac¨∂ up ∑ (#(Squash (Id (Dom (ListRel (l Î [last])
                                                    í {r|câ1 dominates R_exist r})))),up) ç usÆ);
 (* *** Goal "2.3.1" *** *)
-a(strip_asm_tac(list_µ_elim[¨câ1Æ,¨lastÆ,¨lÆ,¨upÆ,¨usÆ,¨tÆ]conjunct1_ax2)
+a(strip_asm_tac(list_µ_elim[¨câ1Æ,¨lastÆ,¨lÆ,¨upÆ,¨usÆ,¨tÆ]conjunct1_lemma2)
 	THEN POP_ASM_T rewrite_thm_tac);
 a(lemma_tac¨isVal(updateRow câ1 (TS_class t) (up, last))Æ);
 (* *** Goal "2.3.1.1" *** *)
@@ -1366,11 +1616,11 @@ a(DROP_NTH_ASM_T 5 ante_tac THEN DROP_NTH_ASM_T 3 ante_tac
 (* *** Goal "2.3.2.1.2" *** *)
 a(rewrite_tac[rel_combine_one_lemma]);
 (* *** Goal "2.3.2.2" *** *)
-a(strip_asm_tac(list_µ_elim[¨lÆ,¨lastÆ,¨câ1Æ,¨usÆ,¨tÆ]conjunct1_ax1));
+a(strip_asm_tac(list_µ_elim[¨lÆ,¨lastÆ,¨câ1Æ,¨usÆ,¨tÆ]conjunct1_lemma1));
 a(asm_rewrite_tac[]);
 (* *** Goal "2.4" *** *)
 a(asm_rewrite_tac[rel_combine_one_lemma,squash_Î_ax]);
-a(strip_asm_tac(list_µ_elim[¨lÆ,¨lastÆ,¨câ1Æ,¨usÆ,¨tÆ]conjunct1_ax1));
+a(strip_asm_tac(list_µ_elim[¨lÆ,¨lastÆ,¨câ1Æ,¨usÆ,¨tÆ]conjunct1_lemma1));
 a(asm_rewrite_tac[]);
 val €updateRows_lemma› = save_pop_thm"updateRows_lemma";
 =TEX
