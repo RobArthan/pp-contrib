@@ -1,7 +1,7 @@
 pp_make_database -f -p hol topology
 docsml topology analysis
 xpp -file topology.doc -com pp -d topology -i analysis,topology &
-doctex topology topology.th; texdvi topology
+doctex topology topology.th  topology_examples.th; texdvi topology
 =TEX
 \documentclass[10pt,a4paper]{article}
 \usepackage{latexsym}
@@ -204,6 +204,8 @@ Our final definition is the Hausdorff condition:
 %%%%
 {\HOLindexOff
 \include{topology.th}}
+{\HOLindexOff
+\include{topology_examples.th}}
 =TEX
 %%%%
 %%%%
@@ -1658,10 +1660,13 @@ a(PC_T1 "sets_ext1" rewrite_tac[closed_interval_def]);
 a(REPEAT strip_tac THEN rename_tac[] THEN all_asm_fc_tac[] THEN asm_rewrite_tac[Ø_º_def]);
 val €connected_Ø_thm› = save_pop_thm "connected_Ø_thm";
 =TEX
-\subsection{Path Connectedness}
+\subsection{Path Connectedness and the Path Groupoid}
 Continuing along the way towards the elements of algebraic topology, we now consider
 path connectedness. Here is the definition of path connected set.
-This differs from the traditional one in taking th
+This differs from the traditional one in taking the path to be a continuous function on
+the whole real line and in allowing the end point of the path to be any real number.
+This does not make any difference to the underlying concept and is more uniform with
+what we plan to do with the path space presently.
 =SML
 declare_postfix(300, "PathConnected");
 πHOLCONST
@@ -1671,7 +1676,7 @@ declare_postfix(300, "PathConnected");
 ‹	{	A
 ‹	|	A Ä Space ‘
 ‹	±	µx y∑ x ç A ± y ç A 
-‹	¥	∂f∑  f ç (OpenâR, ‘) Continuous ± (µ t∑ f t ç A) ± f (ÓØ 0) = x ± f (ÓØ 1) = y}
+‹	¥	∂f t∑  f ç (OpenâR, ‘) Continuous ± (µ t∑ f t ç A) ± f (ÓØ 0) = x ± f t = y}
 ∞
 =SML
 val €path_connected_def› = get_spec¨$PathConnectedÆ;
@@ -1698,13 +1703,108 @@ a(all_var_elim_asm_tac1 THEN asm_rewrite_tac[]);
 (* *** Goal "2" *** *)
 a(∂_tac¨ÓØ 0Æ THEN asm_rewrite_tac[]);
 (* *** Goal "3" *** *)
-a(∂_tac¨ÓØ 1Æ THEN asm_rewrite_tac[]);
+a(∂_tac¨tÆ THEN asm_rewrite_tac[]);
 val €path_connected_connected_thm› = save_pop_thm "path_connected_connected_thm";
+=TEX
+We define the path space of a space to be a set of pairs $(f, d)$ where $f$ is a continuous function
+from the real line into the space and $d$ is a non-negative real number giving the end-point
+of the path, the start-point being taken to be $0$. The function is required to be constant
+for $x \le 0$ and $x \ge d$.
+This formulation is equivalent to the more common
+one where $d$ is fixed equal to $1$ and has the advantage that addition of paths can be defined
+so that it is associative and has an identity on the nose rather than just up to homotopy.
+For the time being we do not define a topology on the path space (this being a slightly thorny
+topic in the literature).
+%%%%
+%%%%
+=SML
+πHOLCONST
+‹ €PathSpace› : 'a SET SET ≠ ((Ø ≠ 'a) ∏ Ø) SET
+˜¸¸¸¸¸¸
+‹ µ‘∑ PathSpace ‘ =
+‹	{	(f, d)
+‹	|	f ç (OpenâR, ‘) Continuous ± ÓØ 0 º d
+‹	±	(µt∑ t º ÓØ 0 ¥ f t = f(ÓØ 0))
+‹	±	(µt∑ d º t ¥ f t = f d) }
+∞
+=TEX
+Now we define addition of paths:
+=SML
+declare_infix(300, "+âP");
+πHOLCONST
+‹ €$+âP› : ((Ø ≠ 'a) ∏ Ø) ≠ ((Ø ≠ 'a) ∏ Ø) ≠ ((Ø ≠ 'a) ∏ Ø)
+˜¸¸¸¸¸¸
+‹ µf d g e∑ (f, d) +âP (g, e) = ((Ãt∑if t º d then f t else g (t - d)), d + e)
+∞
+The identity elements of the path space are the constant paths of zero length:
+πHOLCONST
+‹ €0âP› : 'a ≠ ((Ø ≠ 'a) ∏ Ø)
+˜¸¸¸¸¸¸
+‹ µx∑ 0âP x = ((Ãt∑ x), ÓØ 0)
+∞
+=SML
+val €path_space_def› = get_spec¨$PathSpaceÆ;
+val €path_plus_def› = get_spec¨$+âPÆ;
+val €path_0_def› = get_spec¨0âPÆ;
+=TEX
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µ‘ f d∑
+	‘ ç Topology
+±	(f, d) ç PathSpace ‘
+¥	(f, d) +âP 0âP (f d) = (f, d)
+±	0âP (f (ÓØ 0)) +âP (f, d) = (f, d)
+Æ);
+a(rewrite_tac[path_space_def, path_0_def, path_plus_def] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(cases_tac¨x º dÆ THEN asm_rewrite_tac[]);
+a(lemma_tac¨d º xÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(ALL_ASM_FC_T rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(cases_tac¨x º ÓØ 0Æ THEN asm_rewrite_tac[]);
+a(ALL_ASM_FC_T rewrite_tac[]);
+val €path_plus_0_thm› = save_pop_thm "path_plus_0_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µ‘ f d∑
+	‘ ç Topology
+±	(f, c) ç PathSpace ‘
+±	(g, d) ç PathSpace ‘
+±	(h, e) ç PathSpace ‘
+±	f c = g (ÓØ 0)
+±	g d = h(ÓØ 0)
+¥	((f, c) +âP (g, d)) +âP (h, e) = (f, c) +âP ((g, d) +âP (h, e))
+Æ);
+a(rewrite_tac[path_space_def, path_plus_def] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(cases_tac¨x º cÆ THEN asm_rewrite_tac[]);
+(* *** Goal "1.1" *** *)
+a(cases_tac¨x º c + dÆ THEN asm_rewrite_tac[]);
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "1.2" *** *)
+a(cases_tac¨x º c + dÆ THEN asm_rewrite_tac[]);
+(* *** Goal "1.2.1" *** *)
+a(cases_tac¨x + ~c º dÆ THEN asm_rewrite_tac[]);
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "1.2.2" *** *)
+a(cases_tac¨x + ~c º dÆ THEN asm_rewrite_tac[]);
+(* *** Goal "1.2.2.1" *** *)
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "1.2.2.2" *** *)
+a(rewrite_tac[Ø_plus_assoc_thm]);
+(* *** Goal "2" *** *)
+a(rewrite_tac[Ø_plus_assoc_thm]);
+val €path_plus_assoc_thm› = save_pop_thm "path_plus_assoc_thm";
 =TEX
 \subsection{Epilogue}
 =TEX
 =SML
-output_theory{out_file="topology.th.doc", theory="-"};
+output_theory{out_file="topology.th.doc", theory="topology"};
+output_theory{out_file="topology_examples.th.doc", theory="topology_examples"};
 =TEX
 \twocolumn[\section{INDEX}\label{INDEX}]
 {\small\printindex}
