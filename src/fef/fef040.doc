@@ -120,16 +120,17 @@ declare_type_abbrev(Û"ML_BEHAVIOURS"İ,["'IP", "'OP"], ¬: ('IP)LIST ­ ('OP )LIST®
 =TEX
 
 \subsection{Classes}
-We use the lattice of security classes defined in \cite{DS/FMU/FEF/003} as the type $Class$ togeth with operations $dominates$, $lub$, etc.
-We will need the notions of the down-set
+We use the lattice of security classes defined in \cite{DS/FMU/FEF/003} as the type $Class$ together with operations $dominates$, $lub$, etc.
+We will need the notions of the down-set,
 =INLINEFT
 c%downarrow%
 =TEX
-, and the up-set
+, and the up-set,
 =INLINEFT
 c%uparrow%
 =TEX
-\ of a class $c$.
+, of a class $c$.
+We write these operators with postfix syntax:
 =SML
 declare_postfix(300, "%downarrow%");
 declare_postfix(300, "%uparrow%");
@@ -146,13 +147,32 @@ declare_postfix(300, "%uparrow%");
 Üµc·	c %uparrow% = { d | d dominates c }
 °
 
+We need the idea of the ``orthogonal complement'' of a set $A$ of classes, which we shall write as
+=INLINEFT
+A ç%bottom%ê
+=TEX
+.
+=INLINEFT
+A ç%bottom%ê
+=TEX
+\ is to be the set of classes which are are not comparable with any element of $A$.
+=SML
+declare_postfix(300, "ç%bottom%ê");
+=TEX
+¹HOLCONST
+Ü	Û$ç%bottom%êİ : Class ğ­ Class ğ
+÷üüüüüüüüüüüüüü
+ÜµA·	A ç%bottom%ê = { c | µd·d  A ´ ³ c dominates d ± ³ d dominates c }
+°
+
+
 \subsection{Purging Data}
 In \cite{DS/FMU/FEF/003}, the security policy is expressed in terms of relations $same\_ins$, and $same\_outs$ parameterised by a security class.
 In \cite{securityprops}, the non-interference property is expressed using a relation $identicalObjs$ also parameterised by a class.
 \cite{securityprops} also uses a visibility predicate $visible$ again parameterised by a class.
 
-To generalise these ideas from \cite{DS/FMU/FEF/003,securityprops}, it is convenient to define the notion of an equivalence relation.
-An equivalence relation is one which is reflexive, symmetric and transitive, which we may express as follows.
+To generalise these ideas from \cite{DS/FMU/FEF/003,securityprops}, it is convenient to define the notion of an equivalence relation,
+(an equivalence relation being one which is reflexive, symmetric and transitive).
 
 
 ¹HOLCONST
@@ -162,14 +182,18 @@ An equivalence relation is one which is reflexive, symmetric and transitive, whi
 °
 
 \Note{The above assumes that we are only concerned with equivalence relations on the entire type of objects.
-This would mean that if the input and output objects have to satisfy some invariant, then that invariant must be captured in a type definition.}
+This may mean that if the input and output objects have to satisfy some invariant, then it has to be captured in a type definition.}
 
 In \cite{DS/FMU/FEF/003,securityprops}, two objects, $x$ and $y$, are take to be identical viewed from a class, $c$, if they become the same when components whose classification is not dominated by $c$ are ``purged''.
-I.e., $x$ and $y$ are taken as the same at $c$ iff. they become identical when we treat components whose classification is not in $Downset(c)$ as being equal. 
+I.e., $x$ and $y$ are taken as the same at $c$ iff. they become identical when we treat components whose classification is not in
+=INLINEFT
+c %downarrow%
+=TEX
+\ as being equal. 
 To tackle the result labelling property, it is useful to have available the analogous notion for any set of classes, not just down-sets.
 To do this we introduce the idea of an {\em indexed equivalence relation}.
 This is to be a function, $s$ associating with each set, $A$, of classes, an equivalence relation $s(A)$.
-We require that $s$ be antimonotonic with respect to inclusion, that is to say, the bigger the set $A$, the finer is the equivalence relation $s(A)$:
+We require that $s$ be antimonotonic with respect to inclusion, i.e., the bigger the set $A$, the finer the equivalence relation $s(A)$:
 
 ¹HOLCONST
 Ü	ÛIndexedEquivİ : (Class ğ ­ ('a ª 'a)) ğ
@@ -187,8 +211,8 @@ We require that $s$ be antimonotonic with respect to inclusion, that is to say, 
 I have tried ``purging relation'' and ``filter'' and didn't like them much.}
 
 Given a relation parameterised by individual classes we may lift it to an indexed relation.
-In the next section, this lifting function allows us to relate the multi-level security policy with the single level one of \cite{DS/FMU/FEF/003}.
-It is defined as follows:
+In the next section, this allows us to relate the multi-level security policy with the single level one of \cite{DS/FMU/FEF/003}.
+The lifting function is defined as follows:
 
 ¹HOLCONST
 Ü	ÛLiftRelİ : (Class ­ ('a ª 'a)) ­ (Class ğ ­ ('a ª 'a))
@@ -196,7 +220,15 @@ It is defined as follows:
 ÜµR·	LiftRel R = (ÌA·¥{ r | ¶c· c  A ± r = R c })
 °
 
+We will say that an indexed equivalence relation is {\em independent} if the following criterion holds:
 
+¹HOLCONST
+Ü	ÛIndependentİ : (Class ğ ­ ('a ª 'a)) ğ
+÷üüüüüüüüüüüüüü
+Ü	Independent =
+Ü	{	s
+Ü	|	µA x· (¶y· ³(x, y)  s(A)) ´ ¶z· ³(x, z)  s(A) ± (x, z)  s(A ç%bottom%ê)}
+°
 
 \subsection{Security Policy} \label{CRITICAL}
 
@@ -226,11 +258,11 @@ val Ûconj_040_1İ = ¬
 \section{RESULT LABELLING}
 \subsection{Observations}
 The general way we are modelling structured multi-level objects requires us to use indirect means to handle the idea of a component of an object labelled with a class.
-We think of the component as being modelled by the function which maps an object, or a sequence of same, to the class-value pair held in the component.
-For present purposes, it is generally more convenient to think of such a function as a pair of functions, one returning a class and the other as a value.
+We think of the component as being modelled by the function which maps an object to the class-value pair held in the component.
+Because the class component is itself a potential source of information flows it will often be more convenient to think of such a function as a pair of functions, one to returning the class and the other the value.
 
 
-In general, given an arbitrary function on a set endowed with an indexed equivalence relation, we consider the classes at or above which information has flowed into the result of applying the function.
+Given an arbitrary function on a set endowed with an indexed equivalence relation, we consider the classes at or above which information has flowed into the result of applying the function.
 This notion may be formalised as follows:
 
 ¹HOLCONST
@@ -240,6 +272,12 @@ This notion may be formalised as follows:
 Ü	Influenced s x f =
 Ü	{ c | ¶y· (x, y)  s(~(c %uparrow%)) ± ³f(x) = f(y) }
 °
+
+(Here
+=INLINEFT
+~A
+=TEX
+\ is ProofPower-HOL notation for the complement of the set $A$.)
 
 That is to say
 =INLINEFT
@@ -251,57 +289,57 @@ Influenced s x f
 \Note{Should one be using uncurried functions here: $Influenced(s, x, f)$?}
 
 We model the process of examining a labelled component of an object in the output of a system by a pair of functions, $(C, V)$: $C$ computing the class; and $V$ computing the value.
-We will call such a pair an observation:
+We will call such a pair an {\em observation}:
 =SML
 declare_type_abbrev(Û"OBSERVATION"İ,["'a", "'b"], ¬: ('a ­ Class) ¸ ('a ­ 'b)®);
 =TEX
-The labelled value taken by an observation of an object is defined as follows:
+The labelled value produced when an object is observed is defined by the following function (which converts a pair of functions into a function returning pairs):
 
 ¹HOLCONST
-Ü	ObservedValue : ('a, 'b) OBSERVATION ­ 'a ­ (Class ¸ 'b)
+Ü	ÛObservedValueİ : ('a, 'b) OBSERVATION ­ 'a ­ (Class ¸ 'b)
 ÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüü
 ÜµC V x·
 Ü	ObservedValue (C, V) x = (C x, V x)
 °
 
-We can think of the labelled values resulting from observations as (single-level) classified objects using the following parameterised equivalence relation, which corresponds to the filtering operation performed on database cells in the single-level formulation of SWORD.
+We can think of the labelled values resulting from observations as (single-level) classified objects using the following parameterised equivalence relation, (cf. the filtering operation which are performed on database cells in the single-level formulation of SWORD).
+For the time being, despite earlier remarks, we take it that the class in a labelled value is {\em not} part of the information revealed to the user.
 
 ¹HOLCONST
-Ü	SameLabVal : Class ­ (Class ¸ 'b) ª (Class ¸ 'b)
+Ü	ÛSameLabValİ : Class ­ (Class ¸ 'b) ª (Class ¸ 'b)
 ÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüü
 Üµc·	SameLabVal c =
-Ü	{	((c‰1, y‰1), (c‰2, y‰2))
-Ü	|	c‰1 = c‰2
-Ü	±	(c dominates c‰1 ´ y‰1 = y‰2)}
+Ü	{	((c‰1, v‰1), (c‰2, v‰2))
+Ü	|	(c dominates c‰1 ¤ c dominates c‰2)
+Ü	±	(c dominates c‰1 ´ v‰1 = v‰2) }
 °
 
 We can now consider the question of when the process of making an observation is secure.
-When a client makes an observation, we assume that some trusted part of the overall system will check the class which is returned and will prevent revelation of the value to clients who are not cleared to see it.
-Thus the value may depend on information a client is not cleared to see, but this does not matter provided the class returned is such as to prevent the client being given the value.
+When a client makes an observation, we assume that some trusted part of the overall system will check the class which is returned and will withhold the value from clients who are not cleared to see it.
+Thus the value may depend on information a client is not cleared to see, but this does not matter provided the class prevents the client from seeing the value.
 However, since the class is itself intended to be part of what the client making the observation sees, the class must not depend on information the client is not allowed to know.
-These ideas may be formalised as follows:
+We will call an observation {\em bounded} if the following holds of it:
 
 ¹HOLCONST
-Ü	SecureObs : (Class ğ ­ ('a ª 'a)) ­ ('a, 'b) OBSERVATION ğ
+Ü	ÛBoundedObsİ : (Class ğ ­ ('a ª 'a)) ­ ('a, 'b) OBSERVATION ğ
 ÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüü
-Üµs·	SecureObs s =
+Üµs·	BoundedObs s =
 Ü	{	(C, V) : ('a, 'b) OBSERVATION
-Ü	|	µx·	Influenced s x C € {lattice_bottom}
-Ü		±	Influenced s x V € (C x)%downarrow% }
+Ü	|	µx·	Influenced s x V € (C x)%downarrow% }
 °
 
-The the above definition is necessary the required security properties on an observation is shown by the following conjecture:
+The above definition is necessary for an observation to be secure in a certain sense, as asserted in the following conjecture:
 =SML
 val Ûconj_040_2İ = ¬
 µs·		s  IndexedEquiv
 	´	µC V·	ObservedValue (C, V)  ml_secure s (LiftRel SameLabVal)
-		´	(C, V)  SecureObs s
+		´	(C, V)  BoundedObs s
 ®;
 =TEX
 =IGN
 val Ûconj_040_3İ = ¬
 µs·		s  IndexedEquiv ± s(Universe) = Id Universe
-	´	µC V·	(C, V)  SecureObs s
+	´	µC V·	(C, V)  BoundedObs s
 		´	ObservedValue (C, V)  ml_secure s (LiftRel SameLabVal)
 ®;
 =TEX
@@ -310,7 +348,7 @@ The following \Product{} instruction restores the previous proof context.
 =SML
 pop_pc();
 =TEX
-=SML
+=IGN
 output_theory{theory = "fef040",out_file = "fef040th.doc"};
 =TEX
 \newpage
@@ -534,30 +572,12 @@ set_goal([], ¬LiftRel SameLabVal  IndexedEquiv®);
 a(bc_tac[lift_rel_indexed_equiv_thm] THEN rewrite_tac[same_lab_val_equiv_thm]);
 val Ûlift_rel_same_lab_val_equiv_thmİ =
 	save_pop_thm"lift_rel_same_lab_val_equiv_thm";
-=TEX
-=SML
-set_pc"hol2";
-set_goal([], ¬
-	µc d·c dominates d ´ SameLabVal c € SameLabVal d
-®);
-a(rewrite_tac(map get_spec[¬SameLabVal®]) THEN REPEAT strip_tac);
-a(all_fc_tac[get_spec¬$dominates®]);
-val Ûsame_lab_val_anti_mono_thmİ = save_pop_thm"same_lab_val_anti_mono_thm";
-=TEX
-=SML
-set_goal([], ¬
-µc·	(LiftRel SameLabVal)(c %downarrow%) = SameLabVal c
-®);
-a(bc_tac[equiv_anti_mono_lift_rel_thm] THEN
-	rewrite_tac
-	[same_lab_val_equiv_thm, same_lab_val_anti_mono_thm]);
-val Ûlift_rel_same_lab_down_thmİ = save_pop_thm"same_lab_down_thm";
 =TEX 
-=SML
+=IGN SML
 set_pc"hol";
 set_goal([], conj_040_2);
 a(rewrite_tac(lift_rel_same_lab_down_thm:: map get_spec
-	[¬SecureObs®, ¬ObservedValue®, ¬SameLabVal®,
+	[¬BoundedObs®, ¬ObservedValue®, ¬SameLabVal®,
 	¬ml_secure®, ¬Influenced®]) THEN
 	PC_T1 "hol2" REPEAT strip_tac);
 (* *** Goal "1" *** *)
@@ -604,7 +624,7 @@ val Ûdown_¥_comp_up_thmİ = save_pop_thm"down_¥_comp_up_thm";
 set_pc"hol";
 set_goal([], conj_040_3);
 a(rewrite_tac(lift_rel_same_lab_down_thm:: map get_spec
-	[¬SecureObs®, ¬ObservedValue®, ¬SameLabVal®,
+	[¬BoundedObs®, ¬ObservedValue®, ¬SameLabVal®,
 	¬ml_secure®, ¬Influenced®]) THEN
 	PC_T1 "hol2" REPEAT strip_tac);
 (* *** Goal "1" *** *)
