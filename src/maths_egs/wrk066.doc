@@ -1,8 +1,7 @@
 pp_make_database -f -p hol analysis
-docsml analysis wrk044
-hol -f wrk044.sml -d analysis
+docsml analysis
 xpp -file analysis.doc -com pp -d analysis -i analysis &
-doctex analysis analysis.th; texdvi analysis
+doctex analysis analysis.th fin_thms.th; texdvi analysis
 =TEX
 \documentclass[10pt,a4paper]{article}
 \usepackage{latexsym}
@@ -58,7 +57,7 @@ force_delete_theory"analysis" handle Fail _ => ();
 open_theory"Ø";
 set_merge_pcs["basic_hol1", "'sets_alg", "'Ø"];
 new_theory"analysis";
-new_parent"fin_thms";
+new_parent"fin_set";
 =TEX
 %%%%
 %%%%
@@ -297,9 +296,9 @@ of complementing a set with respect to the universe of its type..]
 %%%%
 %%%%
 {\HOLindexOff
-\let\Section\section
-\def\section#1{\Section{#1}\label{THEORYLISTING}}
-\include{analysis.th}}
+\include{analysis.th}
+\newpage
+\include{fin_thms.th}}
 %%%%
 %%%%
 %%%%
@@ -364,11 +363,93 @@ val €Ø_abs_def› = get_spec¨AbsâRÆ;
 %%%%
 %%%%
 %%%%
+%%%%
+%%%%
+%%%%
+%%%%
 \subsection{Lemmas about Lists and Sets}
-%%%%
-%%%%
-%%%%
-%%%%
+The first few belong in the theory of finiteness.
+=SML
+val €fin_set_induction_thm› = save_thm("fin_set_induction_thm", (
+push_goal([], ¨
+		µP∑	P {} ± (µa x∑a ç Finite ± P a ± ≥x ç a ¥ P({x} ¿ a))
+		¥ 	µa∑a ç Finite ¥ P a
+Æ);
+a(REPEAT strip_tac);
+a(asm_ante_tac¨a ç FiniteÆ);
+a(rewrite_tac[get_spec¨FiniteÆ]);
+a(REPEAT strip_tac);
+a(spec_nth_asm_tac 1 ¨{b | b ç Finite ± P b}Æ);
+(* *** Goal "1" *** *)
+a(swap_asm_concl_tac ¨≥ {} ç FiniteÆ);
+a(rewrite_tac[get_spec¨FiniteÆ]);
+a(PC_T "hol1" (REPEAT strip_tac));
+(* *** Goal "2" *** *)
+a(swap_asm_concl_tac ¨a' ç FiniteÆ);
+a(asm_ante_tac ¨≥ {x} ¿ a' ç FiniteÆ);
+a(rewrite_tac[get_spec¨FiniteÆ]);
+a(PC_T "hol1" (contr_tac));
+a(spec_nth_asm_tac 1 ¨sÆ);
+(* *** Goal "2.1" *** *)
+a(list_spec_nth_asm_tac 5 [¨a''Æ, ¨x'Æ]);
+(* *** Goal "2.2" *** *)
+a(list_spec_nth_asm_tac 4 [¨a'Æ, ¨xÆ]);
+(* *** Goal "3" *** *)
+a(swap_asm_concl_tac ¨≥ P ({x} ¿ a')Æ);
+a(cases_tac¨x ç a'Æ);
+(* *** Goal "3.1" *** *)
+a(LEMMA_T¨{x} ¿ a' = a'Æ asm_rewrite_thm_tac);
+a(PC_T "hol1" (REPEAT strip_tac));
+a(asm_rewrite_tac[]);
+(* *** Goal "3.2" *** *)
+a(list_spec_nth_asm_tac 6 [¨a'Æ, ¨xÆ]);
+pop_thm()
+));
+=TEX
+=SML
+val €fin_set_induction_tac› : TACTIC =
+		gen_induction_tac1 fin_set_induction_thm;
+=TEX
+=SML
+val €empty_finite_thm› = save_thm("empty_finite_thm", (
+push_goal([], ¨{} ç FiniteÆ);
+a(rewrite_tac[get_spec¨FiniteÆ]);
+a(PC_T "hol1" (REPEAT strip_tac));
+pop_thm()
+));
+=TEX
+=SML
+val €singleton_¿_finite_thm› = save_thm("singleton_¿_finite_thm", (
+push_goal([], ¨µ a x∑ a ç Finite ¥ ({x} ¿ a) ç FiniteÆ);
+a(rewrite_tac[get_spec¨FiniteÆ] THEN (PC_T "hol1" (REPEAT strip_tac)));
+a(spec_nth_asm_tac 3 ¨sÆ);
+(* *** Goal "1" *** *)
+a(list_spec_nth_asm_tac 3 [¨a'Æ, ¨x'Æ]);
+(* *** Goal "2" *** *)
+a(list_spec_nth_asm_tac 2 [¨aÆ, ¨xÆ]);
+pop_thm()
+));
+=TEX
+=SML
+val €Ä_finite_thm› = save_thm("Ä_finite_thm", (
+push_goal([], ¨µa b∑ a ç Finite ± b Ä a
+	¥		b ç FiniteÆ);
+a(REPEAT strip_tac);
+a(POP_ASM_T ante_tac THEN intro_µ_tac(¨bÆ, ¨bÆ) THEN POP_ASM_T ante_tac);
+a(fin_set_induction_tac THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a((lemma_tac¨b = {}Æ THEN1 PC_T1 "sets_ext" asm_prove_tac[]) THEN all_var_elim_asm_tac1);
+a(rewrite_tac[empty_finite_thm]);
+(* *** Goal "2" *** *)
+a(cases_tac¨b Ä aÆ THEN1 all_asm_fc_tac[]);
+a(lemma_tac¨b = {x} ¿ (b \ {x})Æ THEN1
+	(PC_T1 "sets_ext" asm_prove_tac[] THEN asm_fc_tac[] THEN all_var_elim_asm_tac));
+a(POP_ASM_T once_rewrite_thm_tac THEN bc_thm_tac singleton_¿_finite_thm);
+a(GET_NTH_ASM_T 4 bc_thm_tac);
+a(PC_T1 "sets_ext" asm_prove_tac[]);
+pop_thm()
+));
+=TEX
 The following lemma is useful in connection with certain compactness arguments:
 =SML
 set_goal([], ¨µV∑
@@ -928,21 +1009,6 @@ val €poly_eventually_0_eq_0_thm› = save_pop_thm "poly_eventually_0_eq_0_thm";
 %%%%
 %%%%
 We will need a number of facts about absolute values etc.
-Firstly, reciprocals of positive numbers are positive.
-=TEX
-%%%%
-%%%%
-=SML
-set_goal([], ¨µx∑ ÓØ 0 < x ¥ ÓØ 0 < x õ-õ1Æ);
-a(contr_tac);
-a(lemma_tac¨≥x = ÓØ 0 ± (x õ-õ1 = ÓØ 0 ≤ ÓØ 0 < ~(x õ-õ1))Æ THEN1
-	PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-(* *** Goal "1" *** *)
-a(ALL_FC_T (MAP_EVERY ante_tac) [Ø_times_recip_thm] THEN asm_rewrite_tac[]);
-(* *** Goal "2" *** *)
-a(all_fc_tac [Ø_times_recip_thm, Ø_0_less_0_less_times_thm]);
-a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-val €Ø_0_less_recip_thm› = save_pop_thm "Ø_0_less_recip_thm";
 =TEX
 Absolute values are non-negative:
 =TEX
@@ -973,16 +1039,6 @@ set_goal([], ¨µx y z:Ø∑ Abs x º Abs (y + z) ¥ Abs x º Abs y + Abs zÆ);
 a(REPEAT strip_tac THEN bc_thm_tac Ø_º_trans_thm);
 a(∂_tac¨Abs(y + z)Æ THEN asm_rewrite_tac[Ø_abs_plus_thm]);
 val €Ø_abs_plus_bc_thm› = save_pop_thm "Ø_abs_plus_bc_thm";
-=TEX
-Absolute values kill signs:
-%%%%
-%%%%
-=SML
-set_goal([], ¨µx:Ø∑ Abs(~x) = Abs xÆ);
-a(REPEAT strip_tac THEN rewrite_tac[get_spec¨AbsâRÆ]);
-a(MAP_EVERY cases_tac [¨ÓØ 0 º xÆ, ¨ÓØ 0 º ~xÆ]
-	THEN asm_rewrite_tac[] THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-val €Ø_abs_minus_thm› = save_pop_thm "Ø_abs_minus_thm";
 =TEX
 Absolute values commute with multiplication:
 %%%%
@@ -1072,7 +1128,7 @@ set_goal([], ¨µx y:Ø∑ ÓØ 0 < x ± ÓØ 0 < y ± x < y ¥ y õ-õ1 < x õ-õ1Æ);
 a(REPEAT strip_tac);
 a(lemma_tac¨y õ-õ1 * x õ-õ1 * x < y õ-õ1 * x õ-õ1 * yÆ);
 (* *** Goal "1" *** *)
-a(all_fc_tac[Ø_0_less_recip_thm]);
+a(all_fc_tac[Ø_0_less_0_less_recip_thm]);
 a(REPEAT (bc_thm_tac Ø_times_mono_thm THEN REPEAT strip_tac));
 (* *** Goal "2" *** *)
 a(lemma_tac¨≥x = ÓØ 0 ± ≥y = ÓØ 0Æ THEN1
@@ -1144,7 +1200,7 @@ below by the reciprocal of a positive natural number.
 %%%%
 =SML
 set_goal([], ¨µx:Ø∑ ÓØ 0 < x ¥ ∂m∑ (ÓØ (m+1))õ-õ1 < xÆ);
-a(REPEAT strip_tac THEN all_fc_tac[Ø_0_less_recip_thm]);
+a(REPEAT strip_tac THEN all_fc_tac[Ø_0_less_0_less_recip_thm]);
 a(strip_asm_tac(µ_elim¨x õ-õ1ÆØ_archimedean_thm));
 a(lemma_tac¨x õ-õ1 < ÓØ (m+1)Æ THEN1
 	(rewrite_tac[ÓØ_plus_homomorphism_thm] THEN
@@ -1275,7 +1331,7 @@ a(strip_asm_tac(µ_elim¨c2Æ Ø_0_º_abs_thm));
 a(lemma_tac¨ÓØ 0 < e*(ÓØ 2 * (b + Abs c2))õ-õ1Æ);
 (* *** Goal "1" *** *)
 a(bc_thm_tac Ø_0_less_0_less_times_thm THEN REPEAT strip_tac);
-a(bc_thm_tac Ø_0_less_recip_thm THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(bc_thm_tac Ø_0_less_0_less_recip_thm THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 (* *** Goal "2" *** *)
 a(LIST_DROP_NTH_ASM_T [5, 7] (MAP_EVERY ante_tac));
 a(all_asm_fc_tac[] THEN REPEAT strip_tac);
@@ -1364,7 +1420,7 @@ a(ALL_FC_T rewrite_tac[Ø_minus_recip_thm] THEN rewrite_tac[Ø_abs_minus_thm]);
 a(ALL_FC_T rewrite_tac[Ø_abs_recip_thm] THEN bc_thm_tac Ø_times_mono_thm);
 a(REPEAT strip_tac);
 (* *** Goal "2.1" *** *)
-a(bc_thm_tac Ø_0_less_recip_thm THEN REPEAT strip_tac);
+a(bc_thm_tac Ø_0_less_0_less_recip_thm THEN REPEAT strip_tac);
 (* *** Goal "2.2" *** *)
 a(bc_thm_tac Ø_less_recip_less_thm THEN
 	LIST_GET_NTH_ASM_T [14, 5] (MAP_EVERY ante_tac) THEN
@@ -1397,7 +1453,7 @@ a(lemma_tac¨ÓØ 0 < ÓØ (m+1) ± ÓØ 0 < ÓØ (m'+1)Æ THEN1 rewrite_tac[ÓØ_0_less_thm]
 a(lemma_tac¨ÓØ (m+1) < ÓØ (m'+1)Æ THEN1 
 	(asm_rewrite_tac[ÓØ_less_thm] THEN PC_T1 "lin_arith" asm_prove_tac[]));
 a(lemma_tac¨ÓØ 0 º ÓØ (m' + 1) õ-õ1Æ THEN1
-	(rewrite_tac[Ø_º_def] THEN all_fc_tac[Ø_0_less_recip_thm] THEN asm_rewrite_tac[]));
+	(rewrite_tac[Ø_º_def] THEN all_fc_tac[Ø_0_less_0_less_recip_thm] THEN asm_rewrite_tac[]));
 a(asm_rewrite_tac[Ø_abs_def]);
 a(all_fc_tac[Ø_less_recip_less_thm]);
 a(bc_thm_tac Ø_less_trans_thm THEN ∂_tac¨ÓØ (m + 1) õ-õ1Æ THEN REPEAT strip_tac);
@@ -1411,7 +1467,7 @@ a(REPEAT strip_tac);
 a(∂_tac¨(Ãm∑x + ÓØ(m+1)õ-õ1)Æ THEN rewrite_tac[lim_seq_recip_Ó_thm]);
 a(REPEAT strip_tac THEN lemma_tac¨ÓØ 0 < ÓØ (m + 1) õ-õ1Æ THEN_LIST
 	[id_tac, PC_T1 "Ø_lin_arith" asm_prove_tac[]]);
-a(bc_tac[Ø_0_less_recip_thm] THEN rewrite_tac[ÓØ_0_less_thm]);
+a(bc_tac[Ø_0_less_0_less_recip_thm] THEN rewrite_tac[ÓØ_0_less_thm]);
 val €lim_seq_≥_eq_thm› = save_pop_thm "lim_seq_≥_eq_thm";
 =TEX
 The following ``shift theorem''
@@ -1477,7 +1533,7 @@ a(contr_tac THEN lemma_tac¨
 Æ THEN1 prove_∂_tac THEN REPEAT strip_tac);
 (* *** Goal "2.1" *** *)
 a(lemma_tac¨ÓØ 0 < ÓØ (m' + 1) õ-õ1Æ THEN1
-	(bc_thm_tac Ø_0_less_recip_thm THEN rewrite_tac[ÓØ_less_thm]));
+	(bc_thm_tac Ø_0_less_0_less_recip_thm THEN rewrite_tac[ÓØ_less_thm]));
 a(spec_nth_asm_tac 2 ¨ÓØ (m' + 1) õ-õ1Æ);
 a(∂_tac¨yÆ THEN REPEAT strip_tac THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 (* *** Goal "2.2" *** *)
@@ -2333,7 +2389,7 @@ a(REPEAT strip_tac THEN POP_ASM_T ante_tac);
 a(curtain_induction_tac¨y:ØÆ THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(∂_tac¨x + ~(ÓØ 1)Æ THEN REPEAT strip_tac);
-a(∂_tac¨{}Æ THEN PC_T1 "sets_ext1" rewrite_tac[fin_set_thm2, closed_interval_def]);
+a(∂_tac¨{}Æ THEN PC_T1 "sets_ext1" rewrite_tac[empty_finite_thm, closed_interval_def]);
 a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 (* *** Goal "2" *** *)
 a(PC_T1 "sets_ext1" (spec_nth_asm_tac 1) ¨zÆ THEN all_asm_fc_tac[]);
@@ -2356,7 +2412,7 @@ a(DROP_NTH_ASM_T 3 ante_tac THEN
 	PC_T1 "sets_ext" REPEAT strip_tac);
 a(all_asm_fc_tac[] THEN all_fc_tac[Ø_less_dense_thm]);
 a(∂_tac¨z'Æ THEN ∂_tac¨zÆ THEN REPEAT strip_tac);
-a(∂_tac¨{s} ¿ WÆ THEN ALL_FC_T rewrite_tac[fin_set_thm3]);
+a(∂_tac¨{s} ¿ WÆ THEN ALL_FC_T rewrite_tac[singleton_¿_finite_thm]);
 a(rewrite_tac[closed_interval_def] THEN REPEAT strip_tac);
 (* *** Goal "4.2.1" *** *)
 a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac THEN1 all_var_elim_asm_tac1);
@@ -2407,7 +2463,7 @@ a(PC_T1 "sets_ext1" REPEAT strip_tac THEN
 	all_fc_tac[pc_rule1"sets_ext1" prove_rule[]¨µA B∑x' ç A ± A Ä B ¥ x' ç BÆ] THEN
 	all_var_elim_asm_tac1);
 (* *** Goal "3.2" *** *)
-a(bc_thm_tac size_thm4 THEN ∂_tac¨WÆ THEN REPEAT strip_tac);
+a(bc_thm_tac Ä_finite_thm THEN ∂_tac¨WÆ THEN REPEAT strip_tac);
 a(PC_T1 "sets_ext1" prove_tac[]);
 (* *** Goal "3.3" *** *)
 a(POP_ASM_T ante_tac THEN PC_T1 "sets_ext1" REPEAT strip_tac);
@@ -2693,7 +2749,7 @@ a(lemma_tac¨∂b1∑ÓØ 0 < b1 ± b1 < b ± b1 < dÆ THEN1 (
 a(∂_tac ¨b1Æ THEN REPEAT strip_tac);
 a(lemma_tac¨ÓØ 0 < e * c õ-õ1Æ THEN1 
 	(bc_thm_tac Ø_0_less_0_less_times_thm THEN
-	REPEAT strip_tac THEN bc_thm_tac Ø_0_less_recip_thm THEN REPEAT strip_tac));
+	REPEAT strip_tac THEN bc_thm_tac Ø_0_less_0_less_recip_thm THEN REPEAT strip_tac));
 a(spec_nth_asm_tac 9 ¨e * c õ-õ1Æ);
 a(∂_tac¨nÆ THEN REPEAT strip_tac);
 a(rewrite_tac[pc_rule1"Ø_lin_arith" prove_rule[]¨µA B∑A*f y + ~(B * f y) = (A + ~B)*f yÆ,
