@@ -68,7 +68,8 @@ TO DO:
 to make it trivial to show that a function defined by a differential equation
 satisfied by some power series is the limit of that power series).
 
-4) Prove that log is continuous and differentiable.
+4) Make systematic use of open and closed interval functions in the statements
+of the basic theorems on limits etc.
 
 %%%%
 %%%%
@@ -1078,7 +1079,7 @@ val Û¯_abs_plus_minus_thmÝ = save_thm ("¯_abs_plus_minus_thm", rewrite_rule[]¯_a
 %%%%
 %%%%
 =SML
-set_goal([], ¬µx y z:¯· î¯ 0 < z ´ (Abs (x + ~y) < z ¤ x + ~z < y ± y < x + z)®);
+set_goal([], ¬µx y z:¯· î¯ 0 < z ´ (Abs (x + ~y) < z ¤ y + ~z <  x ± x < y + z)®);
 a(REPEAT µ_tac THEN ´_tac THEN cases_tac¬î¯ 0 ¼ x + ~y® THEN
 	asm_rewrite_tac[¯_abs_def] THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
 val Û¯_abs_diff_bounded_thmÝ = save_pop_thm "¯_abs_diff_bounded_thm";
@@ -2572,6 +2573,67 @@ a(all_asm_fc_tac[] THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
 a(REPEAT strip_tac THEN ¶_tac ¬z® THEN asm_rewrite_tac[]);
 val Ûcts_limit_unique_thmÝ = save_pop_thm"cts_limit_unique_thm";
 =TEX
+The following theorem says that if a function is Darboux continuous (i.e., if it
+satisfies the conclusion of the intermediate value theorem) and monotonic
+increasing in an interval then it is continuous.
+The proof hits the linear arithmetic decision procedure rather hard.
+%%%%
+%%%%
+=SML
+set_goal([], ¬µf a b x·
+	(µx y· x  ClosedInterval a b ± y  ClosedInterval a  b ± x < y ´ f x < f y)
+±	(µy· y  OpenInterval (f a) (f b) ´ ¶x·a < x ± x < b  ± f x = y)
+±	 x  OpenInterval a b
+´	f CtsAt x®);
+a(rewrite_tac[cts_at_def, open_interval_def, closed_interval_def] THEN REPEAT strip_tac);
+a(lemma_tac¬f a < f x ± f x < f b® THEN1 
+	(REPEAT strip_tac THEN GET_NTH_ASM_T 5 bc_thm_tac THEN
+		PC_T1 "¯_lin_arith" asm_prove_tac[]));
+a(lemma_tac¬î¯ 0 < f  b + ~(f x) ± î¯ 0 < f x + ~(f a)® THEN1
+	PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(strip_asm_tac (list_µ_elim[¬e®, ¬f x + ~(f a)®, ¬f b + ~(f x)®] ¯_bound_below_3_thm));
+a(lemma_tac¬f a < f x + ~d ± f x + ~d < f b ± f a < f x + d ± f x + d < f b® THEN1	
+	PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(LIST_GET_NTH_ASM_T [16] all_fc_tac);
+a(rename_tac[(¬x'®, "U"), (¬x''®, "L")] THEN
+	LIST_DROP_NTH_ASM_T [1, 2, 3, 14, 15, 18, 19] discard_tac);
+a(lemma_tac¬f L < f x ± f x < f U® THEN1
+	(DROP_NTH_ASM_T 12 ante_tac THEN asm_rewrite_tac[]
+		THEN PC_T1 "¯_lin_arith" prove_tac[]));
+a(lemma_tac¬³x = L ± ³x = U® THEN1 (contr_tac THEN all_var_elim_asm_tac1));
+a(lemma_tac¬³x <  L® THEN1
+	(contr_tac THEN LEMMA_T¬f x < f L® 
+		(fn th => ante_tac th THEN GET_ASM_T ¬f L < f x® ante_tac
+			THEN PC_T1 "¯_lin_arith" prove_tac[])
+		THEN GET_NTH_ASM_T 24 bc_thm_tac
+		THEN PC_T1 "¯_lin_arith" asm_prove_tac[]));
+a(lemma_tac¬³U < x® THEN1
+	(contr_tac THEN LEMMA_T¬f U < f x® 
+		(fn th => ante_tac th THEN GET_ASM_T ¬f x < f U® ante_tac
+			THEN PC_T1 "¯_lin_arith" prove_tac[])
+		THEN GET_NTH_ASM_T 25 bc_thm_tac
+		THEN PC_T1 "¯_lin_arith" asm_prove_tac[]));
+a(lemma_tac¬L < x ± x < U ± î¯ 0 < x + ~L ± î¯ 0 < U + ~x® THEN1
+	PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(LIST_DROP_NTH_ASM_T [5, 6, 7, 8] discard_tac);
+a(strip_asm_tac (list_µ_elim[¬x + ~L®, ¬U + ~x®] ¯_bound_below_2_thm));
+a(¶_tac¬d'® THEN REPEAT strip_tac);
+a(POP_ASM_T ante_tac THEN ALL_FC_T1 fc_¤_canon rewrite_tac [¯_abs_diff_bounded_thm]);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(lemma_tac¬L < y® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(bc_thm_tac ¯_less_trans_thm THEN ¶_tac¬f L®);
+a(REPEAT strip_tac THEN_LIST [
+		asm_rewrite_tac[] THEN PC_T1 "¯_lin_arith" asm_prove_tac[],
+		GET_NTH_ASM_T 31 bc_thm_tac THEN PC_T1 "¯_lin_arith" asm_prove_tac[]]);
+(* *** Goal "2" *** *)
+a(lemma_tac¬y < U® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(bc_thm_tac ¯_less_trans_thm THEN ¶_tac¬f U®);
+a(REPEAT strip_tac THEN_LIST [
+		GET_NTH_ASM_T 31 bc_thm_tac THEN PC_T1 "¯_lin_arith" asm_prove_tac[],
+		asm_rewrite_tac[] THEN PC_T1 "¯_lin_arith" asm_prove_tac[]]);
+val Ûdarboux_cts_mono_thmÝ = save_pop_thm "darboux_cts_mono_thm";
+=TEX
 %%%%
 %%%%
 %%%%
@@ -3690,7 +3752,7 @@ a(lemma_tac ¬d = î¯ 0® THEN1
 			THEN REPEAT strip_tac THEN bc_thm_tac th
 				THEN PC_T1 "¯_lin_arith" asm_prove_tac[]))));
 a(all_var_elim_asm_tac1 THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
-val Ûderiv_0_lemmaÝ = save_pop_thm"deriv_0_lemma";
+val Ûderiv_0_thm1Ý = save_pop_thm"deriv_0_thm1";
 =TEX
 %%%%
 %%%%
@@ -3705,7 +3767,7 @@ a(all_fc_tac[¯_less_dense_thm]);
 a(¶_tac¬f z® THEN REPEAT strip_tac);
 a(cases_tac¬x = z® THEN1 asm_rewrite_tac[]);
 a(lemma_tac¬x <  z ² z < x® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]
-	THEN all_fc_tac[deriv_0_lemma]);
+	THEN all_fc_tac[deriv_0_thm1]);
 a(asm_rewrite_tac[]);
 val Ûderiv_0_thmÝ = save_pop_thm"deriv_0_thm";
 =TEX
@@ -4743,6 +4805,19 @@ a(ALL_FC_T (MAP_EVERY ante_tac) [cts_lim_seq_thm]);
 a(rewrite_tac[]);
 val Ûcomp_lim_fun_thmÝ = save_pop_thm "comp_lim_fun_thm";
 =TEX
+
+%%%%
+%%%%
+=SML
+set_goal([], ¬µf t x g· (g --> t) (f x) ± (f CtsAt x) ± (µy· f y = f x ¤ y = x)
+	´ ((Ìx·g (f x)) -->  t) x®);
+a(rewrite_tac[lim_fun_lim_seq_thm] THEN REPEAT strip_tac);
+a(all_fc_tac[cts_lim_seq_thm1]);
+a(lemma_tac¬µm· ³(Ìm·f(s m)) m = f x® THEN1 asm_rewrite_tac[]);
+a(ALL_ASM_FC_T  (MAP_EVERY ante_tac)[]);
+a(rewrite_tac[]);
+val Ûcomp_lim_fun_thm1Ý = save_pop_thm "comp_lim_fun_thm1";
+=TEX
 %%%%
 %%%%
 =SML
@@ -4812,7 +4887,7 @@ val Ûlim_fun_unique_thmÝ = save_pop_thm "lim_fun_unique_thm";
 set_goal([], ¬µu v s t x a b ·
 	(u --> s) x
 ±	a < x ± x < b
-±	(µt·a < t ± t < b ± ³t = x ´ v t = u t)
+±	(µt·a < t ± t < b ± ³t = x ´ u t = v t)
 ´	(v --> s) x®);
 a(rewrite_tac[lim_fun_def] THEN REPEAT strip_tac);
 a(LIST_DROP_NTH_ASM_T [5] all_fc_tac);
@@ -4826,6 +4901,85 @@ a(lemma_tac¬Abs(y + ~x) < d® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
 a(LIST_DROP_NTH_ASM_T [10] (ALL_FC_T (MAP_EVERY ante_tac)));
 a(LIST_DROP_NTH_ASM_T [12] (ALL_FC_T rewrite_tac));
 val Ûlim_fun_local_thmÝ = save_pop_thm "lim_fun_local_thm";
+=TEX
+
+%%%%
+%%%%
+=SML
+set_goal([], ¬µf a b t x g·
+	x  OpenInterval a b
+±	 (g --> t) (f x)
+±	(f CtsAt x)
+±	(µy· y  OpenInterval a b ´ (f y = f x ¤ y = x))
+´	((Ìx·g (f x)) -->  t) x®);
+a(rewrite_tac[open_interval_def] THEN REPEAT strip_tac THEN bc_thm_tac lim_fun_local_thm);
+a(lemma_tac¬¶h·(µt·a < t ± t < b ´ h t = f t) ± (µt·h t = h x ¤ t = x)®);
+(* *** Goal "1" *** *)
+a(¶_tac¬Ìt·if a < t ± t < b then f t else f x + î¯ 1® THEN rewrite_tac[] THEN
+	REPEAT strip_tac THEN_TRY asm_rewrite_tac[]);
+a(POP_ASM_T ante_tac THEN cases_tac¬a < t' ± t' < b® THEN asm_rewrite_tac[]);
+a(REPEAT strip_tac THEN all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(MAP_EVERY ¶_tac [¬b®, ¬a®, ¬Ìx·g(h x)®]);
+a(asm_rewrite_tac[] THEN REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(bc_thm_tac comp_lim_fun_thm1 THEN asm_rewrite_tac[]);
+a(ALL_ASM_FC_T asm_rewrite_tac[]);
+a(bc_thm_tac cts_local_thm);
+a(MAP_EVERY ¶_tac [¬f®, ¬b®, ¬a®]);
+a(REPEAT strip_tac);
+a(ALL_ASM_FC_T rewrite_tac[]);
+(* *** Goal "2.2" *** *)
+a(ALL_ASM_FC_T rewrite_tac[]);
+val Ûcomp_lim_fun_thm2Ý = save_pop_thm "comp_lim_fun_thm2";
+=TEX
+
+The theorems on limits above have the following consequence concerning
+the differentiability of an inverse function:
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬µf g a b x c· 
+	x  OpenInterval a b
+±	(µy·y  OpenInterval a b ´ f(g y) = y)
+±	(f HasDeriv c) (g x)
+±	(g CtsAt x)
+±	³c = î¯ 0
+´	(g HasDeriv c ›-›1) x
+®);
+a(rewrite_tac[deriv_lim_fun_thm] THEN REPEAT strip_tac);
+a(lemma_tac¬µ y· y  OpenInterval a b ´ (g y = g x ¤ y = x)® THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(LEMMA_T ¬y = f(g y) ± x = f(g x)® once_rewrite_thm_tac THEN1
+	(REPEAT strip_tac THEN ALL_ASM_FC_T rewrite_tac[]));
+a(POP_ASM_T rewrite_thm_tac);
+(* *** Goal "2" *** *)
+a(POP_ASM_T rewrite_thm_tac);
+(* *** Goal "3" *** *)
+a(all_fc_tac[comp_lim_fun_thm2]);
+a(DROP_NTH_ASM_T 5 discard_tac);
+a(all_fc_tac [recip_lim_fun_thm]);
+a(POP_ASM_T ante_tac THEN rewrite_tac[] THEN strip_tac);
+a(bc_thm_tac lim_fun_local_thm);
+a(MAP_EVERY ¶_tac [¬b®, ¬a®, ¬(Ì x'· ((f (g x') + ~ (f (g x))) / (g x' + ~ (g x))) ›-›1)®]);
+a(GET_NTH_ASM_T 7 (asm_rewrite_thm_tac o rewrite_rule[open_interval_def]));
+a(REPEAT strip_tac);
+a(lemma_tac¬t  OpenInterval a b® THEN1 asm_rewrite_tac[open_interval_def]);
+a(LIST_GET_NTH_ASM_T [10] (ALL_FC_T rewrite_tac));
+a(lemma_tac¬³g t = g x®);
+(* *** Goal "3.1" *** *)
+a(swap_nth_asm_concl_tac 2);
+a(LEMMA_T¬f(g t) = f(g x)® ante_tac THEN1 asm_rewrite_tac[]);
+a(LIST_GET_NTH_ASM_T [10] (ALL_FC_T rewrite_tac));
+(* *** Goal "3.2" *** *)
+a(lemma_tac¬³t + ~x = î¯ 0 ± ³g t + ~(g x) = î¯ 0® THEN1
+	PC_T1 "¯_lin_arith"asm_prove_tac[]);
+a(all_fc_tac[¯_³_recip_0_thm]);
+a(rename_tac[(¬x®, "X")] THEN
+	ALL_FC_T rewrite_tac[¯_over_times_recip_thm, ¯_recip_clauses]);
+a(conv_tac(LEFT_C (once_rewrite_conv[¯_times_comm_thm])) THEN REPEAT strip_tac);
+val Ûinverse_deriv_thmÝ = save_pop_thm "inverse_deriv_thm";
 =TEX
 %%%%
 %%%%
@@ -5384,7 +5538,7 @@ a(pure_rewrite_tac[
 a(LEMMA_T ¬î¯ 0 ¼ x + ~t® (fn th => conv_tac(RIGHT_C (rewrite_conv[th, ¯_abs_def])))
 	THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
 a(DROP_NTH_ASM_T 8 bc_thm_tac THEN REPEAT strip_tac);
-val Ûunif_lim_seq_deriv_lemma1Ý = save_pop_thm "unif_lim_seq_deriv_lemma1";
+val Ûunif_lim_seq_deriv_estimate_thmÝ = save_pop_thm "unif_lim_seq_deriv_estimate_thm";
 =TEX
 
 %%%%
@@ -5406,7 +5560,7 @@ a(LEMMA_T¬î¯ 0 < (1/2)*e®
 	THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
 a(LEMMA_T¬î¯ 0 < (1/2)*e*(B + ~A)›-›1®
 	(fn th => DROP_NTH_ASM_T 2 discard_tac THEN strip_asm_tac th
-	THEN all_fc_tac[unif_lim_seq_deriv_lemma1]));
+	THEN all_fc_tac[unif_lim_seq_deriv_estimate_thm]));
 (* *** Goal "1" *** *)
 a(REPEAT (bc_thm_tac ¯_0_less_0_less_times_thm THEN REPEAT strip_tac)
 	THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
@@ -5447,7 +5601,7 @@ a(pure_rewrite_tac[pc_rule1 "¯_lin_arith" prove_rule[]¬µx y·(B + ~A)*x *y = x*y*
 a(ALL_FC_T rewrite_tac[¯_recip_clauses]);
 a(cases_tac¬î¯ 0 ¼ y + ~x0® THEN asm_rewrite_tac[¯_abs_def]
 	THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
-val Ûunif_lim_seq_deriv_lemma2Ý = save_pop_thm "unif_lim_seq_deriv_lemma2";
+val Ûunif_lim_seq_deriv_lemmaÝ = pop_thm();
 =TEX
 
 Now the main theorem.
@@ -5469,7 +5623,7 @@ a(REPEAT µ_tac);
 a(conv_tac(LEFT_C (RIGHT_C (rewrite_conv[open_interval_def]))));
 a(conv_tac(RIGHT_C (BINDER_C(RIGHT_C (rewrite_conv[open_interval_def])))));
 a(REPEAT strip_tac);
-a(all_fc_tac[unif_lim_seq_deriv_lemma2]);
+a(all_fc_tac[unif_lim_seq_deriv_lemma]);
 a(¶_tac¬f® THEN GET_NTH_ASM_T 5 ante_tac);
 a(rewrite_tac[deriv_lim_fun_thm] THEN REPEAT strip_tac);
 a(lemma_tac ¬¶g·((Ìm·Ì y'· (u m y' + ~ (u m y)) / (y' + ~ y)) ---> g) (OpenInterval A B \ {y})®);
@@ -5477,7 +5631,7 @@ a(lemma_tac ¬¶g·((Ìm·Ì y'· (u m y' + ~ (u m y)) / (y' + ~ y)) ---> g) (OpenInter
 a(bc_thm_tac cauchy_seq_unif_lim_seq_thm THEN rewrite_tac[] THEN REPEAT strip_tac);
 a(lemma_tac¬î¯ 0 < (1/2)*e® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
 a(DROP_NTH_ASM_T 2 discard_tac);
-a(all_fc_tac[unif_lim_seq_deriv_lemma1]);
+a(all_fc_tac[unif_lim_seq_deriv_estimate_thm]);
 a(¶_tac¬N® THEN PC_T1 "sets_ext1" rewrite_tac[open_interval_def] THEN REPEAT strip_tac);
 a(lemma_tac¬y' < y ² y < y'® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
 (* *** Goal "1.1" *** *)
@@ -6610,7 +6764,7 @@ a(ALL_FC_T (MAP_EVERY (strip_asm_tac o conv_rule(ONCE_MAP_C eq_sym_conv)))
 a(ALL_FC_T rewrite_tac[¯_recip_clauses]);
 a(rewrite_tac[¯_times_assoc_thm1]);
 a(ALL_FC_T rewrite_tac[¯_recip_clauses]);
-val Ûexp_deriv_lemmaÝ = save_pop_thm "exp_deriv_lemma";
+val Ûexp_deriv_coeffs_thmÝ = save_pop_thm "exp_deriv_coeffs_thm";
 =TEX
 We can now show using the ratio test and some calculations that the usual series
 for the exponential converges for all positive arguments:
@@ -6711,7 +6865,7 @@ a(pure_once_rewrite_tac[prove_rule[]¬µm· m ! ›-›1 = (Ìm· m ! ›-›1) m®]);
 a(strip_tac THEN all_fc_tac[power_series_main_thm2]);
 a(POP_ASM_T (strip_asm_tac o rewrite_rule[factorial_def]));
 a(DROP_NTH_ASM_T 3 ante_tac);
-a(rewrite_tac[exp_deriv_lemma] THEN REPEAT strip_tac);
+a(rewrite_tac[exp_deriv_coeffs_thm] THEN REPEAT strip_tac);
 a(¶_tac¬f®  THEN REPEAT strip_tac);
 a(LEMMA_T¬f y = df y® asm_rewrite_thm_tac);
 a(bc_thm_tac lim_seq_unique_thm);
@@ -6803,7 +6957,7 @@ a(all_asm_fc_tac[]);
 a(POP_ASM_T ante_tac THEN
 	cases_tac¬î¯ 0 ¼ Exp x + ~(î¯ 1)® THEN asm_rewrite_tac[¯_abs_def]
 		THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
-val Ûexp_0_less_lemmaÝ = save_pop_thm "exp_0_less_lemma";
+val Ûexp_0_less_lemmaÝ = pop_thm();
 =TEX
 
 The exponential function maps addition to multiplication if one operand
@@ -6860,7 +7014,7 @@ a(rewrite_tac[exp_def] THEN REPEAT strip_tac THEN all_var_elim_asm_tac1);
 a(POP_ASM_T (rewrite_thm_tac o eq_sym_rule));
 a(once_rewrite_tac[pc_rule1 "¯_lin_arith" prove_rule[]¬µa b c:¯· a * b * c = b * a * c®]);
 a(ALL_FC_T rewrite_tac[¯_recip_clauses]);
-val Ûexp_plus_lemmaÝ = save_pop_thm "exp_plus_lemma";
+val Ûexp_plus_lemmaÝ = pop_thm();
 =TEX
 
 The exponential function is positive and maps addition
@@ -6907,7 +7061,7 @@ a(LIST_GET_NTH_ASM_T [7] all_fc_tac);
 a(rewrite_tac[µ_elim¬î¯ q * d® ¯_plus_comm_thm]);
 a(asm_rewrite_tac[¯_plus_assoc_thm, ¯_times_assoc_thm]);
 a(bc_thm_tac ¯_0_less_0_less_times_thm THEN asm_rewrite_tac[]);
-val Ûexp_0_less_plus_lemmaÝ = save_pop_thm "exp_0_less_plus_lemma";
+val Ûexp_0_less_plus_lemmaÝ = pop_thm();
 =TEX
 
 The exponential function maps negation to reciprocal:
@@ -7125,20 +7279,65 @@ The natural logarithm function is continuous on the positive reals:
 %%%%
 
 =SML
-(* TBD
 set_goal([], ¬µx·  î¯ 0 < x ´  Log CtsAt x®);
-a(rewrite_tac[cts_at_def] THEN REPEAT strip_tac);
-a(lemma_tac¬î¯ 0 < Exp(Log x + e) ± î¯ 0 < Exp (Log x + ~e)®
-	THEN1 rewrite_tac[exp_0_less_thm]);
-
-a(strip_asm_tac (list_µ_elim[¬x®, ¬Exp (Log x + e)®, ¬Exp (Log x + ~e)®] ¯_bound_below_3_thm));
-a(¶_tac ¬d® THEN REPEAT strip_tac);
-a(POP_ASM_T ante_tac THEN	
-	ALL_FC_T1 fc_¤_canon rewrite_tac[¯_abs_diff_bounded_thm]);
 a(REPEAT strip_tac);
-
+a(bc_thm_tac darboux_cts_mono_thm);
+a(lemma_tac ¬¶U L·î¯ 0 < L ± L < x ± x < U ± î¯ 0 < U® THEN1
+	(¶_tac¬î¯ 2*x® THEN ¶_tac¬(1/2)* x® THEN PC_T1 "¯_lin_arith" asm_prove_tac[]));
+a(¶_tac¬U® THEN ¶_tac¬L® THEN rewrite_tac[open_interval_def, closed_interval_def]
+	THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(bc_thm_tac log_less_mono_thm THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(¶_tac¬Exp y® THEN rewrite_tac[log_def]);
+a(LEMMA_T ¬L = Exp (Log L) ± U = Exp(Log U)® once_rewrite_thm_tac THEN1
+	ALL_FC_T rewrite_tac [exp_log_thm]);
+a(REPEAT strip_tac THEN bc_thm_tac exp_less_mono_thm THEN REPEAT strip_tac);
 val Ûlog_cts_thmÝ = save_pop_thm "log_cts_thm";
-*)
+=TEX
+
+The natural logarithm function is differential for positive arguments with derivative given by the
+reciprocal function.
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µx·  î¯ 0 < x ´  (Log HasDeriv x ›-›1) x®);
+a(REPEAT strip_tac THEN bc_thm_tac inverse_deriv_thm);
+a(lemma_tac ¬¶U L·î¯ 0 < L ± L < x ± x < U ± î¯ 0 < U ±³x = î¯ 0® THEN1
+	(¶_tac¬î¯ 2*x® THEN ¶_tac¬(1/2)* x® THEN PC_T1 "¯_lin_arith" asm_prove_tac[]));
+a(¶_tac¬Exp® THEN ¶_tac¬U® THEN ¶_tac¬L® THEN
+	rewrite_tac[open_interval_def] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_fc_tac[¯_less_trans_thm] THEN ALL_FC_T rewrite_tac[exp_log_thm]);
+(* *** Goal "2" *** *)
+a(all_fc_tac[exp_0_less_onto_thm] THEN all_var_elim_asm_tac1 THEN rewrite_tac[exp_def, log_def]);
+(* *** Goal "3" *** *)
+a(all_fc_tac[log_cts_thm]);
+val Ûlog_deriv_thmÝ = save_pop_thm "log_deriv_thm";
+=TEX
+
+The natural logarithm function is a homomorphism from the multiplicative group
+of positive real numbers under multiplication to the group of  all reals under addition:
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬
+	Log (î¯ 1) = î¯ 0
+±	(µx·  î¯ 0 < x ´  Log(x ›-›1) = ~(Log x))
+±	(µx y·  î¯ 0 < x ± î¯ 0 < y ´  Log(x*y) = Log x + Log y)
+®);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(rewrite_tac[eq_sym_rule (±_left_elim exp_def), log_def]);
+(* *** Goal "1" *** *)
+a(all_fc_tac[exp_0_less_onto_thm] THEN all_var_elim_asm_tac1);
+a(rewrite_tac[conv_rule(ONCE_MAP_C eq_sym_conv) exp_minus_thm, log_def]);
+(* *** Goal "3" *** *)
+a(all_fc_tac[exp_0_less_onto_thm] THEN all_var_elim_asm_tac1);
+a(rewrite_tac[conv_rule(ONCE_MAP_C eq_sym_conv) exp_plus_thm, log_def]);
+val Ûlog_clausesÝ = save_pop_thm "log_clauses";
 =TEX
 =TEX
 %%%%
