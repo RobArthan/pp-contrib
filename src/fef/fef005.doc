@@ -89,7 +89,7 @@ for the proof tools.
 =SML 
 open_theory "fef004";
 new_theory€"fef005"›;
-push_pc "hol1";
+push_pc "hol2";
 =TEX
 
 \section{THE FUNCTION $hide$}
@@ -181,7 +181,7 @@ Filter out the data in columns about whose existence the user is cleared to know
 ‹	µ cols : ColSpec ; ds : Num ™ Data  
 ‹	∑ 	filterRow cols ds
 ‹		=
-‹		Dom{(n,c)|c ç cols ± CS_posn c = n} Ú ds
+‹		{n|∂c ∑ c ç cols ± CS_posn c = n} Ú ds
 ∞
 
 
@@ -222,6 +222,7 @@ not cleared to see by a dummy value.
 ‹		else 	d
 ∞
 
+
 \subsubsection{Clean all Data in a Row}
 Filter out the data in columns about whose existence the user is cleared to know.
 Replace data in fields that the user is not cleared to see by 
@@ -250,9 +251,6 @@ Delete all rows about whose existence the user is not cleared to know, and then 
 ‹		= 
 ‹		Map (cleanRow clear cols) (rs ˘ {r:Row|clear dominates (R_exist r)})
 ∞
-
-
-
 
 
 \subsubsection{The function $cleanTable$}
@@ -295,12 +293,12 @@ directory will either be hidden or modified by $cleanTable$.
 ‹	µ clear : Class; dir : Directory  
 ‹	∑	cleanDirectory clear dir 
 ‹		=
-‹		if	≥(clear dominates (Dir_class dir))
-‹		then	MkDirectory {}(Dir_exist dir)(Dir_class dir)
-‹		else	
-‹			let 	newtables = Dir_tables dir ª cleanTable clear
-‹			in	
-‹			MkDirectory newtables(Dir_exist dir)(Dir_class dir)
+‹		MkDirectory 
+‹		(if	(clear dominates (Dir_class dir)) 
+‹		then 	(Dir_tables dir ª cleanTable clear) 
+‹		else 	{})
+‹		(Dir_exist dir)
+‹		(Dir_class dir)
 ∞
 
 \subsection{Cleaning a State} \label{CLEANSTATE}
@@ -314,7 +312,7 @@ cleaned by $cleanDirectory$.
 ‹	µ clear : Class; s : State
 ‹	∑ 	hide(clear,s) 
 ‹		= 
-‹		{i|clear dominates Dir_exist(s @ i)} Ú s ª cleanDirectory clear
+‹		(s í {dir | clear dominates (Dir_exist dir)}) ª cleanDirectory clear
 ∞
 
 
@@ -365,7 +363,7 @@ exists in a particular state.
 ‹	µ i : Tab; s:State
 ‹	∑ 	validTable i s 
 ‹		=
-‹		(Front i ç Dom s ± Last i ç Dom(Dir_tables(s @ (Front i))))
+‹		∂â1 dir ∑ (Front i,dir) ç s ± Last i ç Dom(Dir_tables dir)
 ∞
 
 πHOLCONST
@@ -384,12 +382,23 @@ exists in a particular state.
 ‹		else	s
 ∞
 
+A function that returns the visible columns of a table.
+
+πHOLCONST
+‹	€cols› : Class ≠ TableSpec ≠ ColSpec 
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µ clear : Class; ts: TableSpec
+‹	∑ 	cols clear ts 
+‹		=
+‹		Snd(cleanColCons clear ts)
+∞
+
+
 \subsection{Insert}
 
-The function $colDefaults$ takes a   column number - data  relation and a table
- and supplies a new relation  with
-appropriate  column number - default value  pairs
- added, corresponding to the  columns which were hidden to the user. The
+The function $colDefaults$ takes a  partial function from column number to data and a table
+ and adds the appropriate  column number - default value  pairs which correspond to 
+the  columns that were hidden to the user. The
 default values are obtained from the table information.
 
 
@@ -399,9 +408,9 @@ default values are obtained from the table information.
 ‹	µ  clear : Class; ts : TableSpec; ds : Num ™ Data
 ‹	∑	colDefaults clear ts ds
 ‹		=
-‹		let hiddencols = Snd(cleanColCons clear ts)
+‹		let hiddencols = (TS_colspecs ts) \ cols clear ts
 ‹		in 
-‹		ds ´ Dom{((n,d),c)|c ç hiddencols ± n = CS_posn c ± d = CS_default c}
+‹		ds ´ {(n,d)|∂c ∑ c ç hiddencols ± n = CS_posn c ± d = CS_default c}
 ∞
 
 
@@ -416,8 +425,7 @@ An insert query will fail if the user is not permitted to access the table.
 ‹		=
 ‹		if 	≥(clear dominates  (TS_class ts))
 ‹		then 	(s,[accessDenied])
-‹		else
-‹			let rl = Map ((MkRow clear) o (colDefaults clear ts)) ds 
+‹		else	let rl = Map ((MkRow clear) o (colDefaults clear ts)) ds 
 ‹			in	
 ‹			(changeSpec i (replaceRows ts ((TS_rows ts) Î rl)) s,[])	
 ∞
@@ -439,10 +447,10 @@ then the structure of the table would have been hidden from him and therefore th
 ‹	µ clear:Class; i:Tab; ns : Num ; e:Errors; s:State; ts:TableSpec
 ‹	∑	deleteQuery(clear,(i,ns),s,ts)
 ‹		=
-‹		let	rs = Delete (TS_rows ts) (Ran(ns Ú (revealRow clear ts)))
+‹		let	rs = Extract (Ran(ns · (revealRow clear ts)))(TS_rows ts) 
 ‹		in	
 ‹		(changeSpec i (replaceRows ts rs) s)	
-∞¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸	
+∞	
 
 
 
@@ -466,16 +474,16 @@ of data or an error message.
 ‹		if	clear = table_class
 ‹		then	if 	isItem u
 ‹			then	giveVal(MkData (Dat_class table_d)(destItem u))
-‹			else	if	isClass u
-‹				then	if (destClass u) dominates (Dat_class table_d)
-‹					then	giveVal(MkData (destClass u) (Dat_item table_d))
-‹					else	giveError downGrade
-‹				else	giveVal(destData u) 	(* must be Data *)
-‹		else	if 	isItem u
-‹			then	if	(Dat_class table_d) dominates clear
-‹				then	giveVal(MkData (Dat_class table_d) (destItem u))
-‹				else	giveError underClassified
-‹			else	giveError classChange
+‹			else if	isClass u
+‹			then	if (destClass u) dominates (Dat_class table_d)
+‹				then	giveVal(MkData (destClass u) (Dat_item table_d))
+‹				else	giveError downGrade
+‹			else	giveVal(destData u) 	(* must be Data *)
+‹		else if 	isItem u
+‹		then	if	(Dat_class table_d) dominates clear
+‹			then	giveVal(MkData (Dat_class table_d) (destItem u))
+‹			else	giveError underClassified
+‹		else	giveError classChange
 ∞
 
 Now the effect of an update on a row.  A new row is only returned if all updates are secure; otherwise
@@ -489,17 +497,16 @@ Now the effect of an update on a row.  A new row is only returned if all updates
 ‹		=
 ‹		let 	us' = 	RelCombine us (R_data r) ª (updateField clear table_class)
 ‹		in
-‹		let 	es = RelList((us' í {x|isError x}) ª destError)  
+‹		let 	es = RelList(Squash((us' í {x|isError x}) ª destError))  
 ‹		in
 ‹		if 	es = []
-‹		then	giveVal(MkRow (R_exist r)((R_data r) 
-‹						´ ((us' í {x|isVal x}) ª destVal)))
+‹		then	giveVal(MkRow (R_exist r)((R_data r) ´ (us' ª destVal)))
 ‹		else	giveError es
 ∞
 
 
 
-Finally, the $updateQuery$ function. 
+Finally, the $updateQuery$ function. A check is made to prevent access to hidden columns. 
 
 πHOLCONST
 ‹	€updateQuery› :  (Class ∏ UpDate ∏ State ∏ TableSpec)  ≠ State ∏ Errors
@@ -507,17 +514,21 @@ Finally, the $updateQuery$ function.
 ‹	µ clear:Class; i:Tab; us : Num ™ (Num ™ Update); s:State; ts : TableSpec
 ‹	∑	updateQuery (clear,(i,us),s,ts)
 ‹		=
-‹		let 	us' = InverseRelation(revealRow  clear ts) ª us
+‹		let colnums = {n | ∂ c ∑ c ç cols clear ts ± CS_posn c = n}
 ‹		in
-‹		let	pr = RelCombine us' (ListRel(TS_rows ts)) 
-‹					ª (updateRow clear (TS_class ts))
-‹		in	
-‹		let 	es = RelList((pr í {x|isError x}) ª destError)
-‹		in	if 	es = []
-‹			then	let	rs =  RelList(ListRel(TS_rows ts) 
-‹								´((pr í {x|isVal x}) ª destVal))
-‹				in 	(changeSpec i(replaceRows ts rs) s,[])
-‹			else	(s,Flatten es)
+‹		if	≥((Dom (ﬁ (Ran us))) Ä colnums) 
+‹		then	(s,[noSuchColumn])
+‹		else 	let 	us' = InverseRelation(revealRow  clear ts) ª us
+‹			in
+‹			let	pr = RelCombine us' (ListRel(TS_rows ts)) 
+‹						ª (updateRow clear (TS_class ts))
+‹			in	
+‹			let 	es = RelList(Squash((pr í {x|isError x}) ª destError))
+‹			in	if 	es = []
+‹				then	let	rs =  RelList(ListRel(TS_rows ts)
+‹								´(pr ª destVal))
+‹					in 	(changeSpec i(replaceRows ts rs) s,[])
+‹				else	(s,Flatten es)
 ∞
 
 
@@ -525,7 +536,7 @@ Finally, the $updateQuery$ function.
 
 We first provide a function that given a full table name returns a table. 
 This will only be applied in the case where the table
-name is valid.
+name is valid. (The  operator $@$ is the partial function application operator.) 
 
 πHOLCONST
 ‹	€getTable› : Tab ≠ State ≠ TableSpec
@@ -544,10 +555,10 @@ state of the database remains unchanged.
 For an insert, delete or update query, if an invalid table name is returned
 by $processQuery$, then
  the state of the database remains unchanged and an appropriate error message is returned.
-For an insert, delete or update query, if errors were generated by $processQuery$
+If errors were generated by $processQuery$
 then
  the state of the database remains unchanged and the errors are returned.  
-For an insert, delete or update query, if a valid table name and no errors are returned
+If a valid table name and no errors are returned
 by $processQuery$ then the appropriate update to the state of the database, given by
 $insertQuery$, $deleteQuery$ and $updateQuery$, is carried out after the security 
 checks have been made. In the case of an insert or update query, if the security checks
@@ -562,35 +573,27 @@ generated by the security checks are returned to the user.
 ‹				State ∏ (Class ∏ (Data LIST LIST ∏ Errors))
 ˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
 ‹	µ clear:Class;ef : Effect; es : Errors; s : State
-‹	∑ 	updateState(clear,(ef,es),s)
+‹	∑	updateState(clear,(ef,es),s)
 ‹		=	
 ‹		if	isSelect ef
 ‹		then	(s,(clear,(destSelect ef,es)))
-‹		else	if 	≥(es = [])  (* delete,update and insert only valid if no errors *)
-‹			then	(s,(clear,([],es)))
-‹			else	let	i = tabFromEffect ef
+‹		else if ≥(es = [])  (* delete,update and insert only valid if no errors *)
+‹		then	(s,(clear,([],es)))
+‹		else	let	i = tabFromEffect ef
+‹			in	
+‹			if	validTable i s
+‹			then	let ts = getTable i s 
+‹				in
+‹				let	(s',es') 
+‹					=	
+‹					if 	isInsert ef
+‹					then	insertQuery(clear,destInsert ef,s,ts)
+‹					else if	isDelete ef
+‹					then	(deleteQuery(clear,destDelete ef,s,ts),[])
+‹					else	updateQuery(clear,destUpdate ef,s,ts)
 ‹				in	
-‹				if	validTable i s
-‹				then	let ts = getTable i s 
-‹					in
-‹					if	isInsert ef
-‹					then	let	(s1,e1) 
-‹							= 
-‹							insertQuery(clear,destInsert ef,s,ts)
-‹						in	
-‹						(s1,(clear,([],e1)))
-‹					else	if	isDelete ef
-‹						then	let	s2 
-‹								= 
-‹								deleteQuery(clear,destDelete ef,s,ts)
-‹							in	
-‹							(s2,(clear,([],[])))
-‹						else	let	(s3,e3)  (* must be Update *)
-‹								= 
-‹								updateQuery(clear,destUpdate ef,s,ts)
-‹							in	
-‹							(s3,(clear,([],e3)))
-‹				else	(s,(clear,([],[noSuchTable])))  (* Invalid table name *)
+‹				(s',(clear,([],es')))
+‹			else	(s,(clear,([],[noSuchTable])))  (* Invalid table name *)
 ∞
 
 \section{CLOSING DOWN}
@@ -598,6 +601,10 @@ The following ICL HOL instruction restores the previous proof context.
 =SML
 pop_pc();
 =TEX
+
+\section{APPROVAL OF THE SECURITY RELATED SPECIFICATIONS} 
+Comments on this document by DRA to be made  by 19th June 1992.
+
 
 =IGN
 output_theory{theory = "fef005",outfile = "fef005th.doc"};
