@@ -8510,6 +8510,125 @@ a(ante_tac (list_µ_elim[¬Sin x®, ¬Cos x®, ¬î¯ 1®]sum_squares_abs_bound_thm));
 a(asm_rewrite_tac[¯_î_exp_0_1_thm] THEN REPEAT strip_tac);
 val Ûabs_sin_abs_cos_¼_1_thmÝ = save_pop_thm "abs_sin_abs_cos_¼_1_thm";
 =TEX
+We plan to make our estimates of the vlaue of $\pi/2$ a little bit more accurate than
+the ones given by Mitchell. The following general theorem will give us a lower bound
+(it implies that the first zero of the cosine function is at least 1).
+%%%%
+%%%%
+=SML
+set_goal([], ¬
+	µf a b v w·
+	a < b ± f a = v ± f b = w
+±	(µx· a ¼ x ± x ¼ b ´ ¶c· (f HasDeriv c) x)
+±	(µx c· a < x ± x < b ±  (f HasDeriv c) x ´ Abs c ¼ î¯ 1)
+´	Abs(w - v) ¼ b - a
+®);
+a(REPEAT strip_tac THEN all_fc_tac[mean_value_thm1]);
+a(all_var_elim_asm_tac1 THEN POP_ASM_T ante_tac THEN asm_rewrite_tac[] THEN strip_tac);
+a(LEMMA_T ¬Abs(f b + ~(f a)) = Abs((b + ~a) * d)® ante_tac THEN1
+	 asm_rewrite_tac[] THEN rewrite_tac[¯_abs_times_thm]);
+a(lemma_tac ¬î¯ 0 ¼ b + ~a® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(strip_tac THEN LEMMA_T ¬b + ~a = Abs (b + ~a)® once_rewrite_thm_tac THEN1 asm_rewrite_tac[¯_abs_def]);
+a(POP_ASM_T rewrite_thm_tac);
+a(conv_tac (RAND_C (pure_once_rewrite_conv[prove_rule[]¬µx·x = x * î¯ 1®])));
+a(bc_thm_tac ¯_¼_times_mono_thm);
+a(rewrite_tac[¯_0_¼_abs_thm]);
+a(DROP_NTH_ASM_T 6 bc_thm_tac THEN REPEAT strip_tac);
+a(¶_tac¬x® THEN REPEAT strip_tac);
+val Ûderiv_linear_estimate_thmÝ = save_pop_thm "deriv_linear_estimate_thm";
+=TEX
+Now, following Mitchell but getting the best estimate we can from the proof we have the following
+theorem that shows that if the cosine function is  greater than $1/\sqrt{2}$ in some interval
+$[0, t)$, then $t$ is at most $\sqrt{2}$.
+%%%%
+%%%%
+=SML
+set_goal([], ¬
+	µt· î¯ 0 < t ±  (µx·î¯ 0 < x ± x < t ´ 1/2 < Cos x ^ 2) ´ t ^ 2 ¼ î¯ 2
+®);
+a(rewrite_tac[¯_î_exp_square_thm] THEN REPEAT strip_tac);
+a(ante_tac (list_µ_elim[¬Sin®, ¬î¯ 0®, ¬t®]mean_value_thm1));
+a(LEMMA_T ¬µx·¶c·(Sin HasDeriv c) x® asm_rewrite_thm_tac THEN1
+	(strip_tac THEN ¶_tac ¬Cos x®) THEN rewrite_tac[sin_def] THEN REPEAT strip_tac);
+a(lemma_tac¬(Sin HasDeriv Cos x) x® THEN1 rewrite_tac[sin_def]);
+a(all_fc_tac[deriv_unique_thm] THEN all_var_elim_asm_tac1);
+a(CONTR_T (strip_asm_tac o rewrite_rule[¯_³_¼_less_thm]));
+a(LIST_DROP_NTH_ASM_T [6] all_fc_tac);
+a(lemma_tac¬î¯ 1 < Sin t * Sin t® THEN1 asm_rewrite_tac[]);
+(* *** Goal "1" *** *)
+a(pure_rewrite_tac[pc_rule1 "¯_lin_arith" prove_rule[] ¬
+	î¯ 1 = î¯ 2 * (1/2)
+±	(t * Cos x) * t * Cos x = (t * t) * (Cos x * Cos x)®]);
+a(bc_thm_tac ¯_less_trans_thm THEN ¶_tac¬î¯ 2 * (Cos x * Cos x)® THEN
+	REPEAT strip_tac THEN1
+		(bc_thm_tac ¯_times_mono_thm THEN REPEAT strip_tac));
+a(lemma_tac ¬î¯ 0 < Cos x * Cos x®  THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(once_rewrite_tac[¯_times_comm_thm] THEN bc_thm_tac ¯_times_mono_thm
+	THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(lemma_tac ¬î¯ 0 ¼ Sin t * Sin t®  THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(LEMMA_T¬î¯ 1 < Abs(Sin t * Sin t)® ante_tac THEN1 
+	(DROP_NTH_ASM_T 5 discard_tac THEN asm_rewrite_tac[¯_abs_def]));
+a(rewrite_tac[¯_abs_times_thm] THEN REPEAT strip_tac);
+a(rewrite_tac[¯_³_less_¼_thm]);
+a(bc_thm_tac ¯_¼_trans_thm THEN ¶_tac¬Abs(Sin t) * î¯ 1®);
+a(REPEAT strip_tac THEN1
+	(bc_thm_tac ¯_¼_times_mono_thm )THEN
+		rewrite_tac[abs_sin_abs_cos_¼_1_thm, ¯_0_¼_abs_thm]);
+val Ûcos_greater_root_2_thmÝ = save_pop_thm "cos_greater_root_2_thm";
+=TEX
+By the intermediate value theorem and the last results,there is an $x$
+with $0 < x$,  $x^2 < 2 + e$ and $\Cos{x} = 1/\sqrt{2}$. for any positive $e$
+%%%%
+%%%%
+=SML
+set_goal([], ¬
+	µe· î¯ 0 < e ´ ¶x· î¯ 0 < x ± x ^ 2 < î¯ 2 + e ± Cos x ^ 2 = 1/2
+®);
+a(REPEAT strip_tac THEN lemma_tac ¬î¯ 0 < î¯ 2 + e ® THEN1 PC_T1"¯_lin_arith" asm_prove_tac[]);
+a(cases_tac¬³µx· î¯ 0 < x ± x ^ 2 < î¯ 2 + e ´ î¯ 0 ¼  (Ìx· Cos x ^ 2  + ~(1/2)) x®
+	THEN REPEAT  strip_tac);
+(* *** Goal "1" *** *)
+a(POP_ASM_T (strip_asm_tac o rewrite_rule[¯_³_¼_less_thm]));
+a(lemma_tac ¬ µx· (Ìx· Cos x ^ 2  + ~(1/2))  CtsAt x®);
+(* *** Goal "1.1" *** *)
+a(DROP_ASMS_T discard_tac THEN
+	REPEAT strip_tac THEN bc_thm_tac has_deriv_cts_thm THEN REPEAT strip_tac);
+a(contr_tac THEN asm_tac (rewrite_rule[] (deriv_rule trans_deriv_thms ¬ (Ìx· Cos x ^ 2 + ~(1/2)) ® ¬x®)));
+a(all_asm_fc_tac[]);
+(* *** Goal "1.2" *** *)
+a(ante_tac (list_µ_elim[¬(Ìx· Cos x ^ 2 + ~(1/2))®, ¬î¯ 0®, ¬x®] intermediate_value_thm));
+a(pure_asm_rewrite_tac[] THEN asm_rewrite_tac[cos_def]);
+a(STRIP_T (ante_tac o µ_elim¬î¯ 0®) THEN asm_rewrite_tac[] THEN REPEAT strip_tac);
+a(¶_tac¬x'® THEN REPEAT strip_tac THEN_LIST[id_tac, PC_T1 "¯_lin_arith" asm_prove_tac[]]);
+a(bc_thm_tac ¯_less_trans_thm THEN ¶_tac¬x^2®  THEN REPEAT strip_tac);
+a(rewrite_tac[¯_î_exp_square_thm] THEN bc_thm_tac ¯_less_trans_thm
+	THEN ¶_tac ¬x' * x® THEN REPEAT strip_tac THEN1
+		(bc_thm_tac ¯_times_mono_thm THEN REPEAT strip_tac));
+a(once_rewrite_tac [¯_times_comm_thm] THEN
+		bc_thm_tac ¯_times_mono_thm THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(POP_ASM_T (strip_asm_tac o rewrite_rule[]) THEN contr_tac);
+a(lemma_tac¬î¯ 0 < î¯ 2  + (1/2)*e® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(lemma_tac¬¶t·î¯ 0 < t  ± t^ 2 = î¯ 2  + (1/2)*e® THEN1
+	(bc_thm_tac square_root_thm THEN REPEAT strip_tac));
+a(lemma_tac ¬t ^ 2 ¼ î¯ 2® THEN_LIST
+	[bc_thm_tac cos_greater_root_2_thm, PC_T1 "¯_lin_arith" asm_prove_tac[]]);
+a(REPEAT strip_tac);
+a(lemma_tac ¬x ^ 2 < t ^ 2® );
+(* *** Goal "2.1" *** *)
+a(rewrite_tac[¯_î_exp_square_thm] THEN bc_thm_tac ¯_less_trans_thm
+		THEN ¶_tac ¬x * t® THEN REPEAT strip_tac THEN1
+			(bc_thm_tac ¯_times_mono_thm THEN REPEAT strip_tac));
+a(once_rewrite_tac [¯_times_comm_thm] THEN
+		bc_thm_tac ¯_times_mono_thm THEN REPEAT strip_tac);
+(* *** Goal "2.2" *** *)
+a(lemma_tac¬x ^ 2 < î¯ 2 + e® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(LEMMA_T¬î¯ 0  ¼ Cos x ^ 2 + ~(1/2)® ante_tac THEN1 all_asm_fc_tac[]);
+a(SPEC_NTH_ASM_T 8 ¬x® ante_tac);
+a(REPEAT strip_tac THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
+val Ûcos_squared_eq_half_thmÝ = save_pop_thm "cos_squared_eq_half_thm";
+=TEX
 %%%%
 %%%%
 %%%%
