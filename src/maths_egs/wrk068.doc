@@ -1,0 +1,413 @@
+=IGN
+********************************************************************************
+wrk068.doc: this file is supplementary material for the ProofPower system
+
+Copyright (c) 2004 Lemma 1 Ltd.
+
+This file is supplied under the GNU General Public Licence (GPL) version 2.
+
+See the file LICENSE supplied with ProofPower source for the terms of the GPL
+or visit the OpenSource web site at http://www.opensource.org/
+
+Contact: Rob Arthan < rda@lemma-one.com >
+********************************************************************************
+=IGN
+pp_make_database -f -p hol maths_egs
+docsml wrk068
+xpp wrk068.doc -d maths_egs -i wrk068 &
+doctex wrk068 wrk068.th; texdvi -b wrk068; texdvi wrk068; texdvi wrk068
+=TEX
+\documentclass[11pt,a4paper]{article}
+\usepackage{latexsym}
+\usepackage{ProofPower}
+\ftlinepenalty=9999
+\usepackage{A4}
+\def\N{\mathbb{N}}
+\def\D{\mathbb{D}}
+\def\B{\mathbb{B}}
+\def\R{\mathbb{R}}
+\def\Z{\mathbb{Z}}
+\def\Q{\mathbb{Q}}
+\def\Lim{\mbox{{\sf lim}}}
+\def\LimInf{\mbox{{\sf lim inf}}}
+\def\LimSup{\mbox{{\sf lim sup}}}
+
+\def\ExpName{\mbox{{\sf exp}}}
+\def\Exp#1{\ExpName(#1)}
+
+\def\LogName{\mbox{{\sf log}}}
+\def\Log#1{\LogName(#1)}
+
+\def\SinName{\mbox{{\sf sin}}}
+\def\Sin#1{\SinName(#1)}
+
+\def\CosName{\mbox{{\sf cos}}}
+\def\Cos#1{\CosName(#1)}
+
+\def\Abs#1{|#1|}
+
+\def\ThmsII#1#2{%
+{\vertbarfalse
+\begin{minipage}[t]{0.48\hsize}
+#1
+\end{minipage}
+\begin{minipage}[t]{0.48\hsize}
+#2
+\end{minipage}}}
+
+\def\ThmsIII#1#2#3{%
+{\vertbarfalse
+\begin{minipage}[t]{0.32\hsize}
+#1
+\end{minipage}
+\begin{minipage}[t]{0.32\hsize}
+#2
+\end{minipage}
+\begin{minipage}[t]{0.32\hsize}
+#3
+\end{minipage}}}
+
+\def\Hide#1{\relax}
+
+\makeindex
+\title{Mathematical Case Studies: \\ --- \\ Some Group Theory}
+\author{Rob Arthan}
+\makeindex
+\author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
+\date{\FormatDate{$Date: 2004/04/12 12:10:55 $%
+}}
+
+\begin{document}
+\begin{titlepage}
+\maketitle
+\begin{abstract}
+This {\ProductHOL} script contains definitions and proofs concerning
+group theory.
+
+\end{abstract}
+\vfill
+\begin{centering}
+
+\bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
+Reference: LEMMA1/HOL/WRK068; issue $Revision: 1.77 $%
+
+
+\end{centering}
+\thispagestyle{empty}
+\end{titlepage}
+\newpage
+%\section{DOCUMENT CONTROL}
+%\subsection{Contents list}
+\tableofcontents
+%\newpage
+%\subsection{Document cross references}
+
+\subsection*{To Do}
+\begin{itemize}
+
+\item
+Write the document!
+
+\end{itemize}
+
+
+\bibliographystyle{plain}
+\bibliography{fmu}
+
+%%%%
+%%%%
+%%%%
+%%%%
+\newpage
+\section{INTRODUCTION}
+%%%%
+%%%%
+%%%%
+%%%%
+This document gives specifications and proofs relating to group theory.
+%%%%
+%%%%
+%%%%
+%%%%
+\section{AN OVERVIEW OF THE THEORY}
+
+\subsection{Equivalence Relations}
+
+\subsection{Technical Prelude}
+
+First of all, we must give the the ML commands to  introduce the new theory ``equiv\_rel'' as a child of the theory ``orders'' of ordered sets (whence comes our definition of transitivity,
+see \cite{LEMMA1/HOL/DTD114}).
+
+
+=SML
+force_delete_theory"equiv_rel" handle Fail _ => ();
+open_theory"orders";
+set_merge_pcs["basic_hol1", "'sets_alg"];
+new_theory"equiv_rel";
+=TEX
+%%%%
+%%%%
+%%%%
+%%%%
+
+%%%%
+%%%%
+%%%%
+%%%%
+¹HOLCONST
+Ü ÛReflÝ : ('a SET ¸ ('a ­ 'a ­ BOOL)) ­ BOOL
+÷üüüüüü
+Ü µ X $<<·
+Ü	Refl(X, $<<)
+Ü ¤	µx·x  X ´ x <<  x
+°
+¹HOLCONST
+Ü ÛSymÝ : ('a SET ¸ ('a ­ 'a ­ BOOL)) ­ BOOL
+÷üüüüüü
+Ü µ X $<<·
+Ü	Sym(X, $<<)
+Ü ¤	µx y·x  X ± y  X ± x <<  y ´ y << x
+°
+¹HOLCONST
+Ü ÛEquivÝ : ('a SET ¸ ('a ­ 'a ­ BOOL)) ­ BOOL
+÷üüüüüü
+Ü µ X $<<·
+Ü	Equiv(X, $<<)
+Ü ¤	Refl(X, $<<) ± Sym(X, $<<) ± Trans(X, $<<)
+°
+¹HOLCONST
+Ü ÛEquivClassÝ : ('a SET ¸ ('a ­ 'a ­ BOOL)) ­ 'a ­ 'a SET
+÷üüüüüü
+Ü µ X $<< x·
+Ü	EquivClass(X, $<<) x = {y | y  X ± x << y}
+°
+=SML
+declare_infix(300, "//");
+
+¹HOLCONST
+Ü Û$//Ý : 'a SET ­ ('a ­ 'a ­ BOOL) ­ 'a SET SET
+÷üüüüüü
+Ü µ X $<<·
+Ü	X // ($<<) = {A | ¶x· x  X ± A = EquivClass(X, $<<) x}
+°
+=SML
+declare_infix(200, "Respects");
+
+¹HOLCONST
+Ü Û$RespectsÝ : ('a ­ 'b) ­ ('a ­ 'a ­ BOOL) ­ 'a SET ­ BOOL
+÷üüüüüü
+Ü µ f $<< X·
+Ü	(f Respects $<<) X ¤ µx y·x  X ± y  X ± x << y ´ f x = f y
+°
+¹HOLCONST
+Ü Û$ContentsÝ : 'a SET ­ 'a
+÷üüüüüü
+Ü µ x· Contents {x} = x
+°
+
+
+\newpage
+
+%%%%
+%%%%
+%%%%
+%%%%
+{\let\Section\section
+\def\section#1{\Section{#1}}
+\include{wrk0681.th}
+}  %\let
+
+\twocolumn[\section{INDEX}\label{INDEX}]
+{\small\printindex}
+
+\end{document}
+
+{\HOLindexOff
+%%%%
+%%%%
+%%%%
+%%%%
+\onecolumn
+\section{THEOREMS}\label{THEOREMS}
+=SML
+fun arb_gen (thm : THM) : THM = (
+	let	val ty_map = map
+			(fn tv => (mk_vartype("@_" ^ tv), mk_vartype tv))
+			(term_tyvars(concl thm));
+		val thm1 = asm_inst_type_rule ty_map thm;
+	in	all_µ_intro (all_µ_arb_elim thm1)
+	end
+);
+=TEX
+%%%%
+%%%%
+%%%%
+%%%%
+\subsection{The Definitions and Their Consistency}
+%%%%
+%%%%
+%%%%
+%%%%
+=SML
+val Ûrefl_defÝ = get_spec¬Refl®;
+val Ûsym_defÝ = get_spec¬Sym®;
+val Ûequiv_defÝ = get_spec¬Equiv®;
+val Ûequiv_class_defÝ = get_spec¬EquivClass®;
+val Ûquotient_defÝ = get_spec¬$//®;
+val Ûrespects_defÝ = get_spec¬$Respects®;
+=SML
+push_consistency_goal ¬Contents®;
+a(¶_tac¬ÌA·Åx·A = {x}® THEN REPEAT strip_tac THEN rewrite_tac[]);
+a(all_Å_tac);
+(* *** Goal "1" *** *)
+a(¶_tac¬x® THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(POP_ASM_T ante_tac THEN PC_T1 "sets_ext" REPEAT strip_tac);
+a(POP_ASM_T (ante_tac o µ_elim¬x®));
+a(rewrite_tac[] THEN STRIP_T (rewrite_thm_tac o eq_sym_rule));
+val _ = save_consistency_thm ¬Contents® (pop_thm());
+val Ûcontents_defÝ = save_thm("contents_def", get_spec¬$Contents®);
+=TEX
+%%%%
+%%%%
+%%%%
+%%%%
+%%%%
+%%%%
+%%%%
+%%%%
+\subsection{Lemmas about Lists and Sets}
+=TEX
+We also need a few general lemmas about lists:
+%%%%
+%%%%
+=SML
+set_goal([], ¬
+	µX; $<<; x y·
+	Equiv(X, $<<) ± x  X ± y  X ´
+	(EquivClass(X, $<<)  x = EquivClass(X, $<<) y ¤ x << y)
+®);
+a(PC_T1 "sets_ext1" rewrite_tac[equiv_class_def, equiv_def, sym_def, refl_def, trans_def]
+	THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(DROP_NTH_ASM_T 5 bc_thm_tac THEN REPEAT strip_tac);
+a(DROP_NTH_ASM_T 1 (ante_tac o µ_elim¬x®));
+a(ALL_ASM_FC_T asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(REPEAT (all_asm_fc_tac[]));
+(* *** Goal "3" *** *)
+a(REPEAT (all_asm_fc_tac[]));
+val Ûequiv_class_eq_thmÝ = save_pop_thm "equiv_class_eq_thm";
+=TEX
+=SML
+set_goal([], ¬
+	µA a c·
+		a  A ± (µx·x  A ´ f x = c)
+	´	{y | ¶x·x  A ± y = f x} = {c}
+®);
+a(PC_T1 "sets_ext1"  REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_asm_fc_tac[] THEN all_var_elim_asm_tac1);
+(* *** Goal "2" *** *)
+a(¶_tac¬a® THEN REPEAT strip_tac);
+a(ALL_ASM_FC_T asm_rewrite_tac[]);
+val Ûconstant_image_thmÝ = save_pop_thm "constant_image_thm";
+=TEX
+=SML
+set_goal([], ¬
+	µX $<< f x·
+		Equiv(X, $<<)
+	±	(f Respects $<<) X
+	±	x  X
+	´	{y | ¶z·z  EquivClass(X, $<<) x ± y = f z} = {f x}
+®);
+a(REPEAT strip_tac);
+a(bc_thm_tac constant_image_thm);
+a(¶_tac¬x® THEN all_asm_ante_tac);
+a(PC_T1 "sets_ext1" rewrite_tac[ respects_def,
+	equiv_class_def, equiv_def, sym_def, refl_def, trans_def]
+		THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(ALL_ASM_FC_T rewrite_tac[]);
+val Ûrespects_image_thmÝ = save_pop_thm "respects_image_thm";
+=TEX
+=SML
+set_goal([], ¬
+	µX $<< f x·
+		Equiv(X, $<<)
+	±	(f Respects $<<) X
+	±	x  X
+	´	Contents {y | ¶z·z  EquivClass(X, $<<) x ± y = f z} = f x
+®);
+a(REPEAT strip_tac);
+a(ALL_FC_T rewrite_tac[arb_gen respects_image_thm]);
+a(rewrite_tac[contents_def]);
+val Ûrespects_image_contents_thmÝ = save_pop_thm "respects_image_contents_thm";
+=TEX
+=SML
+set_goal([], ¬
+	µX $<<·
+		Equiv(X, $<<)
+	´	µA· A  X // ($<<) ´ ¶x· x  X ± A = EquivClass(X, $<<) x
+
+®);
+a(rewrite_tac[ quotient_def]);
+val Ûquotient_map_onto_thmÝ = save_pop_thm "quotient_map_onto_thm";
+=TEX
+=SML
+set_goal([], ¬
+	µX f· Equiv(X, (Ìx y·f x = f y))
+®);
+a(PC_T1 "sets_ext1" rewrite_tac[ equiv_def, sym_def, refl_def, trans_def]
+		THEN REPEAT strip_tac THEN asm_rewrite_tac[]);
+val Ûequiv_fun_thmÝ = save_pop_thm "equiv_fun_thm";
+=TEX
+=SML
+set_goal([], ¬
+	µX f· (f Respects (Ìx y·f x = f y)) X
+®);
+a(rewrite_tac[ respects_def] THEN REPEAT strip_tac);
+val Ûrespects_fun_thmÝ = save_pop_thm "respects_fun_thm";
+=TEX
+=SML
+set_goal([], ¬
+	µX : 'a SET; f : 'a ­ 'b· ¶g : 'a SET ­ 'b·
+		µx:'a· x  X ´ g(EquivClass(X, (Ìx y·f x = f y)) x)  = f x
+®);
+a(REPEAT strip_tac);
+a(¶_tac¬ÌA·Contents{ y | ¶z·z  A ± y = f z}® THEN REPEAT strip_tac THEN rewrite_tac[]);
+a(bc_thm_tac respects_image_contents_thm);
+a(asm_rewrite_tac[equiv_fun_thm, respects_fun_thm]);
+val Ûfun_factors_thmÝ = save_pop_thm "fun_factors_thm";
+=TEX
+=SML
+set_goal([], ¬
+	µX : 'a SET; f : 'a ­ 'b; g1 g2 : 'a SET ­ 'b·
+		(µx:'a· x  X ´ g1(EquivClass(X, (Ìx y·f x = f y)) x)  = f x)
+	±	(µx:'a· x  X ´ g2(EquivClass(X, (Ìx y·f x = f y)) x)  = f x)
+	´	µA·A  X //  (Ìx y·f x = f y) ´ g1 A = g2 A
+®);
+a(rewrite_tac[quotient_def] THEN REPEAT strip_tac);
+a(all_var_elim_asm_tac1);
+a(ALL_ASM_FC_T rewrite_tac[]);
+val Ûfun_factors_unique_thmÝ = save_pop_thm "fun_factors_unique_thm";
+=TEX
+
+=TEX
+%%%%
+%%%%
+%%%%
+%%%%
+=TEX
+\subsection{Epilogue}\label{END}
+} % matches turning off of HOL index entries.
+=TEX
+%%%%
+%%%%
+=SML
+output_theory{out_file="wrk0681.th.doc", theory="equiv_rel"};
+=TEX
+\end{document}
+=IGN
