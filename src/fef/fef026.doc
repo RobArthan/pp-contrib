@@ -1,0 +1,425 @@
+=TEX
+% TQtemplate.tex
+\documentstyle[hol1,11pt,TQ]{article}
+\def\Hide#1{}
+\def\Bool{``$\it{:}bool\,$''}
+\makeindex
+\TPPproject{DRA FRONT END FILTER PROJECT}  %% Mandatory field
+%\TPPvolume{}
+%\TPPpart{}
+\TPPtitle{Critical Requirements on the SWORD Query Transformations}  %% Mandatory field
+\TPPref{DS/FMU/FEF/026}  %% Mandatory field
+\def\SCCSversion{$Revision$
+}
+\TPPissue{\SCCSversion}  %% Mandatory field
+\TPPdate{\FormatDate{$Date$
+}}  %% Mandatory field (with sensible default)
+\TPPstatus{Draft}			%% Mandatory field
+\TPPtype{Specification}
+\TPPkeywords{}
+\TPPauthor{R.~D.~Arthan & WIN01}  %% Mandatory field
+%\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
+\TPPauthorisation{R.B.~Jones & HAT Manager}
+\TPPabstract{A formalisation of the critical requirements on the SWORD
+Query Transformations for the DRA front end filter project RSRE 1C/6130.}
+%\TPPabstractB{}
+%\TPPabstractC{}
+%\TPPabstractD{}
+%\TPPabstractE{}
+%\TPPabstractF{}
+\TPPdistribution{\parbox[t]{4.0in}{%
+	HAT FEF File \\
+	Simon Wiseman
+}}
+%\TPPclass{CLASSIFICATION}
+\newfont{\icllogo}{icllogo50}
+\def\TPPheadlhs{$\vcenter{\halign{##\cr\icllogo ICL\cr}}$}
+%\def\TPPheadlhs{}
+%\def\TPPheadcentre{}
+%def\TPPheadrhs{}
+%\def\TPPfootlhs{}
+%\def\TPPfootcentre{}
+%\def\TPPfootrhs{}
+
+\begin{document}
+\TPPsetsizes
+\makeTPPfrontpage
+
+\vfill
+\begin{centering}
+
+%\bf Copyright \copyright\ : International Computers Ltd \number\year
+
+\end{centering}
+
+\newpage
+\section {DOCUMENT CONTROL}
+\subsection{Contents List}
+\tableofcontents
+\newpage
+
+\subsection{Document Cross References}
+\bibliographystyle{fmu}
+\bibliography{fmu,fef}
+
+\subsection{Changes History}
+\begin{description}
+\item[Issue \SCCSversion ({\FormatDate{$Date$%
+}}) ] First draft.
+\end{description}
+
+\subsection{Changes Forecast}
+The current issue is preliminary discussion of issues in
+formalising the critical requirements.
+\pagebreak
+\section{GENERAL}
+\subsection{Scope}
+This document gives a formal specification of part of the SWORD Front
+End giving the high-level security properties required of both the
+Query Transformations of \cite{trans} and of the Front End Filter of
+\cite{filter}.  It constitutes part of deliverable D3 of work package 1a, as
+given in the Phase 2 Technical Proposal, \cite{DS/FMU/017}.
+
+\subsection{Introduction}
+
+\cite{DS/FMU/FEF/022} gives a formal description of the top-level
+architecture of the Front End Implementation of SWORD and identifies
+three subsystems from which the system is constructed, namely,
+the SSQL Transformation Processor, the TSQL database, and the Output Filter.
+It is the purpose of this document to give a more concrete formulation
+of the critical requirements on these subsystems.
+
+The current issue gives preliminary discussion of issues in
+formalising the critical requirements. Some formal material is included.
+
+\section{PRELIMINARIES}
+The following \Product{} instructions set the context for the proof
+tools and set up the new theory $fef026$, with parent the theory
+$fef022$ in which the architectural model is formalised.
+=SML 
+open_theory "fef022";
+new_theoryÛ"fef026"İ;
+push_pc "hol";
+=TEX
+
+\section{CONSTRUCTING THE SUBSYSTEMS}
+\subsection{Introduction}
+The abstract formulation of the critical requirements on
+the subsystems of $FE\_SWORD$ given in the previous section give little
+insight into {\em how} the subsystems are to be constructed. Further detail
+on the actual data types involved is required to discuss this.
+
+Apart from some minor and easily remedied differences of
+organisation, the syntax of TSQL is a subset of the syntax of SSQL.
+For simplicity, it has been chosen to model the TSQL abstract syntax as
+being identical with the SSQL syntax. The TSQL semantics may then be
+specified reusing most of the SSQL semantics of
+\cite{DS/FMU/FEF/004,DS/FMU/FEF/005,DS/FMU/FEF/014} by imposing
+a state invariant which asserts that all classification information in
+the state, apart from where classifications are stored as data, is fixed
+at the lowest classification. A formal treatment of the TSQL semantics along
+these lines is given in \cite{DS/FMU/FEF/021}.
+
+The representation of a TSQL state as an SSQL state is defined informally
+in \cite{filter} and formally in TBA. In the general case, an SSQL table
+with $k$ columns is represented as a TSQL table with $1 + 3k$ columns:
+the first column in the TSQL table contain the row existence classes,
+successive blocks of 3 columns give the classification, the dinary data
+and the sterling data for the corresponding SSQL column. The SSQL state
+also associates some `static'' classification information about each
+table, namely: its class ($TS\_class$\footnote{%
+The names used here are as used in \cite{DS/FMU/FEF/004}.%
+}) and its maximum
+row class ($TS\_maxRow$), and also about each column in a table, namely:
+its existence class ($CC\_exist$) and the maximum and minimum classifications
+for the data in the column ($CS\_min$, $CS\_,max$). This information
+is not represented in the TSQL state (as modelled here, although in
+practice, it will be held in a TSQL table); however, it is used in
+the transformations of \cite{filter} in order to optimise the representation,
+so that, for example, the row existence class column is omitted if
+$TS\_maxRow = TS\_class$.
+
+The management of the optimisations discussed above and of the variable
+scoping rules of the query language make a significant contribution to the
+complexity of the transformations as specified in \cite{filter}. The scoping rules
+also complicate the semantics of both SSQL as given in \cite{DS/FMU/FEF/014}
+and hence of TSQL. The main security-relevant mechanisms used in the
+transformations are therefore best understood if the optimisations,
+the handling of the scoping rules for the two languages,
+and the security checks themselves are
+best handled separately in a formal treatment.
+
+Most of the complexity of the TSQL and SSQL semantics is in the $SELECT$
+query. Indeed, at least in $TSQL$, the $DELETE$, $INSERT$ and $UPDATE$
+queries can be modelled as a $SELECT$ query to compute a new table
+followed by an assignment or a merge of the new table into an existing one table.
+
+The security checks which apply to a $SELECT$ query are best understood
+if we think of execution of the query as returning a {\em derived table}, which
+we think of as having two components: the table specification
+which contains static information about the table and its columns;
+and the list of rows comprising the table data proper.
+We will take a conceptual, unoptimised, view of derived tables
+and so use the following data types for them:
+
+¹HOLLABPROD DerColSpecüüüüüüüüüüüüüüüüüüü
+Ü	DCS_name	: Ide LIST LIST;
+Ü	DCS_min		: Class;
+Ü	DCS_max		: Class;
+Ü	DCS_exists	: Class
+°üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+¹HOLLABPROD DerTableSpecüüüüüüüüüüüüüüüüüü
+Ü	DTS_name	: Ide LIST LIST;
+Ü	DTS_class	: Class;
+Ü	DTS_maxRow	: Class;
+Ü	DTS_colSpecs	: DerColSpec LIST
+°üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+¹HOLLABPROD DerTableRowüüüüüüüüüüüüüüüüüü
+Ü	DTR_where	: Class;
+Ü	DTR_row		: Class;
+Ü	DTR_cols	: (Class ¸ Item) LIST
+°üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+¹HOLLABPROD DerTableüüüüüüüüüüüüüüüüüüüü
+Ü	DT_spec		: DerTableSpec;
+Ü	DT_rows		: DerTableRow LIST
+°üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+
+The information in the above is intended to be extracted from information
+recorded for a table in the SSQL state or computed during derivation
+of the table, as described in the following table:
+
+\begin{centering}
+\begin{tabular}{|l|p{4in}|}\hline
+Field & Description \\\hline\hline
+$DCS\_name$ &
+The names by which the column may be known
+(computed from $DirectoryS$ and the $ColSpec$s for the table initially) \\\hline
+$DCS\_min$/$DCS\_max$ &
+The minimum and maximum classes for data in the column
+(taken from the $ColSpec$s for the column initially) \\\hline
+$DCS\_exist$ &
+The column existence class
+(taken from the $ColCon$ for the column initially) \\\hline
+$DTS\_name$ &
+The names by which the table may be known
+(computed from $DirectoryS$ initially) \\\hline
+$DTS\_class$ &
+The class of the table
+(computed from the $TableSpec$ for the table initially) \\\hline
+$DTS\_maxRow$ &
+The maximum row existence class of the table
+(computed from the $TableSpec$ for the table initially) \\\hline
+$DTS\_colSpecs$ &
+The column specifications for the table \\\hline
+$DTR\_where$ &
+The classification in this row of a $WHERE$
+clause used to construct this table (taken equal to the client clearance
+initially) \\\hline
+$DTR\_row$ &
+The existence classification of this row
+(taken from the SSQL state initially) \\\hline
+$DTR\_cols$ &
+The classication and data for each field in this row
+(taken from the SSQL state initially)  \\\hline
+\end{tabular}
+\end{centering}
+
+Before discussing the use of the above representation of a derived
+table within the formal framework, it may be helpful to consider some
+examples of the transformation of SSQL queries into TSQL. 
+For the examples which follow, the main part of the transformation algorithm
+is defined in the description of $tuple\_list\sb{make\_outer}$ in \cite{trans}.
+
+\paragraph{Example 1}
+The basic principle of operation of the Front End implementation
+of SWORD is apparent from the treatment of the simplest form
+of $SELECT$ query:
+
+=GFT SSQL Example
+	SELECT * FROM table
+=TEX
+
+In essence, this is transformed into a single TSQL query
+(with no check query) of the form\footnote{%
+In fact, the optimised query may omit some of the expressions in the
+select-list. In this case, $cc$ would certainly be omitted, since there
+is no $WHERE$ clause.%
+}:
+
+=GFT TSQL Example
+	SELECT cc, rc, col1‰c, col1‰s, col1‰d, ...
+	FROM table‰t
+	WHERE cc DOM rc
+=TEX
+where $table\sb{t}$ is the TSQL table implementing $table$,
+$cc$ is a constant classification equal to the clearance of the client,
+$rc$ is the column containing the row classes,
+and the $col{\cal I}\sb{{\cal X}}$
+are the columns containing the classes, sterling data and dinary data
+for the (SSQL) columns of $table$. Viewed conceptually as a derived
+table in the above sense, the result of this TSQL query represents the entirety
+of all rows in $table$ whose existence the client is cleared to know,
+together with a column of where clause classes all equal to
+the clearance of the client. Filtering such a derived table amounts, in
+effect, to removing all rows whose class is not dominated by the
+client clearance and overwriting with a dummy value the data in all fields where
+the field classification is not dominated by the client clearance.
+Since, in this case, all of the classification information in the
+derived table is taken directly from the database (and so may be assumed
+to be correct), the result of this filtering removes all information
+content which the client is not cleared to see\footnote{%
+In the current specifications \cite{filter,trans}, the transformations
+add the $WHERE$ clause as shown in the example and the filter apparently
+does not need to eliminate rows whose existence the client is not cleared
+to know since there will not be any. However, the row existence column
+is passed into the filter. This point needs clarification.%
+}.
+
+\paragraph{Example 2}
+For a more complex SSQL query classifications in the derived table
+which represents its output are computed during execution of
+the TSQL query. For example, consider:
+
+=GFT SSQL Example
+	SELECT col2 + col3 FROM table WHERE col1 < col2
+=TEX
+
+Here, in each row, computation of the $WHERE$ clause reveals information
+about values in the first two fields of the row. Again there is no check
+query and the transformed query might have the form:
+
+=GFT TSQL Example
+	SELECT col1‰c LUB col2‰c, rc, col2‰c LUB col3‰c, col2‰s + col3‰s
+	FROM table‰t
+	WHERE (col1‰s < col1‰s OR NOT cc DOM (col1‰c LUB col2‰c)) AND cc DOM rc
+=TEX
+Here the transformations have arranged to include in the derived table
+passed to the filter rows for which either the SSQL $WHERE$ clause is true
+or the client is not cleared to compute the $WHERE$ clause. The filter
+can then discard rows for which the $WHERE$ clause computation is a possible
+covert channel. The classification associated with each computed data value
+=INLINEFT
+col2‰s + col3‰s
+=TEX
+\ in each row is the least upper bound of the classifications for
+$col2$ and $col3$ in that row, since the result of the addition reveals
+information about both of its operands. 
+
+\paragraph{Example 3}
+In the above examples, there is no need for a check query since the
+data query can include all the information required for the filter
+to eliminate possible covert channels. The check query becomes necessary
+when the query includes a $GROUP$ $BY$ clause, e.g. consider the following
+query:
+
+=GFT SSQL Example
+	SELECT col1, COUNT FROM table WHERE col2 > 0 GROUP BY col1
+=TEX
+
+This is intended to return a table showing, for each value of $col1$
+appearing in $table$, the number of rows having that $col1$ value
+and a positive $col2$ value. The query must not be allowed to reveal information
+about rows whose $col1$
+value the client is not cleared to see. This will result in a check query
+as follows:
+
+=GFT TSQL Example
+	SELECT TRUE
+	FROM table‰t
+	WHERE cc DOM rc AND col2‰s > 0 AND NOT cc DOM col1‰c
+=TEX
+Thus the check query will return a row for each row in $table$ whose
+existence the client is cleared to know, whose $col2$ value is such
+that the row would be included in the counts to be made by the data query
+and whose $col1$ value the client is not cleared to know. If there are
+any such rows the data query should not be allowed to proceed.
+
+\paragraph{Example 4}
+The above examples involve selection from a single table. Selection
+from (cartesian product of) several tables follows similar lines except
+that the row existence classes must be combined to give the existence
+class for the derived table. For, example, consider:
+
+=GFT SSQL Example
+	SELECT * FROM tableA, tableB
+=TEX
+
+This is transformed into the following query, which is similar to the selection
+from a single table but with the existence class in each row of the cartesian
+product taken to be the least upper bound of the existence classes of the
+two rows it is formed from.
+=GFT TSQL Example
+	SELECT cc, rcA LUB rcB, colA1‰c, colA1‰s, colA1‰d, ..., colB1‰c, colB1‰s, colB1‰d, ...
+	FROM tableA‰t, tableB‰t,
+	WHERE cc DOM (rcA LUB rcB)
+=TEX
+
+\paragraph{Discussion}
+In fact, the above examples display most of the security relevant
+features of the transformations, with the following exceptions:
+
+\begin{enumerate}
+\item
+The more complex variants of a single select query,
+e.g. the $HAVING$ clause.
+\item
+The details of the computation of the classification of
+the result of an expression (cf. example 2 above where for each row,
+the expression $col1 + col2$ is assigned a classification which
+is the least upper bound of the classifications of $col1$ and $col2$ in that
+row).
+\item
+The details of the mapping of the SSQL name space onto the TSQL name space.
+\item
+The handling of nested $SELECT$ queries and the management of the
+scope of names within them.
+\end{enumerate}
+
+%The first and second of these appear to be fairly straightforward to
+%describe and formalise, given a suitable framework. The problems
+%with names, $SELECT$s are somewhat more complex.
+%To factor out these problems while retaining the core security relevant
+%features, a model of the operation of the TSQL system in which the
+%semantics of the queries are represented by simple relational algebra-style
+%operations on derived tables is suggested. The idea is that one may
+%consider any TSQL query possibly involving nested $SELECT$s as the result
+%of performing a sequence of $SELECT$s whose results are assigned
+%to intermediate tables and in which the only nested $SELECT$s have the
+%form.
+
+
+%Of course, a precise working out of the details of such a translation
+%would require a careful examination of the TSQL scope rules, and the
+%the introduction of correlation names where necessary to avoid scoping
+%problems. However, it is reasonably clear in principle that such a
+%translation is possible. Moreover, it would seem that such an approach
+%will give insight into the information flow constraints which the
+%transformations should impose by giving a simplified framework for
+%understanding the execution of the TSQL queries they generate.
+=TEX
+
+\section{CLOSING DOWN}
+The following \Product{} instruction restores the previous proof context.
+=SML
+pop_pc();
+=TEX
+
+=SML
+output_theory{theory = "fef026",out_file = "fef026th.doc"};
+=TEX
+
+\newpage
+\HOLindexOff
+\input{fef026th.tex}
+\HOLindexOn
+\newpage
+\twocolumn[\section{INDEX} \label{INDEX}]
+\small
+\printindex
+=TEX
+\end{document}
+
+
+
+
+
