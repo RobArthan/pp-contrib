@@ -56,7 +56,7 @@ doctex wrk067.doc  wrk067[1234].th.doc ; docdvi wrk067
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2004/11/22 21:10:22 $%
+\date{\FormatDate{$Date: 2004/11/26 16:49:05 $%
 }}
 \begin{document}
 \begin{titlepage}
@@ -97,7 +97,7 @@ give a groupoid modulo homotopy equivalence.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK067; issue $Revision: 1.35 $%
+Reference: LEMMA1/HOL/WRK067; issue $Revision: 1.36 $%
 
 
 \end{centering}
@@ -1045,6 +1045,27 @@ val €Ä_size_thm› = save_pop_thm"Ä_size_thm";
 %%%%
 
 =SML
+set_goal([],¨µa b∑ a ç Finite ± b Ä a ± ≥b = a ¥ #b < #aÆ);
+a(REPEAT strip_tac);
+a(lemma_tac¨a \ b Ä a ± ≥a \ b = {}Æ THEN1
+	PC_T1 "sets_ext1" asm_prove_tac[]);
+a(REPEAT strip_tac THEN all_fc_tac[Ä_finite_thm]);
+a(LEMMA_T ¨# (b ¿ (a \ b)) + # (b ° (a \ b)) = # b + # (a \ b)Æ ante_tac THEN1
+	(bc_thm_tac size_¿_thm THEN REPEAT strip_tac));
+a(LEMMA_T ¨b ¿ (a \ b) = a ± b ° (a \ b) = {}Æ rewrite_thm_tac THEN1
+	PC_T1 "sets_ext1" asm_prove_tac[]);
+a(rewrite_tac[size_empty_thm]);
+a(STRIP_T rewrite_thm_tac);
+a(lemma_tac ¨≥ #(a \ b) = 0Æ THEN_LIST
+	[id_tac, PC_T1 "lin_arith" asm_prove_tac[]]);
+a(ALL_FC_T1 fc_§_canon asm_rewrite_tac[size_0_thm]);
+val €Ä_size_thm1› = save_pop_thm "Ä_size_thm1";
+
+=TEX
+%%%%
+%%%%
+
+=SML
 
 set_goal([], ¨µn a∑ n ç a ¥ Min a ç aÆ);
 a(µ_tac THEN cov_induction_tac ¨n:ÓÆ THEN REPEAT strip_tac);
@@ -1076,6 +1097,41 @@ a(bc_thm_tac(get_spec¨MinÆ) THEN REPEAT strip_tac);
 a(spec_nth_asm_tac 2 ¨iÆ);
 a(PC_T1 "lin_arith" asm_prove_tac[]);
 val €min_º_thm› = save_pop_thm"min_º_thm";
+
+=TEX
+%%%%
+%%%%
+
+=SML
+
+set_goal([],¨µp a∑
+	a ç Finite
+±	p a
+¥	∂b∑
+	b Ä a
+±	p b
+±	µc∑c Ä b ± p c ¥ c = bÆ);
+a(REPEAT strip_tac);
+a(PC_T1 "predicates" lemma_tac ¨#a ç {n | ∂t∑ t Ä a ± p t ± n = #t}Æ);
+(* *** Goal "1" *** *)
+a(REPEAT strip_tac);
+a(∂_tac¨aÆ THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(all_fc_tac[min_ç_thm]);
+a(∂_tac¨tÆ THEN REPEAT strip_tac);
+a(contr_tac THEN all_fc_tac[Ä_finite_thm]);
+a(all_fc_tac[Ä_size_thm1]);
+a(DROP_NTH_ASM_T 9 discard_tac);
+a(PC_T1 "predicates" lemma_tac ¨#c ç {n | ∂t∑ t Ä a ± p t ± n = #t}Æ);
+(* *** Goal "2.1" *** *)
+a(REPEAT strip_tac);
+a(∂_tac¨cÆ THEN REPEAT strip_tac);
+a(PC_T1 "sets_ext1" asm_prove_tac[]);
+(* *** Goal "2.2" *** *)
+a(all_fc_tac[min_º_thm]);
+a(PC_T1 "lin_arith" asm_prove_tac[]);
+val €finite_Ä_well_founded_thm› = save_pop_thm "finite_Ä_well_founded_thm";
+
 =TEX
 %%%%
 %%%%
@@ -3139,6 +3195,59 @@ a(lemma_tac¨Min {n|L(n + 1) = L n} ç {n|L(n + 1) = L n}Æ THEN1
 a(DROP_NTH_ASM_T 6 (ante_tac o µ_elim¨Min {n|L (n + 1) = L n}Æ)
 	THEN asm_rewrite_tac[cons_lemma]);
 val €connected_chain_thm› = save_pop_thm "connected_chain_thm";
+
+=TEX
+%%%%
+%%%%
+
+=SML
+
+set_goal([],¨µ‘ A B C∑
+	‘ ç Topology
+±	A ç ‘ Connected
+±	B ç ‘ Connected
+±	C ç ‘ Connected
+±	A ¿ B ¿ C ç ‘ Connected
+¥	A ¿ C ç ‘ Connected ≤ B ¿ C ç ‘ ConnectedÆ);
+a(contr_tac);
+a(swap_nth_asm_concl_tac 3 THEN rewrite_tac[connected_def] THEN strip_tac);
+a(≤_right_tac THEN conv_tac (TOP_MAP_C ≥_µ_conv));
+a(all_fc_tac[separation_thm]);
+a(∂_tac¨A'' ¿ A'Æ THEN ∂_tac¨B'' ° B'Æ);
+a(ALL_FC_T rewrite_tac[¿_open_thm, °_open_thm]);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(LIST_GET_NTH_ASM_T [1, 2, 6, 7] (MAP_EVERY ante_tac)
+	THEN PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "2" *** *)
+a(LIST_GET_NTH_ASM_T [1, 2, 3, 6, 7, 8] (MAP_EVERY ante_tac)
+	THEN DROP_ASMS_T discard_tac
+	THEN PC_T1 "sets_ext1" prove_tac[]
+	THEN REPEAT (contr_tac THEN all_asm_fc_tac[]));
+(* *** Goal "3" *** *)
+a(contr_tac THEN lemma_tac¨C Ä A'' ¿ A'Æ THEN1
+	(POP_ASM_T ante_tac THEN  PC_T1 "sets_ext1" prove_tac[]));
+a(cases_tac ¨C = {}Æ THEN1 all_var_elim_asm_tac1);
+(* *** Goal "3.1" *** *)
+a(swap_nth_asm_concl_tac 10 THEN1 asm_rewrite_tac[]);
+(* *** Goal "3.2" *** *)
+a((LIST_GET_NTH_ASM_T [1, 2, 4, 6, 9, 11] (MAP_EVERY ante_tac)
+		THEN DROP_ASMS_T  discard_tac
+		THEN PC_T "sets_ext1" contr_tac));
+a(LIST_DROP_NTH_ASM_T [2, 3, 4, 5, 6] (MAP_EVERY (strip_asm_tac o µ_elim¨xÆ)));
+(* *** Goal "4" *** *)
+a(contr_tac THEN lemma_tac¨A Ä B''Æ THEN1
+	(POP_ASM_T ante_tac THEN  PC_T1 "sets_ext1" prove_tac[]));
+a(cases_tac ¨A = {}Æ THEN1 all_var_elim_asm_tac1);
+(* *** Goal "4.1" *** *)
+a(swap_nth_asm_concl_tac 12 THEN1 asm_rewrite_tac[]);
+(* *** Goal "4.2" *** *)
+a((LIST_GET_NTH_ASM_T [1, 2, 5, 6] (MAP_EVERY ante_tac)
+		THEN DROP_ASMS_T  discard_tac
+		THEN PC_T "sets_ext1" contr_tac));
+a(LIST_DROP_NTH_ASM_T [2, 3, 4] (MAP_EVERY (strip_asm_tac o µ_elim¨xÆ)));
+val €connected_triad_thm› = save_pop_thm "connected_triad_thm";
+
 
 =TEX
 %%%%
