@@ -520,7 +520,24 @@ val €object_clauses› = save_pop_thm"object_clauses";
 =TEX
 =SML
 =TEX
+\subsection{Consistency of {\it list_machine}}
+
 =SML
+push_consistency_goal¨lift_machineÆ;
+a (prove_∂_tac THEN strip_tac);
+a (lemma_tac ¨∂ lm ∑ 
+	(lm [] = Ãs∑([], s))
+ ± (µ r rl ∑
+	lm (Cons r rl) =
+	Ã s ∑ (let out = Output mch' (s, r) and s' = Next mch' (s, r)
+             in let (outl, final_state) = lm rl s'
+                in (Cons out outl, final_state)))Æ
+	THEN1 prove_∂_tac);
+a (∂_tac ¨Ãs rl∑ lm rl sÆ);
+a (asm_rewrite_tac[]);
+save_consistency_thm¨lift_machineÆ(pop_thm());
+=TEX
+=IGN
 push_consistency_goal¨output_seqÆ;
 a(lemma_tac ¨∂os : Req LIST ≠ 'State Machine ≠ 'State ≠ Obj LIST∑
 	µr rs mch s∑
@@ -874,6 +891,27 @@ a(PC_T1 "prop_eq" prove_tac[]);
 val €identical_obj_trans_thm› = save_pop_thm"identical_obj_trans_thm";
 =TEX
 =SML
+push_goal([], ¨µ c
+           ∑ identicalObj c ç Reflexive
+               ± identicalObj c ç Symmetric
+               ± identicalObj c ç TransitiveÆ);
+a (rewrite_tac ([identical_obj_refl_thm, identical_obj_sym_thm,
+	identical_obj_trans_thm] @ (map get_spec
+	[¨ReflexiveÆ, ¨SymmetricÆ, ¨TransitiveÆ])));
+val €identical_obj_rft_thm› = save_pop_thm "identical_obj_rft_thm";
+=TEX
+=SML
+push_goal([], ¨µ c∑ identicalObj c ç EquivalenceÆ);
+a(rewrite_tac[get_spec ¨EquivalenceÆ, identical_obj_rft_thm]);
+val €identical_obj_equiv_thm› = save_pop_thm"identical_obj_equiv_thm";
+=TEX
+=SML
+push_goal([], ¨µc ∑identicalObj c ç EquivalenceÆ);
+a(rewrite_tac[get_spec ¨EquivalenceÆ, ]);
+a(PC_T1 "prop_eq" prove_tac[]);
+val €identical_obj_trans_thm› = save_pop_thm"identical_obj_trans_thm";
+=TEX
+=SML
 set_goal([], ¨µc∑
 	sameRequests c =
 	{	(rs1, rs2)
@@ -948,24 +986,7 @@ The following \Product{} instructions open the theory $fef043$.
 =SML
 open_theory "fef043";
 map delete_thm (map (hd o fst) (get_thms "fef043"));
-=TEX
-
-\subsection{Consistency of {\it list_machine}}
-
-=SML
-push_consistency_goal¨lift_machineÆ;
-a (prove_∂_tac THEN strip_tac);
-a (lemma_tac ¨∂ lm ∑ 
-	(lm [] = Ãs∑([], s))
- ± (µ r rl ∑
-	lm (Cons r rl) =
-	Ã s ∑ (let out = Output mch' (s, r) and s' = Next mch' (s, r)
-             in let (outl, final_state) = lm rl s'
-                in (Cons out outl, final_state)))Æ
-	THEN1 prove_∂_tac);
-a (∂_tac ¨Ãs rl∑ lm rl sÆ);
-a (asm_rewrite_tac[]);
-save_consistency_thm¨lift_machineÆ(pop_thm());
+set_pc "hol2";
 =TEX
 
 \subsection{Consistency Proof}
@@ -1000,46 +1021,56 @@ val lemma_043_1 = save_pop_thm "lemma_043_1";
 set_labelled_goal "2";
 
 =SML
-set_goal([],¨µc x∑ (x, x) ç identicalObj cÆ);
-=TEX
-=SML
-set_pc "hol2";
-set_goal([],¨LiftRel sameRequests ç IndexedEquivÆ);
-a (lemma_tac ¨µ c∑ sameRequests c ç EquivalenceÆ);
-(* *** Goal "1" *** *)
-a (rewrite_tac (map get_spec [¨sameRequestsÆ, ¨EquivalenceÆ]));
-a (REPEAT strip_tac);
-(* *** Goal "1.1" *** *)
-a (rewrite_tac [
-	get_spec ¨ReflexiveÆ,
-	get_spec ¨sameRequestÆ,
-	get_spec ¨ElemsÆ,
-	let_def,
-	sets_ext_clauses]);
-a (REPEAT strip_tac);
-a (lemma_tac ¨µy:Req LIST∑ (x1, x2) ç Elems (Combine y y) ¥ x1 = x2Æ);
-(* *** Goal "1.1.1" *** *)
-a strip_tac;
-a (list_induction_tac ¨yÆ THEN asm_rewrite_tac (map get_spec [
-	¨CombineÆ,¨$˘Æ,
-	¨ElemsÆ]));
-a (REPEAT strip_tac THEN asm_rewrite_tac[]);
-(* *** Goal "1.1.2" *** *)
-a (ALL_ASM_FC_T rewrite_tac []);
-=GFT
-(* *** Goal "1.1.2" *** *)
-
-(*  2 *)  ¨(x1, x2) ç Elems (Combine (x ˘ VisibleReq c) (x ˘ VisibleReq c))Æ
-(*  1 *)  ¨µ y∑ (x1, x2) ç Elems (Combine y y) ¥ x1 = x2Æ
-
-(* ?Ù *)  ¨(reqSsql x2, reqSsql x2) ç identicalObj cÆ
-
-=SML
-(* *** Goal "2" *** *)
-a (fc_tac [lift_rel_indexed_equiv_thm]);
-=TEX
-=SML
 set_goal([],¨LiftRel (same_at_c_below_level 1) ç IndexedEquivÆ);
+set_goal([],¨µn c∑ (same_at_c_below_level n c) ç EquivalenceÆ);
+a (REPEAT strip_tac);
+a (induction_tac ¨nÆ);
+(* *** Goal "1" *** *)
+a (rewrite_tac (
+	(map get_spec [
+	¨same_at_c_below_levelÆ, ¨EquivalenceÆ, ¨ReflexiveÆ,
+	¨SymmetricÆ, ¨TransitiveÆ])
+	@
+	[identical_obj_refl_thm, identical_obj_sym_thm,
+	identical_obj_trans_thm]));
+(* *** Goal "2" *** *)
+a (asm_rewrite_tac (
+	(map get_spec [
+	¨same_at_c_below_levelÆ, ¨EquivalenceÆ])
+	@
+	[identical_obj_refl_thm, identical_obj_sym_thm,
+	identical_obj_trans_thm]));
+a (REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a (rewrite_tac [get_spec ¨ReflexiveÆ]);
+a (REPEAT strip_tac
+	THEN all_fc_tac [elems_combine_thm]
+	THEN asm_rewrite_tac[]);
+a (DROP_NTH_ASM_T 4 ante_tac
+	THEN rewrite_tac (map get_spec [¨EquivalenceÆ, ¨ReflexiveÆ,
+	¨SymmetricÆ, ¨TransitiveÆ]));
+a (REPEAT strip_tac THEN asm_rewrite_tac[]);	
+(* *** Goal "2.2" *** *)
+a (rewrite_tac [get_spec ¨SymmetricÆ]);
+a (REPEAT_N 3 strip_tac
+	THEN asm_rewrite_tac[]);
+a (REPEAT strip_tac);
+a (DROP_NTH_ASM_T 4
+	(strip_asm_tac o
+	(rewrite_rule (map get_spec [¨EquivalenceÆ, ¨SymmetricÆ]))));
+a (all_asm_fc_tac[]);
+
+	THEN all_fc_tac [elems_combine_thm]
+	THEN asm_rewrite_tac[]);
+a (DROP_NTH_ASM_T 4 ante_tac
+	THEN rewrite_tac (map get_spec [¨EquivalenceÆ, ¨ReflexiveÆ,
+	¨SymmetricÆ, ¨TransitiveÆ]));
+a (REPEAT strip_tac THEN asm_rewrite_tac[]);	
+
+
+¨same_at_c_below_levelÆ,
+	THEN_TRY asm_rewrite_tac[identical_obj_rft_thm]);
+(* *** Goal "2" *** *)
 =TEX
 =SML
 set_goal([],¨LiftRel (same_at_c_below_level 2) ç IndexedEquivÆ);
@@ -1051,24 +1082,21 @@ set_goal([],¨simplest_witness ç label_secureÆ);
 a (rewrite_tac ((map get_spec [
 	¨label_secureÆ , ¨label_secure_toÆ, ¨factor0Æ
 	])@[let_def, lemma_043_1]));
-a (rewrite_tac ([let_def]@(map get_spec [
+a (rewrite_tac ([let_def, same_requests_indexed_equiv_thm]@(map get_spec [
 	¨ml_secureÆ,¨x_ml_secureÆ,¨special_machineÆ,¨machineÆ,¨NextÆ,¨$ªâfÆ])));
 =GFT
 (* *** Goal "" *** *)
 
-(* ?Ù *)  ¨(LiftRel sameRequests ç IndexedEquiv
-               ± LiftRel (same_at_c_below_level 1) ç IndexedEquiv
+(* ?Ù *)  ¨(LiftRel (same_at_c_below_level 1) ç IndexedEquiv
                ± (µ c iâ1 iâ2
                ∑ (iâ1, iâ2) ç LiftRel sameRequests (c %downarrow%)
                    ¥ (Arbitrary, Arbitrary)
                      ç LiftRel (same_at_c_below_level 1) (c %downarrow%)))
-             ± (LiftRel sameRequests ç IndexedEquiv
-               ± LiftRel (same_at_c_below_level 2) ç IndexedEquiv
+             ± (LiftRel (same_at_c_below_level 2) ç IndexedEquiv
                ± (µ c iâ1 iâ2
                ∑ (iâ1, iâ2) ç LiftRel sameRequests (c %downarrow%)
                    ¥ (Arbitrary, Arbitrary)
                      ç LiftRel (same_at_c_below_level 2) (c %downarrow%)))
-             ± LiftRel sameRequests ç IndexedEquiv
              ± LiftRel (same_at_c_below_level 3) ç IndexedEquiv
              ± (µ c iâ1 iâ2
              ∑ (iâ1, iâ2) ç LiftRel sameRequests (c %downarrow%)
