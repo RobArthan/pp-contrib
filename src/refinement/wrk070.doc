@@ -65,20 +65,17 @@ the specification annotations.
 \Hide{
 The following ML sets up a context for giving the {\ProductZ} specifications.
 =SML
-open_theory"z_library";
+open_theory"refinement";
 set_pc"z_library1";
-force_delete_theory"refinement" handle Fail _ => ();
-new_theory"refinement";
-ReaderWriterSupport.PrettyNames.add_new_symbols[
-	(["refinedby"], Value "√", ReaderWriterSupport.PrettyNames.Simple)
-] handle Fail _ => ();
+force_delete_theory"wp" handle Fail _ => ();
+new_theory"wp";
 =TEX
 }
 
 The Z specification uses infix notation for the following relation
 and function symbols:
 πZ
-‹ rel _ √ _,  _ %models% _, _ ‚ _
+‹ rel  _ %models% _, _ ‚ _
 ∞
 πZ
 ‹ fun 7 _ íâ* _, _ Åâ* _
@@ -126,47 +123,19 @@ which is a state $s'$ such that $(s, s') \in t$.
 
 \section{Predicates and Specifications}\label{PRED}
 
-In our model, a predicate on states is just a set of states, i.e., the denotation of the
-usual syntactic notion of a predicate.
+We use the notions of predicates, specifications etc. from the first document in the series.
 
 πZ
-‹ €PRED› ¶ STATE
-∞
-
-Syntactically, a pre-condition is a predicate whose free variables are program variables and a post-condition is a predicate whose free variables are
-program variables with optional decoration to distinguish values in the before-state
-from values in the after-state.
-A pre-condition denotes the set of assignments, $\alpha$, in which the program
-variables satisfy the pre-condition and a post-condition denotes
-the relation, $\rho$, which holds between two states $s$ and $s'$ when $s \times s'$
-satisfies the post-condition after makihng the appropriate binding of before- and after-values
-to the variables in the post-condition.
-
-Taken together, we can often think of the pre- and post-condition as denoting the state transformer
-=INLINEFT
-¡ Ú “
-=TEX
-.
-However,as we will be making
-formal presently, our reading of a specification requires the program
-not to terminate in before-states that satisfy the pre-condition but to
-which the post-condition cannot respond.
-Consequently we lose some expressiveness if we throw away the pre-condition,
-for example, if the post-condition is unsatisfiable, the pre-condition
-defines a set of states in which the program must not terminate.
-We therefore keep a separate record of the pre-condition. 
-So a specification is a pair comprising a predicate giving the pre-condition
-and a binary relation on states giving the post-condition. (Thus ``post-condition''
-and ``state transformer'' are two names for a single kind of
-mathematical object in this model.)
-πZ
-‹ €PRE_COND› ¶ PRED
+‹ €P_PRED› ¶ PRED[STATE]
 ∞
 πZ
-‹ €POST_COND› ¶ STATE ™ STATE
+‹ €P_PRE_COND› ¶ PRE_COND[STATE]
 ∞
 πZ
-‹ €SPEC› ¶ PRE_COND ∏ POST_COND
+‹ €P_POST_COND› ¶ POST_COND[STATE, STATE]
+∞
+πZ
+‹ €P_SPEC› ¶ SPEC[STATE, STATE]
 ∞
 
 
@@ -205,9 +174,9 @@ harmless, and, again, helps to keep things simple later on.
 ‹ €PROG› ::=
 ‹	€Atom› (STATE_TRANSFORMER)
 ‹ |	€Seq› (PROG ∏ PROG)
-‹ |	€If› (PRED ∏ PROG ∏ PROG)
-‹ |	€While› (PRED ∏ PROG)
-‹ |	€Spec› (SPEC ∏ PROG)
+‹ |	€If› (P_PRED ∏ PROG ∏ PROG)
+‹ |	€While› (P_PRED ∏ PROG)
+‹ |	€Spec› (P_SPEC ∏ PROG)
 ∞
 In a typical imperative language, the atoms might be the denotations of assignment statements and procedure calls. In the Compliance Notation, the denotation of a procedure
 call is effectively represented by an instance of the formal specification appearing
@@ -222,7 +191,7 @@ for it.
 πZAX
 ‹ €semantics› : PROG ≠ STATE_TRANSFORMER
 ˜¸¸¸¸¸¸
-‹ µt : STATE_TRANSFORMER; pâ1, pâ2 : PROG; c : PRED; s : SPEC∑
+‹ µt : STATE_TRANSFORMER; pâ1, pâ2 : PROG; c : P_PRED; s : P_SPEC∑
 ‹	semantics (Atom t) = t
 ‹ ±	semantics (Seq(pâ1, pâ2)) = semantics pâ1 ª semantics pâ2
 ‹ ±	semantics (If(c, pâ1, pâ2)) = (c Ú semantics pâ1) ¿ (c · semantics pâ2)
@@ -252,7 +221,7 @@ which simply strips out all the specifications is semantics-preserving:
 πZ
 ‹ strip_specs_cnj ?Ù
 ‹	µ	strip_specs: PROG ≠ PROG
-‹	|	µt : STATE_TRANSFORMER; pâ1, pâ2 : PROG; c : PRED; s : SPEC∑
+‹	|	µt : STATE_TRANSFORMER; pâ1, pâ2 : PROG; c : P_PRED; s : SPEC∑
 ‹		strip_specs (Atom t) = (Atom t)
 ‹	 ±	strip_specs (Seq(pâ1, pâ2)) = Seq(strip_specs pâ1, strip_specs pâ2)
 ‹	 ±	strip_specs (If(c, pâ1, pâ2)) = If(c, strip_specs pâ1, strip_specs pâ2)
@@ -261,107 +230,6 @@ which simply strips out all the specifications is semantics-preserving:
 ‹	∑ µp : PROG∑ semantics(strip_specs p) = semantics p
 ∞
 
-\section{Refinement}\label{refines}
-Refinement is a notion that is fundamental to the notion of program
-correctness that we will define. It is a semantic notion
-that is independent of the syntax of programs.
-Recall that a specification comprises a predicate, the
-pre-condition, and a state transformer, the post-condition.
-One specification, 
-=INLINEFT
-sâ2 = (precâ2, postcâ2)
-=TEX
-\ refines another
-=INLINEFT
-sâ1 = (precâ1, postcâ1)
-=TEX
-\ iff:
-\begin{itemize}
-\item
-=INLINEFT
-precâ2
-=TEX
-\ includes
-=INLINEFT
-precâ1
-=TEX
-; and:
-\item the restriction of
-=INLINEFT
-postcâ2
-=TEX
-\ to
-=INLINEFT
-precâ1
-=TEX
-\ is contained in
-=INLINEFT
-postcâ1
-=TEX
-.
-\end{itemize}
-The first of these conditions is a vestigial analogue of liveness in our partial
-correctness view of refinement.
-The traditional notion of liveness allows the pre-condition to be weakened
-but requires
-=INLINEFT
-postcâ2
-=TEX
-\ to be at least as responsive as
-=INLINEFT
-postcâ1
-=TEX
-\ in states where
-=INLINEFT
-precâ1
-=TEX
-\ holds.
-Here, we do not impose the latter requirement.
-We just say is that $s_2$ may not strengthen the
-pre-condition of $s_1$: this amounts to saying that $s_2$ must not be
-less specific than $s_1$ in its requirements for non-termination.
-
-The second condition is the traditional notion of safety --- it says that any response
-made by $s_2$ in a state satisfying the pre-condition of $s_1$
-is a response that could also be made by $s_1$. This
-includes the possibility that $s_2$ may be unable to respond where $s_1$ can.
-
-
-πZAX
-‹ €_ √ _› : SPEC ™ SPEC
-˜¸¸¸¸¸¸
-‹ µprecâ1, precâ2 : PRE_COND; postcâ1, postcâ2 : POST_COND∑
-‹	(precâ1, postcâ1) √ (precâ2, postcâ2)
-‹ §	precâ1 Ä precâ2
-‹ ±	precâ1 Ú postcâ2 Ä postcâ1
-∞
-To check the definitions, we state a few simple conjectures about refinement.
-The first says that any specification with an empty pre-condition is
-chaotic --- it may be refined by any specification:
-πZ
-‹ chaos_cnj ?Ù µ postc : POST_COND; s : SPEC∑ (ö, postc) √ s
-∞
-The second conjecture says that when $s_2$ refines $s_1$, then
-the post-condition of $s_2$ cannot respond in any 
-state in the pre-condition of $s_1$ for which the post-condition of
-$s_1$ cannot respond.
-πZ
-‹ deadlock_cnj ?Ù
-‹ µ precâ1, precâ2 : PRE_COND; postcâ1, postcâ2 : POST_COND∑
-‹	(precâ1, postcâ1) √ (precâ2, postcâ2)
-‹ ¥	(precâ1 \ dom postcâ1) ° dom postcâ2 = ö
-∞
-The ``diamond'' in the next conjecture is the lattice of inclusions
-between the four sets $a$, $b$, $c$ and $d$. Only three of the four
-inclusions needs to be stated explicitly since the fourth is in
-the definition of refinement:
-πZ
-‹ diamond_refines_cnj ?Ù
-‹	µa, b, c, d : PRE_COND; tâ1, tâ2 : POST_COND∑
-‹		a Ä b ± (b, tâ1) √ (d, tâ2)
-‹	±	a Ä c Ä d
-‹	¥	(a, tâ1) √ (c, tâ2)
-∞
 
 \section{Program Correctness}\label{sat}
 For a program to be correct every part of it that has a specification
@@ -373,7 +241,7 @@ p %models% s
 πZAX
 ‹ €_ %models% _› : PROG ™ SPEC
 ˜¸¸¸¸¸¸
-‹ µ prog : PROG; prec : PRE_COND; postc : POST_COND ∑
+‹ µ prog : PROG; prec : P_PRE_COND; postc : P_POST_COND ∑
 ‹	prog %models% (prec, postc) § (prec, postc) √ (prec, semantics prog)
 ∞
 
@@ -397,8 +265,8 @@ We write $p \perp c$ when this holds.
 πZAX
 ‹ €_ ‚ _› : PROG ™ PRED
 ˜¸¸¸¸¸¸
-‹ µt : STATE_TRANSFORMER; postc : POST_COND; pâ1, pâ2 : PROG;
-‹  câ1, câ2, prec : PRE_COND∑
+‹ µt : STATE_TRANSFORMER; postc : P_POST_COND; pâ1, pâ2 : PROG;
+‹  câ1, câ2, prec : P_PRE_COND∑
 ‹	((Atom t) ‚ câ1)
 ‹ ±	((Seq(pâ1, pâ2) ‚ câ1) § pâ1 ‚ câ1 ± pâ2 ‚ semantics pâ1 ®câ1©)
 ‹ ±	((If(câ2, pâ1, pâ2) ‚ câ1) § pâ1 ‚ câ1 ° câ2 ± pâ2 ‚ câ1 \ câ2)
@@ -408,12 +276,12 @@ We write $p \perp c$ when this holds.
 Uprightness enjoys the following two useful properties:
 πZ
 ‹ upright_mono_cnj ?Ù
-‹	µ prog : PROG; câ1, câ2 : PRED∑
+‹	µ prog : PROG; câ1, câ2 : P_PRED∑
 ‹		prog ‚ câ1 ± câ2 Ä câ1 ¥ prog ‚ câ2
 ∞
 πZ
 ‹ upright_cup_cnj ?Ù
-‹	µ prog : PROG; câ1, câ2 : PRED∑
+‹	µ prog : PROG; câ1, câ2 : P_PRED∑
 ‹		prog ‚ câ1 ± prog ‚ câ2 ¥ prog ‚ câ1 ¿ câ2
 ∞
 
@@ -434,7 +302,7 @@ program state throughout the calculation. The calculation
 essentially works backwards through the program reversing the effects
 of program execution. 
 πZ
-‹ €PREC_CALC› ¶ PROG ∏ POST_COND ≠ POST_COND
+‹ €PREC_CALC› ¶ PROG ∏ P_POST_COND ≠ P_POST_COND
 ∞
 In the simple view as a predicate transformer,
 a pre-condition calculator would be
@@ -451,7 +319,7 @@ ensure that pre-condition calculation interacts nicely with sequential compositi
 ˜¸¸¸¸¸¸
 ‹ µpc : PREC_CALC∑
 ‹	pc ç sound_prec_calc
-‹ §	(µprog : PROG; postc, postc' : POST_COND
+‹ §	(µprog : PROG; postc, postc' : P_POST_COND
 ‹	|	postc = pc(prog, postc')
 ‹	∑	(dom postc, postc') √ (dom postc, postc ª semantics prog))
 ∞
@@ -465,8 +333,8 @@ pre-condition contains the pre-condition of the specification, then
 the program satisfies the specification:
 πZ
 ‹ prec_calc_sat_cnj ?Ù
-‹	µ pc : PREC_CALC; c_prec, s_prec: PRE_COND;
-‹	  s_postc : POST_COND; p : PROG
+‹	µ pc : PREC_CALC; c_prec, s_prec: P_PRE_COND;
+‹	  s_postc : P_POST_COND; p : PROG
 ‹	|	pc ç sound_prec_calc
 ‹	±	c_prec = dom (pc(Spec((s_prec, s_postc), p), s_postc) ° (id STATE))
 ‹	±	s_prec Ä c_prec
@@ -479,7 +347,7 @@ any desired post-condition:
 πZ
 ‹ trivial_prec_calc_sound_cnj ?Ù
 ‹	µ pc : PREC_CALC
-‹	|	µprog : PROG; postc : POST_COND∑ pc (prog, postc) = ö
+‹	|	µprog : PROG; postc : P_POST_COND∑ pc (prog, postc) = ö
 ‹	∑	pc ç sound_prec_calc
 ∞
 
@@ -504,9 +372,9 @@ the heuristic --- it has to be, because as the following
 loose specification shows, one possibility is that the
 specification is just lifted from the program without further analysis.
 πZAX
-‹ €guess_spec› : PROG ≠ SPEC
+‹ €guess_spec› : PROG ≠ P_SPEC
 ˜¸¸¸¸¸¸
-‹ µs : SPEC; p : PROG ∑ guess_spec(Spec(s, p)) = s
+‹ µs : P_SPEC; p : PROG ∑ guess_spec(Spec(s, p)) = s
 ∞
 
 With the preliminaries in place,
@@ -568,9 +436,9 @@ the body of the specification statement.
 πZAX
 ‹ €prec_calc› : PREC_CALC
 ˜¸¸¸¸¸¸
-‹ µt : STATE_TRANSFORMER; postc, postcâ1 : POST_COND;
-‹  pâ1, pâ2 : PROG; c : PRED;
-‹  precâ1 : PRE_COND; body_prec : PRED; body_postc : POST_COND∑
+‹ µt : STATE_TRANSFORMER; postc, postcâ1 : P_POST_COND;
+‹  pâ1, pâ2 : PROG; c : P_PRED;
+‹  precâ1 : P_PRE_COND; body_prec : P_PRED; body_postc : P_POST_COND∑
 ‹
 ‹	prec_calc (Atom t, postc) = {s, s' : STATE | t®{s'}© Ä postc®{s}©}
 ‹
@@ -686,7 +554,7 @@ The following conjecture gives a useful property of our useful pre-condition
 calculator, which turns out to be a simple consequence of its soundness.
 πZ
 ‹ prec_calc_dom_cnj ?Ù
-‹	µ prog: PROG; postc : POST_COND
+‹	µ prog: PROG; postc : P_POST_COND
 ‹	∑	dom (prec_calc(prog, postc) ° (id STATE)) ° dom (semantics prog)
 ‹			Ä dom postc
 ∞
@@ -700,7 +568,7 @@ based on the pre-condition calculator does indeed guarantee program correctness
 as discussed in section~\ref{sat} above.
 πZ
 ‹ prec_calc_upright_cnj ?Ù
-‹	µ prog: PROG; postc, postc' : POST_COND
+‹	µ prog: PROG; postc, postc' : P_POST_COND
 ‹	|	postc = prec_calc(prog, postc')
 ‹	∑	prog %bottom% ran postc
 ∞
@@ -711,7 +579,7 @@ for which it returns something more interesting than an empty relation.
 The first block of examples covers various forms of atom.
 πZ
 ‹ prec_calc_atom_egs_cnj ?Ù
-‹	µ null, chaos, stop : PROG; postc : POST_COND
+‹	µ null, chaos, stop : PROG; postc : P_POST_COND
 ‹	|	null = Atom (id STATE)
 ‹	±	chaos = Atom (STATE ∏ STATE)
 ‹	±	stop = Atom ö
@@ -723,7 +591,7 @@ The second block gives at least one example of each of the compound
 syntactic categories.
 πZ
 ‹ prec_calc_compound_egs_cnj ?Ù
-‹	µ null, chaos, stop, p, spec_null : PROG; postc : POST_COND; c : PRED
+‹	µ null, chaos, stop, p, spec_null : PROG; postc : P_POST_COND; c : P_PRED
 ‹	|	null = Atom (id STATE)
 ‹	±	chaos = Atom (STATE ∏ STATE)
 ‹	±	stop = Atom ö
@@ -747,8 +615,11 @@ instead of
 =TEX
 in the equation for the semantic category Atom. The pre-condition
 calculator is sound and guarantees uprightness with this mistake,
-but very far from useful.
-
+but very far from useful (since the mistaken predicate will require $s' = s$ is
+=INLINEFT
+{s'} Ú t
+=TEX
+\ is not empty).
 }
 
 \newpage
@@ -779,37 +650,24 @@ new_pc "'refinement";
 set_goal([], Ò
 	STATE_TRANSFORMER = U
 ±	STATE = U
-±	PRED = U
-±	PRE_COND = U
-±	POST_COND = U
+±	P_PRED = U
+±	P_PRE_COND = U
+±	P_POST_COND = U
 ±	PROG = U
-±	SPEC = U
+±	P_SPEC = U
 ±	(_ ™ _) = UÆ
 );
 a(rewrite_tac(map z_get_spec[
-	ÒSTATE_TRANSFORMERÆ,
-	ÒSTATEÆ,
-	ÒPREDÆ,
-	ÒPRE_CONDÆ,
-	ÒPOST_CONDÆ,
+	ÒSTATE_TRANSFORMERÆ, ÒSTATEÆ,
+	ÒP_PREDÆ, ÒP_SPECÆ,
+	ÒP_PRE_CONDÆ,	ÒP_POST_CONDÆ,
+	ÒPREDÆ, ÒSPECÆ,
+	ÒPRE_CONDÆ,	ÒPOST_CONDÆ,
 	ÒPROGÆ,
-	ÒSPECÆ,
 	Ò(_ ™ _)Æ]));
 val €refinement_u_thm› = save_pop_thm "refinement_u_thm";
 set_u_simp_eqn_cxt (u_simp_eqn_cxt [refinement_u_thm]) "'refinement";
-set_merge_pcs["'refinement", "z_library1"];
-=TEX
-=SML
-set_goal([], Òµ sâ1, sâ2 : U∑
-	sâ1 √ sâ2
-           § sâ1.1 Ä sâ2.1
-             ± sâ1.1 Ú sâ2.2 Ä sâ1.2Æ);
-a(z_µ_tac);
-a(LEMMA_TÒsâ1 = (sâ1.1, sâ1.2) ± sâ2 = (sâ2.1, sâ2.2)Æ pure_once_rewrite_thm_tac
-	THEN1 PC_T1 "z_library_ext" REPEAT strip_tac);
-a(pure_rewrite_tac[(z_get_spec Ò(_√_)Æ)]);
-a(rewrite_tac[]);
-val €refines_def› = save_pop_thm "refines_def";
+set_merge_pcs["'refinement", "'refcalc", "z_library1"];
 =TEX
 =SML
 set_goal([], Òµ R : U; T : U∑
@@ -913,19 +771,9 @@ a(prog_induction_tacÒpÆ THEN asm_rewrite_tac[semantics_def]);
 val strip_specs_thm = save_pop_thm "strip_specs_thm";
 =TEX
 =SML
-set_goal([], get_conjecture "-" "chaos_cnj");
+set_goal([], Òµ postc : POST_COND; s : SPEC∑ (ö, postc) √ sÆ);
 a(rewrite_tac[refines_def] THEN PC_T1 "z_library_ext" prove_tac[]);
 val €chaos_thm›  = save_pop_thm"chaos_thm";
-=TEX
-=SML
-set_goal([], get_conjecture "-" "deadlock_cnj");
-a(rewrite_tac[refines_def] THEN PC_T1 "z_library_ext" prove_tac[]);
-val €deadlock_thm›  = save_pop_thm"deadlock_thm";
-=TEX
-=SML
-set_goal([], get_conjecture "-" "diamond_refines_cnj");
-a(rewrite_tac[refines_def] THEN PC_T1 "z_library_ext" prove_tac[]);
-val €diamond_refines_thm›  = save_pop_thm"diamond_refines_thm";
 =TEX
 =SML
 set_goal([], get_conjecture "-" "upright_mono_cnj");
@@ -1158,7 +1006,7 @@ a(PC_T1 "z_library_ext" prove_tac[]);
 val €prec_calc_upright_thm›  = save_pop_thm"prec_calc_upright_thm";
 =TEX
 =SML
-set_goal([], Òµpostc : POST_COND∑
+set_goal([], Òµpostc : P_POST_COND∑
 	prec_calc(Atom (id STATE), postc) = postc
 Æ);
 a(rewrite_tac[prec_calc_def, refinement_u_thm]
@@ -1168,7 +1016,7 @@ a(z_spec_nth_asm_tac 1 Òx2Æ);
 val null_lemma = pop_thm();
 =TEX
 =SML
-set_goal([], Òµpostc : POST_COND∑
+set_goal([], Òµpostc : P_POST_COND∑
 	prec_calc(Atom (STATE ∏ STATE), postc) =
 	{s, s' : STATE | postc®{s}© = STATE}
 Æ);
@@ -1186,7 +1034,7 @@ a(z_∂_tacÒx1Æ THEN REPEAT strip_tac);
 val chaos_lemma = pop_thm();
 =TEX
 =SML
-set_goal([], Òµpostc : POST_COND∑
+set_goal([], Òµpostc : P_POST_COND∑
 	prec_calc(Atom ö, postc) = STATE ∏ STATE
 Æ);
 a(rewrite_tac[prec_calc_def, refinement_u_thm]);
@@ -1200,7 +1048,7 @@ a(REPEAT strip_tac
 val €prec_calc_atom_egs_thm› = save_pop_thm"prec_calc_atom_egs_thm";
 =TEX
 =SML
-set_goal([], Òµnull, spec_null : PROG; postc : POST_COND
+set_goal([], Òµnull, spec_null : PROG; postc : P_POST_COND
 	|	null = Atom (id STATE)
 	±	spec_null = Spec ((STATE, id STATE), null)
 	∑	prec_calc(spec_null, postc) = postc
