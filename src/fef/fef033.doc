@@ -1849,77 +1849,72 @@ The following theorem takes a minute or so to compute so we give
 a name to it here (to make the proof of the induction theorem easier
 to modify, e.g. if the definitions change).
 =SML
-(* Commented out ***
+(* Temporarily commented out until we know what is needed
 val table_computation_rw_thm =
 	rewrite_rule[get_spec¨•â2Æ] (get_spec¨TableComputationsÆ);
-set_pc"hol2";
-set_goal([], ¨µq : TABLE_COMP ≠ BOOL; p : VALUE_COMP ≠ BOOL∑ µcc : Class ∑
-		(µci∑ p(DenoteConstant ci))
-	±	(µi∑ p(Contents i))
-	±	(µi∑ p(Classification i))
-	±	p CountAll
+set_goal([], ¨µcc:Class∑
+	µtcs : TABLE_COMP SET; vcs : VALUE_COMP SET∑
+		(µci∑ DenoteConstant ci ç vcs)
+	±	(µi∑ Contents i ç vcs)
+	±	(µi∑ Classification i ç vcs)
+	±	CountAll ç vcs
 
-	±	(µf e∑ p e ¥ p(MonOp f e))
-	±	(µf e1 e2∑ p e1 ± p e2 ¥ p(BinOp f e1 e2))
-	±	(µf e1 e2 e3∑ p e1 ± p e2 ± p e3 ¥ p(TriOp f e1 e2 e3))
-	±	(µel∑ (µe∑e ç Elems el ¥ p e) ¥ p(BinOpAnd el))
-	±	(µel∑ (µe∑e ç Elems el ¥ p e) ¥ p(BinOpOr el))
+	±	(µf e∑ e ç vcs ¥ MonOp f e ç vcs)
+	±	(µf e1 e2∑ e1 ç vcs ± e2 ç vcs ¥ BinOp f e1 e2 ç vcs)
+	±	(µf e1 e2 e3∑ e1 ç vcs ± e2 ç vcs ± e3 ç vcs ¥ TriOp f e1 e2 e3 ç vcs)
+	±	(µcc el∑ Elems el Ä vcs ¥ BinOpAnd cc el ç vcs)
+	±	(µcc el∑ Elems el Ä vcs ¥ BinOpOr cc el ç vcs)
 
-	±	(µcc te cel ee∑ p te ± (µe∑e ç Elems(Map Fst cel) ¥ p e) ±
-				(µe∑ e ç Elems(Map Snd cel) ¥ p e) ± p ee ¥
-					p(CaseVal cc te cel ee))
-	±	(µcc cel ee∑ (µe∑e ç Elems(Map Fst cel) ¥ p e) ±
-				(µe∑ e ç Elems(Map Snd cel) ¥ p e) ± p ee  ¥
-					p(Case cc cel ee))
+	±	(µcc te cel ee∑ te ç vcs ± Elems(Map Fst cel) Ä vcs ±
+				Elems(Map Snd cel) Ä vcs ± ee ç vcs ¥
+					CaseVal cc te cel ee ç vcs)
+	±	(µcc cel ee∑ Elems(Map Fst cel) Ä vcs ±
+				Elems(Map Snd cel) Ä vcs ± ee ç vcs  ¥
+					Case cc cel ee ç vcs)
 
-	±	(µe∑ p e ¥ p(SetFuncAllAnd e))
-	±	(µe∑ p e ¥ p(SetFuncAllOr e))
-	±	(µe∑ p e ¥ p(CountNonNull e))
-	±	(µe∑ p e ¥ p(CountDistinct e))
-	±	(µe∑ p e ¥ p(CommonValue e))
+	±	(µcc e∑ e ç vcs ¥ SetFuncAllAnd cc e ç vcs)
+	±	(µcc e∑ e ç vcs ¥ SetFuncAllOr cc e ç vcs)
+	±	(µe∑ e ç vcs ¥ CountNonNull e ç vcs)
+	±	(µe∑ e ç vcs ¥ CountDistinct e ç vcs)
+	±	(µe∑ e ç vcs ¥ CommonValue e ç vcs)
 
-	±	(µf e∑ p e ¥ p(SetFuncAll f e))
-	±	(µf e∑ p e ¥ p(SetFuncDistinct f e))
+	±	(µf e∑ e ç vcs ¥ SetFuncAll f e ç vcs)
+	±	(µf e∑ e ç vcs ¥ SetFuncDistinct f e ç vcs)
 
-	±	(µcc te∑ q te ¥ p(ExistsTuples cc te))
-	±	(µcc te∑ q te ¥ p(SingleValue cc te))
+	±	(µcc te∑ te ç tcs ¥ ExistsTuples cc te ç vcs)
+	±	(µcc te∑ te ç tcs ¥ SingleValue cc te ç vcs)
 
-	±	(µcc∑ p(JoinedRowExistence cc))
+	±	(µcc∑ JoinedRowExistence cc ç vcs)
 =TEX
 =SML
-	±	(µi∑ q(TableContents i))
+	±	(µi∑ TableContents i ç tcs)
 
-	±	(µesl tel e1 ml nl e2∑ (µe∑e ç Elems(Map Fst esl) ¥ p e)
-			± (µte∑te ç Elems tel ¥ q te) ± p e1 ± p e2
-				¥ q(AllTuples cc esl tel e1 ml nl e2))
-(*	±	(µesl tel e1 ml nl e2∑ (µe∑e ç Elems(Map Fst esl) ¥ p e)
-			± (µte∑te ç Elems tel ¥ q te) ± p e1 ± p e2
-				¥ q(DistinctTuples cc esl tel e1 ml nl e2))
-	±	(µesl tel e1 ml nl e2∑ (µe∑e ç Elems(Map Fst esl) ¥ p e)
-			± (µte∑te ç Elems tel ¥ q te) ± p e1 ± p e2
-				¥ q(Evaluate cc esl tel e1 ml nl e2))	*)
-	¥	(µte∑ te ç TableComputations cc ¥ q te)
-	±	(µe∑ e ç ValueComputations cc ¥ p e)
+	±	(µesl tel e1 ml nl e2∑ Elems(Map Fst esl) Ä vcs
+			± Elems tel Ä tcs ± e1 ç vcs ± e2 ç vcs
+				¥ AllTuples cc esl tel e1 ml nl e2 ç tcs)
+(*	±	(µesl tel e1 ml nl e2∑ Elems(Map Fst esl) Ä vcs)
+			± Elems tel Ä tcs ± e1 ç vcs ± e2 ç vcs
+				¥ DistinctTuples cc esl tel e1 ml nl e2 ç tcs)
+	±	(µesl tel e1 ml nl e2∑ Elems(Map Fst esl) Ä vcs)
+			± Elems tel Ä tcs) ± e1 ç vcs ± e2 ç vcs
+				¥ Evaluate cc esl tel e1 ml nl e2 ç tcs)	*)
+	¥	TableComputations cc Ä tcs
+	±	ValueComputations cc Ä vcs
 Æ);
-a(REPEAT strip_tac);
+a(REPEAT µ_tac THEN strip_tac
+	THEN rewrite_tac[table_computation_rw_thm]
+	THEN PC_T1"sets_ext1" REPEAT strip_tac);
 (* *** Goal "1" *** *)
-a(swap_asm_concl_tac ¨te ç TableComputations ccÆ
-	THEN rewrite_tac[table_computation_rw_thm]
-	THEN strip_tac
-	THEN ∂_tac¨{te | q te}Æ
-	THEN POP_ASM_T rewrite_thm_tac
-	THEN ∂_tac¨{e | p e}Æ THEN asm_rewrite_tac[]);
+a(POP_ASM_T (strip_asm_tac o µ_elim¨tcsÆ)
+	THEN POP_ASM_T (ante_tac o µ_elim¨vcsÆ)
+	THEN asm_rewrite_tac[]);
 (* *** Goal "2" *** *)
-a(swap_asm_concl_tac ¨e ç ValueComputations ccÆ
-	THEN rewrite_tac[table_computation_rw_thm]
-	THEN strip_tac
-	THEN ∂_tac¨{e | p e}Æ
-	THEN POP_ASM_T rewrite_thm_tac
-	THEN ∂_tac¨{te | q te}Æ THEN asm_rewrite_tac[]);
+a(POP_ASM_T (strip_asm_tac o µ_elim¨vcsÆ)
+	THEN POP_ASM_T (ante_tac o µ_elim¨tcsÆ)
+	THEN asm_rewrite_tac[]);
 val table_computation_induction_thm =
 	save_pop_thm"table_computation_induction_thm";
-**** end of commented out section **** *)
-
+*)
 =TEX
 \section{CLOSING DOWN}
 =TEX
