@@ -969,7 +969,220 @@ declare_type_abbrev(Û"WHERE_PAR"İ, [],
 Ü		(WhereData p (Map DT_rows tl))
 °
 
-and so on ...
+\subsection{$GROUPBY$/$HAVING$}
+The $GROUPBY$ and $HAVING$ operations are most naturally treated together.
+The combined operation is parameterised by four things:
+{\em (i)}, a function, $gpby$; to compute a comparison value from a row
+{\em (ii)}, a function, $eval$, to compute a row from a list of rows;
+{\em (iii)}, a function, $hasit$, to compute a truth value from a list of rows;
+and, {\em (iv)}, a table specification, $ts$.
+$gpby$ is used to decide whether two rows are in the
+same group;  $eval$ is the function which computes the row to be returned
+for a group;
+and $hasit$ is used to decide whether a group meets the
+$HAVING$ condition; $ts$ is the table specification for the result table.
+
+Since, in practice, $gpby$ is just projection onto 1 or more of the columns
+of the table, we take it that $gpby$ returns a table row as the value
+to be compared.
+
+Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
+
+=SML
+declare_type_abbrev(Û"GROUPBY_PAR"İ, [],
+	”	(DerTableRow ­ DerTableRow)
+	¸	(DerTableRow LIST ­ DerTableRow)
+	¸	(DerTableRow LIST ­ BOOL)
+	¸	DerTableSpec®);
+=TEX
+To define the grouping part of the operation, we need some list processing
+preliminaries:
+¹HOLCONST
+Ü	ÛPutInGroupİ :  ('a ­ 'b) ­ 'a ­ ('a LIST) LIST ­ ('a LIST) LIST
+÷üüüüüüüüüüüüüüüüüü
+Üµgpby x gp gps·
+Ü	PutInGroup gpby x [] = [[x]]
+Ü±	PutInGroup gpby x (Cons gp gps) =
+Ü	if	gpby x = gpby (Hd gp)
+Ü	then	Cons (Cons x gp) gps
+Ü	else	Cons gp (PutInGroup gpby x gps)
+°
+
+¹HOLCONST
+Ü	ÛMakeGroupsİ	: ('a ­ 'b)
+Ü			 ­ 'a LIST
+Ü			 ­ ('a LIST) LIST
+÷üüüüüüüüüüüüüüüüüü
+Üµgpby x xs·
+Ü	MakeGroups gpby [] = []
+Ü±	MakeGroups gpby (Cons x xs) = PutInGroup gpby x (MakeGroups gpby xs)
+°
+
+¹HOLCONST
+Ü	ÛGroupByDataİ	: GROUPBY_PAR
+Ü			 ­ DerTableRow LIST LIST
+Ü			 ­ DerTableRow LIST
+÷üüüüüüüüüüüüüüüüüü
+Üµgpby eval hasit ts tab ign·
+Ü	GroupByData (gpby, eval, hasit, ts) [] = []
+Ü±	GroupByData (gpby, eval, hasit, ts) (Cons tab ign) =
+Ü	let	gps = MakeGroups gpby tab
+Ü	in	Map eval (gps ù {r | hasit r})
+°
+
+¹HOLCONST
+Ü	ÛGroupByİ : GROUPBY_PAR ­ DerTable LIST ­ DerTable
+÷üüüüüüüüüüüüüüüüüü
+Üµgpby eval hasit ts tl·
+Ü		GroupBy (gpby, eval, hasit, ts) tl
+Ü	=	MkDerTable
+Ü		ts
+Ü		(GroupByData (gpby, eval, hasit, ts) (Map DT_rows tl))
+°
+
+\subsection{Expression Forms}
+\subsubsection{Critical Properties}
+We view (the semantics of) expressions as functions from table rows
+to class-item pairs.  E.g., if a table includes columns called $a$ and
+$b$, the semantics of $a + b$ will be the function which given a row
+in which the values of $a$ and $b$ are $\alpha$ and $\beta$ say,
+and the classifications of $a$ and $b$ are $c$ and $d$ say, returns
+$(c\,\hbox{lub}\,d, \alpha + \beta)$.
+=SML
+declare_type_abbrev(Û"EXPR"İ, [],
+	”	(DerTableRow ­ (Class ¸ Item))®);
+=TEX
+
+As with operations on tables, we define the {\em risk inputs} of
+an expression $e$ at a class $c$ to be the set inputs for which $e$
+reveals information which should not be visible at class $c$.
+
+¹HOLCONST
+Ü	ÛExpRiskInputsİ	: Class ­ EXPR ­ DerTableRow ğ
+÷üüüüüüüüüüüüüüüüüü
+Üµcc e ·	ExpRiskInputs cc e
+Ü	=	{	r
+Ü		|	¶r‰0 ·
+Ü			HideDerTableRow cc r‰0 = HideDerTableRow cc r
+Ü		±	let	(c, i) = e r
+Ü			in let	(c‰0, i‰0) = e r‰0
+Ü			in	³i = i‰0
+Ü			±	³(c dominates cc ± c‰0 dom cc)}
+°
+
+\subsection{Particular Forms}
+We can now define the particular expression forms which model those of
+TSQL.
+The classifications follow those assigned in \cite{trans}.
+The classification information is taken from $internal\_value\sb{class}$
+in \cite{trans} unless otherwise noted below.
+
+The order of the treatment is also taken from $internal\_value\sb{class}$.
+
+\subsection{Constant Expression}\label{DenoteConstant}
+¹HOLCONST
+Ü	ÛDenoteConstantİ	: (Class ¸ Item) ­ EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµci ·	DenoteConstant ci = Ìr· ci
+°
+
+\subsection{Monadic}\label{MonOp}
+The monadic forms are parameterised here by the actual item computation
+to perform and a number indicating which column to operate on.
+
+¹HOLCONST
+Ü	ÛMonOpİ	: (Item ­ Item) ­ î ­ EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµf i·	MonOp f i = Ìr· let (c, i) = Nth (DTR_cols r) i in (c, f i)
+°
+\subsection{Binary}\label{BinOp}
+The logical binary operators are treated specially. In particular, iterated
+$and$s and $or$s are effectively treated by $simplify\sb{ands}$ and
+$simplify\sb{ors}$in \cite{trans} as composite operators
+on lists of expressions, for the purpose of computing the classification.
+We model this directly here (althought this makes the name a misnomer).
+Thus $BinOpAnd$ and $BinOpOr$ below are parameterised by lists of
+numbers identifying the columns to be combined.
+
+We use the following to coerce $Item$s into truth values and vice versa:
+
+¹HOLCONST
+Ü	ÛItemBoolİ	: Item ­ Bool
+÷üüüüüüüüüüüüüüüüüü
+Üµv·	ItemBool v = (v = ValuedItemItem(MkValuedItem sterling (BoolVal true)))
+°
+¹HOLCONST
+Ü	ÛBoolItemİ	: Bool ­ Item
+÷üüüüüüüüüüüüüüüüüü
+Üµv·	BoolItem v = ValuedItemItem(MkValuedItem sterling (BoolVal v))
+°
+We use the following to compute iterated conjunctions and disjunctions:
+¹HOLCONST
+Ü	ÛListAndİ	: Bool LIST ­ Bool
+÷üüüüüüüüüüüüüüüüüü
+Üµb bs·	(ListAnd [] ¤ true)
+Ü±	(ListAnd (Cons b bs) ¤ b ± ListAnd bs)
+°
+¹HOLCONST
+Ü	ÛListOrİ	: Bool LIST ­ Bool
+÷üüüüüüüüüüüüüüüüüü
+Üµb bs·	(ListOr [] ¤ false)
+Ü±	(ListOr (Cons b bs) ¤ b ² ListOr bs)
+°
+Now $BinOpAnd$ which embodies the algorithm of $simplify\sb{ands}$:
+¹HOLCONST
+Ü	ÛBinOpAndİ	: î LIST ­ EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµil·	BinOpAnd il =
+Ü		Ìr·	let	cvl = Map (Nth (DTR_cols r)) il
+Ü			in let	v = ListAnd(Map (ItemBool o Snd) cvl)
+Ü			in let	makecase(c, u) =
+Ü				if ItemBool u then lattice_top else c
+Ü			in	((if	v
+Ü				  then	lubl (Map Fst cvl)
+Ü				  else	glbl (Map makecase cvl)),
+Ü				BoolItem v)
+°
+Now $BinOpOr$ which embodies the algorithm of $simplify\sb{ors}$
+¹HOLCONST
+Ü	ÛBinOpOrİ	: î LIST ­ EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµil·	BinOpOr il =
+Ü		Ìr·	let	cvl = Map (Nth (DTR_cols r)) il
+Ü			in let	v = ListAnd(Map (ItemBool o Snd) cvl)
+Ü			in let	makecase(c, u) =
+Ü				if ItemBool u then c else lattice_top
+Ü			in	((if	v
+Ü				  then	glbl (Map makecase cvl)
+Ü				  else	lubl (Map Fst cvl)),
+Ü				BoolItem v)
+°
+
+\subsection{Triadic}\label{TriOp}
+
+The triadic forms all use an unoptimised treatment of
+classifications and are parameterised by the actual item computation
+to perform and three numbers indicating which columns to operate on.
+
+¹HOLCONST
+Ü	ÛTriOpİ	: (Item ­ Item ­ Item ­ Item) ­ î ­ î ­ î ­ EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµf i1 i2 i3 ·	TriOp f i1 i2 i3 =
+Ü		Ìr·	let	(c1, i1) = Nth (DTR_cols r) i1
+Ü			in let	(c2, i2) = Nth (DTR_cols r) i2
+Ü			in let	(c3, i3) = Nth (DTR_cols r) i3
+Ü			in	(c1 lub (c2 lub c3), f i1 i2 i3)
+°
+\subsection{Contents}\label{Contents}
+The contents operator is parameterised by a number telling us which
+column to select.
+¹HOLCONST
+Ü	ÛContentsİ	: î ­ EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµi ·	Contents i = Ìr· Nth (DTR_cols r) i
+°
+
+
 
 \section{CLOSING DOWN}
 The following \Product{} instruction restores the previous proof context.
@@ -993,45 +1206,4 @@ output_theory{theory = "fef026",out_file = "fef026th.doc"};
 =TEX
 \end{document}
 =IGN
-rewrite_conv[get_spec¬JoinData®, get_spec¬JoinRows®, let_def, map_def,
-	flat_def, get_spec¬$ë®, get_spec¬$MkDerTableRow®]
-¬
-JoinData
-[
-[	MkDerTableRow w1 r1 [(c, A); (c, FALSE)];
-	MkDerTableRow w2 r2 [(c, B); (c, TRUE)] ];
-[	MkDerTableRow w3 r3 [(c, X); (c, a); (c, TRUE)];
-	MkDerTableRow w4 r4 [(c, Y); (c, b); (c, FALSE)] ];
-[	MkDerTableRow w5 r5 [(c, x)];
-	MkDerTableRow w6 r6 [(c, y)];
-	MkDerTableRow w7 r7 [(c, z)] ]
-]
-®;
-=IGN
-rewrite_conv[get_spec¬JoinData®, get_spec¬JoinRows®, let_def, map_def,
-	flat_def, get_spec¬$ë®, get_spec¬$MkDerTableRow®]
-¬
-JoinData
-[
-[	MkDerTableRow w1 r1 [(c, A); (c, FALSE)];
-	MkDerTableRow w2 r2 [(c, B); (c, TRUE)] ];
-[	 ];
-[	MkDerTableRow w5 r5 [(c, x)];
-	MkDerTableRow w6 r6 [(c, y)];
-	MkDerTableRow w7 r7 [(c, z)] ]
-]
-®;
-rewrite_conv[get_spec¬JoinData®, get_spec¬JoinRows®, let_def, map_def,
-	flat_def, get_spec¬$ë®, get_spec¬$MkDerTableRow®]
-¬
-JoinData
-[
-[	MkDerTableRow w1 r1 [(c, A); (c, FALSE)];
-	MkDerTableRow w2 r2 [(c, B); (c, TRUE)] ];
-[	MkDerTableRow w4 r3 [] ];
-[	MkDerTableRow w5 r5 [(c, x)];
-	MkDerTableRow w6 r6 [(c, y)];
-	MkDerTableRow w7 r7 [(c, z)] ]
-]
-®;
 
