@@ -17,10 +17,19 @@ doctex analysis analysis.th; texdvi analysis
 \def\Lim{\mbox{{\sf lim}}}
 \def\LimInf{\mbox{{\sf lim inf}}}
 \def\LimSup{\mbox{{\sf lim sup}}}
-\def\Exp#1{\mbox{{\sf exp}(#1)}}
-\def\Log#1{\mbox{{\sf log}(#1)}}
-\def\Sin#1{\mbox{{\sf sin}(#1)}}
-\def\Cos#1{\mbox{{\sf cos}(#1)}}
+
+\def\ExpName{\mbox{{\sf exp}}}
+\def\Exp#1{\ExpName(#1)}
+
+\def\LogName{\mbox{{\sf log}}}
+\def\Log#1{\LogName(#1)}
+
+\def\SinName{\mbox{{\sf sin}}}
+\def\Sin#1{\SinName(#1)}
+
+\def\CosName{\mbox{{\sf cos}}}
+\def\Cos#1{\CosName(#1)}
+
 \def\Abs#1{|#1|}
 
 \title{Mathematical Case Studies: \\ --- \\ Basic Analysis}
@@ -184,396 +193,44 @@ elementary theorems).
 %%%%
 %%%%
 %%%%
-\section{OVERVIEW OF THE FORMALISATION}
-\subsection{Polynomials}
-=GFT
-PlusCoeffs_consistent
-const_eval_thm
-id_eval_thm
-plus_eval_thm
-const_times_eval_thm
-times_eval_thm
-poly_induction_thm
-poly_func_eq_poly_eval_thm
-const_poly_func_thm
-id_poly_func_thm
-plus_poly_func_thm
-times_poly_func_thm
-comp_poly_thm
-poly_eval_append_thm
-poly_eval_rev_thm
-poly_diff_powers_thm
-length_plus_coeffs_thm
-poly_linear_div_thm
-poly_roots_finite_thm
+\section{AN OVERVIEW OF THE THEORY}
+In this section, we give the formal definitions of the HOL constants with which the theory deals
+and discuss the theorems that we will prove about them.
+To keep our us of the {\Product} document preparation system simple, we simply identify the theorems
+by name and refer the reader to the theory listing in section~\ref{TheoryListing} on page~\pageref{TheoryListing}
+for the formal statements of the theorems.
+There is an index to the formal definitions and the theory listing in section~\ref{INDEX} on page~\pageref{INDEX}.
+
+This document is a {\Product} literate script. It contains all the metalanguage (ML) commands required
+to create a {\ProductHOL} theory (called ``analysis''), populate it with the formal definitions and
+prove and record all the theorems. The proof commands are given in section~\ref{THEOREMS} which
+begins on page~\pageref{THEOREMS} and continues to the end of the document on page~\pageref{END}.
+ML proof scripts are not particularly informative even to the expert eye, except when they are brought
+alive by replaying them interactively. Most readers of the printed document will
+therefore not wish to study that part of the document.
+
+
+There are several ways of motivating this material and my preference is for a topological and
+geometric approach. From that point of view, almost the whole of the material in this document
+can be viewed as leading towards the results on the trigonometric functions in section~\ref{TheSineAndCosineFunctions} below.
+
+\subsection{Technical Prelude}
+
+First of all, we must give the the ML commands to  introduce the new theory ``analysis'' as a child of the
+theory Ø of real numbers. The parents of the theory are the theory Ø of real numbers and the
+theory ``fin\_set'' which introduces the notion of finiteness (used here in the definition
+of compactness and in proofs about compact sets). We set up a proof context by merging
+tigether: ``basic\_hol1'' for assistance with the predicate calculus, natural numbers, ordered pairs, lists etc.;
+``sets\_alg''  for sets; and ``'Ø'' for real numbers.
+The resulting proof context will automatically prove trivalities
+such as
+=INLINEFT
+Hd [1/2; 1/3] ç {x | x^2 < ÓØ 1}
 =TEX
-\subsection{Algebraic Results}
-=GFT
-Ø_0_º_abs_thm
-Ø_abs_plus_thm
-Ø_abs_subtract_thm
-Ø_abs_plus_minus_thm
-Ø_abs_diff_bounded_thm
-Ø_abs_plus_bc_thm
-Ø_abs_abs_minus_thm
-Ø_abs_abs_thm
-Ø_abs_times_thm
-Ø_abs_Ø_Ó_exp_thm
-Ø_abs_eq_0_thm
-Ø_abs_º_0_thm
-Ø_abs_0_thm
-Ø_abs_recip_thm
-Ø_abs_squared_thm
-Ø_abs_less_times_thm
-Ø_≥_0_abs_thm
-Ø_less_recip_less_thm
-Ø_plus_recip_thm
-Ø_Ó_exp_0_1_thm
-Ø_Ó_exp_square_thm
-Ø_Ó_exp_0_less_thm
-Ø_Ó_exp_1_less_mono_thm
-Ø_Ó_exp_1_less_mono_thm1
-Ø_º_times_mono_thm
-Ø_Ó_exp_≥_eq_0_thm
-Ø_Ó_exp_plus_thm
-Ø_Ó_exp_times_thm
-Ø_Ó_exp_recip_thm
-Ø_Ó_exp_recip_thm1
-Ø_Ó_exp_1_º_thm
-Ø_Ó_exp_less_1_mono_thm
-Ø_Ó_exp_less_mono_thm
-Ø_Ó_exp_less_1_mono_thm1
-Ø_Ó_exp_linear_estimate_thm
-Ø_bound_below_2_thm
-Ø_bound_below_3_thm
-=TEX
-\subsection{The Archimedean Property}
-=GFT
-Ø_archimedean_thm
-Ø_archimedean_recip_thm
-Ø_archimedean_times_thm
-Ø_archimedean_division_thm
-Ø_Ó_exp_tends_to_infinity_thm
-Ø_Ó_exp_tends_to_0_thm
-=TEX
-\subsection{Limits of Sequences of Numbers}
-=GFT
-const_lim_seq_thm
-plus_lim_seq_thm
-lim_seq_bounded_thm
-times_lim_seq_thm
-minus_lim_seq_thm
-poly_lim_seq_thm
-recip_lim_seq_thm
-lim_seq_choice_thm
-abs_lim_seq_thm
-lim_seq_recip_Ó_thm
-lim_seq_≥_eq_thm
-lim_seq_shift_thm
-lim_seq_≥_eq_thm1
-lim_seq_≥_0_thm
-lim_seq_upper_bound_thm
-lim_seq_unique_thm
-lim_seq_diffs_tend_to_0_thm
-=TEX
-\subsection{Continuity}
-=GFT
-cts_lim_seq_thm
-cts_lim_seq_thm1
-cts_lim_seq_thm2
-cts_local_thm
-const_cts_thm
-id_cts_thm
-plus_cts_thm
-times_cts_thm
-poly_cts_thm
-comp_cts_thm
-minus_cts_thm
-minus_comp_cts_thm
-recip_cts_thm
-recip_comp_cts_thm
-abs_cts_thm
-cts_extension_thm1
-cts_extension_thm
-open_Ø_delta_thm
-lim_seq_open_Ø_thm
-cts_open_Ø_thm
-closed_interval_closed_thm
-cts_estimate_thm
-cts_estimate_0_thm
-cts_limit_unique_thm
-cts_open_interval_thm
-darboux_cts_mono_thm
-=TEX
-\subsection{Derivatives}
-=GFT
-caratheodory_deriv_thm
-deriv_cts_thm
-const_deriv_thm
-id_deriv_thm
-plus_deriv_thm
-plus_const_deriv_thm
-times_deriv_thm
-times_const_deriv_thm
-comp_deriv_thm
-minus_deriv_thm
-minus_comp_deriv_thm
-power_deriv_thm
-recip_deriv_thm
-recip_comp_deriv_thm
-poly_deriv_thm
-deriv_local_thm
-deriv_lim_fun_thm
-deriv_unique_thm
-=TEX
-\subsection{Some Classical Theorems}
-=GFT
-curtain_induction_thm
-bisection_thm
-closed_interval_compact_thm
-finite_chain_thm
-cts_compact_bounded_thm
-cts_bounded_thm
-cts_abs_bounded_thm
-intermediate_value_thm
-local_min_thm
-local_max_thm
-rolle_thm
-mean_value_thm
-mean_value_thm1
-deriv_0_thm1
-deriv_0_thm
-deriv_0_thm2
-deriv_0_less_thm
-=TEX
-\subsection{Excursus: Cantor's Theorem}
-=GFT
-Ø_mono_inc_seq_thm
-Ø_mono_dec_seq_thm
-nested_interval_bounds_thm
-nested_interval_diag_thm
-nested_interval_intersection_thm
-Ø_uncountable_thm
-=TEX
-\subsection{Some Topology}
-=GFT
-°_open_interval_thm
-°_closed_interval_thm
-ﬁ_open_Ø_thm
-¿_open_Ø_thm
-°_open_Ø_thm
-•_closed_Ø_thm
-°_closed_Ø_thm
-¿_closed_Ø_thm
-open_interval_open_thm
-complement_open_interval_thm
-complement_closed_interval_thm
-half_infinite_intervals_open_thm
-half_infinite_intervals_closed_thm
-empty_universe_open_closed_thm
-compact_closed_thm
-compact_min_max_thm 
-closed_Ä_compact_thm
-empty_universe_compact_thm
-heine_borel_thm
-Ø_connected_thm
-=TEX
-\subsection{Cauchy Sequences}
-=GFT
-lim_seq_cauchy_seq_thm
-fin_seq_bounded_thm
-cauchy_seq_bounded_above_thm
-cauchy_seq_bounded_below_thm
-lim_seq_mono_inc_sup_thm
-lim_seq_mono_inc_thm
-lim_seq_mono_dec_thm
-lim_sup_thm
-lim_inf_thm
-cauchy_seq_lim_seq_thm
-lim_seq_§_cauchy_seq_thm
-=TEX
-\subsection{Liimits of Function Values}
-=GFT
-lim_fun_lim_seq_thm
-const_lim_fun_thm
-id_lim_fun_thm
-plus_lim_fun_thm
-times_lim_fun_thm
-recip_lim_fun_thm
-comp_lim_fun_thm
-comp_lim_fun_thm1
-poly_lim_fun_thm
-lim_fun_upper_bound_thm
-lim_fun_unique_thm
-lim_fun_local_thm
-comp_lim_fun_thm2
-inverse_deriv_thm
-=TEX
-\subsection{Limits of Sequences of Functions}
-=GFT
-const_unif_lim_seq_thm
-plus_unif_lim_seq_thm
-bounded_unif_limit_thm
-times_unif_lim_seq_thm
-unif_lim_seq_bounded_thm
-unif_lim_seq_Ä_thm
-unif_lim_seq_shift_thm
-unif_lim_seq_cts_thm
-unif_lim_seq_cauchy_seq_thm
-cauchy_seq_unif_lim_seq_thm
-unif_lim_seq_pointwise_lim_seq_thm
-unif_lim_seq_pointwise_unique_thm
-unif_lim_seq_unique_thm
-lim_fun_lim_seq_interchange_thm
-unif_lim_seq_deriv_estimate_thm
-unif_lim_seq_deriv_thm
-=TEX
-\subsection{Series and Power Series}
-\subsubsection{Elementary Properties}
-=GFT
-power_series_series_thm
-series_power_series_thm
-power_series_0_arg_thm
-series_power_limit_0_thm
-plus_series_thm
-series_0_thm
-const_times_series_thm
-lim_seq_ÓØ_recip_eq_0_thm
-lim_seq_Ø_Ó_exp_eq_0_thm
-series_shift_thm
-lim_series_shift_thm
-lim_series_shift_∂_thm
-lim_series_bounded_thm
-=TEX
-\subsubsection{Geometric Series}
-=GFT
-geometric_sum_thm
-geometric_series_thm
-geometric_series_series_thm
-geometric_series_thm1
-=TEX
-\subsubsection{Convergence Tests}
-=GFT
-weierstrass_test_thm
-comparison_test_thm
-simple_root_test_thm
-root_test_thm
-ratio_test_thm1
-ratio_test_thm
-=TEX
-\subsubsection{Convergence of Power Series and Their Derivatives}
-=GFT
-power_series_convergence_thm
-power_series_deriv_coeffs_thm
-power_series_deriv_lemma1
-power_series_deriv_lemma2
-power_series_scale_arg_thm
-power_series_scale_coeffs_thm
-power_series_deriv_lim_seq_convergence_thm
-power_series_deriv_convergence_thm
-power_series_main_thm
-power_series_main_thm1
-power_series_main_thm2
-power_series_main_thm3
-=TEX
-\subsection{The Transcendental Functions}
-=GFT
-=TEX
-\subsubsection{The Exponential Function}
-=GFT
-factorial_linear_estimate_thm
-factorial_0_less_thm
-exp_deriv_coeffs_thm
-exp_series_convergence_thm
-exp_consistency_thm
-Exp_consistent
-exp_def
-exp_unique_thm
-exp_cts_thm
-exp_minus_thm
-exp_0_less_thm
-exp_≥_eq_0_thm
-exp_plus_thm
-exp_clauses
-exp_less_mono_thm
-exp_power_series_thm
-=TEX
-\subsubsection{The Natural Logarithm Function}
-=GFT
-Log_consistent
-log_def
-exp_one_one_thm
-exp_Ø_Ó_exp_thm
-exp_0_less_onto_thm
-exp_log_thm
-log_less_mono_thm
-log_cts_thm
-log_deriv_thm
-log_clauses
-Ø_Ó_exp_exp_log_thm
-=TEX
-\subsubsection{The Sine and Cosine Functions}
-=GFT
-positive_root_thm
-square_root_thm
-square_root_thm1
-square_root_unique_thm
-square_square_root_mono_thm
-sin_series_convergence_thm
-even_odd_thm
-mod_2_div_2_thm
-mod_2_cases_thm
-mod_2_0_Ø_Ó_exp_thm
-mod_2_1_Ø_Ó_exp_thm
-power_series_even_thm
-power_series_odd_thm
-sin_deriv_coeffs_thm
-sin_cos_consistency_thm
-Sin_consistent
-sin_def
-sin_cos_cts_thm
-cos_squared_plus_sin_squared_thm
-sin_cos_unique_lemma1
-sin_cos_unique_lemma2
-sin_cos_unique_thm
-sin_cos_plus_thm
-sin_cos_minus_thm
-=TEX
-\subsubsection{The number $\pi$}
-=GFT
-sin_0_group_thm
-sin_eq_cos_sin_cos_twice_thm
-sum_squares_abs_bound_thm
-abs_sin_abs_cos_º_1_thm
-deriv_linear_estimate_thm
-cos_positive_estimate_thm
-sin_positive_estimate_thm
-cos_greater_root_2_thm
-cos_squared_eq_half_thm
-sin_eq_cos_exists_thm
-sin_positive_zero_thm
-Ø_discrete_subgroup_thm
-pi_consistency_thm
-ArchimedesConstant_consistent
-–_def
-ÓØ_plus_1_times_bound_thm
-=TEX
-\subsubsection{Periodicity of the Sine and Cosine Functions}
-=GFT
-sin_0_–_≥_eq_0_thm
-sin_0_–_0_less_thm
-sin_cos_–_over_2_thm
-sin_cos_plus_–_over_2_thm
-sin_cos_plus_–_thm
-sin_cos_plus_2_–_thm
-=TEX
-%%%%
-%%%%
-%%%%
-%%%%
-\section{METALANGUAGE PRELUDE}
-The following ML commands introduce the new theory ``analysis'' as a child of the
-theory Ø of real numbers.
+, and will generally carry out useful simplifications to most problems expressed using this
+sort of vocabulary.
+
+
 =SML
 force_delete_theory"analysis" handle Fail _ => ();
 open_theory"Ø";
@@ -585,11 +242,7 @@ new_parent"fin_set";
 %%%%
 %%%%
 %%%%
-\section{DEFINITIONS}\label{DEFINITIONS}
-%%%%
-%%%%
-%%%%
-%%%%
+
 \subsection{Polynomials}\label{Polynomials}
 We define the polynomial functions on the real numbers to be the smallest set
 of functions containing the constant functions and the identity function
@@ -639,14 +292,6 @@ correspond to addition of polynomials \ldots
 ‹	TimesCoeffs (Cons c l1) l2 =
 ‹	PlusCoeffs (Cons (ÓØ 0) (TimesCoeffs l1 l2)) (Map (Ãx∑c * x) l2) )
 ∞
-\ldots and to the derivative of a polynomial:
-πHOLCONST
-‹ €DerivCoeffs› : Ø LIST ≠ Ø LIST
-˜¸¸¸¸¸¸
-‹ 	DerivCoeffs [] = []
-‹±	(µc l∑
-‹	DerivCoeffs (Cons c l) = PlusCoeffs l (Cons (ÓØ 0) (DerivCoeffs l)))
-∞
 =TEX
 The following is useful in forming polynomials whose list
 of coefficients is given by a function:
@@ -654,7 +299,6 @@ of coefficients is given by a function:
 %%%%
 =SML
 declare_infix(310, "To");
-
 πHOLCONST
 ‹ $€To› : (Ó ≠ 'a) ≠ Ó ≠ 'a LIST
 ˜¸¸¸¸¸¸
@@ -711,64 +355,250 @@ at this theorem. The next step might be to develop the theory of  the degree of 
 and of division, but that would probably be better done in general for polynomials over
 an arbitrary field.
 
+\def\ThmsII#1#2{%
+\begin{minipage}[t]{0.48\hsize}
+\vertbarfalse
+#1
+\end{minipage}
+\begin{minipage}[t]{0.48\hsize}
+\vertbarfalse
+#2
+\end{minipage}}
+
+\def\ThmsIII#1#2#3{%
+\begin{minipage}[t]{0.32\hsize}
+\vertbarfalse
+#1
+\end{minipage}
+\begin{minipage}[t]{0.32\hsize}
+\vertbarfalse
+#2
+\end{minipage}
+\begin{minipage}[t]{0.32\hsize}
+\vertbarfalse
+#3
+\end{minipage}}
+
+Here is the complete list of the theorems discussed above.
+
+\ThmsIII{%
+=GFT
+PlusCoeffs_consistent
+const_eval_thm
+id_eval_thm
+plus_eval_thm
+const_times_eval_thm
+times_eval_thm
+poly_induction_thm
+=TEX
+}{%
+=GFT
+poly_func_eq_poly_eval_thm
+const_poly_func_thm
+id_poly_func_thm
+plus_poly_func_thm
+times_poly_func_thm
+comp_poly_thm
+poly_eval_append_thm
+=TEX
+}{%
+=GFT
+poly_eval_rev_thm
+poly_diff_powers_thm
+length_plus_coeffs_thm
+poly_linear_div_thm
+poly_roots_finite_thm
+=TEX
+}
+
+\subsection{Algebraic Results}
+
+To deal with limits we will need a number of simple algebraic facts about
+the absolute value function, for example
+=INLINEFT
+Ø_abs_plus_thm
+=TEX
+, which is the triangle inequality. Also, for dealing with power series we need some
+elementary facts about the operator
+=INLINEFT
+x ^ m
+=TEX
+\ that raises a real number to a natural number power. These facts are collected together
+here with a view to moving them into the theory of reals (and augmenting the linear
+arithmetic decision procedure to deal with absolute values). The names of the theorems
+are listed below:
+
+\ThmsIII{%
+=GFT
+Ø_0_º_abs_thm
+Ø_abs_plus_thm
+Ø_abs_subtract_thm
+Ø_abs_plus_minus_thm
+Ø_abs_diff_bounded_thm
+Ø_abs_plus_bc_thm
+Ø_abs_abs_minus_thm
+Ø_abs_abs_thm
+Ø_abs_times_thm
+Ø_abs_Ø_Ó_exp_thm
+Ø_abs_eq_0_thm
+Ø_abs_º_0_thm
+Ø_abs_0_thm
+=TEX
+}{%
+=GFT
+Ø_abs_recip_thm
+Ø_abs_squared_thm
+Ø_abs_less_times_thm
+Ø_≥_0_abs_thm
+Ø_less_recip_less_thm
+Ø_plus_recip_thm
+Ø_Ó_exp_0_1_thm
+Ø_Ó_exp_square_thm
+Ø_Ó_exp_0_less_thm
+Ø_Ó_exp_1_less_mono_thm
+Ø_Ó_exp_1_less_mono_thm1
+Ø_º_times_mono_thm
+Ø_Ó_exp_≥_eq_0_thm
+=TEX
+}{%
+=GFT
+Ø_Ó_exp_plus_thm
+Ø_Ó_exp_times_thm
+Ø_Ó_exp_recip_thm
+Ø_Ó_exp_recip_thm1
+Ø_Ó_exp_1_º_thm
+Ø_Ó_exp_less_1_mono_thm
+Ø_Ó_exp_less_mono_thm
+Ø_Ó_exp_less_1_mono_thm1
+Ø_Ó_exp_linear_estimate_thm
+Ø_bound_below_2_thm
+Ø_bound_below_3_thm
+=TEX
+}
 
 
+\subsection{The Archimedean Property}
+It is a consequence of the completeness of the real numbers that they are an archimedean
+ordered ring: given any $x, y > 0$ there is a natural number $m$ such that $y < mx$.
+The following theorems capture this property and some consequences.
+The archimedean division theorem says that given $d > 0$ and $y \ge 0$, there is a natural
+number $q$ and $r > 0$ such that $y = qd + r$ and $r < d$, and turns out to be an important
+lemma in the development of the properties of the transcendental functions.
+
+=GFT
+Ø_archimedean_thm
+Ø_archimedean_recip_thm
+Ø_archimedean_times_thm
+Ø_archimedean_division_thm
+Ø_Ó_exp_tends_to_infinity_thm
+Ø_Ó_exp_tends_to_0_thm
+=TEX
+\subsection{Limits of Sequences of Numbers}
 %%%%
 %%%%
 %%%%
 %%%%
-\subsection{Limits}
-%%%%
-%%%%
-%%%%
-%%%%
+
 We will write $s {-}{>} x$ to indicate that the sequence $s_n$, indexed by
-natural numbers, tends to the limit $x$ as $n$ tends to infinity:
+natural numbers, tends to the limit $x$ as $n$ tends to infinity.
+We use real-valued functions on the natural numbers Ó to represent such sequences.
+The definition is completely standard:
 %%%%
 %%%%
 =SML
 declare_infix(200, "->");
-
 πHOLCONST
 ‹ $€->› : (Ó ≠ Ø) ≠ Ø ≠ BOOL
 ˜¸¸¸¸¸¸
 ‹µs x∑ s -> x § µe∑ÓØ 0 < e ¥ ∂n∑µm∑n º m ¥ Abs(s m - x) < e
 ∞
-We will write $(f {-}{-}{>} c)x$ to indicate that $f(t)$
-tends to the limit $c$ as $t$ tends to $x$:
 %%%%
 %%%%
-=SML
-declare_infix(200, "-->");
+%%%%
+%%%%
+The notions of closed and open intervals are used to make some of the results
+slightly more readable. The early part of the theory does not depend heavily on
+these notions. Later on we will develop some elementary topological results.
+The more interesting of these results, e.g.,
+the Heine-Borel theorem depend on later definitions and results so they are collected
+together in section~\ref{SomeTopology} below (with one or two honourable exceptions
+in section~\ref{SomeClassicalTheorems} which are needed earlier on.
 
+%%%%
+%%%%
 πHOLCONST
-‹ $€-->› : (Ø ≠ Ø) ≠ Ø ≠ Ø ≠ BOOL
+‹ €ClosedInterval› : Ø ≠ Ø ≠ Ø SET
 ˜¸¸¸¸¸¸
-‹µf c x∑
-‹	(f --> c) x
-‹ §	µe∑ÓØ 0 < e
-‹	¥	∂d∑ÓØ 0 < d ± µy∑ Abs(y - x) < d ± ≥y = x ¥ Abs(f y - c) < e
+‹ µx y∑ ClosedInterval x y = {t | x º t ± t º y}
+∞
+πHOLCONST
+‹ €OpenInterval› : Ø ≠ Ø ≠ Ø SET
+˜¸¸¸¸¸¸
+‹ µx y∑ OpenInterval x y = {t | x < t ± t < y}
 ∞
 
-We write $(u {-}{-}{-}{>} h) X$ to indicate that the sequence of functions $u_n$, indexed by
-natural numbers, tends uniformly to the limit function $h$ on the
-set $X$ as $n$ tends to infinity. The definition requires $a < b$.
-%%%%
-%%%%
-=SML
-declare_infix(200, "--->");
+New sequences may be formed from old using the field operations. If the original sequences
+converge then so do the new ones (providing we are careful to avoid dividing by zero)
+The first few theorems on limits capture this observation and some consequences, e.g.,
+=INLINEFT
+poly_lim_seq_thm
+=TEX
+, which says that if $s_m$ is a sequence converging to a limit, $t$,
+and $f(x)$ is a polynomail, then the sequence $f(s_m)$ converges to $f(t)$.
 
-πHOLCONST
-‹ $€--->› : (Ó ≠ Ø ≠ Ø) ≠ (Ø ≠ Ø) ≠ Ø SET ≠ BOOL
-˜¸¸¸¸¸¸
-‹µu h X∑
-‹	(u ---> h) X
-‹ §	µe∑ÓØ 0 < e ¥ ∂n∑µm y∑ n º m ± y ç X ¥ Abs(u m y - h y) < e
-∞
-%%%%
-%%%%
-%%%%
-%%%%
+None of this theory would be very interesting if there were no convergent sequences, so
+we show that the sequence whose $m$-th term is $x + 1/(m+1)$ converges to $x$ for any $x$.
+This is
+=INLINEFT
+lim_seq_recip_Ó_thm
+=TEX
+.  Here we are using a very common and useful device to avoid talking about division by zero:
+if $m$ is a natural number, then $m+1$ is a non-zero natural number and it is often
+easier just to state results about $m+1$ rather than have hypotheses of the form $0 < m$.
+
+As it will turn out, sequences are very important in our approach to limiting processes
+generally, so we develop the necessary theory a little further here.
+We show, for example,  in
+=INLINEFT
+lim_seq_≥_eq_thm
+=TEX
+\ that any real $x$ can be given as the limit of a sequence $s_m$ such that no $s_m = x$.
+We also show, very importantly, in
+=INLINEFT
+lim_seq_unique_thm
+=TEX
+, that if a sequence converges to a limit then  that limit is unique.
+A similar uniqueness property will be derived for all of the limiting processes we
+investigate.
+
+\ThmsIII{%
+=GFT
+const_lim_seq_thm
+plus_lim_seq_thm
+lim_seq_bounded_thm
+times_lim_seq_thm
+minus_lim_seq_thm
+poly_lim_seq_thm
+=TEX
+}{%
+=GFT
+recip_lim_seq_thm
+lim_seq_choice_thm
+abs_lim_seq_thm
+lim_seq_recip_Ó_thm
+lim_seq_≥_eq_thm
+lim_seq_shift_thm
+=TEX
+}{%
+=GFT
+lim_seq_≥_eq_thm1
+lim_seq_≥_0_thm
+lim_seq_upper_bound_thm
+lim_seq_unique_thm
+lim_seq_diffs_tend_to_0_thm
+=TEX
+}
+
 \subsection{Continuity}
 %%%%
 %%%%
@@ -789,11 +619,78 @@ declare_infix(200, "Cts");
 ˜¸¸¸¸¸¸
 ‹ µf x∑ f Cts x § µe∑ÓØ 0 < e ¥ ∂d∑ÓØ 0 < d ± µy∑ Abs(y - x) < d ¥ Abs(f y - f x) < e
 ∞
-%%%%
-%%%%
-%%%%
-%%%%
+
+As observed in \cite{Harrison96}, several notions of limit arise and it is desirable to have
+common ways of dealing with them. Harrison's approach is via the general notion of
+convergence nets. We prefer a more homely way. As we shall state and prove later, 
+to say that $f$ is continuous at $x$ is to say that $f(y)$ tends to $f(x)$ as $y$
+tends to $x$. As the first of our theorems,
+=INLINEFT
+cts_lim_seq_thm
+=TEX
+, shows, this holds iff. for any
+sequence $s_m$ whose limit is $x$, we have that the sequence $f(s_m)$ tends to $f(x)$.
+
+
+This approach makes the proofs of the continuity of functions formed from continuous functions
+by applying field-operations pointwise trivial applications of the analogous results on
+sequences. I have not seen this useful observation made
+in any elementary textbook on the subject, the reason, I suspect being two-fold: {\em(i)}
+proving these results about continuity from the definitions is considered to be a good exercise
+for the student, and, {\em(ii)}, the analogue of this approach does not work in an arbitrary
+topological space. Nonetheless, it seems to work very well for us here, so well in fact that
+we spend the time to prove a couple of variants of the result on continuity and limits
+of sequences which let us restrict attention to sequences which are confined to any
+given neighbourhood of the point at which continuity is asserted and which avoid that point.
+This immediately shows that continuity is a local property: if two functions, $f$ and $g$, agree in some
+open interval containing $x$ and $g$ is continuous at $x$, then so is $f$.
+
+\ThmsIII{%
+=GFT
+cts_lim_seq_thm
+cts_lim_seq_thm1
+cts_lim_seq_thm2
+cts_local_thm
+const_cts_thm
+id_cts_thm
+plus_cts_thm
+times_cts_thm
+poly_cts_thm
+=TEX
+}{%
+=GFT
+comp_cts_thm
+minus_cts_thm
+minus_comp_cts_thm
+recip_cts_thm
+recip_comp_cts_thm
+abs_cts_thm
+cts_extension_thm1
+cts_extension_thm
+open_Ø_delta_thm
+=TEX
+}{%
+=GFT
+lim_seq_open_Ø_thm
+cts_open_Ø_thm
+closed_interval_closed_thm
+cts_estimate_thm
+cts_estimate_0_thm
+cts_limit_unique_thm
+cts_open_interval_thm
+darboux_cts_mono_thm
+=TEX
+}
 \subsection{Derivatives}
+The following gives the operation on lists of coefficients that
+corresponds to taking the derivative of a a polynomial function.
+πHOLCONST
+‹ €DerivCoeffs› : Ø LIST ≠ Ø LIST
+˜¸¸¸¸¸¸
+‹ 	DerivCoeffs [] = []
+‹±	(µc l∑
+‹	DerivCoeffs (Cons c l) = PlusCoeffs l (Cons (ÓØ 0) (DerivCoeffs l)))
+∞
 %%%%
 %%%%
 %%%%
@@ -818,39 +715,41 @@ declare_infix(200, "Deriv");
 ‹		ÓØ 0 < d
 ‹	±	µy∑ Abs(y - x) < d ± ≥y = x ¥ Abs((f y - f x)/(y-x) - c) < e
 ∞
+\ThmsIII{%
+=GFT
+caratheodory_deriv_thm
+deriv_cts_thm
+const_deriv_thm
+id_deriv_thm
+plus_deriv_thm
+plus_const_deriv_thm
+=TEX
+}{%
+=GFT
+times_deriv_thm
+times_const_deriv_thm
+comp_deriv_thm
+minus_deriv_thm
+minus_comp_deriv_thm
+power_deriv_thm
+=TEX
+}{%
+=GFT
+recip_deriv_thm
+recip_comp_deriv_thm
+poly_deriv_thm
+deriv_local_thm
+deriv_lim_fun_thm
+deriv_unique_thm
+=TEX
+}
+
+\subsection{Some Classical Theorems}\label{SomeClassicalTheorems}
 %%%%
 %%%%
 %%%%
 %%%%
-\subsection{Intervals}
-%%%%
-%%%%
-%%%%
-%%%%
-The notions of closed and open intervals make some of the results
-slightly more readable.
-%%%%
-%%%%
-πHOLCONST
-‹ €ClosedInterval› : Ø ≠ Ø ≠ Ø SET
-˜¸¸¸¸¸¸
-‹ µx y∑ ClosedInterval x y = {t | x º t ± t º y}
-∞
-πHOLCONST
-‹ €OpenInterval› : Ø ≠ Ø ≠ Ø SET
-˜¸¸¸¸¸¸
-‹ µx y∑ OpenInterval x y = {t | x < t ± t < y}
-∞
-%%%%
-%%%%
-%%%%
-%%%%
-\subsection{Open, Closed and Compact Sets}
-%%%%
-%%%%
-%%%%
-%%%%
-The notions of open, closed and compact sets are useful:
+The notions of open, closed and compact sets are useful in stating some of these results.
 %%%%
 %%%%
 πHOLCONST
@@ -875,12 +774,191 @@ of complementing a set with respect to the universe of its type..]
 ‹ CompactâR =
 ‹ {A | µ V∑ V Ä OpenâR ± A Ä ﬁV ¥ ∂W∑ W Ä V ± W ç Finite ± A Ä ﬁ W}
 ∞
+\ThmsIII{%
+=GFT
+curtain_induction_thm
+bisection_thm
+closed_interval_compact_thm
+finite_chain_thm
+cts_compact_bounded_thm
+cts_bounded_thm
+=TEX
+}{%
+=GFT
+cts_abs_bounded_thm
+intermediate_value_thm
+local_min_thm
+local_max_thm
+rolle_thm
+mean_value_thm
+=TEX
+}{%
+=GFT
+mean_value_thm1
+deriv_0_thm1
+deriv_0_thm
+deriv_0_thm2
+deriv_0_less_thm
+=TEX
+}
+
+\subsection{Excursus: Cantor's Theorem}
+
+\ThmsIII{%
+=GFT
+Ø_mono_inc_seq_thm
+Ø_mono_dec_seq_thm
+=TEX
+}{%
+=GFT
+nested_interval_bounds_thm
+nested_interval_diag_thm
+=TEX
+}{%
+=GFT
+nested_interval_intersection_thm
+Ø_uncountable_thm
+=TEX
+}
+
+\subsection{Some Topology}\label{SomeTopology}
+
+\ThmsII{%
+=GFT
+°_open_interval_thm
+°_closed_interval_thm
+ﬁ_open_Ø_thm
+¿_open_Ø_thm
+°_open_Ø_thm
+•_closed_Ø_thm
+°_closed_Ø_thm
+=TEX
+}{%
+=GFT
+¿_closed_Ø_thm
+open_interval_open_thm
+complement_open_interval_thm
+complement_closed_interval_thm
+half_infinite_intervals_open_thm
+half_infinite_intervals_closed_thm
+empty_universe_open_closed_thm
+=TEX
+}{%
+=GFT
+compact_closed_thm
+compact_min_max_thm 
+closed_Ä_compact_thm
+empty_universe_compact_thm
+heine_borel_thm
+Ø_connected_thm
+=TEX
+}
+
+\subsection{Cauchy Sequences}
+\ThmsIII{%
+=GFT
+lim_seq_cauchy_seq_thm
+fin_seq_bounded_thm
+cauchy_seq_bounded_above_thm
+cauchy_seq_bounded_below_thm
+=TEX
+}{%
+=GFT
+lim_seq_mono_inc_sup_thm
+lim_seq_mono_inc_thm
+lim_seq_mono_dec_thm
+lim_sup_thm
+=TEX
+}{%
+=GFT
+lim_inf_thm
+cauchy_seq_lim_seq_thm
+lim_seq_§_cauchy_seq_thm
+=TEX
+}
+
+\subsection{Liimits of Function Values}
+We will write $(f {-}{-}{>} c)x$ to indicate that $f(t)$
+tends to the limit $c$ as $t$ tends to $x$:
 %%%%
 %%%%
+=SML
+declare_infix(200, "-->");
+πHOLCONST
+‹ $€-->› : (Ø ≠ Ø) ≠ Ø ≠ Ø ≠ BOOL
+˜¸¸¸¸¸¸
+‹µf c x∑
+‹	(f --> c) x
+‹ §	µe∑ÓØ 0 < e
+‹	¥	∂d∑ÓØ 0 < d ± µy∑ Abs(y - x) < d ± ≥y = x ¥ Abs(f y - c) < e
+∞
+
+\ThmsIII{%
+=GFT
+lim_fun_lim_seq_thm
+const_lim_fun_thm
+id_lim_fun_thm
+plus_lim_fun_thm
+times_lim_fun_thm
+=TEX
+}{%
+=GFT
+recip_lim_fun_thm
+comp_lim_fun_thm
+comp_lim_fun_thm1
+poly_lim_fun_thm
+lim_fun_upper_bound_thm
+=TEX
+}{%
+=GFT
+lim_fun_unique_thm
+lim_fun_local_thm
+comp_lim_fun_thm2
+inverse_deriv_thm
+=TEX
+}
+
+\subsection{Limits of Sequences of Functions}
+We write $(u {-}{-}{-}{>} h) X$ to indicate that the sequence of functions $u_n$, indexed by
+natural numbers, tends uniformly to the limit function $h$ on the
+set $X$ as $n$ tends to infinity. The definition requires $a < b$.
 %%%%
 %%%%
+=SML
+declare_infix(200, "--->");
+πHOLCONST
+‹ $€--->› : (Ó ≠ Ø ≠ Ø) ≠ (Ø ≠ Ø) ≠ Ø SET ≠ BOOL
+˜¸¸¸¸¸¸
+‹µu h X∑
+‹	(u ---> h) X
+‹ §	µe∑ÓØ 0 < e ¥ ∂n∑µm y∑ n º m ± y ç X ¥ Abs(u m y - h y) < e
+∞
+
+\ThmsII{%
+=GFT
+const_unif_lim_seq_thm
+plus_unif_lim_seq_thm
+bounded_unif_limit_thm
+times_unif_lim_seq_thm
+unif_lim_seq_bounded_thm
+unif_lim_seq_Ä_thm
+unif_lim_seq_shift_thm
+unif_lim_seq_cts_thm
+=TEX
+}{%
+=GFT
+unif_lim_seq_cauchy_seq_thm
+cauchy_seq_unif_lim_seq_thm
+unif_lim_seq_pointwise_lim_seq_thm
+unif_lim_seq_pointwise_unique_thm
+unif_lim_seq_unique_thm
+lim_fun_lim_seq_interchange_thm
+unif_lim_seq_deriv_estimate_thm
+unif_lim_seq_deriv_thm
+=TEX
+}
+
 \subsection{Series and Power Series}
-.
 The {\em series} defined by a sequence of real terms is, to all intents and
 purposes, the sequence of partial sums of the sequence:
 %%%%
@@ -905,27 +983,103 @@ subsequences of the sequence:
 ˜¸¸¸¸¸¸
 ‹ µs n∑ PowerSeries s n = PolyEval (s To n)
 ∞
-%%%%
-%%%%
-%%%%
-%%%%
+\subsubsection{Elementary Properties}
+
+\ThmsIII{%
+=GFT
+power_series_series_thm
+series_power_series_thm
+power_series_0_arg_thm
+series_power_limit_0_thm
+plus_series_thm
+=TEX
+}{%
+=GFT
+series_0_thm
+const_times_series_thm
+lim_seq_ÓØ_recip_eq_0_thm
+lim_seq_Ø_Ó_exp_eq_0_thm
+series_shift_thm
+=TEX
+}{%
+=GFT
+lim_series_shift_thm
+lim_series_shift_∂_thm
+lim_series_bounded_thm
+=TEX
+}
+
+\subsubsection{Geometric Series}
+
+\ThmsII{%
+=GFT
+geometric_sum_thm
+geometric_series_thm
+=TEX
+}{%
+=GFT
+geometric_series_series_thm
+geometric_series_thm1
+=TEX
+}
+
+\subsubsection{Convergence Tests}
+
+\ThmsII{%
+=GFT
+weierstrass_test_thm
+comparison_test_thm
+simple_root_test_thm
+=TEX
+}{%
+=GFT
+root_test_thm
+ratio_test_thm1
+ratio_test_thm
+=TEX
+}
+
+\subsubsection{Convergence of Power Series and Their Derivatives}
+
+\ThmsII{%
+=GFT
+power_series_convergence_thm
+power_series_deriv_coeffs_thm
+power_series_deriv_lemma1
+power_series_deriv_lemma2
+power_series_scale_arg_thm
+power_series_scale_coeffs_thm
+=TEX
+}{%
+=GFT
+power_series_deriv_lim_seq_convergence_thm
+power_series_deriv_convergence_thm
+power_series_main_thm
+power_series_main_thm1
+power_series_main_thm2
+power_series_main_thm3
+=TEX
+}
+
+
 \subsection{Some Special Functions}\label{SomeSpecialFunctions}
 %%%%
 %%%%
 %%%%
 %%%%
 In this section, we define the transcendental functions,
-$\Exp{}$, $\Log{}$, $\Sin{}$ and $\Cos{}$.
+$\ExpName$, $\LogName$, $\SinName$ and $\CosName$.
 For geometric applications, it seems most natural
-to specify $\Exp{}$, $\Sin{}$ and $\Cos{}$ by differential equations.
+to specify $\ExpName$, $\SinName$ and $\CosName$ by differential equations.
 We will use power series to provide witnesses to the consistency of these specifications
 (i.e., to provide solutions to the differential equations).
 We will then rely on the differential equations to derive the main properties of the
-functions (including the fact that $\Exp{}$ is 1-1, which justifies a specification of
-$\Log{}$ as its left inverse.
+functions (including the fact that $\ExpName$ is 1-1, which justifies a specification of
+$\LogName$ as its left inverse.
  
 
-The factorial function, which we will need to give the terms of the power series that
+Before defining the transcendental functions, we
+introduce the factorial function, which we will need to give the terms of the power series that
 provide the witnesses . We make this a postfix operator with precedence higher
 than all the binary arithmetic operators.
 %%%%
@@ -938,7 +1092,11 @@ declare_postfix(330, "!");
 ‹	0 ! = ÓØ 1
 ‹ ±	(µm∑(m+1)! = ÓØ(m+1)*m!)
 ∞
-The exponential function, which we define by a differential equation.
+=GFT
+=TEX
+\subsubsection{The Exponential Function}
+
+The exponential function, which we define by a differential equation with an initial condition.
 %%%%
 %%%%
 =SML
@@ -948,6 +1106,36 @@ The exponential function, which we define by a differential equation.
 ‹	Exp (ÓØ 0) = ÓØ 1
 ‹ ±	(µx∑ (Exp Deriv Exp x) x)
 ∞
+
+
+\ThmsIII{%
+=GFT
+factorial_linear_estimate_thm
+factorial_0_less_thm
+exp_deriv_coeffs_thm
+exp_series_convergence_thm
+exp_consistency_thm
+Exp_consistent
+=TEX
+}{%
+=GFT
+exp_def
+exp_unique_thm
+exp_cts_thm
+exp_minus_thm
+exp_0_less_thm
+exp_≥_eq_0_thm
+=TEX
+}{%
+=GFT
+exp_plus_thm
+exp_clauses
+exp_less_mono_thm
+exp_power_series_thm
+=TEX
+}
+
+\subsubsection{The Natural Logarithm Function}
 The natural logarithm function, which we define as the left inverse of
 the exponential function:
 %%%%
@@ -958,7 +1146,31 @@ the exponential function:
 ˜¸¸¸¸¸¸
 ‹	µx∑ Log (Exp x) = x
 ∞
-The sine and cosine functions defined by a differential equation:
+
+\ThmsIII{%
+=GFT
+Log_consistent
+log_def
+exp_one_one_thm
+exp_Ø_Ó_exp_thm
+=TEX
+}{%
+=GFT
+exp_0_less_onto_thm
+exp_log_thm
+log_less_mono_thm
+log_cts_thm
+=TEX
+}{%
+=GFT
+log_deriv_thm
+log_clauses
+Ø_Ó_exp_exp_log_thm
+=TEX
+}
+
+\subsubsection{The Sine and Cosine Functions}\label{TheSineAndCosineFunctions}
+The sine and cosine functions defined by a differential equation and initial conditions.
 %%%%
 %%%%
 =SML
@@ -970,6 +1182,45 @@ The sine and cosine functions defined by a differential equation:
 ‹ ±	(µx∑ (Sin Deriv Cos x) x)
 ‹ ±	(µx∑ (Cos Deriv ~(Sin x)) x)
 ∞
+
+
+\ThmsIII{%
+=GFT
+positive_root_thm
+square_root_thm
+square_root_thm1
+square_root_unique_thm
+square_square_root_mono_thm
+sin_series_convergence_thm
+even_odd_thm
+mod_2_div_2_thm
+=TEX
+}{%
+=GFT
+mod_2_cases_thm
+mod_2_0_Ø_Ó_exp_thm
+mod_2_1_Ø_Ó_exp_thm
+power_series_even_thm
+power_series_odd_thm
+sin_deriv_coeffs_thm
+sin_cos_consistency_thm
+Sin_consistent
+=TEX
+}{%
+=GFT
+sin_def
+sin_cos_cts_thm
+cos_squared_plus_sin_squared_thm
+sin_cos_unique_lemma1
+sin_cos_unique_lemma2
+sin_cos_unique_thm
+sin_cos_plus_thm
+sin_cos_minus_thm
+=TEX
+}
+
+\subsubsection{The number $\pi$}
+
 Archimedes' constant, the generator of the group of roots of the sine function:
 %%%%
 %%%%
@@ -988,10 +1239,62 @@ declare_alias("–", ¨ArchimedesConstantÆ);
 =TEX
 From one point of view, almost the whole of the formal treatment in this document may
 be viewed as a systematic and informative proof of the consistency of the definitions above.
-%%%%
-%%%%
-%%%%
-%%%%
+
+\ThmsIII{%
+=GFT
+sin_0_group_thm
+sin_eq_cos_sin_cos_twice_thm
+sum_squares_abs_bound_thm
+sum_squares_abs_bound_thm1
+abs_sin_abs_cos_º_1_thm
+deriv_linear_estimate_thm
+=TEX
+}{%
+=GFT
+cos_positive_estimate_thm
+sin_positive_estimate_thm
+cos_greater_root_2_thm
+cos_squared_eq_half_thm
+sin_eq_cos_exists_thm
+sin_positive_zero_thm
+=TEX
+}{%
+=GFT
+Ø_discrete_subgroup_thm
+pi_consistency_thm
+ArchimedesConstant_consistent
+–_def
+ÓØ_plus_1_times_bound_thm
+ÓØ_0_less_≥_ÓØ_times_–_thm
+=TEX
+}
+
+\subsubsection{Periodicity of the Sine and Cosine Functions}
+
+
+\ThmsIII{%
+=GFT
+sin_0_–_≥_eq_0_thm
+sin_0_–_0_less_thm
+sin_cos_–_over_2_thm
+sin_cos_plus_–_over_2_thm
+sin_cos_plus_–_thm
+=TEX
+}{
+=GFT
+sin_cos_–_thm
+sin_cos_plus_2_–_thm
+sin_cos_2_–_thm
+sin_cos_plus_even_times_–_thm
+sin_cos_even_times_–_thm
+=TEX
+}{
+=GFT
+sin_cos_period_thm
+sin_cos_onto_unit_circle_thm
+sin_cos_onto_unit_circle_thm1
+=TEX
+}
 
 \newpage
 
@@ -999,8 +1302,10 @@ be viewed as a systematic and informative proof of the consistency of the defini
 %%%%
 %%%%
 %%%%
+{\let\Section\section
+\def\section#1{\Section{#1}\label{TheoryListing}}
 \include{analysis.th}
-
+}  %\let
 \bibliographystyle{plain}
 \bibliography{bookspapers}
 
@@ -1013,7 +1318,7 @@ be viewed as a systematic and informative proof of the consistency of the defini
 %%%%
 %%%%
 \onecolumn
-\section{THEOREMS}
+\section{THEOREMS}\label{THEOREMS}
 %%%%
 %%%%
 %%%%
@@ -9183,6 +9488,17 @@ a(once_rewrite_tac[Ø_times_comm_thm]);
 a(bc_thm_tac Ø_times_mono_thm THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 val €sum_squares_abs_bound_thm› = save_pop_thm "sum_squares_abs_bound_thm";
 =TEX
+We need a special case ($z = 1$)
+of the following algebraic inequality, which is just as easy to state and prove for arbitrary $z$:
+%%%%
+%%%%
+=SML
+set_goal([], ¨µx y z:Ø∑ x ^ 2 + y ^ 2 = ÓØ 1 ¥ Abs x º ÓØ 1Æ);
+a(REPEAT strip_tac);
+a(ante_tac(list_µ_elim[¨xÆ, ¨yÆ, ¨ÓØ 1Æ] sum_squares_abs_bound_thm) THEN rewrite_tac[]);
+a(POP_ASM_T ante_tac THEN taut_tac);
+val €sum_squares_abs_bound_thm1› = save_pop_thm "sum_squares_abs_bound_thm1";
+=TEX
 Whence sine and cosine are of absolute value at most one:
 %%%%
 %%%%
@@ -9193,9 +9509,7 @@ set_goal([], ¨
 a(strip_tac);
 a(strip_asm_tac (µ_elim¨xÆ cos_squared_plus_sin_squared_thm));
 a(TOP_ASM_T (strip_asm_tac o once_rewrite_rule[Ø_plus_comm_thm]));
-a(ante_tac (list_µ_elim[¨Cos xÆ, ¨Sin xÆ, ¨ÓØ 1Æ]sum_squares_abs_bound_thm));
-a(ante_tac (list_µ_elim[¨Sin xÆ, ¨Cos xÆ, ¨ÓØ 1Æ]sum_squares_abs_bound_thm));
-a(asm_rewrite_tac[Ø_Ó_exp_0_1_thm] THEN REPEAT strip_tac);
+a(all_fc_tac[sum_squares_abs_bound_thm1] THEN REPEAT strip_tac);
 val €abs_sin_abs_cos_º_1_thm› = save_pop_thm "abs_sin_abs_cos_º_1_thm";
 =TEX
 We plan to make our estimates of the value of $\pi/2$ a little bit more accurate than
@@ -9573,6 +9887,28 @@ val €ÓØ_plus_1_times_bound_thm› = save_pop_thm "ÓØ_plus_1_times_bound_thm";
 %%%%
 %%%%
 =SML
+set_goal([], ¨µx m∑
+	ÓØ 0 < x
+¥	≥x = ~(ÓØ m * –)
+Æ);
+a(REPEAT strip_tac);
+a(strip_asm_tac(µ_elim¨mÆ Ó_cases_thm) THEN all_var_elim_asm_tac1);
+(* *** Goal "1" *** *)
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(all_asm_ante_tac THEN
+	rewrite_tac[pc_rule1"Ø_lin_arith" prove_rule[]¨µa b:Ø∑ ~(a * b) = a * ~bÆ]
+	THEN REPEAT strip_tac);
+a(lemma_tac¨ÓØ(i + 1) * ~ – º ~ –Æ THEN1
+	(bc_thm_tac (±_right_elim ÓØ_plus_1_times_bound_thm) THEN ante_tac –_def
+	THEN PC_T1 "Ø_lin_arith" prove_tac[]));
+a(strip_asm_tac –_def);
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+val €ÓØ_0_less_≥_ÓØ_times_–_thm› = save_pop_thm "ÓØ_0_less_≥_ÓØ_times_–_thm";
+=TEX
+%%%%
+%%%%
+=SML
 set_goal([], ¨µx∑
 	ÓØ 0 < x ± x < – ¥ ≥Sin x = ÓØ 0	
 Æ);
@@ -9586,18 +9922,7 @@ a(lemma_tac¨– º ÓØ(i + 1) * –Æ THEN1
 	(bc_thm_tac (±_left_elim ÓØ_plus_1_times_bound_thm) THEN rewrite_tac[–_def]));
 a(all_fc_tac[pc_rule1"Ø_lin_arith" prove_rule[]¨µa b:Ø∑ a < b ± b º a ¥ FÆ]);
 (* *** Goal "2" *** *)
-a(strip_asm_tac(µ_elim¨mÆ Ó_cases_thm) THEN all_var_elim_asm_tac1);
-(* *** Goal "2.1" *** *)
-a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-(* *** Goal "2.2" *** *)
-a(all_asm_ante_tac THEN
-	rewrite_tac[pc_rule1"Ø_lin_arith" prove_rule[]¨µa b:Ø∑ ~(a * b) = a * ~bÆ]
-	THEN REPEAT strip_tac);
-a(lemma_tac¨ÓØ(i + 1) * ~ – º ~ –Æ THEN1
-	(bc_thm_tac (±_right_elim ÓØ_plus_1_times_bound_thm) THEN ante_tac –_def
-	THEN PC_T1 "Ø_lin_arith" prove_tac[]));
-a(strip_asm_tac –_def);
-a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(all_fc_tac[ÓØ_0_less_≥_ÓØ_times_–_thm] THEN all_asm_fc_tac[]);
 val €sin_0_–_≥_eq_0_thm› = save_pop_thm "sin_0_–_≥_eq_0_thm";
 =TEX
 %%%%
@@ -9672,6 +9997,16 @@ val €sin_cos_plus_–_thm› = save_pop_thm "sin_cos_plus_–_thm";
 %%%%
 %%%%
 =SML
+set_goal([], ¨
+	Sin – = ÓØ 0 
+±	Cos – = ~(ÓØ 1)
+Æ);
+a(accept_tac(rewrite_rule[sin_def] (µ_elim¨ÓØ 0Æ sin_cos_plus_–_thm)));
+val €sin_cos_–_thm› = save_pop_thm "sin_cos_–_thm";
+=TEX
+%%%%
+%%%%
+=SML
 set_goal([], ¨µx∑
 	Sin (x + ÓØ 2 * –) = Sin x
 ±	Cos(x + ÓØ 2 * –) = Cos x
@@ -9682,10 +10017,189 @@ val €sin_cos_plus_2_–_thm› = save_pop_thm "sin_cos_plus_2_–_thm";
 =TEX
 %%%%
 %%%%
+=SML
+set_goal([], ¨
+	Sin (ÓØ 2 * –) = ÓØ 0 
+±	Cos (ÓØ 2 * –) = ÓØ 1
+Æ);
+a(accept_tac(rewrite_rule[sin_def] (µ_elim¨ÓØ 0Æ sin_cos_plus_2_–_thm)));
+val €sin_cos_2_–_thm› = save_pop_thm "sin_cos_2_–_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µx m∑
+	Sin (x + ÓØ (2*m) * –) = Sin x
+±	Cos(x + ÓØ (2*m) * –) = Cos x
+Æ);
+a(rewrite_tac[ÓØ_times_homomorphism_thm]);
+a(REPEAT µ_tac THEN induction_tac¨m:ÓÆ THEN1 rewrite_tac[]);
+a(rewrite_tac[ÓØ_plus_homomorphism_thm, Ø_times_plus_distrib_thm]);
+a(asm_rewrite_tac[Ø_plus_assoc_thm1, sin_cos_plus_2_–_thm]);
+val €sin_cos_plus_even_times_–_thm› = save_pop_thm "sin_cos_plus_even_times_–_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µm∑
+	Sin (ÓØ (2*m) * –) = ÓØ 0
+±	Cos(ÓØ (2*m) * –) = ÓØ 1
+Æ);
+a(rewrite_tac[rewrite_rule[sin_def] (µ_elim¨ÓØ 0Æ sin_cos_plus_even_times_–_thm)]);
+val €sin_cos_even_times_–_thm› = save_pop_thm "sin_cos_even_times_–_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µx y∑
+	x <  y
+±	Sin x = Sin y
+±	Cos x = Cos y
+¥	∂m∑ y = x + ÓØ (2 * m) * –
+Æ);
+a(REPEAT strip_tac);
+a(lemma_tac¨Sin(y + ~x) = ÓØ 0 ± Cos(y + ~x) = ÓØ 1Æ THEN1
+	(asm_rewrite_tac[sin_cos_plus_thm, sin_cos_minus_thm] THEN
+		conv_tac (ONCE_MAP_C Ø_anf_conv) THEN
+			rewrite_tac[rewrite_rule[Ø_Ó_exp_square_thm]
+					cos_squared_plus_sin_squared_thm]));
+a(fc_tac[–_def]);
+(* *** Goal "1" *** *)
+a(strip_asm_tac(µ_elim¨mÆ even_odd_thm) THEN all_var_elim_asm_tac1);
+(* *** Goal "1.1" *** *)
+a(∂_tac¨nÆ);
+a(all_fc_tac[pc_rule1 "Ø_lin_arith" prove_rule[]¨µz∑y + ~x = z ¥ y = x + zÆ]);
+(* *** Goal "1.2" *** *)
+a(lemma_tac¨Cos(y + ~x) = ~(ÓØ 1)Æ THEN_LIST [id_tac, PC_T1 "Ø_lin_arith" asm_prove_tac[]]);
+a(POP_ASM_T rewrite_thm_tac THEN DROP_ASMS_T discard_tac);
+a(rewrite_tac[ÓØ_plus_homomorphism_thm, Ø_times_plus_distrib_thm,
+	sin_cos_plus_–_thm, sin_cos_even_times_–_thm]);
+(* *** Goal "2" *** *)
+a(i_contr_tac THEN swap_nth_asm_concl_tac 1);
+a(bc_thm_tac ÓØ_0_less_≥_ÓØ_times_–_thm);
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+val €sin_cos_period_lemma› = pop_thm();
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µx y∑
+	x <  y
+¥	(Sin x = Sin y ± Cos x = Cos y § ∂m∑ y = x + ÓØ (2 * m) * –)
+Æ);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_fc_tac[sin_cos_period_lemma]);
+a(∂_tac¨mÆ THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(all_var_elim_asm_tac1);
+a(rewrite_tac[sin_cos_plus_even_times_–_thm]);
+(* *** Goal "3" *** *)
+a(all_var_elim_asm_tac1);
+a(rewrite_tac[sin_cos_plus_even_times_–_thm]);
+val €sin_cos_period_thm› = save_pop_thm "sin_cos_period_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µx∑
+	Abs x º ÓØ 1
+¥	∂z∑ z ç ClosedInterval (ÓØ 0) – ± Cos z = x
+Æ);
+a(rewrite_tac[closed_interval_def] THEN REPEAT strip_tac);
+a(lemma_tac¨~(ÓØ 1) º x ± x º ÓØ 1Æ THEN1
+	(POP_ASM_T ante_tac THEN cases_tac ¨ÓØ 0 º xÆ THEN
+		asm_rewrite_tac[Ø_abs_def] THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(ante_tac (list_µ_elim[¨CosÆ, ¨ÓØ 0Æ, ¨–Æ] intermediate_value_thm));
+a(asm_rewrite_tac[sin_cos_cts_thm, cos_def, sin_cos_–_thm] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(strip_asm_tac –_def THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(cases_tac¨x = ÓØ 1Æ THEN1
+	(∂_tac¨ÓØ 0Æ THEN asm_rewrite_tac[cos_def] THEN
+		strip_asm_tac –_def THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(cases_tac¨x = ~(ÓØ 1)Æ THEN1
+	(∂_tac¨ –Æ THEN asm_rewrite_tac[sin_cos_–_thm] THEN
+		strip_asm_tac –_def THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(lemma_tac¨~(ÓØ 1) < x ± x < ÓØ 1Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(all_asm_fc_tac[]);
+a(∂_tac¨x'Æ THEN REPEAT strip_tac THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+val €sin_cos_onto_unit_circle_lemma› = pop_thm();
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µx y∑
+	x ^ 2 + y ^ 2 = ÓØ 1
+¥	∂z∑ ÓØ 0 º z ± z < ÓØ 2 * – ± x = Cos z ± y = Sin z
+Æ);
+a(REPEAT strip_tac);
+a(all_fc_tac[sum_squares_abs_bound_thm1]);
+a(all_fc_tac[rewrite_rule[closed_interval_def] sin_cos_onto_unit_circle_lemma]);
+a(all_var_elim_asm_tac1);
+a(strip_asm_tac (µ_elim¨zÆ cos_squared_plus_sin_squared_thm));
+a(lemma_tac¨y ^ 2 = Sin z ^ 2Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(fc_tac[square_root_unique_thm]);
+(* *** Goal "1" *** *)
+a(∂_tac¨zÆ THEN asm_rewrite_tac[] THEN 
+	strip_asm_tac –_def THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(cases_tac¨z = ÓØ 0Æ THEN1
+	(all_var_elim_asm_tac1 THEN all_asm_ante_tac THEN rewrite_tac[sin_def]
+		THEN REPEAT strip_tac));
+(* *** Goal "2.1" *** *)
+a(∂_tac¨ÓØ 0Æ THEN
+	asm_rewrite_tac[sin_def]
+		 THEN strip_asm_tac –_def  THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "2.2" *** *)
+a(∂_tac¨~z + ÓØ 2 * –Æ THEN
+	asm_rewrite_tac[sin_cos_plus_2_–_thm, sin_cos_minus_thm, closed_interval_def]
+		 THEN strip_asm_tac –_def  THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+val €sin_cos_onto_unit_circle_thm› = save_pop_thm "sin_cos_onto_unit_circle_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µx y∑
+	x ^ 2 + y ^ 2 = ÓØ 1
+¥	∂â1z∑ ÓØ 0 º z ± z < ÓØ 2 * – ± x = Cos z ± y = Sin z
+Æ);
+a(REPEAT strip_tac);
+a(all_fc_tac[sin_cos_onto_unit_circle_thm]);
+a(∂â1_tac¨zÆ THEN REPEAT strip_tac);
+a(all_var_elim_asm_tac1);
+a(strip_asm_tac (list_µ_elim[¨z'Æ, ¨zÆ] Ø_less_cases_thm));
+(* *** Goal "1" *** *)
+a(LIST_DROP_NTH_ASM_T [2, 3] (MAP_EVERY (strip_asm_tac o eq_sym_rule)));
+a(all_fc_tac[sin_cos_period_thm]);
+a(all_var_elim_asm_tac1);
+a(strip_asm_tac(µ_elim¨mÆÓ_cases_thm) THEN all_var_elim_asm_tac1 THEN1 rewrite_tac[]);
+a(lemma_tac¨ÓØ 2 * – º ÓØ (2 * (i + 1)) * –Æ THEN1
+	(once_rewrite_tac[times_comm_thm] THEN
+	rewrite_tac[ÓØ_times_homomorphism_thm, Ø_times_assoc_thm] THEN
+	bc_thm_tac (±_left_elim ÓØ_plus_1_times_bound_thm) THEN
+	strip_asm_tac –_def THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(all_fc_tac[pc_rule1 "Ø_lin_arith"  prove_rule[]¨
+	µa b c d∑ÓØ 0 º  a ± a < b ± b º d ¥ ≥a + d < bÆ]);
+(* *** Goal "2" *** *)
+a(all_fc_tac[sin_cos_period_thm]);
+a(all_var_elim_asm_tac1);
+a(strip_asm_tac(µ_elim¨mÆÓ_cases_thm) THEN all_var_elim_asm_tac1 THEN1 rewrite_tac[]);
+a(lemma_tac¨ÓØ 2 * – º ÓØ (2 * (i + 1)) * –Æ THEN1
+	(once_rewrite_tac[times_comm_thm] THEN
+	rewrite_tac[ÓØ_times_homomorphism_thm, Ø_times_assoc_thm] THEN
+	bc_thm_tac (±_left_elim ÓØ_plus_1_times_bound_thm) THEN
+	strip_asm_tac –_def THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(all_fc_tac[pc_rule1 "Ø_lin_arith"  prove_rule[]¨
+	µa b c d∑ÓØ 0 º  a ± a < b ± b º d ¥ ≥a + d < bÆ]);
+val €sin_cos_onto_unit_circle_thm1› = save_pop_thm "sin_cos_onto_unit_circle_thm1";
+=TEX
+%%%%
+%%%%
 %%%%
 %%%%
 =TEX
-\subsection{Epilogue}
+\subsection{Epilogue}\label{END}
 } % matches turning off of HOL index entries.
 =TEX
 %%%%
