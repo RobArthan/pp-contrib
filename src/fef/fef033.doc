@@ -86,13 +86,13 @@ produced as pilot work during the third stage of phase 2.)
 The following \Product{} instructions set up a new theory $fef033$
 to hold the theorems to be proved and set up a proof context in which
 to carry out the proofs. Some theorems are required from the theory
-$fef010$ defined in \cite{DS/FMU/FEF/010} and so this is made a parent of
+$fef031$ defined in \cite{DS/FMU/FEF/031} and so this is made a parent of
 the theory $fef033$.
 
 =SML 
 open_theory "fef032";
 new_theory€"fef033"›;
-new_parent"fef010";
+new_parent"fef031";
 set_pc"hol";
 =TEX
 \section{MISCELLANY}
@@ -197,8 +197,208 @@ val table_computation_induction_thm =
 ‹	±	≥Snd(vc tlâ0 rlâ0 râ0) = Snd(vc tlâ1 rlâ1 râ1)
 ‹	¥	≥c dominates Fst(vc tlâ0 rlâ0 râ0)
 ∞
-\section{PROOFS}
 =SML
+val €dominates_linear_conj› = ¨µc1 c2∑ c1 dominates c2 ≤ c2 dominates c1Æ;
+=TEX
+\section{LEMMAS}
+=SML
+set_pc"hol";
+set_goal([], ¨µi1 i2∑ BoolItem i1 = BoolItem i2 § i1 = i2Æ);
+a(rewrite_tac(map get_spec[¨BoolItemÆ, ¨ValuedItemItemÆ])
+	THEN REPEAT µ_tac THEN §_tac THEN_TRY asm_rewrite_tac[]);
+a(LEMMA_T ¨VI_val(MkValuedItem sterling (BoolVal i1))
+             = VI_val(MkValuedItem sterling (BoolVal i2))Æ
+	(accept_tac o rewrite_rule(map get_spec[¨MkValuedItemÆ, ¨BoolValÆ]))
+	THEN1 asm_rewrite_tac[]);
+val €BoolItem_OneOne_lemma› = save_pop_thm"BoolItem_OneOne_lemma";
+=SML
+set_goal([], ¨µf a b c∑ f(if a then b else c) = (if a then f b else f c)Æ);
+a(REPEAT strip_tac THEN cases_tac¨a:BOOLÆ THEN asm_rewrite_tac[]);
+val €fun_if_thm› = save_pop_thm"fun_if_thm";
+=TEX
+=SML
+push_goal([], ¨µxy list∑
+	Split [] = ([], []) ±
+	Split (Cons xy list) =
+	(Cons (Fst xy) (Fst (Split list)), Cons (Snd xy) (Snd (Split list)))Æ);
+a(rewrite_tac[get_spec¨SplitÆ] THEN REPEAT strip_tac);
+a(lemma_tac ¨∂x y∑xy = (x, y)Æ THEN1
+	(∂_tac¨Fst xyÆ THEN ∂_tac¨Snd xyÆ) THEN
+	asm_rewrite_tac[get_spec¨SplitÆ]);
+val €split_thm› = save_pop_thm"split_thm";
+=TEX
+=SML
+push_goal([], ¨µlist∑
+	Fst(Split list) = Map Fst list ±
+	Snd(Split list)= Map Snd list Æ);
+a(strip_tac);
+a(list_induction_tac ¨listÆ THEN
+	asm_rewrite_tac(split_thm::map get_spec[¨MapÆ]));
+val €fst_snd_split_thm› = save_pop_thm"fst_snd_split_thm";
+=TEX
+=SML
+push_goal([], ¨µc cl∑ glbl [] = lattice_top ± glbl (Cons c cl) = c glb glbl clÆ);
+a(REPEAT µ_tac THEN rewrite_tac(map get_spec[¨glblÆ, ¨FoldÆ]));
+val €glbl_lemma› = save_pop_thm"glbl_lemma";
+=TEX
+=SML
+push_goal([], ¨µc cl∑ lubl [] = lattice_bottom ± lubl (Cons c cl) = c lub lubl clÆ);
+a(REPEAT µ_tac THEN rewrite_tac(map get_spec[¨lublÆ, ¨FoldÆ]));
+val €lubl_lemma› = save_pop_thm"lubl_lemma";
+=TEX
+=SML
+push_goal([], ¨µc∑ c glb lattice_top = cÆ);
+a(REPEAT strip_tac THEN lemma_tac
+	¨c dominates c glb lattice_top ±
+		c glb lattice_top dominates cÆ
+	THEN_LIST [rewrite_tac[get_spec¨$glbÆ], all_fc_tac[get_spec¨$glbÆ]]);
+a(lemma_tac
+	¨c dominates c ± lattice_top dominates cÆ
+	THEN_LIST [rewrite_tac[get_spec¨$glbÆ], all_fc_tac[get_spec¨$glbÆ]]);
+val €glb_lattice_top_thm› = save_pop_thm"glb_lattice_top_thm";
+=TEX
+=SML
+push_goal([], ¨µc1 c2∑ c1 glb c2 = c2 glb c1Æ);
+a(REPEAT strip_tac THEN lemma_tac
+	¨c1 glb c2 dominates c2 glb c1 ±
+		c2 glb c1 dominates c1 glb c2Æ
+	THEN_LIST [id_tac, all_fc_tac[get_spec¨$glbÆ]]);
+a(lemma_tac
+	¨c1 dominates c1 glb c2 ± c2 dominates c1 glb c2 ±
+		c1 dominates c2 glb c1 ± c2 dominates c2 glb c1Æ
+	THEN_LIST [rewrite_tac[get_spec¨$glbÆ], all_fc_tac[get_spec¨$glbÆ]]);
+a(REPEAT strip_tac);
+val €glb_comm_thm› = save_pop_thm"glb_comm_thm";
+=TEX
+=SML
+push_goal([], ¨µc1 c2∑ c1 lub c2 = c2 lub c1Æ);
+a(REPEAT strip_tac THEN lemma_tac
+	¨c1 lub c2 dominates c2 lub c1 ±
+		c2 lub c1 dominates c1 lub c2Æ
+	THEN_LIST [id_tac, all_fc_tac[get_spec¨$lubÆ]]);
+a(lemma_tac
+	¨c1 lub c2 dominates c1 ± c1 lub c2 dominates c2 ±
+		c2 lub c1 dominates c1 ± c2 lub c1 dominates c2Æ
+	THEN_LIST [rewrite_tac[get_spec¨$lubÆ], all_fc_tac[get_spec¨$lubÆ]]);
+a(REPEAT strip_tac);
+val €lub_comm_thm› = save_pop_thm"lub_comm_thm";
+=TEX
+=SML
+push_goal([], ¨µcil∑
+	ListAnd (Map (ItemBool o Snd) cil) ¥
+	glbl(Map (Ã (c, u)∑ if ItemBool u then lattice_top else c) cil) =
+	lattice_topÆ);
+a(strip_tac);
+a(list_induction_tac ¨cilÆ
+	THEN asm_rewrite_tac(glbl_lemma :: map get_spec[¨ListAndÆ, ¨MapÆ, ¨FoldÆ]));
+a(REPEAT strip_tac THEN asm_rewrite_tac[]);
+a(rewrite_tac[glb_lattice_top_thm]);
+val €ListAnd_true_lemma› = save_pop_thm "ListAnd_true_lemma";
+=TEX
+=SML
+push_goal([], ¨µb∑ ItemBool(BoolItem b) § bÆ);
+a(rewrite_tac(map get_spec[¨ValuedItemItemÆ, ¨ItemBoolÆ, ¨BoolItemÆ]));
+a(REPEAT strip_tac THEN_TRY asm_rewrite_tac[]);
+a(LEMMA_T ¨VI_val(MkValuedItem sterling (BoolVal b))
+             = VI_val(MkValuedItem sterling (BoolVal true))Æ
+	(rewrite_thm_tac o rewrite_rule(map get_spec[¨MkValuedItemÆ, ¨BoolValÆ]))
+	THEN1 asm_rewrite_tac[]);
+val €ItemBool_BoolItem_lemma› = save_pop_thm "ItemBool_BoolItem_lemma";
+=TEX
+=SML
+set_goal([], ¨µvc vcl∑
+	BinOpAnd [] = (Ãtl rl r∑ (lattice_bottom, BoolItem true))
+±	BinOpAnd (Cons vc vcl) =
+	(Ãtl rl r∑
+	let	(cr, ir) = BinOpAnd vcl tl rl r
+	in let	(c, i) = vc tl rl r
+	in let	br = ItemBool ir
+	in let 	b = ItemBool i
+	in	if	b ± br
+		then	(cr lub c, BoolItem true)
+		else if	b ± ≥br
+		then	(cr, BoolItem false)
+		else if	≥b ± br
+		then	(c, BoolItem false)
+		else	(c glb cr, BoolItem false))
+Æ);
+a(PC_T1 "predicates1" rewrite_tac[]);
+a(rewrite_tac(glbl_lemma :: lubl_lemma ::ItemBool_BoolItem_lemma ::
+	 map get_spec [¨BinOpAndÆ, ¨ListAndÆ, ¨MapÆ, ¨LetÆ]));
+a(REPEAT strip_tac);
+a(cases_tac¨ItemBool (Snd (vc x x' x''))Æ THEN
+	cases_tac¨ListAnd (Map (ItemBool o Snd) (Map (Ã e∑ e x x' x'') vcl))Æ THEN
+	asm_rewrite_tac[]);
+(* *** Goal "1" *** *)
+a(conv_tac (LEFT_C (once_rewrite_conv[lub_comm_thm])));
+a(REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(conv_tac (LEFT_C (once_rewrite_conv[glb_comm_thm])));
+a(rewrite_tac[glb_lattice_top_thm]);
+(* *** Goal "3" *** *)
+a(ALL_FC_T rewrite_tac [ListAnd_true_lemma]);
+a(rewrite_tac[glb_lattice_top_thm]);
+val €BinOpAnd_lemma› = save_pop_thm "BinOpAnd_lemma";
+=TEX
+=SML
+set_goal([], ¨µcc tst cev cevs ev∑
+	CaseVal cc tst [] ev =
+	(Ãtl rl r∑
+	let	(tc, ti) = tst tl rl r
+	in let	(ec, ei) = ev tl rl r
+	in	if	cc dominates tc
+		then	(ec, ei)
+		else	(tc, ei))
+±	CaseVal cc tst (Cons cev cevs) ev =
+	(Ãtl rl r∑
+	let	(cr, ir) = CaseVal cc tst cevs ev tl rl r
+	in let	(tc, ti) = tst tl rl r
+	in let	(ce, cv) = cev
+	in let 	(cec, cei) = ce tl rl r
+	in let 	(cvc, cvi) = cv tl rl r
+	in	if	ti = cei
+		then	if	cc dominates tc ± cc dominates cec
+			then	(cvc, cvi)
+			else if	≥cc dominates tc
+			then	(tc, cvi)
+			else	(cec, cvi)
+		else	if	cc dominates tc ± cc dominates cec
+			then	(cr, ir)
+			else if	≥cc dominates tc
+			then	(tc, ir)
+			else	(cec, ir))
+Æ);
+a(PC_T1 "predicates1" rewrite_tac[]);
+a(rewrite_tac(map get_spec[¨$domÆ, ¨CaseValÆ, ¨CheckTestÆ,
+	¨CaseValValueÆ, ¨CheckListÆ, ¨LetÆ, ¨MapÆ]) THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(cases_tac ¨cc dominates Fst (tst x x' x'')Æ THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(cases_tac ¨cc dominates Fst (tst x x' x'')Æ THEN
+	cases_tac ¨cc dominates Fst (Fst cev x x' x'')Æ THEN
+	cases_tac ¨Snd (tst x x' x'') = Snd (Fst cev x x' x'')Æ THEN
+	asm_rewrite_tac[]);
+val €CaseVal_lemma› = save_pop_thm "CaseVal_lemma";
+=SML
+push_goal([dominates_linear_conj], ¨µc1 c2∑c1 glb c2 = c1 ≤ c1 glb c2 = c2Æ);
+a(REPEAT strip_tac);
+a(lemma_tac¨c1 dominates c2 ± c2 dominates c2Æ
+	THEN1 rewrite_tac[get_spec¨$glbÆ]);
+(* *** Goal "1" *** *)
+a(contr_tac THEN all_asm_fc_tac[]);
+a(lemma_tac¨c1 dominates c1Æ THEN1 rewrite_tac[get_spec¨$glbÆ]);
+a(all_fc_tac[get_spec¨$glbÆ]);
+a(lemma_tac¨c1 dominates c1 glb c2Æ THEN1 rewrite_tac[get_spec¨$glbÆ]);
+a(all_fc_tac[get_spec¨$glbÆ]);
+(* *** Goal "2" *** *)
+a(all_fc_tac[get_spec¨$glbÆ]);
+a(lemma_tac¨c2 dominates c1 glb c2Æ THEN1 rewrite_tac[get_spec¨$glbÆ]);
+a(all_fc_tac[get_spec¨$glbÆ]);
+val €dominates_linear_glb_lemma› = save_pop_thm "dominates_linear_glb_lemma";
+=TEX
+\section{PROOFS ABOUT THE AUXILIARY DEFINITIONS}
+=SML
+set_pc"hol";
 set_goal([], ¨µc∑ OK_TC c Ä OkTableComputation cÆ);
 a(PC_T1"hol2"
 	rewrite_tac(map get_spec[¨OK_TCÆ, ¨OkTableComputationÆ, ¨RiskInputsÆ, ¨LetÆ])
@@ -207,11 +407,15 @@ a(DROP_NTH_ASM_T 2 (strip_asm_tac o eq_sym_rule));
 a(DROP_NTH_ASM_T 2 (strip_asm_tac o conv_rule(RAND_C eq_sym_conv)));
 a(all_asm_fc_tac[]);
 val €OK_TC_lemma› = save_pop_thm"OK_TC_lemma";
+=TEX
+\section{OKNESS PROOFS}
+\subsection{Constant Expression}
 =SML
 set_goal([], ¨µc ci∑ DenoteConstant ci ç OK_VC cÆ);
 a(rewrite_tac(map get_spec[¨OK_VCÆ, ¨DenoteConstantÆ]) THEN REPEAT strip_tac);
 val €DenoteConstant_OK_lemma› = save_pop_thm"DenoteConstant_OK_lemma";
 =TEX
+\subsection{Monadic}
 =SML
 set_goal([], ¨µc f vc∑ vc ç OK_VC c ¥ MonOp f vc ç OK_VC cÆ);
 a(rewrite_tac(map get_spec[¨OK_VCÆ, ¨MonOpÆ, ¨LetÆ]) THEN REPEAT strip_tac);
@@ -219,6 +423,263 @@ a(lemma_tac¨≥Snd (vc tlâ0 rlâ0 râ0) = Snd (vc tlâ1 rlâ1 râ1)Æ
 	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
 a(all_asm_fc_tac[]);
 val €MonOp_OK_lemma› = save_pop_thm"MonOp_OK_lemma";
+=TEX
+\subsection{Binary}
+=SML
+set_goal([dominates_linear_conj],
+	¨µc vcl∑ Elems vcl Ä OK_VC c ¥ BinOpAnd vcl ç OK_VC cÆ);
+a(REPEAT µ_tac);
+a(list_induction_tac¨vclÆ);
+(* *** Goal "1" *** *)
+a(rewrite_tac(BinOpAnd_lemma :: map get_spec[¨OK_VCÆ, ¨LetÆ])
+	THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(PC_T1 "sets_ext" asm_prove_tac[get_spec¨ElemsÆ]);
+(* *** Goal "3" *** *)
+a(rewrite_tac(BinOpAnd_lemma :: map get_spec[¨OK_VCÆ, ¨MapÆ, ¨LetÆ]));
+a(strip_tac THEN strip_tac THEN REPEAT µ_tac);
+a(rewrite_tac[µ_elim¨SndÆfun_if_thm]);
+a(cases_tac¨ItemBool (Snd (x tlâ0 rlâ0 râ0))Æ
+	THEN cases_tac ¨ItemBool (Snd (BinOpAnd vcl tlâ0 rlâ0 râ0))Æ
+	THEN cases_tac ¨ItemBool (Snd (x tlâ1 rlâ1 râ1))Æ
+	THEN cases_tac ¨ItemBool (Snd (BinOpAnd vcl tlâ1 rlâ1 râ1))Æ
+	THEN asm_rewrite_tac[BoolItem_OneOne_lemma, dominates_lub_lemma]
+	THEN REPEAT strip_tac);
+(* *** Goal "3.1" *** *)
+a(lemma_tac¨≥Snd(BinOpAnd vcl tlâ0 rlâ0 râ0) = Snd(BinOpAnd vcl tlâ1 rlâ1 râ1)Æ
+	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
+a(DROP_ASM_T¨BinOpAnd vcl ç OK_VC cÆ
+	(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th]));
+(* *** Goal "3.2" *** *)
+a(lemma_tac¨≥Snd (x tlâ0 rlâ0 râ0) = Snd (x tlâ1 rlâ1 râ1)Æ
+	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
+a(LEMMA_T ¨x ç OK_VC cÆ
+	(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th])
+	THEN1 PC_T1 "sets_ext" asm_prove_tac[get_spec¨ElemsÆ]);
+(* *** Goal "3.3" *** *)
+a(lemma_tac¨≥Snd(BinOpAnd vcl tlâ0 rlâ0 râ0) = Snd(BinOpAnd vcl tlâ1 rlâ1 râ1)Æ
+	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
+a(DROP_ASM_T¨BinOpAnd vcl ç OK_VC cÆ
+	(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th]));
+(* *** Goal "3.4" *** *)
+a(lemma_tac¨≥Snd(BinOpAnd vcl tlâ0 rlâ0 râ0) = Snd(BinOpAnd vcl tlâ1 rlâ1 râ1)Æ
+	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
+a(DROP_ASM_T¨BinOpAnd vcl ç OK_VC cÆ
+	(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th]));
+(* *** Goal "3.5" *** *)
+a(lemma_tac¨≥Snd (x tlâ0 rlâ0 râ0) = Snd (x tlâ1 rlâ1 râ1)Æ
+	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
+a(LEMMA_T ¨x ç OK_VC cÆ
+	(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th])
+	THEN1 PC_T1 "sets_ext" asm_prove_tac[get_spec¨ElemsÆ]);
+(* *** Goal "3.6" *** *)
+a(lemma_tac¨≥Snd (x tlâ0 rlâ0 râ0) = Snd (x tlâ1 rlâ1 râ1)Æ
+	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
+a(LEMMA_T ¨x ç OK_VC cÆ
+	(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th])
+	THEN1 PC_T1 "sets_ext" asm_prove_tac[get_spec¨ElemsÆ]);
+a(lemma_tac¨≥Snd(BinOpAnd vcl tlâ0 rlâ0 râ0) = Snd(BinOpAnd vcl tlâ1 rlâ1 râ1)Æ
+	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
+a(DROP_ASM_T¨BinOpAnd vcl ç OK_VC cÆ
+	(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th]));
+a(strip_asm_tac(list_µ_elim
+	[¨Fst (x tlâ0 rlâ0 râ0)Æ, ¨Fst (BinOpAnd vcl tlâ0 rlâ0 râ0)Æ]
+	dominates_linear_glb_lemma)
+	THEN asm_rewrite_tac[]);
+val €BinOpAnd_OK_lemma› = save_pop_thm"BinOpAnd_OK_lemma";
+=TEX
+=SML
+set_goal([], ¨µc f vc1 vc2∑ vc1 ç OK_VC c ± vc2 ç OK_VC c ¥ BinOp f vc1 vc2 ç OK_VC cÆ);
+a(rewrite_tac(dominates_lub_lemma :: map get_spec[¨OK_VCÆ, ¨BinOpÆ, ¨LetÆ])
+	THEN REPEAT strip_tac);
+a(lemma_tac¨Snd (vc2 tlâ0 rlâ0 râ0) = Snd (vc2 tlâ1 rlâ1 râ1)Æ
+	THEN1 (contr_tac THEN all_asm_fc_tac[]));
+a(lemma_tac¨≥Snd (vc1 tlâ0 rlâ0 râ0) = Snd (vc1 tlâ1 rlâ1 râ1)Æ
+	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
+a(all_asm_fc_tac[]);
+val €BinOp_OK_lemma› = save_pop_thm"BinOp_OK_lemma";
+=TEX
+\subsection{Triadic}
+=SML
+set_goal([], ¨µc f vc1 vc2 vc3∑
+	vc1 ç OK_VC c ± vc2 ç OK_VC c ± vc3 ç OK_VC c ¥
+	TriOp f vc1 vc2 vc3 ç OK_VC cÆ);
+a(rewrite_tac(dominates_lub_lemma :: map get_spec[¨OK_VCÆ, ¨TriOpÆ, ¨LetÆ])
+	THEN REPEAT strip_tac);
+a(lemma_tac¨Snd (vc2 tlâ0 rlâ0 râ0) = Snd (vc2 tlâ1 rlâ1 râ1) ±
+	Snd (vc3 tlâ0 rlâ0 râ0) = Snd (vc3 tlâ1 rlâ1 râ1)Æ
+	THEN1 (contr_tac THEN all_asm_fc_tac[]));
+a(lemma_tac¨≥Snd (vc1 tlâ0 rlâ0 râ0) = Snd (vc1 tlâ1 rlâ1 râ1)Æ
+	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
+a(all_asm_fc_tac[]);
+val €TriOp_OK_lemma› = save_pop_thm"TriOp_OK_lemma";
+=TEX
+\subsection{Conversions}
+Omitted. see \cite{DS/FMU/FEF/032}.
+\subsection{Sterling}
+Omitted. see \cite{DS/FMU/FEF/032}.
+\subsection{Dinary}
+Omitted. see \cite{DS/FMU/FEF/032}.
+\subsection{Declarations}
+Omitted. see \cite{DS/FMU/FEF/032}.
+\subsection{Case Expressions}
+=SML
+set_goal([], ¨µc te cel ee∑
+	te ç OK_VC c ±
+	Elems (Map Fst cel) Ä OK_VC c ±
+	Elems (Map Snd cel) Ä OK_VC c ±
+	ee ç OK_VC c ¥
+	CaseVal c te cel ee ç OK_VC c
+Æ);
+a(REPEAT µ_tac);
+a(list_induction_tac¨celÆ THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(rewrite_tac(CaseVal_lemma:: map get_spec[¨OK_VCÆ, ¨LetÆ])
+	THEN REPEAT µ_tac);
+a(rewrite_tac[µ_elim¨SndÆ fun_if_thm]);
+a(CASES_T¨c dominates Fst (te tlâ0 rlâ0 râ0)Æ rewrite_thm_tac);
+a(CASES_T¨c dominates Fst (te tlâ1 rlâ1 râ1)Æ rewrite_thm_tac);
+(* *** Goal "1.1" (duplicates "1.2") *** *)
+a(REPEAT strip_tac THEN
+	DROP_ASM_T ¨ee ç OK_VC cÆ
+	(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th])
+	THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(PC_T1 "sets_ext1" asm_prove_tac(map get_spec[¨MapÆ, ¨ElemsÆ]));
+(* *** Goal "3" *** *)
+a(PC_T1 "sets_ext1" asm_prove_tac(map get_spec[¨MapÆ, ¨ElemsÆ]));
+(* *** Goal "4" *** *)
+a(rewrite_tac(µ_elim¨SndÆ fun_if_thm::µ_elim¨FstÆ fun_if_thm::CaseVal_lemma::
+	map get_spec[¨OK_VCÆ, ¨LetÆ])
+	THEN REPEAT µ_tac);
+a(MAP_EVERY (fn t => CASES_T t (fn th => rewrite_tac[th] THEN strip_asm_tac th))
+	[¨Snd (te tlâ0 rlâ0 râ0) = Snd (Fst x tlâ0 rlâ0 râ0)Æ,
+	 ¨c dominates Fst (te tlâ0 rlâ0 râ0)Æ,
+	 ¨c dominates Fst (Fst x tlâ0 rlâ0 râ0)Æ]);
+(* *** Goal "4.1" *** *)
+val tac1 = REPEAT strip_tac THEN
+	LEMMA_T ¨Snd x ç OK_VC cÆ
+	(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th])
+	THEN1 PC_T1 "sets_ext" asm_prove_tac(map get_spec[¨ElemsÆ, ¨MapÆ]);
+val tac2 = REPEAT strip_tac THEN
+	cases_tac¨Snd (te tlâ0 rlâ0 râ0) = Snd (te tlâ1 rlâ1 râ1)Æ
+	THEN_LIST [
+	asm_ante_tac ¨≥ Snd (te tlâ1 rlâ1 râ1) = Snd (Fst x tlâ1 rlâ1 râ1)Æ
+	THEN POP_ASM_T (asm_rewrite_thm_tac o eq_sym_rule)
+	THEN REPEAT strip_tac THEN
+	LEMMA_T ¨Fst x ç OK_VC cÆ
+		(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th])
+	THEN1 PC_T1 "sets_ext" asm_prove_tac(map get_spec[¨ElemsÆ, ¨MapÆ])
+	,
+	DROP_ASM_T ¨te ç OK_VC cÆ
+	(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th])];
+a(MAP_EVERY (fn t => CASES_T t (fn th => rewrite_tac[th] THEN strip_asm_tac th))
+	[¨Snd (te tlâ1 rlâ1 râ1) = Snd (Fst x tlâ1 rlâ1 râ1)Æ,
+	 ¨c dominates Fst (Fst x tlâ1 rlâ1 râ1)Æ,
+	 ¨c dominates Fst (te tlâ1 rlâ1 râ1)Æ]
+	THEN_LIST[tac1, tac1, tac1, tac1, tac2, tac2, tac2, tac2]);
+(* *** Goal "4.2" *** *)
+val tac3 = REPEAT strip_tac THEN
+	cases_tac¨Snd (te tlâ0 rlâ0 râ0) = Snd (te tlâ1 rlâ1 râ1)Æ
+	THEN_LIST [
+	asm_ante_tac ¨≥ Snd (te tlâ0 rlâ0 râ0) = Snd (Fst x tlâ0 rlâ0 râ0)Æ
+	THEN asm_rewrite_tac[]
+	THEN STRIP_T (asm_tac o conv_rule(RAND_C eq_sym_conv)) THEN
+	LEMMA_T ¨Fst x ç OK_VC cÆ
+		(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th])
+	THEN1 PC_T1 "sets_ext" asm_prove_tac(map get_spec[¨ElemsÆ, ¨MapÆ])
+	,
+	DROP_ASM_T ¨te ç OK_VC cÆ
+	(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th])];
+val tac4 = REPEAT strip_tac THEN
+	DROP_ASM_T ¨CaseVal c te cel ee ç OK_VC cÆ
+	(fn th => all_fc_tac[rewrite_rule(map get_spec[¨OK_VCÆ])th]);
+a(MAP_EVERY (fn t => CASES_T t (fn th => rewrite_tac[th] THEN strip_asm_tac th))
+	[¨Snd (te tlâ1 rlâ1 râ1) = Snd (Fst x tlâ1 rlâ1 râ1)Æ,
+	 ¨c dominates Fst (Fst x tlâ1 rlâ1 râ1)Æ,
+	 ¨c dominates Fst (te tlâ1 rlâ1 râ1)Æ]
+	THEN_LIST[tac3, tac3, tac3, tac3, tac4, tac4, tac4, tac4]);
+val €CaseVal_OK_lemma› = save_pop_thm"CaseVal_OK_lemma";
+=TEX
+\subsection{Set Functions}
+=SML
+set_goal([], ¨µc f vc∑ vc ç OK_VC c ¥ SetFuncAll f vc ç OK_VC cÆ);
+a(rewrite_tac(map get_spec[¨SetFuncAllÆ, ¨OK_VCÆ, ¨LetÆ])
+	THEN REPEAT strip_tac);
+a(lemma_tac¨≥ Snd(Split(Map(vc tlâ0 rlâ0) rlâ0)) =
+		Snd(Split(Map (vc tlâ1 rlâ1) rlâ1))Æ
+	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
+a(lemma_tac ¨µrl1 rl2 rlâ1∑
+	Map (HideDerTableRow c) rl1 = Map (HideDerTableRow c) rl2 ±
+	Map (HideDerTableRow c) rlâ0 = Map (HideDerTableRow c) rlâ1
+             ¥ ≥ (Snd (Split (Map (vc tlâ0 rl1) rlâ0)))
+                 = (Snd (Split (Map (vc tlâ1 rl2) rlâ1)))
+             ¥ ≥ c dominates lubl (Fst (Split (Map (vc tlâ0 rl1) rlâ0)))Æ
+	THEN_LIST[id_tac, all_asm_fc_tac[]]);
+a(LIST_DROP_NTH_ASM_T [1, 2, 3, 4] (Combinators.K id_tac));
+a(list_induction_tac¨rlâ0Æ THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(strip_asm_tac (µ_elim¨rlâ1Æ list_cases_thm));
+(* *** Goal "1.1" *** *)
+a(swap_asm_concl_tac
+	 ¨≥ (Snd (Split (Map (vc tlâ0 rl1) [])))
+		= (Snd (Split (Map (vc tlâ1 rl2) rlâ1)))Æ
+	THEN asm_rewrite_tac(map get_spec[¨SplitÆ, ¨MapÆ]));
+(* *** Goal "1.2" *** *)
+a(swap_asm_concl_tac
+	¨Map (HideDerTableRow c) [] = Map (HideDerTableRow c) rlâ1Æ
+	THEN asm_rewrite_tac(map get_spec[¨MapÆ]));
+(* *** Goal "2" *** *)
+a(strip_asm_tac (µ_elim¨rlâ1Æ list_cases_thm));
+(* *** Goal "2.1" *** *)
+a(swap_asm_concl_tac
+	¨Map (HideDerTableRow c) (Cons x rlâ0) = Map (HideDerTableRow c) rlâ1Æ
+	THEN asm_rewrite_tac(map get_spec[¨MapÆ]));
+(* *** Goal "2.2" *** *)
+a(var_elim_nth_asm_tac 1);
+a(rewrite_tac[fst_snd_split_thm, lubl_lemma,
+	get_spec¨MapÆ, dominates_lub_lemma]);
+a(swap_asm_concl_tac
+	 ¨≥ (Snd (Split (Map (vc tlâ0 rl1) (Cons x rlâ0))))
+		= (Snd (Split (Map (vc tlâ1 rl2) (Cons x' list2))))Æ
+	THEN asm_rewrite_tac[fst_snd_split_thm, lubl_lemma,
+	get_spec¨MapÆ, dominates_lub_lemma]);
+a(GET_NTH_ASM_T 3 (strip_asm_tac o rewrite_rule[map_def]));
+a(DROP_NTH_ASM_T 7 (strip_asm_tac o rewrite_rule[fst_snd_split_thm]));
+a(contr_tac THEN all_asm_fc_tac[]);
+val €SetFuncAll_OK_lemma› = save_pop_thm"SetFuncAll_OK_lemma";
+=TEX
+\subsection{Count Functions}
+=SML
+set_goal([], ¨µc vc∑ vc ç OK_VC c ¥ CommonValue vc ç OK_VC cÆ);
+a(rewrite_tac(map get_spec[¨CommonValueÆ, ¨LetÆ])
+	THEN REPEAT strip_tac);
+a(ALL_FC_T rewrite_tac [SetFuncAll_OK_lemma]);
+val €CommonValue_OK_lemma› = save_pop_thm"CommonValue_OK_lemma";
+=TEX
+\subsection{$ExistsTuples$}
+=SML
+(* ****  Not yet complete ****
+set_goal([], ¨µc tc∑ tc ç OK_TC c ¥ ExistsTuples tc ç OK_VC cÆ);
+a(rewrite_tac(BoolItem_OneOne_lemma::dominates_lub_lemma::
+	map get_spec[¨OK_TCÆ, ¨OK_VCÆ, ¨ExistsTuplesÆ, ¨LetÆ])
+	THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(cases_tac¨≥HideDerTable c (Snd (tc tlâ0)) = HideDerTable c (Snd (tc tlâ1))Æ
+	THEN1 all_asm_fc_tac[]);
+a(strip_asm_tac (µ_elim¨DT_rows (Snd (tc tlâ0))Æ list_cases_thm));
+a(swap_nth_asm_concl_tac 2 THEN asm_rewrite_tac(MkDerTable_lemma::
+	map get_spec[¨HideDerTableÆ, ¨HideDerTableDataÆ, ¨$˘Æ, ¨LetÆ]));
+ .....
+(* *** Goal "2" *** *)
+a(cases_tac¨≥HideDerTable c (Snd (tc tlâ0)) = HideDerTable c (Snd (tc tlâ1))Æ
+	THEN1 all_asm_fc_tac[]);
+a(strip_asm_tac (µ_elim¨DT_rows (Snd (tc tlâ1))Æ list_cases_thm));
+a(swap_nth_asm_concl_tac 2 THEN asm_rewrite_tac(MkDerTable_lemma::
+	map get_spec[¨HideDerTableÆ, ¨HideDerTableDataÆ, ¨$˘Æ, ¨LetÆ]));
+
+val €ExistsTuples_OK_lemma› = save_pop_thm"ExistsTuples_OK_lemma";
+**** end of incomplete section *** *)
 =TEX
 \section{CLOSING DOWN}
 The following \Product{} instruction restores the previous proof context.
@@ -236,3 +697,6 @@ pop_pc();
 \printindex
 
 \end{document}
+push_goal([], ¨µc cl∑ glbl [] = lattice_top ± glbl (Cons c cl) = c glb glbl clÆ);
+a(REPEAT µ_tac THEN rewrite_tac(map get_spec[¨glblÆ, ¨FoldÆ]));
+val €glbl_lemma› = save_pop_thm"glbl_lemma";
