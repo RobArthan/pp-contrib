@@ -64,7 +64,7 @@ implementation of SWORD for the DRA front end filter project RSRE 1C/6130.}
 \subsection{Changes History}
 \begin{description}
 \item[Issue \SCCSversion ({\FormatDate{$Date$%
-}}) ] First draft for internal review.
+}}) ] First draft for review by DRA.
 \end{description}
 
 \subsection{Changes Forecast}
@@ -130,7 +130,7 @@ the transformations.
 The idea is to identify the primitive operations on tables and on the
 security information in them which underlie the semantics of SSQL and
 its implementation via the transformations. This amounts to something like
-an SSQL analogue of the relational algebra in which security classifcations are
+an SSQL analogue of the relational algebra in which security classifications are
 computed along with the data operations. The critical properties
 of \cite{DS/FMU/FEF/026} may then be rephrased to say something like
 ``provided the SSQL Transformation Processor always produces TSQL query
@@ -141,7 +141,7 @@ in a way which reflects the syntactic formulation of the transformations
 in \cite{trans}, the proviso here is amenable to informal checking, and as
 the semantic framework in which these computations are formalised is
 much simpler than the syntactic one, their information flow properties
-is amenable to formal reasoning.
+are amenable to formal reasoning.
 
 The definitions of the computations are formally related to the
 security policy by using them to characterise a class of table
@@ -313,7 +313,7 @@ by the present work.
 After these simplifications, there are really only
 two semantically distinct syntactic sorts left, namely {\em values},
 denoting the sort of things which appear in the fields of a database
-row,, and, {\em tables}, denoting whole tables.  The correspondence
+row, and, {\em tables}, denoting whole tables.  The correspondence
 between this simplified view of sorts and that of the SSQL
 specification of \cite{specssql} is shown in the following table:
 
@@ -1342,7 +1342,7 @@ auxiliary to remove duplicate items from a list.
 Ü	in	(cl lub lubl cll, rem_dups(Project ts tl sellist gps))
 °
 N.B. the above is known not to be secure
-(see section\ref{OmissionsandAssumptions})
+(see section~\ref{OmissionsandAssumptions})
 and its uses have been commented out later on.
 \subsection{$Evaluate$}\label{Evaluate}
 Like $DistinctTuples$ this is very similar to $AllTuples$
@@ -1366,7 +1366,7 @@ Like $DistinctTuples$ this is very similar to $AllTuples$
 Ü	in	(cl lub lubl cll, EvalProject ts tl sellist gps)
 °
 N.B. the above is known not to be secure
-(see section\ref{OmissionsandAssumptions})
+(see section~\ref{OmissionsandAssumptions})
 and its uses have been commented out later on.
 \pagebreak
 \section{CLOSURE OPERATION}\label{CLOSUREOPERATION}
@@ -1499,33 +1499,9 @@ check must fail on $tl$. (For simplicity, and because that is the line
 taken in \cite{trans}, we actually insist that the check query fail
 by producing some rows rather than by causing an error to be signalled.)
 
-We now define two assertions which we conjecture to be true
-of the above. The first of these conjectures asserts that the
-condition $OkSTP$ is sufficient to ensure the condition $STP\_Secure\_E$
-of \cite{DS/FMU/FEF/026}; the second conjecture asserts that the
-table computations defined in the previous section do have
-the $OkTableComputation$ property.
-
-¹HOLCONST
-Ü	ÛOkSTP_Secure_E_Lemmaİ : BOOL
-÷üüüüüüüüüüüüüüüüüüüüüüüüü
-Ü	OkSTP_Secure_E_Lemma ¤
-Ü	µcompile·
-Ü		(OkSTP compile: (Query, FILTER_PARS)STP_TYPE ğ) €
-Ü		STP_secure_E compile
-°
-In the above, the type constraint is required, since
-for technical reasons connected with the primitive definitional
-mechanisms of \Product, it is necessary to constrain the assertion to the
-particular type of SSQL Transformation Processors with which we are concerned
-rather than leaving the set as a polymorphic one. 
-¹HOLCONST
-Ü	ÛTableComputationsOk_Lemmaİ
-÷üüüüüüüüüüüüüüüüüüüüüüüüü
-Ü	TableComputationsOk_Lemma ¤
-Ü	µcc· TableComputations cc € OkTableComputation cc
-°
-
+The relationship of the notions defined in this section and the critical
+properties for the SWORD system as a whole is discussed and formalised
+in \cite{DS/FMU/FEF/034}.
 
 \section{CLOSING DOWN}
 The following \Product{} instruction restores the previous proof context.
@@ -1540,7 +1516,6 @@ output_theory{theory = "fef032",out_file = "fef032th.doc"};
 \newpage
 \HOLindexOff
 \ftlinepenalty=9999
-\footnotesize
 \input{fef032th.tex}
 \HOLindexOn
 \newpage
@@ -1549,72 +1524,3 @@ output_theory{theory = "fef032",out_file = "fef032th.doc"};
 \printindex
 =TEX
 \end{document}
-=IGN
-
-
-
-The set of computations on tables which are allowed to be produced
-when queries generates by the SQL Transformation Processor are
-compiled will essentially be defined
-by taking the closure under composition
-of a finite set of particular
-operations adequate to represent the primitive constructs of TSQL.
-The closure is formed using the following function:
-
- ¹HOLCONST
- Ü	ÛCompClosureİ	:	('a LIST ­ 'a) SET
- Ü			­	('a LIST ­ 'a) SET
- ÷üüüüüüüüüüüüüüüüüü
- Ü	µfs·	CompClosure fs
- Ü	=	¥
- Ü		{	a
- Ü		|	fs € a
- Ü		±	µh gl il·
- Ü				h  a ± Elems gl € a ± Elems il € 1 .. Length gl
- Ü			´	let	irl tl = Map (Ìg·g tl) gl
- Ü				in let	comp tl = h (Map (Nth(irl tl)) il)
- Ü				in	comp  a}
- °
-That is to say, the closure under composition of a set of functions, $fs$,
-is the smallest set of functions which contains $fs$ and is closed
-under the operation which given a function $h$, a list of functions $gl$,
-and a list of numbers $il$, returns the function which first applies
-each function in $gl$ to produce a list of intermediate results, uses
-$il$ as indices to select some or all of the intermediate results in some
-order and then applies $h$ to the result. For example, if
-=INLINEFT
-gl = [g‰1; g‰2; g‰3]
-=TEX
-\ and
-=INLINEFT
-il = [3; 1; 1; 2]
-=TEX
-, the composite function is
-=INLINEFT
-Ì tl· h [g‰3 tl; g‰1 tl; g‰1 tl; g‰2 tl]
-=TEX
-.
-=IGN
-PC_C1 "hol1" rewrite_conv(map get_spec[¬Map®, ¬Nth®, ¬Let®])
-¬let	irl tl = Map (Ìg·g tl) [g‰1; g‰2; g‰3]
-in let	comp tl = h (Map (Nth(irl tl)) [3; 1; 1; 2])
-in	comp®;
-=TEX
-
-
-As with operations on tables, we define the {\em risk inputs} of
-an expression $e$ at a class $c$ to be the set inputs for which $e$
-reveals information which should not be visible at class $c$.
-
- ¹HOLCONST
- Ü	ÛExpRiskInputsİ	: Class ­ VALUE_COMP ­ DerTableRow ğ
- ÷üüüüüüüüüüüüüüüüüü
- Üµcc e ·	ExpRiskInputs cc e
- Ü	=	{	r
- Ü		|	¶r‰0 ·
- Ü			HideDerTableRow cc r‰0 = HideDerTableRow cc r
- Ü		±	let	(c, i) = e r
- Ü			in let	(c‰0, i‰0) = e r‰0
- Ü			in	³i = i‰0
- Ü			±	³(c dominates cc ± c‰0 dominates cc)}
- °
