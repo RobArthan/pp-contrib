@@ -1,0 +1,1218 @@
+=TEX
+% TQtemplate.tex
+\documentstyle[hol,11pt,TQ]{article}
+\ftlinepenalty=9999
+\def\Hide#1{}
+\def\Bool{``$\it{:}bool\,$''}
+\makeindex
+\TPPproject{DRA FRONT END FILTER PROJECT}  %% Mandatory field
+%\TPPvolume{}
+%\TPPpart{}
+\TPPtitle{Specifications of $hide$ and $update\_state$}  %% Mandatory field
+\TPPref{DS/FMU/FEF/004}  %% Mandatory field
+\def\SCCSversion{$Revision$
+}
+\TPPissue{\SCCSversion}  %% Mandatory field
+\TPPdate{\FormatDate{$Date$
+}}  %% Mandatory field (with sensible default)
+\TPPstatus{Draft}			%% Mandatory field
+\TPPtype{Specification}
+\TPPkeywords{}
+\TPPauthor{G.~M.~Prout & WIN01}  %% Mandatory field
+%\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
+\TPPauthorisation{R.B.~Jones & HAT Manager}
+\TPPabstract{The formal specifications of the functions $hide$ and $update\_state$  for the
+DRA front end filter project RSRE 1C/6130.}
+%\TPPabstractB{}
+%\TPPabstractC{}
+%\TPPabstractD{}
+%\TPPabstractE{}
+%\TPPabstractF{}
+\TPPdistribution{\parbox[t]{4.0in}{%
+	HAT FEF File \\
+	Simon Wiseman
+}}
+%\TPPclass{CLASSIFICATION}
+\newfont{\icllogo}{icllogo50}
+\def\TPPheadlhs{$\vcenter{\halign{##\cr\icllogo ICL\cr}}$}
+%\def\TPPheadlhs{}
+%\def\TPPheadcentre{}
+%def\TPPheadrhs{}
+%\def\TPPfootlhs{}
+%\def\TPPfootcentre{}
+%\def\TPPfootrhs{}
+
+\begin{document}
+\TPPsetsizes
+\makeTPPfrontpage
+
+\vfill
+\begin{centering}
+
+%\bf Copyright \copyright\ : International Computers Ltd \number\year
+
+\end{centering}
+
+\newpage
+\section {DOCUMENT CONTROL}
+\subsection{Contents List}
+\tableofcontents
+\subsection{Document Cross References}
+\bibliographystyle{fmu}
+\bibliography{fmu,fef}
+
+\subsection{Changes History}
+\begin{description}
+\item[1.1] First draft version.
+\end{description}
+
+\subsection{Changes Forecast}
+Changes  may be necessary  as a result of issues raised
+during  the transcription of the specification.
+\pagebreak
+\section{GENERAL}
+\subsection{Scope}
+This document gives a formal specification of the functions $hide$ and $update\_state$. It constitutes deliverable D2 of work package 1a, as given
+in section 7 of the Secure Database Technical Proposal, \cite{DS/FMU/017}.
+
+\subsection{Introduction}
+In the Secure Database Technical Proposal, \cite{DS/FMU/017}, we stated that we propose to formalise the semantics of SSQL, supplied initially in Annex 2, {\em SSQL Abstract Machine}, to the ITT \cite{ittdra}, in a manner suitable for the required security proof, as 
+outlined in \cite{DS/FMU/017}.  This involves the specific
+features of the semantics which ensure that query 
+processing is $secure$ be clearly separated from the purely functional aspects. This results in the formalisation of the semantics of
+SSQL being presented in three main parts:
+\begin{enumerate}
+\item
+A function $hide$ on the state of the database which returns a sanitised state of the database. This version of the database does not
+include any information the existence
+of which the user is not cleared to know, nor does it contain the true value of any field which the user is not cleared to see.
+\item
+The main functionality of SSQL, i.e. how the 
+result of a query is computed from the state of the database.
+\item
+A function $update\_state$ which applies the update determined in (2) to the database.This function is responsible for capturing the security
+constraints associated with updates.
+\end{enumerate}
+
+This document provides the functions $hide$ and $update\_state$ described above.
+
+
+\section{PRELIMINARIES}
+The following ICL HOL instructions set up the new theory $fef004$.
+ๅ
+close_theory();
+load_theory "fef003";
+new_theory"โfef004แ";
+ๆ
+\section{DATA TYPES IN THE STATE}
+In this section, we provide formal specifications of enough of the SSQL semantics to enable the state of the system to be defined.
+
+ 
+We first define a {\it String} as a sequence 
+of {\it Char}.
+่
+Ý	[โCharแ]
+ๆ
+
+่
+Ý	โStringแ == seq Char
+ๆ
+
+The types $ํ$ and $bool$ are already defined in the system.
+
+่
+ÝBool == bool
+ๆ
+
+่
+Ý	โNumแ == {n : ํ|n  0}
+ๆ
+
+๊
+Ý	โIdeแ : String
+ห
+
+้โIntแออออออออออออออ฿
+Ý	mantissa 	: Num;
+Ý	exponent	: Num
+สอออออออออออออออออเ
+
+้โFloatแอออออออออออออ฿
+Ý	mantissa 	: Num;
+Ý	exponent	: Num
+สอออออออออออออออออเ
+
+We define $Time$, $Interval$ and $Code$ as given sets.
+
+่
+Ý	[โTimeแ,โIntervalแ,โCodeแ]
+ๆ
+
+$bottom$ is the classification dominated by everything.
+
+๊
+Ý	โbottomแ : Class
+ษออออออออออออออออออออออออออออออ
+Ý	 c : Class  c dominates bottom
+ห
+
+We have removed `error' from the domain of possible errors
+since things that are partial functions
+will be modelled as partial functions.
+
+่
+Ý	โErrorแ ::= notCleared
+Ý		|tooWide
+Ý		|tooTall
+Ý		|wrongType
+Ý		|nullValue
+Ý		|noSuchColumn
+Ý		|ambigiousColumn
+Ý		|ambigiousUpdate
+Ý		|mayNotBeComplete
+Ý		|underClassified
+Ý		|downGrade
+Ý		|classChange
+Ý		|noSuchTable
+Ý		|noSuchDirectory
+Ý		|ambiguousEvaluate
+Ý		|ambiguousHaving
+Ý		|nonUniformValues
+Ý		|nonUniqueValues
+Ý		|noNulls
+Ý		|fieldClassOutOfRange
+Ý		|rowClassTooLow
+Ý		|noAccess
+ๆ
+
+
+่
+Ý	โWorthแ ::= worthless
+Ý		|dinary
+Ý		|sterling
+Ý		|priceless
+ๆ
+
+่
+Ý	โValแ ::= void
+Ý		| mk_Bool พพ Bool ฟฟ
+Ý		| mk_String พพ String ฟฟ
+Ý		| mk_Int พพ Int ฟฟ
+Ý		| mk_Float พพ Float ฟฟ
+Ý		| mk_Time พพ Time ฟฟ
+Ý		| mk_Interval พพ Interval ฟฟ
+Ý		| mk_Class พพ Class ฟฟ
+Ý		| exception
+ๆ
+
+้โValuedItemแออออออออออออออ฿
+Ý	worth 	: Worth;
+Ý	val	: Val
+สอออออออออออออออออออออเ
+
+่
+Ý	โNullItemแ ::= null
+ๆ
+
+่
+Ý	โItemแ ::= mk_ValuedItem พพ ValuedItem ฟฟ
+Ý		| mk_NullItem พพ NullItem ฟฟ
+ๆ
+
+้โDataแออออออออออออออ฿
+Ý	class 	: Class;
+Ý	item	: Item
+สออออออออออออออออออเ
+
+่
+Ý	โUpdateแ ::= mk_Update_Item พพ Item ฟฟ
+Ý		| mk_Update_Class พพ Class ฟฟ
+Ý		| mk_Update_Data พพ Data ฟฟ
+ๆ
+
+
+้โCharsแออออออออออออออ฿
+Ý	minLength 	: Num;
+Ý	maxLength	: Num
+สออออออออออออออออออเ
+
+้โIntegerแออออออออออออออ฿
+Ý	min 	: Int;
+Ý	max	: Int;
+Ý	scale	: Int
+สออออออออออออออออออเ
+
+้โFloatingแออออออออออออออ฿
+Ý	minMant	: Int;
+Ý	maxMant	: Int;
+Ý	minExp	: Int;
+Ý	maxExp	: Int
+สออออออออออออออออออเ
+
+
+่
+Ý	โTypeแ ::= monolean
+Ý		| boolean
+Ý		| mk_Chars พพ Chars ฟฟ
+Ý		| mk_Integer พพ Integer ฟฟ
+Ý		| mk_Floating พพ Floating ฟฟ
+Ý		| time
+Ý		| interval 
+Ý		| class 
+ๆ
+
+่
+Ý	โErrorsแ == seq Error
+ๆ
+
+
+้โColSpecแออออออออออออออ฿
+Ý	ide 		: Ide;
+Ý	posn		: Num;
+Ý	dinaryType	: Type;
+Ý	sterlingType	: Type;
+Ý	nullType	: Bool;
+Ý	default		: Data;
+Ý	consGroup	: Num;
+Ý	min		: Class;
+Ý	max		: Class
+สออออออออออออออออออเ
+
+
+
+We intend to remove $Error$ from the state of the data base and
+ provide 
+access functions  which return either a data type or an error.
+
+We wish to remove some of the redundancy from $TableSpec$ by having
+a component which is a set of $ColSpec$ instead of the (partial)
+functions $ColSpecs$ and $ColPosns$. We therefore define the retrieval functions $ColSpecs$
+and $ColPosns$
+in terms of $ColSpec$.
+
+๊
+Ý	โColSpecsแ : ‘ ColSpec  Ide – ColSpec
+ษออออออออออออออออออออออออออออออ
+Ý	 cs : ‘ ColSpec
+Ý		ColSpecs cs = {c : cs |true  c.ide — c}
+ห
+
+๊
+Ý	โColPosnsแ : ‘ ColSpec  Num – ColSpec
+ษออออออออออออออออออออออออออออออ
+Ý	 cs : ‘ ColSpec
+Ý		ColPosns cs = {c : cs |true  c.posn — c}
+ห
+
+
+่
+Ý	โTabแ == seq Ide 
+ๆ
+
+้โReferenceแออออออออออออออ฿
+Ý	table 	: Tab;
+Ý	group	: Num
+สออออออออออออออออออเ
+
+้โColConแอออออออออออออออออออออ฿
+Ý	exist 		: Class;
+Ý	uniform	: Bool;
+Ý	unique		: Bool;
+Ý	classLimited	: Bool;
+Ý	primary	: Bool;
+Ý	secondary	: Bool;
+Ý	referential	: seq Reference
+สออออออออออออออออออออออออออเ
+
+่
+Ý	โColConsแ == Num – ColCon
+ๆ
+
+้โRowแออออออออออออออ฿
+Ý	exist 	: Class;
+Ý	data	: seq Data
+สออออออออออออออออออเ
+
+้โTableSpecแออออออออออออออ฿
+Ý	class 			: Class;
+Ý	maxRow		: Class;
+Ý	colspecs		: ‘ ColSpec;
+Ý	cons			: ColCons;
+Ý	rows			: seq Row
+สออออออออออออออออออเ
+
+A table without  the rows component.
+
+่
+Ý	โTableSpecminrowsแ == TableSpec ฤี (rows)
+ๆ
+
+A function which replaces the rows in a table with  given rows.
+
+๊
+Ý	โreplaceRowsแ : TableSpec  seq Row  TableSpec
+ษออออออออออออออออออออออออออออออ
+Ý
+Ý	TableSpec;TableSpec';sr:seq Row 
+Ý	| ญTableSpecminrows = ญTableSpecminrows'
+Ý	€ rows' = sr 
+Ý	 replaceRows (ญTableSpec)  sr = ญTableSpec'
+ห
+
+่
+Ý	โTableSpecsแ == Ide – TableSpec
+ๆ
+
+้โDirectoryแออออออออออออออ฿
+Ý	tables 		: TableSpecs;
+Ý	exist		: Class;
+Ý	class		: Class
+สออออออออออออออออออเ
+
+
+่
+Ý	โStateแ == seq Ide – Directory
+ๆ
+
+We have chosen not to model $Result$. A $Result$ is either some $Data$
+or just a $Class$ (when the user is not cleared to 
+observe the actual value). In effect, we always have some $Data$; in
+the case when the user is not cleared to see the value, the value will be $Hidden$ anyway.
+
+\section{ACCESS FUNCTIONS}
+
+We would like to define a generic free type that returns
+either  a value or an error.
+This is illegal in Z, so we achieve the same effect in the 
+following way:
+
+
+๋[X,ERROR]
+Ýmk_X 		: X 	 X  ERROR  {0};
+Ýmk_ERROR 	: ERROR  X  ERROR  {1}
+ษออออออออออออออออออออออออออออออ
+Ý	 xฐ, xฌ : X;eฐ, eฌ : ERROR
+Ý		(xฐ  xฌ  mk_X  xฐ  mk_X xฌ)
+Ý	€	(eฐ  eฌ  mk_ERROR eฐ  mk_ERROR eฌ)
+ห
+
+่
+Ý	โXorErrorแ[X,ERROR] == (ran mk_X[X,ERROR]) ก (ran mk_ERROR[X,ERROR])
+ๆ
+
+We need discriminator functions and destructor functions.
+
+๋[X,ERROR]
+Ýis_X 		: XorError[X,ERROR]  Bool;
+Ýis_ERROR 	: XorError[X,ERROR]  Bool
+ษออออออออออออออออออออออออออออออ
+Ý	 x : XorError[X,ERROR]
+Ý		is_X x  ( v:X  x = mk_X v) 
+Ý	€	is_ERROR x  (e:ERROR  x = mk_ERROR e) 
+ห
+
+๋[X,ERROR]
+Ýdest_X 	: XorError[X,ERROR]  X;
+Ýdest_ERROR 	: XorError[X,ERROR]  ERROR
+ษออออออออออออออออออออออออออออออ
+Ý	 xe : XorError[X,ERROR];x:X;e:ERROR
+Ý		xe = mk_X x  dest_X xe = x
+Ý	€	xe = mk_ERROR e  dest_ERROR xe = e
+ห
+
+
+Now we define  access functions for $ColSpec$ (from an identifier and a column position), $TableSpec$ and $Directory$.
+
+๊
+Ý	โgetColIdeแ : ‘ ColSpec  Ide  XorError[ColSpec,Errors]
+ษออออออออออออออออออออออออออออออ
+Ý	 cs :  ‘ ColSpec; i : Ide
+Ý		i  dom (ColSpecs cs)  getColIde cs i = mk_X ((ColSpecs cs) i)
+Ý	€	(i  dom (ColSpecs cs))  getColIde cs i = mk_ERROR พnoSuchColumnฟ
+ห
+
+๊
+Ý	โgetColPosแ : ‘ ColSpec  Num  XorError[ColSpec,Errors]
+ษออออออออออออออออออออออออออออออ
+Ý	 cs :  ‘ ColSpec; n : Num
+Ý		n  dom (ColPosns cs)  getColPos cs n = mk_X ((ColPosns cs) n)
+Ý	€	(n  dom (ColPosns cs))  getColPos cs n = mk_ERROR พnoSuchColumnฟ
+ห
+
+๊
+Ý	โgetTabแ : TableSpecs  Ide  XorError[TableSpec,Errors]
+ษออออออออออออออออออออออออออออออ
+Ý	 ts :  TableSpecs; i : Ide
+Ý		i  dom ts  getTab ts i = mk_X (ts i)
+Ý	€	(i  dom ts)  getTab ts i = mk_ERROR พnoSuchTableฟ
+ห
+
+๊
+Ý	โgetDirแ : State  seq Ide  XorError[Directory,Errors]
+ษออออออออออออออออออออออออออออออ
+Ý	 s : State; i : seq Ide
+Ý		i  dom s  getDir s i = mk_X(s i)
+Ý	€	(i  dom s)  getDir s i = mk_ERROR พnoSuchDirectoryฟ
+ห
+
+
+\section{$hide$}
+\subsection{Hiding a Directory within a State}
+Any directories about whose existence the user is 
+not classified to know can be hidden from the state.
+
+๊
+Ý	โhideDirectoryแ : Class  State  State
+ษออออออออออออออออออออออออออออออ
+Ý	 c : Class; s : State;i : dom s
+Ý	 	(c dominates (s i).exist)
+Ý			hideDirectory(c,s) = s ฤ {(i,(s i))}
+Ý	€	(c dominates (s i).exist)
+Ý			hideDirectory(c,s) = s
+ห
+
+NOTE - it may be necessary to introduce a state invariant
+to ensure that all sub-directories of a directory about 
+whose existence the user is 
+not classified to know are also removed from the state.
+
+\subsection{Replacing a Table within a Directory}
+
+A function which replaces a table in a directory with a given table:
+
+๊
+Ý	โreplaceTableแ : Directory  TableSpec  Ide  Directory
+ษออออออออออออออออออออออออออออออ
+Ý	 dir,dir' : Directory;tab : TableSpec;i : Ide
+Ý	|	dir'.tables = dir.tables • {(i,tab)}
+Ý	€ 	dir'.exist = dir.exist
+Ý	€ 	dir'.class = dir.class
+Ý	 	replaceTable dir tab i = dir'
+ห
+
+\subsection{Hiding a Table within a State}
+Any tables  about whose existence the user is 
+not classified to know can be hidden from the state. These are all the
+tables in a directory whose $class$ component is not
+dominated by the user's clearance(i.e. the user is classified to
+know the existence of the directory, but is not classified to
+see the structure of the directory).
+First  these tables  are removed from the directory, then the state
+ is amended by replacing the directory with the new directory that has had the tables removed from it.
+
+
+๊
+Ý	โhideTableแ : Class  State  State
+ษออออออออออออออออออออออออออออออ
+Ý	 c : Class; s : State;seqi : dom s;dir,dir' : Directory  
+Ý	| 	dir = s seqi
+Ý	€ 	dir'.tables = {}
+Ý	€ 	dir'.exist = dir.exist
+Ý	€ 	dir'.class = dir.class
+Ý	 	(c dominates dir.class)
+Ý			hideTable(c,s) =  s • {(seqi,dir')}
+Ý	€	(c dominates dir.class)
+Ý			hideTable(c,s) = s
+ห
+
+In the case where the user is permitted to know of the existence of a table, but is not permitted
+to access it, i.e. his clearance does not dominate the table class, an `empty' table is left in the 
+directory in place of that table.
+
+๊
+Ý	โleaveStubแ : Class  State  State
+ษออออออออออออออออออออออออออออออ
+Ý	 c : Class; s : State; seqi : dom s; dir : Directory; i : dom dir.tables; ts,ts' : TableSpec
+Ý	| 	dir = s seqi
+Ý	€ 	ts = dir.tables i
+Ý	€	ts'.class = ts.class
+Ý	€	ts'.maxRow = ts.maxRow
+Ý	€	ts'.colspecs = {}
+Ý	€	ts'.cons = {}
+Ý	€	ts'.rows = พฟ
+Ý		(c dominates ts.class)
+Ý			leaveStub(c,s) = s • {(seqi,(replaceTable dir ts' i))}
+Ý	€	c dominates ts.class 
+Ý			leaveStub(c,s) = s
+ห
+
+\subsection{Sanitising a Table}
+
+To `sanitise' a table:
+\begin{enumerate}
+\item
+Remove  any rows about whose existence the user is 
+not classified to know.
+\item
+Remove any  columns about whose existence the user is 
+not classified to know. 
+\item
+Replace data that the user is
+not classified to see by  dummy values.
+\end{enumerate}
+\subsubsection{Remove Rows from Table}
+To hide from a table any rows about whose existence the user is 
+not classified to know,  remove the relevant rows from the sequence of rows and replace the original rows of the table with this filtered sequence.
+๊
+Ý	โhideRowsแ : Class  TableSpec  TableSpec
+ษออออออออออออออออออออออออออออออ
+Ý	 c : Class; ts : TableSpec
+Ý	 	hideRows(c,ts) = replaceRows ts (ts.rows ม {r:Row|c dominates r.exist})
+ห
+\subsubsection{Remove Columns from Table}
+
+To hide columns from a table,  it is necessary to check the existence class  
+of groups of columns. If the user is 
+not classified to know the existence of a group of columns, then the group of columns must be removed from the table. This means removing all reference to the 
+identified columns in the $colspecs$  and $colposns$, removing the group number
+from the column group constraints and removing the actual data from each row. 
+First, identify which groups are to be removed.
+ 
+๊
+Ý	โgroups_to_be_hiddenแ : Class  TableSpec  seq Num
+ษออออออออออออออออออออออออออออออ
+Ý	 c : Class; ts : TableSpec
+Ý	 	groups_to_be_hidden(c,ts) =  id Num ม{n : Num|(c dominates (ts.cons n).exist)}
+ห
+
+
+Next, hide a  single group  of columns in a table.
+
+A function to remove data from given positions in the row.
+
+๊
+Ý	โremove_data_from_rowแ : ‘ Num  Row  Row
+ษออออออออออออออออออออออออออออออ
+Ý	 r,r' : Row; ns : ‘ Num
+Ý	| 	r'.exist = r.exist 
+Ý	€	r'.data = r.data ม {n : dom r.data|n “ ns  r.data n} 
+Ý	 	remove_data_from_row ns r= r'
+ห
+
+
+Then hide the group of columns.
+
+๊
+Ý	โhide_groupแ : TableSpec  Num  TableSpec
+ษออออออออออออออออออออออออออออออ
+Ý	 ts,ts' : TableSpec;n :  Num;colnums: ‘ Num 
+Ý	| 	ts'.class = ts.class
+Ý	€ 	ts'.maxRow = ts.maxRow
+Ý	€ 	ts'.colspecs = ts.colspecs ฤ {cs : ColSpec|cs.consGroup = n} 
+Ý	€ 	ts'.cons = ts.cons ฤ {(n, (ts.cons n))}
+Ý	€ 	colnums = {cs : ColSpec|cs.consGroup = n  cs.posn}
+Ý	€ 	ts'.rows = ts.rows ฏ remove_data_from_row colnums
+Ý	 	hide_group(ts,n) = ts'
+ห
+
+Hide all groups of columns from a table.
+
+๊
+Ý	โhide_groupsแ : TableSpec  seq Num  TableSpec
+ษออออออออออออออออออออออออออออออ
+Ý	 ts: TableSpec; ns,tl: seq Num; h:Num
+Ý	 	ns = พฟ
+Ý		 hide_groups ts ns = ts
+Ý	€	ns = พhฟ ต tl
+Ý		 hide_groups ts ns = hide_groups (hide_group(ts,h)) tl		
+ห
+
+Finally, hide from a table all groups of columns about whose existence the user is 
+not classified to know.
+
+
+๊
+Ý	โhide_colsแ : Class  TableSpec   TableSpec
+ษออออออออออออออออออออออออออออออ
+Ý	 c : Class; ts: TableSpec; ns: seq Num
+Ý	| 	ns = groups_to_be_hidden(c,ts)
+Ý	 	hide_cols(c,ts) = hide_groups ts ns	
+Ý	
+ห
+
+\subsubsection{Replace Data in a Row with Dummy Data}
+
+Data consists of a classification and an item of data. An item of data that a 
+user is not cleared to see is replaced by a dummy string $Hidden$
+(its classification remains).
+
+๊
+Ý	โHiddenแ : String
+ห
+
+๊
+Ý	โdummyValแ : Val
+ษออออออออออออออออออออออออออออออ
+Ý	dummyVal = mk_String Hidden
+ห
+
+A function to replace  the value of a piece of data 
+ that the user is
+not cleared to see by a dummy value. 
+
+๊
+Ý	โcleanแ : Class  Data  Data
+ษออออออออออออออออออออออออออออออ
+Ý	 c : Class;d,d' : Data; vi : ValuedItem
+Ý	|	d'.class = d.class
+Ý	€	vi.worth = worthless
+Ý	€	vi.val = dummyVal
+Ý	€	d'.item = mk_ValuedItem vi
+Ý	 	(c dominates d.class) 
+Ý		 	clean c d = d'
+Ý	€	c dominates d.class 
+Ý		 	clean c d = d
+ห
+
+A function to $clean$ all the data in  a row.
+
+๊
+Ý	โclean_data_in_rowแ : Class  Row  Row
+ษออออออออออออออออออออออออออออออ
+Ý	 c : Class;r,r' : Row
+Ý	|	r'.data	= r.data ฏ clean c
+Ý	€	r'.exist = r.exist
+Ý		clean_data_in_row c r = r'
+ห
+
+\subsubsection{Clean all Data in a Table}
+
+$cleanTable$ brings together the functions from the above three subsections.
+
+๊
+Ý	โcleanTableแ : Class  TableSpec  TableSpec
+ษออออออออออออออออออออออออออออออ
+Ý	 c : Class; ts,ts':TableSpec
+Ý	| 	ts' = (hide_cols(c,hideRows(c,ts)))
+Ý	 	cleanTable(c,ts) 
+Ý		= 
+Ý		replaceRows ts'(ts'.rows ฏ(clean_data_in_row c))
+ห
+
+
+\subsection{Specification of $hide$}
+
+The $hide$ function takes a state and :
+\begin{itemize}
+\item
+Hides all directories about whose existence the user is not classified to know.
+\item
+Hides all tables about whose existence the user is not classified to know.
+\item
+Replaces all tables the user is not permitted to access by `empty' tables.
+\item
+Replaces all directories by directories whose tables have been `cleaned'. i.e. have
+been replaced by tables where all rows and columns  about whose 
+existence the user is not classified to know are hidden, and all data the user is
+not classified to see has been replaced by dummy data.
+\end{itemize}
+
+๊
+Ý	โhideแ : Class  State  State
+ษออออออออออออออออออออออออออออออ
+Ý	 c : Class; s,s' : State; seqi : dom s; dir : Directory; i : dom dir.tables; tab : TableSpec
+Ý	| 	dir = s seqi
+Ý	€ 	tab = dir.tables i
+Ý	€ 	s' = leaveStub(c,hideTable(c,hideDirectory(c,s)))
+Ý	 	hide(c,s)   
+Ý		=  
+Ý		s' • {(seqi,(replaceTable dir (cleanTable(c,tab)) i))}
+ห
+
+\section{$update\_state$}
+We have not taken into account that it may be necessary to have as a state invariant
+that  column existence classifications
+are in ascending order.
+\subsection{Auxiliary Functions}
+A function that takes a sequence of sequences and flattens them into a single sequence.
+
+๋[X]
+Ý	โflattenแ :  seq (seq X)  seq X
+ษออออออออออออออออออออออออออออออ
+Ý	 x,tl : seq (seq X);hd : seq X
+Ý		x = พฟ  flatten x = พฟ
+Ý	€	x = พhdฟ ต tl  flatten x = hd ต flatten tl
+ห
+
+When a user makes an update request on a row, the position of the row in
+a table will be its position after rows about whose existence the user is 
+not classified to know have been hidden. We require a function that returns the hidden row position given the 
+true row position.
+๊
+Ý	โhiddenPosnแ : seq Row  seq Row  Num – Num
+ษออออออออออออออออออออออออออออออ
+Ý	 old,new : seq Row
+Ý	 	hiddenPosn old new = {n1 : dom old;n2 : dom new | old n1 = new n2  n1 — n2}   
+ห
+
+We provide the auxiliary function $changeSpec$ (from Annex 2 {\em SSQL Abstract Machine})  which takes a full table name and a table and gives a new state.
+
+๊
+Ý	โchangeSpecแ : Tab  TableSpec  State  State
+ษออออออออออออออออออออออออออออออ
+Ý	 c : Class; s : State; seqi : dom s; dir : Directory; i : Tab; tab : TableSpec
+Ý	| 	dir = s seqi
+Ý	€ 	last i  dom dir.tables
+Ý	€ 	tab = dir.tables (last i)
+Ý	 	changeSpec i tab s 
+Ý		= 
+Ý		s • {(seqi,(replaceTable dir tab (last i)))}
+ห
+
+\subsection{Type of $Effect$}
+The functionality of the semantics of SSQL will be captured by the function $process\_query$ ,described in \cite{DS/FMU/017}.
+This function takes a query, a user's classification and a state and returns the result of the query, i.e., the output to be seen by the user,  an update to be applied to the data base and some error messages.
+The effect of a query depends on the type of the query.
+Insertions, deletions and updates either all succeed or all fail. i.e. any
+$mayNotbeComplete$ on inner selects result in no change to the data base.
+
+
+The `effect' of an insert query is a sequence of  sequences of data, 
+together with a full table name and (possibly) some errors. 
+Each element in the sequence will give a new row whose
+existence classification is the same as the user's clearance. Missing
+columns (i.e. columns that were hidden from the user) will be supplied with the default data for that column.
+
+่
+Ý	โInsertEffectแ == Tab  seq (seq Data)  Errors
+ๆ
+
+The `effect' of a delete query is a  full table name, a set of non-negative
+integers corresponding to which rows in the table's sequence of rows are to be deleted and (possibly) some errors. Note, these row positions will be relative to the hidden state of the database that the user sees, not
+its actual state. 
+
+่
+Ý	โDeleteEffectแ == Tab    ‘ Num  Errors
+ๆ
+
+The `effect' of an update query is a  full table name,  a partial function from row number
+to a partial function from column number to actual update and (possibly) some errors. Again, the row positions will be relative to the hidden state of the database that the user sees, not
+its actual state.
+
+่
+Ý	โUpdateEffectแ == Tab  (Num – (Num – Update))  Errors
+ๆ
+
+The `effect' of a select query is some data to be returned to the user (in fact, a sequence of sequence of $Data$) and (possibly) some errors.
+่
+Ý	โSelectEffectแ == seq (seq Data)  Errors
+ๆ
+
+This gives us the free type $Effect$.
+
+่
+Ý	โEffectแ ::= 	mk_insert พพ InsertEffect ฟฟ
+Ý		|	mk_delete พพ DeleteEffect ฟฟ
+Ý		|	mk_update พพ UpdateEffect ฟฟ
+Ý		|	mk_select พพ SelectEffect ฟฟ
+ๆ
+
+\subsection{Insert}
+
+The function $col\_defaults$ takes a non-empty sequence of  data and a table
+ and supplies a new sequence of data with
+appropriate default values (obtained from the table information) in  columns which were hidden to the user.
+
+๊
+Ý	โcol_defaultsแ :  TableSpec  seqฐ Data   seqฐ Data
+ษออออออออออออออออออออออออออออออ
+Ý	 d : seqฐ Data; ts : TableSpec
+Ý	 	# ts.colspecs = # d 
+Ý		 col_defaults ts d = d
+Ý	€	# ts.colspecs  # d 
+Ý		 col_defaults ts d = d ก {cs : ts.colspecs|cs.posn “ dom d  cs.posn — cs.default}
+ห
+
+
+A function which makes a new row at a given class from a non-empty sequence of data.
+
+๊
+Ý	โrow_from_dataแ :  Class  seqฐ Data  Row
+ษออออออออออออออออออออออออออออออ
+Ý	 c : Class; d : seqฐ Data; r : Row
+Ý	|	r.exist = c
+Ý	€	r.data = d
+Ý	 	row_from_data c d = r
+ห
+
+An insert query will fail if the user is not permitted to access the table.
+
+๊
+Ý	โinsert_queryแ :  Class  InsertEffect  State   State  Errors
+ษออออออออออออออออออออออออออออออ
+Ý	 c:Class; i:Tab; ds : seq (seq Data); e:Errors; s:State;ts,ts':TableSpec;rs : seq Row
+Ý	|	front i  dom s
+Ý	€	last i  dom (s (front i)).tables
+Ý	€	ts = (s (front i)).tables (last i)
+Ý	€	rs = ds ฏ col_defaults ts ฏ row_from_data c 
+Ý	€	ts' = replaceRows ts (ts.rows ต rs)
+Ý	 	c dominates ts.class
+Ý			ds = พฟ 
+Ý			 	insert_query(c,(i,ds,e),s) = (s,e)
+Ý			€
+Ý			ds  พฟ 
+Ý			 	insert_query(c,(i,ds,e),s) = (changeSpec i ts' s,e)
+Ý	€	(c dominates ts.class)
+Ý			insert_query(c,(i,ds,e),s) = (s,พnoAccessฟ ต e)
+ห
+
+\subsection{Delete}
+
+Delete all rows specified by $DeleteEffect$.  The row numbers supplied by $DeleteEffect$ correspond
+to the users view of the hidden state of the data base. In order to delete the correct rows from
+the true state of the data base, it is necessary to take into account those rows about whose
+existence the user is not classified to know. If the user were not permitted access to the table
+then the structure of the table would have been hidden from him and therefore the request would have failed.
+
+๊
+Ý	โdelete_queryแ :  Class  DeleteEffect  State   State  Errors
+ษออออออออออออออออออออออออออออออ
+Ý	 c:Class; i:Tab; ns,ns' : ‘ Num; e:Errors; s:State;ts,ts':TableSpec; seen : seq Row
+Ý	|	front i  dom s
+Ý	€	last i  dom (s (front i)).tables
+Ý	€	ts = (s (front i)).tables (last i)
+Ý	€	seen = ts.rows ม {r:Row|c dominates r.exist}
+Ý	€	ns' = {n:Num|(hiddenPosn ts.rows seen n)  ns}
+Ý	€	ts' = replaceRows ts (ts.rows ม {n:dom ts.rows|n “ ns'ts.rows n})
+Ý	 	ns = {} 
+Ý		 	delete_query(c,(i,ns,e),s) = (s,e)
+Ý		€	
+Ý		ns  {} 
+Ý		 	delete_query(c,(i,ns,e),s) = (changeSpec i ts' s,e)
+ห
+
+
+\subsection{Update}
+
+
+Perform the updates specified by $UpdateEffect$, provided that they do not
+violate the security policy. A user may change the value in a field (classification stays the same) provided the
+ field's classification dominates the user's clearance. A user may downgrade the classification of a field providing
+that the value in the field is overwritten.
+
+Firstly, consider an update request on a single field of data. This will either yield a new piece
+of data or an error message.
+
+๊
+Ý	โupdate_fieldแ :  Class  Class  Update  Data  XorError[Data,Error]
+ษออออออออออออออออออออออออออออออ
+Ý	 c,tc,upc:Class; td,upd,d',d'':Data; upit : Item;u:Update
+Ý	|	d'.class = td.class € d'.item = upit € d''.class = upc € d''.item = td.item
+Ý	 	c = tc € u = mk_Update_Item upit 
+Ý		 	update_field c tc u td = mk_X d' 
+Ý	€	c = tc € u = mk_Update_Class upc  
+Ý		 	upc dominates td.class 
+Ý			 update_field c tc u td= mk_X d''
+Ý		€	(upc dominates td.class) 
+Ý			 update_field c tc u  td= mk_ERROR(downGrade)
+Ý	€	c = tc € u = mk_Update_Data upd
+Ý		 	update_field c tc u td = mk_X upd
+Ý	€	c  tc € u = mk_Update_Item upit
+Ý		 	td.class dominates c
+Ý			 update_field c tc u td = mk_X d'
+Ý		€	(td.class dominates c) 
+Ý			 update_field c tc u td = mk_ERROR(underClassified) 
+Ý	€	c  tc € (u = mk_Update_Class upc  u = mk_Update_Data upd)
+Ý		 	update_field c tc u td = mk_ERROR(classChange)
+ห
+
+
+
+Now the effect of an update on a row.  A new row is only returned if all updates are secure; otherwise
+ a sequence of errors is returned. 
+
+๊
+Ý	โupdate_rowแ :  Class  Class  (Num – Update)  Row  XorError[Row,Errors]
+ษออออออออออออออออออออออออออออออ
+Ý	 c,tc:Class; us:Num – Update;r,r':Row;d,newd:seq Data;es :‘ (Num  Error);es':Errors;
+Ý		updates:Num – (Data  XorError[Data,Error]); updates': Num – Data	
+Ý	|	d =  r.data
+Ý	€	updates = us ฏ (update_field c tc)
+Ý	€	updates' = {n:dom updates;ds:dom(updates n)|truen — (dest_X ((updates n) ds))}
+Ý	€	newd = d • updates'
+Ý	€	r'.data = newd
+Ý	€	r'.exist = r.exist
+Ý	€	es = {n:dom updates;e:ran(updates n)|is_ERROR e  n — dest_ERROR e}
+Ý	€	es' = (id Num ม dom es) ฏ es
+Ý		es' = พฟ  update_row c tc us r = mk_X r'
+Ý	€	es'  พฟ  update_row c tc us r = mk_ERROR es' 
+ห
+
+
+Finally, the $update\_query$ function. 
+
+๊
+Ý	โupdate_queryแ :  Class  UpdateEffect  State   State  Errors
+ษออออออออออออออออออออออออออออออ
+Ý	 c:Class; i:Tab; us : Num – (Num – Update);rn : dom us; e,e':Errors;es:‘(Num  Errors);
+Ý	seen:seq Row;updates:Num – (Row  XorError[Row,Errors]);
+Ý	updates': Num – Row;s:State;ts,ts':TableSpec
+Ý	|	front i  dom s
+Ý	€	last i  dom (s (front i)).tables
+Ý	€	ts = (s (front i)).tables (last i)
+Ý	€	seen = ts.rows ม {r:Row|c dominates r.exist}
+Ý	€	updates = hiddenPosn ts.rows seen ฏ us ฏ (update_row c ts.class)
+Ý	€	updates' = {n:dom updates;r:dom(updates n)|truen — (dest_X ((updates n) r))}
+Ý	€	ts' = replaceRows ts (ts.rows • updates')
+Ý	€	es = {n:dom updates;e:ran(updates n)|is_ERROR e  n — dest_ERROR e}
+Ý	€	e' = flatten((id Num ม dom es) ฏ es)
+Ý	 	e' = พฟ 
+Ý		 	update_query(c,(i,us,e),s) = (changeSpec i ts' s,e)
+Ý		€
+Ý		e'  พฟ 
+Ý		 	update_query(c,(i,us,e),s) = (s,e' ต e)
+ห
+
+\subsection{Select}
+
+Select all data specified by $SelectEffect$.  
+
+
+๊
+Ý	โselect_queryแ :  Class  SelectEffect  State   seq (seq Data)  Errors
+ษออออออออออออออออออออออออออออออ
+Ý	 c:Class; s:State; d : seq (seq Data); e:Errors
+Ý	 	select_query(c,(d,e),s) = (d,e)
+ห
+
+\subsection{Specification of $update\_state$}
+The four functions $insert\_query$, $delete\_query$, $update\_query$ and $select\_query$ are put
+together to give $update\_state$.
+
+๊
+Ý	โupdate_stateแ : Class  Effect  State  
+Ý				State  (Class  (seq (seq Data)  Errors))
+ษอออออออออออออออออออออ
+Ý	 c : Class; s,s1,s2,s3 : State; i : Tab; rs : ‘ Num; e,e1,e2,e3,e4 : Errors;
+Ý		us : Num – (Num – Update);d,d1 : seq(seq Data)
+Ý	|	(s1,e1) = insert_query(c,(i,d,e),s)
+Ý	€	(s2,e2) = delete_query(c,(i,rs,e),s)
+Ý	€	(s3,e3) = update_query(c,(i,us,e),s)
+Ý	€	(d1,e4) = select_query(c,(d,e),s)
+Ý	 	update_state(c,mk_insert(i,d,e),s) = (s1,(c,(พฟ,e1)))
+Ý	€	update_state(c,mk_delete(i,rs,e),s) = (s2,(c,(พฟ,e2)))
+Ý	€	update_state(c,mk_update(i,us,e),s) = (s3,(c,(พฟ,e3)))
+Ý	€	update_state(c,mk_select(d,e),s) = (s,(c,(d,e)))
+ห
+\newpage
+\twocolumn[\section{INDEX} \label{INDEX}]
+\small
+\printindex
+
+\end{document}
+
+
+
+\subsection{Updating Field Values}
+
+First, an auxiliary  function which given a pair of sequences returns a sequence of pairs (of length the first).
+
+๋[X,Y]
+Ý	โseq_pairsแ : seq X   seq Y   seq (X  Y)
+ษอออออออออออออออออออออ
+Ý	 x : seq X;y : seq Y
+Ý		seq_pairs x y = {n : dom x | true  (n,(x n,y n))}
+ห
+
+Put together $replaceTable$ and $replaceDirectory$ to give $changeSpec$. (Table name must be full name).
+
+๊
+Ý	โchangeSpecแ : Tab  TableSpec  State  State
+ษออออออออออออออออออออออออออออออ
+Ý	 c : Class; s : State; seqi : dom s; dir : Directory; i : Tab; tab : TableSpec
+Ý	| 	dir = s seqi
+Ý	€ 	last i  dom dir.tables
+Ý	€ 	tab = dir.tables (last i)
+Ý	 	changeSpec i tab s 
+Ý		= 
+Ý		replaceDirectory s (replaceTable dir tab (last i)) seqi
+ห
+
+Check that data in new rows produced by update query does not violate security policy.
+If there is any violation, return the original rows.
+
+
+A client may change the value in a field (classification stays the same) provided the
+ field's classification dominates the user's clearance. A client may downgrade the classification of a field providing
+that the value in the field is overwritten.
+A client may upgrade the 
+ classification of a field. (New classification should be in range of columns allowable
+classifications - not an issue here but one of integrity). 
+
+๊
+Ý	โcheck_fieldแ : Class  (Data  Data)   Data
+ษอออออออออออออออออออออ
+Ý	 c : Class; oldd,newd: Data
+Ý	 	oldd.class = newd.class
+Ý		 	((oldd.class dominates c
+Ý				check_field c (oldd,newd) = newd)
+Ý			€
+Ý			((oldd.class dominates c)
+Ý				check_field c (oldd,newd) = oldd))
+Ý	€	oldd.class  newd.class € newd.class dominates oldd.class
+Ý			check_field c (oldd,newd) = newd
+Ý	€	oldd.class  newd.class € (newd.class dominates oldd.class)
+Ý			((oldd.item = newd.item
+Ý				check_field c (oldd,newd) = oldd)
+Ý			€
+Ý			((oldd.item = newd.item)
+Ý				check_field c (oldd,newd) = newd))
+ห
+
+If all updates in a row are secure, then return new row, otherwise return old row.
+
+๊
+Ý	โcheck_rowแ : Class  (Row  Row)   Row
+ษอออออออออออออออออออออ
+Ý	 c : Class; oldr,newr,r: Row
+Ý	|	r.data = (seq_pairs oldr.data newr.data) ฏ (check_field c)
+Ý	€	r.exist = oldr.exist
+Ý	 
+Ý		r = newr 
+Ý		 	check_row c (oldr,newr) = r
+Ý		€
+Ý		(r = newr)
+Ý			check_row c (oldr,newr) = oldr
+ห
+
+If all updates in a sequence of rows are secure, then return new rows, otherwise return old rows.
+
+๊
+Ý	โcheck_rowsแ : Class  (seq Row  seq Row)   seq Row
+ษอออออออออออออออออออออ
+Ý	 c : Class; oldrs,newrs,rs: seq Row
+Ý	|	rs = (seq_pairs oldrs newrs) ฏ (check_row c)
+Ý	 
+Ý		rs = newrs 
+Ý		 	check_rows c (oldrs,newrs) = rs
+Ý		€
+Ý		(rs = newrs)
+Ý			check_rows c (oldrs,newrs) = oldrs
+ห
+
+\subsection{Specification of $update\_state$}
+
+A client may only insert rows if either his clearance equals the max row existence class 
+of  the table (in which case he can see all the rows and thus cannot violate any uniqueness constraints) or his clearance equals the table class and there are no uniqueness constraints.
+
+A client may only delete rows if his clearance equals the row existence class of those rows.
+
+A client may only select or update if his clearance dominates that of the table classification.
+
+๊
+Ý	โupdate_stateแ : Class  Effect  State  
+Ý				State  (Class  (seq (seq Data)  Warning))
+ษอออออออออออออออออออออ
+Ý	 c : Class; st : State;tab : TableSpec; i : Tab; rs : seq Row; w : Warning; d : seq(seq Data)
+Ý	|	front i  dom st
+Ý	€	last i  dom (st (front i)).tables
+Ý	€	tab = (st (front i)).tables (last i)
+Ý	 	c = tab.maxRow  (c = tab.class € ( cc : ran tab.cons  cc.uniform = false))
+Ý			update_state (c,(mk_insert(i,rs)),st) 
+Ý			= 
+Ý			((changeSpec i (replaceRows tab (tab.rows ต rs)) st),(c,(พฟ,noMessage)))
+Ý	€	(c = tab.maxRow  (c = tab.class € ( cc : ran tab.cons  cc.uniform = false)))
+Ý			update_state (c,(mk_insert(i,rs)),st) = (st,(c,(พฟ,noMessage)))
+Ý	€	( r : ran rs  c = r.exist)
+Ý			update_state (c,(mk_delete(i,rs)),st) =
+Ý			((changeSpec i (replaceRows tab (tab.rows ม ran rs)) st),(c,(พฟ,noMessage)))
+Ý	€	( r : ran rs  c = r.exist)
+Ý			update_state (c,(mk_delete(i,rs)),st) = (st,(c,(พฟ,noMessage)))
+Ý	€	c dominates tab.class 
+Ý			update_state (c,(mk_update(i,rs)),st) 
+Ý			=
+Ý			((changeSpec i (replaceRows tab (check_rows c (tab.rows,rs))) st),
+				(c,(พฟ,noMessage)))
+Ý		€	update_state (c,(mk_select(d,w)),st) =(st,(c,(d,w)))
+Ý	€	(c dominates tab.class)
+Ý			update_state (c,(mk_update(i,rs)),st) = (st,(c,(พฟ,noMessage)))
+Ý		€	update_state (c,(mk_select(d,w)),st) =(st,(c,(พฟ,noMessage)))
+ห
+
+
+\section{SSQL Abstract Machine}
+
+
+ๅ
+close_theory();
+load_theory "fef004";
+new_theory"โfef005แ";
+ๆ
+
+We model a query as a given set.
+
+่
+Ý	[โQueryแ]
+ๆ
+
+We model the functionality of SSQL with $process\_query$, to be specified later.
+
+๊
+Ý	โprocess_queryแ : Query  Class  State  Effect
+ห
+
+Then define the SSQL transition function, $stf$.
+
+First, an abbreviation definition for the type of state transition functions.
+
+่
+Ý	โSTFแ == (Query  Class)  State  State  (Class  (seq(seq Data)  Warning))
+ๆ
+
+๊
+Ý	โstfแ : STF
+ษออออออออออออออออออออออออออออออ
+Ý
+Ý	q : Query;c : Class;st : State 
+Ý		stf((q,c),st)
+Ý		= 
+Ý		update_state(c,process_query(q,c,hide(c,st)),st)
+ห
+
+The critical requirement on the critical components of the system, $hide$
+and $update\_state$ is a requirement on the relation between $hide$
+and $update\_state$, i.e. on $stf$. If we have
+two classifications $c1$ and $c2$ and we update
+ the database at $c1$ and a change is visible at $c2$, then
+$c2$ must dominate $c1$.
+
+The function composition  operator which propagates errors.
+
+๋[X,Y,Z,ERROR]
+Ý	_โo1แ_ : (X  XorError[Y,ERROR])  (Y  XorError[Z,ERROR]) 
+Ý			 (X  XorError[Z,ERROR])
+ษออออออออออออออออออออออออออออออ
+Ý	 f:X  XorError[Y,ERROR];g:Y  XorError[Z,ERROR];x:X;y:Y;e : ERROR
+Ý	 f x = mk_X y  (f o1 g) x = g y
+Ý	€ f x = mk_ERROR e  (f o1 g) x = mk_ERROR e 
+ห
+
+
+
+้โschema7แ[X]อออออออออออออ฿
+Ý	a,b,c,d,e,f,g:X
+สอออออออออออออออออเ
+
+้โschema8แ[X]อออออออออออออ฿
+Ý	a,b,c,d,e,f,g,h:X
+สอออออออออออออออออเ
+้โschema9แ[X]อออออออออออออ฿
+Ý	a,b,c,d,e,f,g,h,i:X
+สอออออออออออออออออเ
+
+้โschema10แ[X]อออออออออออออ฿
+Ý	a,b,c,d,e,f,g,h,i,j:X
+สอออออออออออออออออเ
+้โschema11แ[X]อออออออออออออ฿
+Ý	a,b,c,d,e,f,g,h,i,j,k:X
+สอออออออออออออออออเ
+
+
+้โschema12แ[X]อออออออออออออ฿
+Ý	a,b,c,d,e,f,g,h,i,j,k,l:X
+สอออออออออออออออออเ
+
+
+
+
+
