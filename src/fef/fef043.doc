@@ -19,7 +19,7 @@
 \TPPstatus{Approved}			%% Mandatory field
 \TPPtype{Specification}
 \TPPkeywords{}
-\TPPauthor{R.~D.~Arthan & WIN01}  %% Mandatory field
+\TPPauthor{R.~B.~Jones & WIN01}  %% Mandatory field
 %\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
 \TPPauthorisation{R.B.~Jones & HAT Manager}
 \TPPabstract{A discussion and formalisation of an abstract `labelling property' for SWORD.
@@ -65,7 +65,7 @@
 \subsection{Changes History}
 \begin{description}
 \item[Issue \SCCSversion ({\FormatDate{$Date$
-}}) ] First draft. 
+}}) ] First draft for DRA. 
 
 \end{description}
 
@@ -95,7 +95,7 @@ in section 7 of the Proposal for Phase 3, \cite{DS/FMU/FEF/039}.
 \subsection{Introduction}
 
 The main source of difficulty in arriving at a satisfactory formalisation of the result labelling property is that the description of the required property in \cite[section 2.3]{securityprops} explicitly (and we believe essentially) refers to features specific to the query language under consideration.
-All the formulations of policy matters so far have avoided commitment to the details of the query language, and the complexity of this language would cause a very great impact on the clarity of the policy statment if the policy were to be expressed, as it appears to be informally, in terms of the syntax an semantics of queries.
+All the formulations of policy matters so far have avoided commitment to the details of the query language, and the complexity of this language would cause a very great impact on the clarity of the policy statement if the policy were to be expressed, as it appears to be informally, in terms of the syntax and semantics of queries.
 
 We therefore propose to define the required property relative to some factorisation of the the semantics of the query language which corresponds to the informal description in an appropriate way, without spelling out the details of this factorisation.
 
@@ -104,20 +104,17 @@ It is also essential that this property be formulated in relation to the pre-fil
 \subsection{The Specification}
 
 An index of the names used in the formal specification may be found in Section \ref{INDEX}. 
-A listing of the theory $fef043$ created by processing this document using \Product{}
-may be found at the end of this document.
 
 The HOL specification here represents an attempt to capture the key ideas from \cite[section 2.3]{securityprops}.
 
 \subsection{Setting Up}
-The following \Product{} instructions set up the new theory $fef040$ and set the context 
+The following \Product{} instructions set up the new theory $fef043$ and set the context 
 for the proof tools.
-The parent theory is the theory $fef040$ which contains some general material about multi-level security policies of the sort we are interested in.
+The parent theory is the theory $fef042$ which contains material about multi-level security policies of the sort we are interested in.
 =SML
 open_theory"fef042";
 (force_delete_theory "fef043" handle _ => ());
 new_theory €"fef043"›;
-(* new_parent "fef036"; *)
 push_pc "hol";
 =TEX
 
@@ -184,7 +181,7 @@ An auxiliary used in expressing these contraints is {\it same_to_level}.
 This is a relationship between objects indexed by natural numbers, and holds for any index {\it n} whenever two objects are identical down (or up!) to level {\it n} (down or up from the root, depending on which way you like to visualise a `tree').
 
 Note that the classification fields are not regarded as classifying themselves and are therefore regarded as being at one level lower than might otherwise have been expected.
-It is not clear from the sources whether this is intended, but this is consistent with the treatment of multi-level objects in {\it indenticalObj}.
+It is not clear from the sources whether this is intended, but this is consistent with the treatment of multi-level objects in {\it identicalObj}.
 
 πHOLCONST
 ‹	€same_to_level› : Ó ≠ (Obj ∏ Obj)
@@ -197,9 +194,9 @@ It is not clear from the sources whether this is intended, but this is consisten
 ‹±	same_to_level (n+1)
 ‹	=	{	(obj1, obj2)
 ‹		|	objectContains obj1 = objectContains obj2
-‹		±	objectClass obj1 = objectClass obj2
-‹		±	# (objectRefers obj1) = # (objectRefers obj2)
-‹		±	Elems (Combine (objectRefers obj1) (objectRefers obj2))
+‹		  ±	objectClass obj1 = objectClass obj2
+‹		  ±	# (objectRefers obj1) = # (objectRefers obj2)
+‹		  ±	Elems (Combine (objectRefers obj1) (objectRefers obj2))
 ‹			Ä (same_to_level n)
 ‹		}
 ∞
@@ -253,7 +250,9 @@ A factorisation is {\it levelled} if the factors each have appropriate levels:
 ‹	±	factor3 facts ç factor_level 3
 ∞
 
-For a factorisation to be correct it must also fail to pre-evaluate levels in the query, however, this detail can only be specified by reference to the form of a query in greater detail than is considered appropriate here.
+For a factorisation to be correct it must also fail to pre-evaluate levels in the query
+(without this constraint the first factor could fully evaluate the query and subsequent factors could be identity functions).
+However, this detail can only be specified by reference to the form of a query in greater detail than is considered appropriate here.
 
 A factorisation factors a particular machine if, when the factors are put together, the resulting output corresponds to that of the machine:
 
@@ -284,20 +283,6 @@ The property for level n is obtained by constructing a machine which maps input 
 These machines will be constructed so that they first operate in the normal way on the input history to determine the state in which the query under consideration will be evaluated.
 The {\it partially} evaluated query will then be evaluated to completion in this state.
 The effect of this construction is to ignore the information flows which take place in the initial stage of the query and confine the security constraint to the information flows occuring in the subsequent evaluation of the query.
-
-This definition is given here pro-tem but should be in fef042 really.
-
-πHOLCONST
-‹	€lift_machine› : 'State Machine ≠ 'State ∏ Req LIST ≠ Obj LIST ∏ 'State
-˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
-‹µmch s r rl∑
-‹	lift_machine mch (s, []) = ([], s)
-‹±	lift_machine mch (s, Cons r rl) =
-‹	let out	= Output mch (s, r)
-‹	and s'	= Next mch (s, r)
-‹	in	let	(outl, final_state) = lift_machine mch (s', rl)
-‹		in	(Cons out outl, final_state)
-∞
 
 For each combination of:
 \begin{itemize}
@@ -378,148 +363,12 @@ A fully factorised machine is {\it label_secure} if the three binary factorisati
 ‹	}
 ∞
 
-\section{CONSISTENCY PROOF}
-
-The simplest consistency proof is obtained by using a constant function as follows.
-
-πHOLCONST
-‹	€simplest_witness› : 'State FactoredMachine
-˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
-‹    simplest_witness =
-‹	let next = Ã sr ∑ Arbitrary
-‹	and output = Ã sr ∑  Arbitrary
-‹	and init = Arbitrary
-‹	and f0 = Ã c ob s ∑ Arbitrary
-‹	in	let (f1,f2,f3) = (f0,f0,f0)
-‹	in	let	mach = MkMachine next output init
-‹		and	facs = MkFactorisation f0 f1 f2 f3
-‹		in	MkFactoredMachine mach facs
-∞
-
-=SML
-set_goal([],¨
-	machine simplest_witness =
-		MkMachine (Ã sr ∑  Arbitrary) (Ã sr ∑  Arbitrary) Arbitrary
- ±	factors simplest_witness =
-		MkFactorisation (Ã c ob s ∑ Arbitrary) (Ã c ob s ∑ Arbitrary)
-		(Ã c ob s ∑ Arbitrary) (Ã c ob s ∑ Arbitrary)
- Æ);
-a (rewrite_tac (let_def::(map get_spec [¨simplest_witnessÆ,¨machineÆ])));
-val lemma_043_1 = save_pop_thm "lemma_043_1";
-=TEX
-set_labelled_goal "2";
-
-=SML
-set_goal([],¨µc x∑ (x, x) ç identicalObj cÆ);
-=TEX
-=SML
-set_pc "hol2";
-set_goal([],¨LiftRel sameRequests ç IndexedEquivÆ);
-a (lemma_tac ¨µ c∑ sameRequests c ç EquivalenceÆ);
-(* *** Goal "1" *** *)
-a (rewrite_tac (map get_spec [¨sameRequestsÆ, ¨EquivalenceÆ]));
-a (REPEAT strip_tac);
-(* *** Goal "1.1" *** *)
-a (rewrite_tac [
-	get_spec ¨ReflexiveÆ,
-	get_spec ¨sameRequestÆ,
-	get_spec ¨ElemsÆ,
-	let_def,
-	sets_ext_clauses]);
-a (REPEAT strip_tac);
-a (lemma_tac ¨µy:Req LIST∑ (x1, x2) ç Elems (Combine y y) ¥ x1 = x2Æ);
-(* *** Goal "1.1.1" *** *)
-a strip_tac;
-a (list_induction_tac ¨yÆ THEN asm_rewrite_tac (map get_spec [
-	¨CombineÆ,¨$˘Æ,
-	¨ElemsÆ]));
-a (REPEAT strip_tac THEN asm_rewrite_tac[]);
-(* *** Goal "1.1.2" *** *)
-a (ALL_ASM_FC_T rewrite_tac []);
-=GFT
-(* *** Goal "1.1.2" *** *)
-
-(*  2 *)  ¨(x1, x2) ç Elems (Combine (x ˘ VisibleReq c) (x ˘ VisibleReq c))Æ
-(*  1 *)  ¨µ y∑ (x1, x2) ç Elems (Combine y y) ¥ x1 = x2Æ
-
-(* ?Ù *)  ¨(reqSsql x2, reqSsql x2) ç identicalObj cÆ
-
-=SML
-(* *** Goal "2" *** *)
-a (fc_tac [lift_rel_indexed_equiv_thm]);
-=TEX
-=SML
-set_goal([],¨LiftRel (same_at_c_below_level 1) ç IndexedEquivÆ);
-=TEX
-=SML
-set_goal([],¨LiftRel (same_at_c_below_level 2) ç IndexedEquivÆ);
-=TEX
-=SML
-set_goal([],¨LiftRel (same_at_c_below_level 3) ç IndexedEquivÆ);
-=SML
-set_goal([],¨simplest_witness ç label_secureÆ);
-a (rewrite_tac ((map get_spec [
-	¨label_secureÆ , ¨label_secure_toÆ, ¨factor0Æ
-	])@[let_def, lemma_043_1]));
-a (rewrite_tac ([let_def]@(map get_spec [
-	¨ml_secureÆ,¨x_ml_secureÆ,¨special_machineÆ,¨machineÆ,¨NextÆ,¨$ªâfÆ])));
-=GFT
-(* *** Goal "" *** *)
-
-(* ?Ù *)  ¨(LiftRel sameRequests ç IndexedEquiv
-               ± LiftRel (same_at_c_below_level 1) ç IndexedEquiv
-               ± (µ c iâ1 iâ2
-               ∑ (iâ1, iâ2) ç LiftRel sameRequests (c %downarrow%)
-                   ¥ (Arbitrary, Arbitrary)
-                     ç LiftRel (same_at_c_below_level 1) (c %downarrow%)))
-             ± (LiftRel sameRequests ç IndexedEquiv
-               ± LiftRel (same_at_c_below_level 2) ç IndexedEquiv
-               ± (µ c iâ1 iâ2
-               ∑ (iâ1, iâ2) ç LiftRel sameRequests (c %downarrow%)
-                   ¥ (Arbitrary, Arbitrary)
-                     ç LiftRel (same_at_c_below_level 2) (c %downarrow%)))
-             ± LiftRel sameRequests ç IndexedEquiv
-             ± LiftRel (same_at_c_below_level 3) ç IndexedEquiv
-             ± (µ c iâ1 iâ2
-             ∑ (iâ1, iâ2) ç LiftRel sameRequests (c %downarrow%)
-                 ¥ (Arbitrary, Arbitrary)
-                   ç LiftRel (same_at_c_below_level 3) (c %downarrow%))Æ
-=SML
-(* *** Goal "1" *** *)
-(* a (REPEAT strip_tac);
-a (rewrite_tac [let_def]);
-a (rewrite_tac (map get_spec [¨LiftRelÆ]));
-a (rewrite_tac (map get_spec [¨lift_machineÆ]));
-*)
-=TEX
-
 \section{CLOSING DOWN}
 
 The following \Product{} instruction restores the previous proof context.
 =SML
-push_consistency_goal¨lift_machineÆ;
-a (prove_∂_tac THEN strip_tac);
-a (lemma_tac ¨∂ lm ∑ 
-	(lm [] = Ãs∑([], s))
- ± (µ r rl ∑
-	lm (Cons r rl) =
-	Ã s ∑ (let out = Output mch' (s, r) and s' = Next mch' (s, r)
-             in let (outl, final_state) = lm rl s'
-                in (Cons out outl, final_state)))Æ
-	THEN1 prove_∂_tac);
-a (∂_tac ¨Ãs rl∑ lm rl sÆ);
-a (asm_rewrite_tac[]);
-save_consistency_thm¨lift_machineÆ(pop_thm());
-=SML
 pop_pc();
 =TEX
-=IGN
-output_theory{theory = "fef043", out_file = "fef043th.doc"};
-=TEX
-\newpage
-\HOLindexOff
-\input{fef043th.tex}
-\HOLindexOn
 \newpage
 \twocolumn[\section{INDEX} \label{INDEX}]
 \small
