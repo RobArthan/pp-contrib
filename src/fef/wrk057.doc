@@ -85,6 +85,8 @@ push_pc "hol";
 =TEX
 \section{LEMMAS ABOUT LISTS}
 =TEX
+We willl need a number of simple facts about lists.
+These lemmas are collected together in this section.
 =SML
 push_goal([], ¨µl1 l2∑ l1 Î l2 = [] § l1 = [] ± l2 = []Æ);
 a(µ_tac);
@@ -183,6 +185,7 @@ val €length_0_thm› = save_pop_thm"length_0_thm";
 =TEX
 \section{LEMMAS ABOUT FUNCTIONS}
 =TEX
+We need a few lemmas about 1-1 and onto functions.
 =SML
 push_goal([], ¨µf∑ OneOne f ¥ ∂g∑ µx∑ g(f x) = xÆ);
 a(rewrite_tac(map get_spec[¨OneOneÆ]) THEN REPEAT strip_tac);
@@ -222,7 +225,7 @@ We are concerned with providing guidelines supported by theorems rather than a f
 The point of view we take is more like that of \cite{Arthan91} than the universal-algebraic view of \cite{Melham89}.
 Both of those references are mainly concerned with recursive types which arise from what are called finitary inductive definitions (this is explicit in \cite{Arthan91} and implicit in \cite{Melham89}).
 The advantage of Melham's universal algebra point of view is that it leads directly to principles justifying definitions over the recursive type (indeed it begins from such principles);
-unfortunately, it is not particularly easy to represent the universal algebra concepts in HOL and even when one has done so, the rules for introduction of new constants in HOL prohibit one from using a universal mapping property as a defining property, so one must use explicit abstraction and representation functions to define the constructors etc. even though there definitions are never needed later.
+unfortunately, it is not particularly easy to represent the general universal algebra concepts in HOL; even if one does so, the rules for introduction of new constants in HOL prohibit one from using a universal mapping property as a defining property, so one must use explicit abstraction and representation functions to define the constructors etc. even though their definitions are never needed later.
 
 For the present treatment, we make full use of the assumption that the recursive type is defined by a finitary inductive definition.
 Intuitively, finitariness means that if we start owning nothing and iterate the process of of applying the constructor functions for the type to everything we own already, we end up acquiring each element of the free type after some {\em finite} number of iterations (although we will need to iterate for ever to get everything).
@@ -283,7 +286,7 @@ We also require a kind of monotonicity property on $M$, telling us that if two f
 We can derive an induction principle from the above assumptions by course-of-values induction on the value of the weight function:
 
 =SML
-set_goal([], ¨µk c w∑ (k, c, w, M) ç FinitaryRecType ¥
+set_goal([], ¨µk c w M∑ (k, c, w, M) ç FinitaryRecType ¥
 	µX: 'T SET∑
 		(µx: 'D∑ c(x) Ä X ¥ k(x) ç X)
 	¥	µt : 'T∑ t ç X
@@ -303,9 +306,62 @@ a(spec_nth_asm_tac 1 ¨x'Æ);
 a(all_asm_fc_tac[]);
 val €fin_rec_type_induction_thm› = save_pop_thm"fin_rec_type_induction_thm";
 =TEX
-Somewhat analogously, we can use the principle of definition by primitive recursion for the natural numbers to derive a definitional principle for the recursive type.
-Just to keep the proofs short we prove a lemma first.
-The function $d$ here is the data for a primitive recursive definition.
+For use with the HOL induction tactics we need the above formulated for properties rather than sets:
+=SML
+set_goal([], ¨µk c w M∑ (k, c, w, M) ç FinitaryRecType ¥
+	µP: 'T ≠ BOOL∑
+		(µx: 'D∑ (µt∑ t ç c(x) ¥ P t) ¥ P(k(x)))
+	¥	µt : 'T∑ P(t)
+Æ);
+a(REPEAT strip_tac);
+a(fc_tac[fin_rec_type_induction_thm]);
+a(SPEC_NTH_ASM_T 1 ¨{t | P t}Æ ante_tac);
+a(PC_T1 "sets_ext1" rewrite_tac[]);
+a(REPEAT strip_tac);
+a(ALL_ASM_FC_T rewrite_tac[]);
+val €fin_rec_type_induction_thm1› = save_pop_thm"fin_rec_type_induction_thm1";
+=TEX
+Somewhat analogously to the proof of the inductino principle, we can use the principle of definition by primitive recursion for the natural numbers to derive a definitional principle for the recursive type.
+The function $d$ here is the data for a primitive recursive definition;
+it is a function from $'D ∏ 'Y$ to $'y$.
+The claim is that for any such function there is a function $h$ from $'T$ to $'y$ satisfying the recursion equation:
+=GFT
+µx:'D∑ h(k(x)) = d(x, M h x)
+∞
+We construct $h$ as follows.
+First of all we observe that the constructor function, $k$, is both one-to-one and onto (by the second clause in the definition of $FinitaryRecType$).
+Therefore $k$ has a two-sided inverse, $ƒ$ say.
+That is to say we can assume the existence of a function
+=INLINEFT
+ƒ: 'T ≠ 'D
+=TEX
+\ satisfying:
+=GFT
+	ƒ (k x) = x
+	k (ƒ y) = y
+∞
+for any $x$ and $y$.
+Now we can use the principle of definition by primitive recursion for the natural numbers to construct a function
+=INLINEFT
+H: Ó ≠ 'T ≠ 'y
+=TEX
+\ satisfying the equations:
+=GFT
+	H 0 y = d(ƒ(y), M Arbitrary (ƒ y)))
+	H(i + 1) y = if w(y) º i then H(i)(y) else d(ƒ(y), M (H i) (ƒ y))
+∞
+The idea here is that, for each $i$, $H(i)$ is an approximation to the desired function $h$, and, in fact, agrees with $h$ for all elements of weight no greater than $i$.
+We can prove (by induction on $j$) that $H$ enjoys the following monotonicity property.
+=GFT
+µj∑ µ y∑ H (w y + j) y = H (w y) y
+∞
+We then define $h$ by
+=GFT
+µ y∑ h  y = H (w y) y
+∞
+\ and check, using the monotonicity properties of $H$ and $M$ that $h$ has the required property.
+
+To formalise the above, we first prove the lemma that there exists $ƒ$ and $H$ satisfying the salient conditions.
 
 =SML
 set_goal([], ¨µk c w∑ (k, c, w, M) ç FinitaryRecType ¥
@@ -316,7 +372,7 @@ set_goal([], ¨µk c w∑ (k, c, w, M) ç FinitaryRecType ¥
 	∂ H : Ó ≠ 'T ≠ 'y ∑
 	(µy∑	H 0 y = d(ƒ(y), M Arbitrary (ƒ y)))
 ±	(µi y∑	H(i + 1) y = if w(y) º i then H(i)(y) else d(ƒ(y), M (H i) (ƒ y)))
-±	(µj∑ µ y∑ (H (w y + j)) y = H (w y) y)Æ);
+±	(µj∑ µ y∑ H (w y + j) y = H (w y) y)Æ);
 a(rewrite_tac[get_spec¨FinitaryRecTypeÆ] THEN REPEAT strip_tac);
 a(lemma_tac¨Onto kÆ THEN1 (rewrite_tac[get_spec¨OntoÆ] THEN REPEAT strip_tac));
 (* *** Goal "1" *** *)
@@ -338,8 +394,10 @@ a(PC_T1 "hol2" rewrite_tac[]);
 a(asm_rewrite_tac[plus_assoc_thm1]);
 val €fin_rec_type_prim_rec_lemma1› = save_pop_thm"fin_rec_type_prim_rec_lemma1";
 =TEX
+Using this lemma we can the existence part of the principle of definition by primitive recursion.
+Note that goals 1 and 2 here come from a case split, not a proof by induction: induction would actually be harmful here because it would introduce an irrelevant equation into the assumptions.
 =SML
-set_goal([], ¨µk c w∑ (k, c, w, M) ç FinitaryRecType ¥
+set_goal([], ¨µk c w M∑ (k, c, w, M) ç FinitaryRecType ¥
 	µd: 'D  ∏'Y ≠ 'y∑
 	∂ h : 'T ≠ 'y ∑ µx:'D∑ h(k(x)) = d(x, M h x)
 Æ);
@@ -374,10 +432,202 @@ a(POP_ASM_T (asm_rewrite_thm_tac o eq_sym_rule));
 (* *** Goal "2.2" *** *)
 a strip_tac;
 a(spec_nth_asm_tac 1 ¨xÆ);
-val €fin_rec_type_prim_rec_thm› = save_pop_thm"fin_rec_type_prim_rec_thm";
+val €fin_rec_type_prim_rec_exists_thm› = save_pop_thm"fin_rec_type_prim_rec_exists_thm";
+=TEX
+It is fairly straightforward to show that the functions $h$ whose existence is given by the principle of definition by primitive recursion are uniquely determined by their recursion equations.
+Note that, perhaps a little inelegantly, it seems to be easier to prove this using course-of-values induction for the natural numbers rather than by dint of the induction principle for the recursive data type.
+=SML
+set_goal([], ¨µk c w M∑ (k, c, w, M) ç FinitaryRecType ¥
+	µd: 'D  ∏'Y ≠ 'y∑
+	µ hâ1 hâ2 : 'T ≠ 'y ∑
+		(µx:'D∑ hâ1(k(x)) = d(x, M hâ1 x)) ±
+		(µx:'D∑ hâ2(k(x)) = d(x, M hâ2 x)) ¥
+		hâ1 = hâ2
+Æ);
+a(rewrite_tac[get_spec¨FinitaryRecTypeÆ] THEN REPEAT strip_tac);
+a(PC_T1 "hol2" REPEAT strip_tac);
+a(lemma_tac¨Onto kÆ THEN1 (rewrite_tac[get_spec¨OntoÆ] THEN REPEAT strip_tac));
+(* *** Goal "1" *** *)
+a(spec_nth_asm_tac 4 ¨yÆ);
+a(∂_tac¨xÆ THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(all_fc_tac[one_one_onto_inv_thm]);
+a(lemma_tac¨∂i∑ w x = iÆ THEN1 prove_∂_tac);
+a(POP_ASM_T ante_tac THEN intro_µ_tac(¨xÆ, ¨xÆ) THEN cov_induction_tac¨iÆ);
+a(lemma_tac¨µ y∑ w y < i ¥ hâ1 y = hâ2 yÆ);
+(* *** Goal "2.1" *** *)
+a(REPEAT strip_tac);
+a(spec_nth_asm_tac 2 ¨w yÆ THEN spec_nth_asm_tac 1 ¨yÆ);
+(* *** Goal "2.2" *** *)
+a(list_spec_nth_asm_tac 8 [¨iÆ, ¨hâ1Æ, ¨hâ2Æ] THEN1 all_asm_fc_tac[]);
+a(REPEAT strip_tac);
+a(spec_nth_asm_tac 11 ¨xÆ);
+a(all_var_elim_asm_tac1);
+a(spec_nth_asm_tac 2 ¨x'Æ);
+a(asm_rewrite_tac[]);
+val €fin_rec_type_prim_rec_unique_thm› =
+	save_pop_thm"fin_rec_type_prim_rec_unique_thm";
+=TEX
+The previous two theorems may now be fitted together to give the principle of definition by primitive recursion in its final form.
+=SML
+set_goal([], ¨µk c w M∑ (k, c, w, M) ç FinitaryRecType ¥
+	µd: 'D  ∏'Y ≠ 'y∑
+	∂â1 h : 'T ≠ 'y ∑ µx:'D∑ h(k(x)) = d(x, M h x)
+Æ);
+a(REPEAT strip_tac);
+a(all_fc_tac[fin_rec_type_prim_rec_exists_thm]);
+a(spec_nth_asm_tac 1 ¨dÆ);
+a(∂â1_tac¨hÆ THEN asm_rewrite_tac[] THEN REPEAT strip_tac);
+a(all_fc_tac[fin_rec_type_prim_rec_unique_thm]);
+val €fin_rec_type_prim_rec_thm› =
+	save_pop_thm"fin_rec_type_prim_rec_thm";
+=TEX
+The condition on $M$ in the definition of $FinitaryRecType$ has been chosen to be the weakest condition for which the above proofs go through conveniently.
+The following shows that a somewhat stronger condition which will often be easy to prove is also sufficient.
+This condition has the advantage of only involving $c$ and $M$.
+We say that $M$ is a {\em local functional} with respect to $c$ when the condition holds.
+πHOLCONST
+‹	LocalFunctional : ((('T ≠ 'y) ≠ ('D ≠ 'Y)) ∏ ('D ≠ 'T SET)) SET
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	LocalFunctional =
+‹	{	(M, c)
+‹	|	µI gâ1 gâ2∑ (µy∑ y ç I ¥ gâ1(y) = gâ2(y))
+‹			¥ µx∑ c(x) Ä I ¥ M(gâ1)(x) = M(gâ2)(x)}
+∞
+=SML
+set_goal([], ¨µc w M∑
+	(M, c) ç LocalFunctional ¥
+	µi gâ1 gâ2∑ (µy∑ w(y) < i ¥ gâ1(y) = gâ2(y))
+		¥ µx∑ c(x) Ä {y | w(y) < i} ¥ M(gâ1)(x) = M(gâ2)(x)
+Æ);
+a(rewrite_tac [get_spec¨LocalFunctionalÆ] THEN REPEAT strip_tac);
+a(spec_nth_asm_tac 3 ¨{y | w y < i}Æ);
+a(list_spec_nth_asm_tac 1 [¨gâ1Æ, ¨gâ2Æ] THEN1 all_asm_fc_tac[]);
+a(spec_nth_asm_tac 1 ¨xÆ);
+val €local_functional_thm› = save_pop_thm "local_functional_thm";
+=TEX
+We can now show that for various useful values of $c$ and $M$, $M$ is local with respect to $c$.
+=SML
+set_goal([], ¨((Ãf∑ f), (Ãx∑{x})) ç LocalFunctionalÆ);
+a(rewrite_tac[get_spec¨LocalFunctionalÆ] THEN REPEAT strip_tac);
+a(lemma_tac¨{x} Ä I ¥ x ç IÆ THEN1 PC_T1 "sets_ext1" prove_tac[]);
+a(all_asm_fc_tac[]);
+val €i_local_thm› = save_pop_thm "i_local_thm";
+=TEX
+=SML
+set_goal([], ¨((Ãf∑ (Ãx∑ {})), (Ãx∑{x})) ç LocalFunctionalÆ);
+a(rewrite_tac[get_spec¨LocalFunctionalÆ] THEN REPEAT strip_tac);
+val €k_local_thm› = save_pop_thm "k_local_thm";
+=TEX
+=SML
+set_goal([], ¨ µ Mâ1 câ1 Mâ2 câ2∑
+	(Mâ1, câ1) ç LocalFunctional ± 
+	(Mâ2, câ2) ç LocalFunctional ¥
+	((Ãf∑Ã(x, y)∑ (Mâ1 f x, Mâ2 f y)), (Ã(x, y)∑ câ1 x ¿ câ2 y)) ç LocalFunctional
+Æ);
+a(rewrite_tac[get_spec¨LocalFunctionalÆ] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(lemma_tac¨câ1 (Fst x) ¿ câ2 (Snd x) Ä I ¥ câ1 (Fst x) Ä IÆ THEN1
+	PC_T1 "sets_ext" prove_tac[]);
+a(all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(lemma_tac¨câ1 (Fst x) ¿ câ2 (Snd x) Ä I ¥ câ2 (Snd x) Ä IÆ THEN1
+	PC_T1 "sets_ext" prove_tac[]);
+a(all_asm_fc_tac[]);
+val €∏_local_thm› = save_pop_thm "∏_local_thm";
+=TEX
+=SML
+set_goal([], ¨ µ Mâ1 câ1 Mâ2 câ2∑
+	(Mâ1, câ1) ç LocalFunctional ± 
+	(Mâ2, câ2) ç LocalFunctional ¥
+	((Ãf∑Ãx∑ if IsL x then Mâ1 f (OutL x) else Mâ2 f (OutR x)),
+	(Ãx∑ if IsL x then câ1 (OutL x) else câ2 (OutR x))) ç LocalFunctional
+Æ);
+a(rewrite_tac[get_spec¨LocalFunctionalÆ] THEN REPEAT strip_tac);
+a(POP_ASM_T ante_tac THEN strip_asm_tac(µ_elim¨xÆ sum_cases_thm)
+	THEN asm_rewrite_tac[] THEN REPEAT strip_tac THEN all_asm_fc_tac[]);
+val €sum_local_thm› = save_pop_thm "sum_local_thm";
+=TEX
+=SML
+set_goal([], ¨ µ M c∑
+	(M, c) ç LocalFunctional  ¥
+	((Ãf∑ Map (M f)),(Ãx∑ ﬁ(Elems (Map c x)))) ç LocalFunctional
+Æ);
+a(rewrite_tac[get_spec¨LocalFunctionalÆ] THEN REPEAT strip_tac);
+a(POP_ASM_T ante_tac THEN list_induction_tac¨xÆ THEN
+	rewrite_tac(map get_spec[¨MapÆ, ¨ElemsÆ]));
+(* *** Goal "1" *** *)
+a(ALL_FC_T rewrite_tac[pc_rule1 "sets_ext1" prove_rule[]
+	¨µa b c∑ ≥ﬁ a Ä b ¥ ≥ﬁ(c ¿ a) Ä bÆ]);
+(* *** Goal "2" *** *)
+a(REPEAT strip_tac);
+a(lemma_tac¨c x' Ä ﬁ ({c x'} ¿ Elems (Map c x))Æ THEN
+	PC_T1 "sets_ext" REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(∂_tac¨c x'Æ THEN REPEAT strip_tac);
+(* *** Goal "2.2" *** *)
+a(all_fc_tac[pc_rule1 "sets_ext1" prove_rule[]
+	¨µa b c∑ a Ä b ± b Ä c ¥ a Ä cÆ]);
+a(all_asm_fc_tac[]);
+val €list_local_thm› = save_pop_thm "list_local_thm";
+=TEX
+=SML
+set_goal([], ¨ (Map, Elems) ç LocalFunctional Æ);
+a(rewrite_tac[get_spec¨LocalFunctionalÆ] THEN REPEAT strip_tac);
+a(POP_ASM_T ante_tac THEN list_induction_tac¨xÆ THEN
+	rewrite_tac(map get_spec[¨MapÆ, ¨ElemsÆ]));
+(* *** Goal "1" *** *)
+a(ALL_FC_T rewrite_tac[pc_rule1 "sets_ext1" prove_rule[]
+	¨µa b c∑ ≥ a Ä b ¥ ≥(c ¿ a) Ä bÆ]);
+(* *** Goal "2" *** *)
+a(REPEAT strip_tac);
+a(lemma_tac¨{x'} ¿ Elems x Ä I ¥ x' ç IÆ THEN1 PC_T1 "sets_ext" prove_tac[]);
+a(all_asm_fc_tac[]);
+val €list_local_thm1› = save_pop_thm "list_local_thm1";
+=TEX
+=SML
+set_goal([], ¨ µ M c∑
+	(M, c) ç LocalFunctional  ¥
+	((Ãf∑ M f o Snd),(c o Snd)) ç LocalFunctional
+Æ);
+a(rewrite_tac[get_spec¨LocalFunctionalÆ] THEN REPEAT strip_tac);
+a(all_asm_fc_tac[]);
+val €o_snd_local_thm› = save_pop_thm "o_snd_local_thm";
+=TEX
+=SML
+set_goal([], ¨ µ M c∑
+	(M, c) ç LocalFunctional  ¥
+	((Ãf∑ M f o Fst),(c o Fst)) ç LocalFunctional
+Æ);
+a(rewrite_tac[get_spec¨LocalFunctionalÆ] THEN REPEAT strip_tac);
+a(all_asm_fc_tac[]);
+val €o_fst_local_thm› = save_pop_thm "o_fst_local_thm";
 =TEX
 \section{TREES}
+We are now going to use the material of the previous sections to construct a specific recursive type.
+What we are going to construct is the HOL analogue of the type defined in ML as follows:
+
+=GFT Standard ML Example
+	datatype 'a TREE = MkTree of ('a * (('a TREE) list));
 =TEX
+The elements of the type may be thought of as trees.
+At each node in one of these trees there is an element of the type parameter $'a$ and a list of sub-trees.
+Alternatively, one can think of the trees as formal expressions formed using the elements of $'a$ as operator symbols.
+
+
+We need a type in which to represent the type of trees.
+Our choice is lists of number-$'a$ pairs.
+Viewing the trees as formal expressions, an expression formed using an element $x:'a$ as an operator with $n$ operands will be represented by the list comprising $(n, x)$ followed by the representations of the operands.
+IThis is essentially just the usual prefix way of writing the expression but with the arities of operators marked to make the representation unambiguous.
+For example, the expression $x(y, z(y))$ would be represented as:
+
+=GFT ProofPower-HOL Example
+[(2, x); (0, y); (1, z); (0, y)]
+=TEX
+Note that not every list corresponds to a tree; e.g. the empty list does not.
+Given a list, $[l_1; \ldots; l_k]$ of lists representing trees, $t_1, \ldots, t_k$, and an element $x:'a$, the representation of $x(t_1, \ldots, t_k)$ will  be the list $Cons k (Flat [l_1; \ldots; l_k])$.
+We can formally define the set of those lists which do represent trees as the smallest set of lists which is closed under this construction of new representatives from old:
+
 πHOLCONST
 ‹	Tree : (Ó ∏ 'a) LIST 
 ˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
@@ -387,10 +637,13 @@ val €fin_rec_type_prim_rec_thm› = save_pop_thm"fin_rec_type_prim_rec_thm";
 ‹			Elems trees Ä A ¥
 ‹			Cons (Length trees, lab) (Flat trees) ç A}
 ∞
-
+=TEX
+To develop a recursive type represented the above set of trees, we first derive an induction principle.
+We do this in three steps.
+The induction hypothesis for the induction principle needs
 =SML
 set_goal([], ¨µX∑
-	(µx ts∑ (Elems ts Ä  X)
+	(µx ts∑ (Elems ts Ä X)
 			¥ (Cons (Length ts, x) (Flat ts)) ç X)
 	¥	Tree Ä X
 Æ);
@@ -426,7 +679,7 @@ a(all_asm_fc_tac[] THEN all_asm_fc_tac[]);
 a(POP_ASM_T ante_tac THEN PC_T1 "sets_ext" prove_tac[]);
 val €tree_induction_lemma› = save_pop_thm"tree_induction_lemma";
 =TEX
-Now recast the above for use with the induction tactic generating function.
+It is convenient to recast the above in terms of properties for use with the induction tactic generating function.
 =SML
 set_goal([], ¨µP∑
 	(µx ts∑ (µt∑ t ç Elems ts ¥ t ç Tree ± P t)
@@ -436,19 +689,19 @@ set_goal([], ¨µP∑
 a(strip_tac);
 a(ante_tac(µ_elim¨{t | P t}Æ tree_induction_lemma));
 a(PC_T1 "sets_ext" rewrite_tac[]);
-val €tree_induction_thm› = save_pop_thm"tree_induction_thm";
+val €tree_induction_tac_lemma› = save_pop_thm"tree_induction_tac_lemma";
 =TEX
 =SML
 set_goal([], ¨µt∑ t ç Tree ¥
 	∂x; ts∑ Elems ts Ä Tree ± t = Cons (Length ts, x) (Flat ts)Æ);
-a(µ_tac THEN gen_induction_tac1 tree_induction_thm);
+a(µ_tac THEN gen_induction_tac1 tree_induction_tac_lemma);
 a(∂_tac¨xÆ THEN ∂_tac¨tsÆ THEN PC_T "sets_ext" contr_tac THEN all_asm_fc_tac[]);
 val €tree_cases_lemma› = save_pop_thm"tree_cases_lemma";
 =TEX
 =SML
 set_goal([], ¨≥ [] ç TreeÆ);
 a(lemma_tac¨µt∑t ç Tree ¥ ≥t = []Æ THEN_LIST[id_tac, asm_prove_tac[]]);
-a(µ_tac THEN gen_induction_tac1 tree_induction_thm);
+a(µ_tac THEN gen_induction_tac1 tree_induction_tac_lemma);
 a(rewrite_tac[]);
 val €≥_empty_list_tree_lemma› = save_pop_thm"≥_empty_list_tree_lemma";
 =TEX
@@ -554,17 +807,6 @@ a(POP_ASM_T (ante_tac o list_µ_elim[¨xÆ, ¨[]: (Ó ∏ 'a) LIST LISTÆ]));
 a(PC_T1 "sets_ext" rewrite_tac(map get_spec [¨ElemsÆ, ¨FlatÆ, ¨LengthÆ]));
 val €leaf_is_a_tree_thm› = save_pop_thm"leaf_is_a_tree_thm";
 =TEX
-=IGN =SML
-=IGN set_goal([], ¨∂con args∑µt∑
-=IGN 	t ç Tree ¥
-=IGN 	Elems (args t) Ä Tree ± Cons (Length (args t), con t) (Flat (args t)) = t
-=IGN Æ);
-=IGN a(prove_∂_tac THEN REPEAT strip_tac);
-=IGN a(cases_tac¨t'' ç TreeÆ THEN asm_rewrite_tac[]);
-=IGN a(all_fc_tac[tree_cases_lemma]);
-=IGN a(all_var_elim_asm_tac1);
-=IGN a(∂_tac¨tsÆ THEN ∂_tac¨xÆ THEN REPEAT strip_tac);
-=IGN val €con_args_lemma› = save_pop_thm"con_args_lemma";
 =TEX
 \section{DEFINING THE TYPE OF TREES}
 =SML
@@ -581,7 +823,6 @@ val €tree_def› = new_type_defn(["TREE", "tree_def"], "TREE", ["'a"],
 ∞
 =TEX
 =SML
-=IGN
 push_consistency_goal¨MkTreeÆ;
 a((strip_asm_tac o rewrite_rule[]) (¥_match_mp_rule type_lemmas_thm tree_def));
 a(∂_tac¨Ã(x, ts)∑ abs(Cons (Length ts, x) (Flat (Map rep ts)))Æ
@@ -636,6 +877,45 @@ a(PC_T1 "lin_arith" asm_prove_tac[]);
 val _ = save_consistency_thm ¨MkTreeÆ (pop_thm());
 =TEX
 =SML
+set_goal([], ¨((Ãf∑ Map f o Snd), (Elems o Snd)) ç LocalFunctionalÆ);
+a(bc_tac[o_snd_local_thm]);
+a(rewrite_tac[list_local_thm1]);
+val €tree_local_thm› = save_pop_thm "tree_local_thm";
+=TEX
+=SML
+set_goal([], ¨∂w∑ (MkTree, Elems o Snd, w, (Ãf∑ Map f o Snd)) ç FinitaryRecTypeÆ);
+a(strip_asm_tac(get_spec¨MkTreeÆ));
+a(∂_tac¨wÆ THEN rewrite_tac[get_spec¨FinitaryRecTypeÆ] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(spec_nth_asm_tac 1 ¨tÆ THEN var_elim_nth_asm_tac 1);
+a(∂_tac¨xÆ THEN REPEAT strip_tac);
+a(PC_T1 "sets_ext1" asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(strip_asm_tac (list_µ_elim[
+	¨Elems o (Snd :  'a ∏ 'a TREE LIST ≠ 'a TREE LIST)Æ, ¨wÆ,
+	¨Ãf:'a TREE ≠ 'b∑ Map f o (Snd :  'a ∏ 'a TREE LIST ≠ 'a TREE LIST)Æ]
+	local_functional_thm));
+(* *** Goal "2.1" *** *)
+a(all_fc_tac[tree_local_thm]);
+(* *** Goal "2.2" *** *)
+a(POP_ASM_T (strip_asm_tac o rewrite_rule[]));
+a(all_asm_fc_tac[]);
+val €tree_fin_rec_thm› = save_pop_thm "tree_fin_rec_thm";
+=TEX
+=SML
+fun  €simple_∂_¥_match_rule› (thm1 : THM) (thm2 : THM) : THM = (
+	let	val (v, b) = dest_∂ (concl thm2);
+		val thm3 = asm_rule b;
+		val thm4 = ¥_match_mp_rule thm1 thm3;
+	in	simple_∂_elim v thm2 thm4
+	end
+);
+=TEX
+=SML
+val €tree_induction_thm› = rewrite_rule[]
+	(simple_∂_¥_match_rule fin_rec_type_induction_thm1 tree_fin_rec_thm);
+val €tree_prim_rec_thm› = rewrite_rule[]
+	(simple_∂_¥_match_rule fin_rec_type_prim_rec_thm tree_fin_rec_thm);
 =TEX
 \section{CLOSING DOWN}
 The following \Product{} instruction restores the previous proof context.
@@ -656,7 +936,7 @@ output_theory{theory = "wrk057",out_file = "wrk057th.doc"};
 
 \end{document}
 
-=SML
+=IGN
 val up_conv = PC_C1 "hol2" rewrite_conv[get_spec¨UnparseÆ];
 
 up_conv¨Unparse [(0, x)] 1Æ			(* x --> x *);
@@ -671,8 +951,4 @@ up_conv¨Unparse [(3, x); (0, y); (1, z); (0, y); (0, a); (0, c); (0, d)] 2Æ
 				(* x(y, z(y), a); c; d --> x(y, z(y), a); c *);
 up_conv¨Unparse [(3, x); (0, y); (1, z); (0, y); (0, a); (1, c); (1, e); (0, f); (0, d)] 2Æ
 				(* x(y, z(y), a); c(e(f)); d --> x(y, z(y), a); c(e(f)) *);
-a(LIST_GET_NTH_ASM_T [5] rewrite_tac);
-a(∂_tac¨(x, list2)Æ THEN rewrite_tac[]);
-a(∂_tac¨(x, Map abs ts)Æ THEN rewrite_tac[]);
-a(asm_rewrite_tac[] THEN strip_tac);
-a(POP_ASM_T (asm_rewrite_thm_tac o eq_sym_rule));
+set_goal([], ¨TÆ);
