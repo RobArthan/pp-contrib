@@ -150,17 +150,18 @@ tables to be selected from.
 The simpler forms of expression are therefore covered by the following
 type abbreviation:
 =SML
-declare_type_abbrev(Û"EXPR"İ, [],
+declare_type_abbrev(Û"VALUE_COMP"İ, [],
 	”(DerTable LIST ­ DerTableRow LIST­ DerTableRow ­ (Class ¸ Item))®);
 =TEX
 We use the term {\em table expression} for the various building blocks of the
 $SELECT$ query and the following type abbreviation reflects this:
 =SML
-declare_type_abbrev(Û"TABLE_EXPR"İ, [],
-	”DerTable LIST ­ DerTable®);
+declare_type_abbrev(Û"TABLE_COMP"İ, [],
+	”DerTable LIST ­ (Class ¸ DerTable)®);
 =TEX
-\section{VALUES}\label{VALUES}
-We view the semantics of most expression forms as functions from table
+\section{VALUE COMPUTATIONS}\label{VALUECOMPUTATIONS}
+We view the semantics of most value, (i.e. expression)
+forms as functions from table
 rows to class-item pairs.  E.g., if a table includes columns called $a$
 and $b$, the semantics of $a + b$ will be the function which given a
 row in which the values of $a$ and $b$ are $\alpha$ and $\beta$ say,
@@ -183,7 +184,7 @@ The order of the treatment is also taken from $internal\_value\sb{class}$.
 The function giving constant expressions is parameterised by the classification and value
 of the constant.
 ¹HOLCONST
-Ü	ÛDenoteConstantİ	: (Class ¸ Item) ­ EXPR
+Ü	ÛDenoteConstantİ	: (Class ¸ Item) ­ VALUE_COMP
 ÷üüüüüüüüüüüüüüüüüü
 Üµci ·	DenoteConstant ci = Ìtl rl r· ci
 °
@@ -193,7 +194,7 @@ The monadic forms are parameterised here by the actual item computation
 to perform and the expression which computes the operand.
 
 ¹HOLCONST
-Ü	ÛMonOpİ	: (Item ­ Item) ­ EXPR ­ EXPR
+Ü	ÛMonOpİ	: (Item ­ Item) ­ VALUE_COMP ­ VALUE_COMP
 ÷üüüüüüüüüüüüüüüüüü
 Üµf e·	MonOp f e =
 Ü	Ìtl rl r·
@@ -242,7 +243,7 @@ to $false$ then the client knows that some operand is $false$ and the class
 can be taken to be the g.l.b. of the classes of the operands which are
 $false$.
 ¹HOLCONST
-Ü	ÛBinOpAndİ	: EXPR LIST ­ EXPR
+Ü	ÛBinOpAndİ	: VALUE_COMP LIST ­ VALUE_COMP
 ÷üüüüüüüüüüüüüüüüüü
 Üµel·	BinOpAnd el =
 Ü	Ìtl rl r·
@@ -260,7 +261,7 @@ to $true$ then the client knows that some operand is $true$ and the class
 can be taken to be the g.l.b. of the classes of the operands which are
 $true$.
 ¹HOLCONST
-Ü	ÛBinOpOrİ	: EXPR LIST ­ EXPR
+Ü	ÛBinOpOrİ	: VALUE_COMP LIST ­ VALUE_COMP
 ÷üüüüüüüüüüüüüüüüüü
 Üµel·	BinOpOr el =
 Ü	Ìtl rl r·
@@ -278,7 +279,8 @@ classifications and are parameterised by the actual item computation
 to perform and expressions to give the operands.
 
 ¹HOLCONST
-Ü	ÛBinOpİ	: (Item ­ Item ­ Item) ­ EXPR ­ EXPR ­ EXPR
+Ü	ÛBinOpİ	: (Item ­ Item ­ Item)
+Ü		­ VALUE_COMP ­ VALUE_COMP ­ VALUE_COMP
 ÷üüüüüüüüüüüüüüüüüü
 Üµf e1 e2 ·
 Ü	BinOp f e1 e2 =
@@ -294,7 +296,8 @@ classifications and are parameterised by the actual item computation
 to perform and three expressions giving the operands.
 
 ¹HOLCONST
-Ü	ÛTriOpİ	: (Item ­ Item ­ Item ­ Item) ­ EXPR ­ EXPR ­ EXPR ­ EXPR
+Ü	ÛTriOpİ	: (Item ­ Item ­ Item ­ Item)
+Ü		­ VALUE_COMP ­ VALUE_COMP ­ VALUE_COMP ­ VALUE_COMP
 ÷üüüüüüüüüüüüüüüüüü
 Üµf e1 e2 e3 ·
 Ü	TriOp f e1 e2 e3 =
@@ -333,8 +336,8 @@ to avoid the anomalous case where the two lists have different lengths
 (which is prohibited by the syntactic rules for TSQL in the context of \cite{trans}).
 
 The following two auxiliary functions are used to compute the class for
-the $caseVal$ form. They correspond to the calculations performed by
-the queries $check\_list$ and $check\_test$ defined in
+the $caseVal$ form. They correspond to
+the queries $check\_list$ and $check\_test$ computed by
 $internal\_value\sb{class}$ in \cite{trans} (with the work performed
 by the $limb$ functions expanded out).
 
@@ -382,7 +385,9 @@ of case expression.
 °
 
 ¹HOLCONST
-Ü	ÛCaseValİ	: Class ­ EXPR ­ (EXPR ¸ EXPR) LIST ­ EXPR ­ EXPR 
+Ü	ÛCaseValİ	: Class ­ VALUE_COMP
+Ü			­ (VALUE_COMP ¸ VALUE_COMP) LIST
+Ü			­ VALUE_COMP ­ VALUE_COMP 
 ÷üüüüüüüüüüüüüüüüüü
 Üµcc tst casevals elseval ·
 Ü	CaseVal cc tst casevals elseval =
@@ -433,7 +438,8 @@ of case expression.
 °
 
 ¹HOLCONST
-Ü	ÛCaseİ	: Class ­ (EXPR ¸ EXPR) LIST ­ EXPR ­ EXPR 
+Ü	ÛCaseİ	: Class ­ (VALUE_COMP ¸ VALUE_COMP) LIST
+Ü		­ VALUE_COMP ­ VALUE_COMP 
 ÷üüüüüüüüüüüüüüüüüü
 Üµcc casevals elseval ·
 Ü	Case cc casevals elseval =
@@ -451,7 +457,7 @@ The logical set functions are treated in a similar fashion to
 the logical binary operators.
 
 ¹HOLCONST
-Ü	ÛSetFuncAllAndİ		: EXPR ­ EXPR
+Ü	ÛSetFuncAllAndİ		: VALUE_COMP ­ VALUE_COMP
 ÷üüüüüüüüüüüüüüüüüü
 Üµe ·	SetFuncAllAnd e =
 Ü	Ìtl rl r·
@@ -465,7 +471,7 @@ the logical binary operators.
 °
 
 ¹HOLCONST
-Ü	ÛSetFuncAllOrİ		: EXPR ­ EXPR
+Ü	ÛSetFuncAllOrİ		: VALUE_COMP ­ VALUE_COMP
 ÷üüüüüüüüüüüüüüüüüü
 Üµe ·	SetFuncAllOr e =
 Ü	Ìtl rl r·
@@ -483,7 +489,7 @@ The general set functions are parameterised by the operation on
 lists or sets of item pairs to be computed and by the expression to
 be computed for each row.
 ¹HOLCONST
-Ü	ÛSetFuncAllİ		: (Item LIST ­ Item) ­ EXPR ­ EXPR
+Ü	ÛSetFuncAllİ		: (Item LIST ­ Item) ­ VALUE_COMP ­ VALUE_COMP
 ÷üüüüüüüüüüüüüüüüüü
 Üµf e ·	SetFuncAll f e =
 Ü	Ìtl rl r·
@@ -491,7 +497,7 @@ be computed for each row.
 Ü	in	(lubl cl, f il)
 °
 ¹HOLCONST
-Ü	ÛSetFuncDistinctİ	: (Item SET ­ Item) ­ EXPR ­ EXPR
+Ü	ÛSetFuncDistinctİ	: (Item SET ­ Item) ­ VALUE_COMP ­ VALUE_COMP
 ÷üüüüüüüüüüüüüüüüüü
 Üµf e ·	SetFuncDistinct f e =
 Ü	Ìtl rl r·
@@ -520,7 +526,7 @@ a TSQL item, the precise details being unimportant:
 °
 
 ¹HOLCONST
-Ü	ÛCountNonNullİ	: EXPR ­ EXPR
+Ü	ÛCountNonNullİ	: VALUE_COMP ­ VALUE_COMP
 ÷üüüüüüüüüüüüüüüüüü
 Üµe ·	CountNonNull e =
 Ü	let	counter il = NatItem(Length (il ù {i | isValuedItem i}))
@@ -528,7 +534,7 @@ a TSQL item, the precise details being unimportant:
 °
 
 ¹HOLCONST
-Ü	ÛCountDistinctİ	: EXPR ­ EXPR
+Ü	ÛCountDistinctİ	: VALUE_COMP ­ VALUE_COMP
 ÷üüüüüüüüüüüüüüüüüü
 Üµe ·	CountDistinct e =
 Ü	let	counter is = NatItem(Size (is ¡ {i | isValuedItem i}))
@@ -539,7 +545,7 @@ The $count\_all$ function uses a somewhat different classification
 computation taking into account row existence classes.
 
 ¹HOLCONST
-Ü	ÛCountAllİ	: EXPR
+Ü	ÛCountAllİ	: VALUE_COMP
 ÷üüüüüüüüüüüüüüüüüü
 Ü	CountAll =
 Ü	Ìtl rl r·
@@ -557,7 +563,7 @@ a fixed arbitrary value is returned with the same classification
 (modelling a compile/transformation-time error). 
 
 ¹HOLCONST
-Ü	ÛCommonValueİ	: EXPR ­ EXPR
+Ü	ÛCommonValueİ	: VALUE_COMP ­ VALUE_COMP
 ÷üüüüüüüüüüüüüüüüüü
 Üµe ·	CommonValue e =
 Ü	Ìtl rl r·
@@ -577,28 +583,32 @@ This construct is parameterised by a table expression to compute
 the operand. The classification below is intended to be in the spirit
 of $tuple\_list\sb{max\_row\_class}$ from \cite{trans}.
 ¹HOLCONST
-Ü	ÛExistsTuplesİ	: TABLE_EXPR ­ EXPR
+Ü	ÛExistsTuplesİ	: TABLE_COMP ­ VALUE_COMP
 ÷üüüüüüüüüüüüüüüüüü
 Üµte ·	ExistsTuples te =
 Ü	Ìtl rl r·
-Ü	let	trl = DT_rows (te tl)
-Ü	in	(lubl (Map DTR_row trl), BoolItem (³trl = []))
+Ü	let	(c, t) = te tl
+Ü	in let	trl = DT_rows t
+Ü	in	(c lub lubl (Map DTR_row trl), BoolItem (³trl = []))
 °
 \subsection{$SingleValue$}\label{SingleValue}
 This construct is parameterised by a table expression to compute
-the operand. The classification below is probably more generous than that in
-$internal\_value\sb{class}$ from \cite{trans}.
+the operand. The classification below is sometimes more generous than that in
+$internal\_value\sb{class}$ from \cite{trans} (which uses the statically
+known upper bound on the class of the single column in the table).
 
 ¹HOLCONST
-Ü	ÛSingleValueİ	: TABLE_EXPR ­ EXPR
+Ü	ÛSingleValueİ	: TABLE_COMP ­ VALUE_COMP
 ÷üüüüüüüüüüüüüüüüüü
 Üµte ·	SingleValue te =
 Ü	Ìtl rl r·
-Ü	let	trl = DT_rows (te tl)
+Ü	let	(c, t) = te tl
+Ü	in let	trl = DT_rows t
 Ü	in let	cil = DTR_cols (Hd trl)
+Ü	in let	(ic, ii) = Hd cil
 Ü	in	if	Length trl = 1 ± Length cil = 1
-Ü		then	Hd cil
-Ü		else	Arbitrary
+Ü		then	(c lub ic, ii)
+Ü		else	(c, Arbitrary)
 °
 
 \subsection{Contents}\label{Contents}
@@ -613,7 +623,7 @@ known at compile/transformation time whether or not the name is
 valid).
 
 ¹HOLCONST
-Ü	ÛContentsİ	: î ­ EXPR
+Ü	ÛContentsİ	: î ­ VALUE_COMP
 ÷üüüüüüüüüüüüüüüüüü
 Üµi ·	Contents i =
 Ü	Ìtl rl r·
@@ -634,7 +644,7 @@ $internal\_value\sb{class}$ from \cite{trans}.
 °
 
 ¹HOLCONST
-Ü	ÛClassificationİ	: î ­ EXPR
+Ü	ÛClassificationİ	: î ­ VALUE_COMP
 ÷üüüüüüüüüüüüüüüüüü
 Üµi ·	Classification i =
 Ü	Ìtl rl r·
@@ -649,7 +659,7 @@ To specify the $SELECT$ query we need to break it
 down into more primitive operations. In this section,
 we give the top-level building blocks.
 These are parameterised by the lower-level constructs (values and the like)
-which are discussed in section \ref{VALUES}.
+which are discussed in section \ref{VALUECOMPUTATIONS}.
 =TEX
 
 In each case, we identify the origin in the specification of
@@ -741,7 +751,7 @@ Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
 °
 ¹HOLCONST
 Ü	ÛProjectDataİ	: DerTable LIST
-Ü			 ­ EXPR LIST
+Ü			 ­ VALUE_COMP LIST
 Ü			 ­ DerTableRow LIST LIST
 Ü			 ­ DerTableRow LIST
 ÷üüüüüüüüüüüüüüüüüü
@@ -755,7 +765,7 @@ Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
 ¹HOLCONST
 Ü	ÛProjectİ	: DerTableSpec
 Ü			­ DerTable LIST
-Ü			­ (EXPR  ¸ DerColSpec) LIST
+Ü			­ (VALUE_COMP  ¸ DerColSpec) LIST
 Ü			­ DerTableRow LIST LIST
 Ü			­ DerTable
 ÷üüüüüüüüüüüüüüüüüü
@@ -767,7 +777,7 @@ Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
 °
 ¹HOLCONST
 Ü	ÛEvalProjectDataİ	: DerTable LIST
-Ü			 ­ EXPR LIST
+Ü			 ­ VALUE_COMP LIST
 Ü			 ­ DerTableRow LIST LIST
 Ü			 ­ DerTableRow LIST
 ÷üüüüüüüüüüüüüüüüüü
@@ -785,7 +795,7 @@ Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
 ¹HOLCONST
 Ü	ÛEvalProjectİ	: DerTableSpec
 Ü			­ DerTable LIST
-Ü			­ (EXPR  ¸ DerColSpec) LIST
+Ü			­ (VALUE_COMP  ¸ DerColSpec) LIST
 Ü			­ DerTableRow LIST LIST
 Ü			­ DerTable
 ÷üüüüüüüüüüüüüüüüüü
@@ -797,43 +807,35 @@ Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
 °
 
 \subsubsection{$WHERE$}
-The $WHERE$ operation is parameterised by a
-function to compute a class and a truth value from a row of a table.
-The operation acts on the first table in the argument list. 
-The argument expression is expected to give an appropriate classification
-for the where clause class. The specification of the computed table is
-the same as the original.
-
-Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
+The $WHERE$ operation is parameterised, amongst other things,
+by a classification to be used to eliminate rows whose existence the
+client is not allowed to know.
+The classification computations follow $tuple\_list\sb{make\_outer}$ in
+\cite{trans}. The local function $w$ computes the class of the where clauses
+for each new row. The local function $h$ computes for each row a pair comprising a
+truth value, indicating whether the new row is wanted, and a row, being
+the row to appear in the result if the row is wanted.
 
 =TEX
 ¹HOLCONST
-Ü	ÛWhereİ : DerTable LIST
+Ü	ÛWhereİ : Class
+Ü		­ DerTable LIST
 Ü		­ DerTableRow LIST
-Ü		­ EXPR
+Ü		­ VALUE_COMP
 Ü		­ DerTableRow LIST
 ÷üüüüüüüüüüüüüüüüüü
-Üµe tl rl·
-Ü	Where tl rl e =
+Üµc tl rl e·
+Ü	Where c tl rl e =
 Ü	let	w r = (DTR_where r lub Fst (e tl rl r))
-Ü	in let	h r = (ItemBool(Snd (e tl rl r)),
-Ü				MkDerTableRow (w r) (DTR_row r) (DTR_cols r))
+Ü	in let	h r = ((ItemBool(Snd (e tl rl r)) ± c dominates DTR_row r),
+Ü			MkDerTableRow (w r) (DTR_row r) (DTR_cols r))
 Ü	in	Map Snd (Map h rl ù {(t, r) | t})
 °
 
 \subsubsection{$GROUPBY$/$HAVING$}
-The $GROUPBY$ and $HAVING$ operations are most naturally treated together.
-The combined operation is parameterised by four things in addition
-to the parameter giving the table to be grouped:
-{\em (i)}, a list of aggregate expressions, $eval$, used to compute a row
-in the result table from each group;
-{\em (ii)}, a list of numbers, $inds$, giving the column indices by which
-the table is to be grouped;
-{\em (iii)}, an aggregate expression, $hasit$,
-to compute a truth value (the $HAVING$ condition) from a list of rows;
-and, {\em (iv)}, a table specification, $ts$,
-the table specification for the result table.
-
+The $GROUPBY$ and $HAVING$ operations must be treated together.
+It is here that the classification produced by a $TABLE_COMP$ is
+computed in anger.
 
 Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
 
@@ -878,56 +880,73 @@ invalid names).
 Ü	else	Arbitrary)
 Ü	(ListNth nl list)
 °
-The classification computations below are suggestions/guesses on the
-basis of current information.
+The classification computation below is a suggestion/guess on the
+basis of current information. The class computed is the least upper
+bound of the classes in the columns required to do the grouping
+and the classes of the results of the $HAVING$ test in each group.
+If the client clearance does not dominate this class then the
+optional check query generated by $tuple\_list\sb{make\_outer}$
+would return some rows (i.e., the check would fail and the query would
+not be allowed to proceed).
+Note that when $Group$ is used, rows whose existence the client is not
+cleared to know have been filtered out (using $Where$), and
+consequently the grouping on class columns does not contribute to the
+result class (following $tuple\_list\sb{make\_outer}$).
 
 ¹HOLCONST
 Ü	ÛGroupİ	: DerTable LIST
 Ü			­ DerTableRow LIST
 Ü			 ­ î LIST
 Ü			 ­ î LIST
-Ü			 ­ EXPR
-Ü			 ­ DerTableRow LIST LIST
+Ü			 ­ VALUE_COMP
+Ü			 ­ (Class ¸ (DerTableRow LIST LIST))
 ÷üüüüüüüüüüüüüüüüüü
 Üµtl rl gbsterling gbclass having·
 Ü	Group tl rl gbsterling gbclass having =
 Ü	let	gpby row = (ListNth gbsterling (Map Snd (DTR_cols row)),
 Ü				ListNth gbclass (Map Fst(DTR_cols row)))
+Ü	in let	gbc row = lubl(ListNth gbsterling (Map Fst(DTR_cols row)))
 Ü	in let	gps = MakeGroups gpby rl
 Ü	in let	has_test gp = ((CommonValue having) tl gp Arbitrary)
-Ü	in	(gps ù {gp | ItemBool(Snd (has_test gp))})
+Ü	in let	cl = lubl (Map gbc rl) lub lubl(Map (Fst o has_test) gps)
+Ü	in let	wanted_gps = gps ù {gp | ItemBool(Snd (has_test gp))}
+Ü	in	(cl, wanted_gps)
 °
 
 \subsection{$TableContents$}\label{TableContents}
-This is parameterised by a number giving the index into the list of tables:
+This is parameterised by a number giving the index into the list of tables.
+The class component of the result is bottom, indicating that no grouping
+has yet been done.
 
 ¹HOLCONST
-Ü	ÛTableContentsİ	: î ­ TABLE_EXPR
+Ü	ÛTableContentsİ	: î ­ TABLE_COMP
 ÷üüüüüüüüüüüüüüüüüü
 Üµi·
 Ü	TableContents i =
 Ü	Ìtl·
 Ü	if	i < Length tl
-Ü	then	Nth tl i
+Ü	then	(lattice_bottom, Nth tl i)
 Ü	else	Arbitrary
 °
 \subsection{$AllTuples$}\label{AllTuples}
 ¹HOLCONST
-Ü	ÛAllTuplesİ	: (EXPR  ¸ DerColSpec) LIST
-Ü			­ TABLE_EXPR LIST
-Ü			­ EXPR
+Ü	ÛAllTuplesİ	: Class
+Ü			­ (VALUE_COMP  ¸ DerColSpec) LIST
+Ü			­ TABLE_COMP LIST
+Ü			­ VALUE_COMP
 Ü			­ î LIST
 Ü			­ î LIST
-Ü			­ EXPR
-Ü			­ TABLE_EXPR
+Ü			­ VALUE_COMP
+Ü			­ TABLE_COMP
 ÷üüüüüüüüüüüüüüüüüü
-Üµsellist fromspec where gbsterling gbclass having·
-Ü	AllTuples sellist fromspec where gbsterling gbclass having =
+Üµcc sellist fromspec where gbsterling gbclass having·
+Ü	AllTuples cc sellist fromspec where gbsterling gbclass having =
 Ü	Ìtl·
-Ü	let	(ts, tab1) = Join (Map (Ìte·te tl) fromspec)
-Ü	in let	tab2 = Where tl tab1 where
-Ü	in let	gps = Group tl tab2 gbsterling gbclass having
-Ü	in	Project ts tl sellist gps
+Ü	let	(cll, tabs) = Split(Map (Ìte·te tl) fromspec)
+Ü	in let	(ts, tab1) = Join tabs
+Ü	in let	tab2 = Where cc tl tab1 where
+Ü	in let	(cl, gps) = Group tl tab2 gbsterling gbclass having
+Ü	in	(cl lub lubl cll, Project ts tl sellist gps)
 °
 
 \subsection{$DistinctTuples$}\label{DistinctTuples}
@@ -944,47 +963,52 @@ auxiliary to remove duplicate items from a list.
 °
 
 ¹HOLCONST
-Ü	ÛDistinctTuplesİ	: (EXPR  ¸ DerColSpec) LIST
-Ü			­ TABLE_EXPR LIST
-Ü			­ EXPR
+Ü	ÛDistinctTuplesİ	: Class
+Ü			­ (VALUE_COMP  ¸ DerColSpec) LIST
+Ü			­ TABLE_COMP LIST
+Ü			­ VALUE_COMP
 Ü			­ î LIST
 Ü			­ î LIST
-Ü			­ EXPR
-Ü			­ TABLE_EXPR
+Ü			­ VALUE_COMP
+Ü			­ TABLE_COMP
 ÷üüüüüüüüüüüüüüüüüü
-Üµsellist fromspec where gbsterling gbclass having·
-Ü	DistinctTuples sellist fromspec where gbsterling gbclass having =
+Üµcc sellist fromspec where gbsterling gbclass having·
+Ü	DistinctTuples cc sellist fromspec where gbsterling gbclass having =
 Ü	Ìtl·
-Ü	let	(ts, tab1) = Join (Map (Ìte·te tl) fromspec)
-Ü	in let	tab2 = Where tl tab1 where
-Ü	in let	gps = Group tl tab2 gbsterling gbclass having
+Ü	let	(cll, tabs) = Split(Map (Ìte·te tl) fromspec)
+Ü	in let	(ts, tab1) = Join tabs
+Ü	in let	tab2 = Where cc tl tab1 where
+Ü	in let	(cl, gps) = Group tl tab2 gbsterling gbclass having
 Ü	in let	rem_dups tab = MkDerTable(DT_spec tab)(RemoveDuplicates(DT_rows tab))
-Ü	in	rem_dups(Project ts tl sellist gps)
+Ü	in	(cl lub lubl cll, rem_dups(Project ts tl sellist gps))
 °
 \subsection{$Evaluate$}\label{Evaluate}
 Like $DistinctTuples$ this is very similar to $AllTuples$
 ¹HOLCONST
-Ü	ÛEvaluateİ	: (EXPR  ¸ DerColSpec) LIST
-Ü			­ TABLE_EXPR LIST
-Ü			­ EXPR
+Ü	ÛEvaluateİ	: Class
+Ü			­ (VALUE_COMP  ¸ DerColSpec) LIST
+Ü			­ TABLE_COMP LIST
+Ü			­ VALUE_COMP
 Ü			­ î LIST
 Ü			­ î LIST
-Ü			­ EXPR
-Ü			­ TABLE_EXPR
+Ü			­ VALUE_COMP
+Ü			­ TABLE_COMP
 ÷üüüüüüüüüüüüüüüüüü
-Üµsellist fromspec where gbsterling gbclass having·
-Ü	Evaluate sellist fromspec where gbsterling gbclass having =
+Üµcc sellist fromspec where gbsterling gbclass having·
+Ü	Evaluate cc sellist fromspec where gbsterling gbclass having =
 Ü	Ìtl·
-Ü	let	(ts, tab1) = Join (Map (Ìte·te tl) fromspec)
-Ü	in let	tab2 = Where tl tab1 where
-Ü	in let	gps = Group tl tab2 gbsterling gbclass having
-Ü	in	EvalProject ts tl sellist gps
+Ü	let	(cll, tabs) = Split(Map (Ìte·te tl) fromspec)
+Ü	in let	(ts, tab1) = Join tabs
+Ü	in let	tab2 = Where cc tl tab1 where
+Ü	in let	(cl, gps) = Group tl tab2 gbsterling gbclass having
+Ü	in	(cl lub lubl cll, EvalProject ts tl sellist gps)
 °
 \section{CLOSURE OPERATION}
 
 We would now like to form a large set of allowable table computations,
 namely, the set of all computations which can be performed by composing
-the ones defined above. To abbreviate this we use the following function
+the ones defined above at a given client clearance.
+To abbreviate the definition we use the following function
 which given a set of pairs of sets, $(a\sb{i}, b\sb{j})$,
 returns a pair comprising the intersection of the $a\sb{i}$ and
 the intersection of all the $b\sb{j})$.
@@ -994,11 +1018,13 @@ the intersection of all the $b\sb{j})$.
 ÷üüüüüüüüüüüüüüüüüü
 Ü	µu· ¥‰2 u = (¥{a | ¶ b·(a, b)  u}, ¥{b | ¶ a·(a, b)  u})
 °
+\ftlinepenalty=9999
 ¹HOLCONST
-Ü	ÛTableComputationsİ : TABLE_EXPR SET;
-Ü	ÛValueComputationsİ : EXPR SET
+Ü	ÛTableComputationsİ : Class ­ TABLE_COMP SET;
+Ü	ÛValueComputationsİ : Class ­ VALUE_COMP SET
 ÷üüüüüüüüüüüüüüüüüü
-Ü	(TableComputations, ValueComputations) =
+Üµcc·
+Ü	(TableComputations cc, ValueComputations cc) =
 Ü	¥‰2 { (tes, es) |
 Ü		(µci· DenoteConstant ci  es)
 Ü	±	(µi· Contents i  es)
@@ -1034,16 +1060,58 @@ the intersection of all the $b\sb{j})$.
 Ü
 Ü	±	(µesl tel e1 ml nl e2·	Elems(Map Fst esl) € es
 Ü			± Elems tel € tes ± e1  es ± e2  es
-Ü				´ AllTuples esl tel e1 ml nl e2  tes)
+Ü				´ AllTuples cc esl tel e1 ml nl e2  tes)
 Ü	±	(µesl tel e1 ml nl e2·	Elems(Map Fst esl) € es
 Ü			± Elems tel € tes ± e1  es ± e2  es
-Ü				´ DistinctTuples esl tel e1 ml nl e2  tes)
+Ü				´ DistinctTuples cc esl tel e1 ml nl e2  tes)
 Ü	±	(µesl tel e1 ml nl e2·	Elems(Map Fst esl) € es
 Ü			± Elems tel € tes ± e1  es ± e2  es
-Ü				´ Evaluate esl tel e1 ml nl e2  tes)
+Ü				´ Evaluate cc esl tel e1 ml nl e2  tes)
 Ü	}
 °
 
+\section{CRITICAL PROPERTIES}
+We now wish to relate the above with the critical properties defined
+in \cite{DS/FMU/FEF/026} and in particular with the notion of a ``risk input''.
+Each table computation as defined in the previous section is a function, $te$ say,
+which computes from a list of derived tables, $tl$ say, a pair comprising
+a classification, $c$, and a new derived table, $t$.
+Restricting attention to the second component of the pair (and tacking
+on an empty list of errors) gives us a function to which the
+defintion of a risk input in \cite{DS/FMU/FEF/026} applies. The intention
+is that $tl$ will be a risk input only in cases where the client clearance
+does not dominate $c$. This is captured formally by the following
+property of table computations.
+
+¹HOLCONST
+Ü	ÛOkTableComputationİ : Class ­ TABLE_COMP ğ
+÷üüüüüüüüüüüüüüüüüüüüüüüüü
+Üµcc te·
+Ü	te  OkTableComputation cc ¤
+Ü	let	c tl = Fst(te tl)
+Ü	in let	f tl = (Snd(te tl), [])
+Ü	in	RiskInputs cc f € {tl | ³cc dominates c tl}
+°
+
+We now say that an SSQL Query Transformation Processor is OK with
+respect to a given compiler if the queries it produces compile to
+functions which may be assumed to arise from appropriate table computations.
+¹HOLCONST
+Ü	ÛOkSTPİ	: (Query ­ (DerTable LIST ­ (DerTable ¸ Errors)))
+Ü		­ (Query, 'PARS) STP_TYPE ğ
+÷üüüüüüüüüüüüüüüüüüüüüüüüü
+Üµcompile stp·
+Ü	stp  OkSTP compile ¤
+Ü	µq c·
+Ü	isError(stp(q, c)) ²
+Ü	let	(dq, ocq, pars) = destVal(stp(q, c))
+Ü	in	¶dte·
+Ü		dte  OkTableComputation c
+Ü	±	compile dq = (Ìtl·(Snd(dte tl), []))
+Ü	±	µtl·
+Ü		³c dominates (Fst (dte tl)) ´
+Ü		IsL ocq ± ³DT_rows(Fst(compile (OutL ocq) tl)) = []
+°
 \section{CLOSING DOWN}
 The following \Product{} instruction restores the previous proof context.
 =SML
@@ -1051,7 +1119,6 @@ pop_pc();
 =TEX
 
 =IGN
-output_theory{theory = "fef026",out_file = "fef026th.doc"};
 output_theory{theory = "fef032",out_file = "fef032th.doc"};
 =TEX
 
@@ -1124,7 +1191,7 @@ an expression $e$ at a class $c$ to be the set inputs for which $e$
 reveals information which should not be visible at class $c$.
 
  ¹HOLCONST
- Ü	ÛExpRiskInputsİ	: Class ­ EXPR ­ DerTableRow ğ
+ Ü	ÛExpRiskInputsİ	: Class ­ VALUE_COMP ­ DerTableRow ğ
  ÷üüüüüüüüüüüüüüüüüü
  Üµcc e ·	ExpRiskInputs cc e
  Ü	=	{	r
@@ -1146,13 +1213,21 @@ conv ¬RemoveDuplicates []®;
 conv ¬RemoveDuplicates [x]®;
 conv ¬RemoveDuplicates [1;2;1;2;1]®;
 conv ¬RemoveDuplicates [1;3;2;1;2;3;1]®;
-
 push_consistency_goal¬TableComputations®;
-a(rewrite_tac[tac_proof(([], ¬µx·¶(y, z)· (y, z) = x®),
-		strip_tac THEN ¶_tac¬(Fst x, Snd x)® THEN rewrite_tac[])]);
+a(prove_¶_tac);
+a(strip_tac THEN rewrite_tac[tac_proof(([], ¬µx·¶z y· (y, z) = x®),
+		strip_tac THEN ¶_tac¬Snd x® THEN ¶_tac¬Fst x® THEN rewrite_tac[])]);
 save_consistency_thm¬TableComputations® (pop_thm());
-
-set_goal([], ¬µq : TABLE_EXPR ­ BOOL; p : EXPR ­ BOOL·
+=TEX
+The following theorem takes a minute or so to compute so we give
+a name to it here (to make the proof of the induction theorem easier
+to modify, e.g. if the definitions change).
+=SML
+set_pc"hol";
+val table_computation_rw_thm =
+	rewrite_rule[get_spec¬¥‰2®] (get_spec¬TableComputations®);
+set_pc"hol2";
+set_goal([], ¬µq : TABLE_COMP ­ BOOL; p : VALUE_COMP ­ BOOL· µcc : Class ·
 		(µci· p(DenoteConstant ci))
 	±	(µi· p(Contents i))
 	±	(µi· p(Classification i))
@@ -1187,15 +1262,31 @@ set_goal([], ¬µq : TABLE_EXPR ­ BOOL; p : EXPR ­ BOOL·
 
 	±	(µesl tel e1 ml nl e2· (µe·e  Elems(Map Fst esl) ´ p e)
 			± (µte·te  Elems tel ´ q te) ± p e1 ± p e2
-				´ q(AllTuples esl tel e1 ml nl e2))
+				´ q(AllTuples cc esl tel e1 ml nl e2))
 	±	(µesl tel e1 ml nl e2· (µe·e  Elems(Map Fst esl) ´ p e)
 			± (µte·te  Elems tel ´ q te) ± p e1 ± p e2
-				´ q(DistinctTuples esl tel e1 ml nl e2))
+				´ q(DistinctTuples cc esl tel e1 ml nl e2))
 	±	(µesl tel e1 ml nl e2· (µe·e  Elems(Map Fst esl) ´ p e)
 			± (µte·te  Elems tel ´ q te) ± p e1 ± p e2
-				´ q(Evaluate esl tel e1 ml nl e2))
-	´ (µte· te  TableComputations ´ q te) ± (µe· e  ValueComputations ´ p e)
+				´ q(Evaluate cc esl tel e1 ml nl e2))
+	´	(µte· te  TableComputations cc ´ q te)
+	±	(µe· e  ValueComputations cc ´ p e)
 ®);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(swap_asm_concl_tac ¬te  TableComputations cc®
+	THEN rewrite_tac[table_computation_rw_thm]
+	THEN strip_tac
+	THEN ¶_tac¬{te | q te}®
+	THEN POP_ASM_T rewrite_thm_tac
+	THEN ¶_tac¬{e | p e}® THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(swap_asm_concl_tac ¬e  ValueComputations cc®
+	THEN rewrite_tac[table_computation_rw_thm]
+	THEN strip_tac
+	THEN ¶_tac¬{e | p e}®
+	THEN POP_ASM_T rewrite_thm_tac
+	THEN ¶_tac¬{te | q te}® THEN asm_rewrite_tac[]);
+val table_computation_induction_thm =
+	save_pop_thm"table_computation_induction_thm";
 
-a(rewrite_tac[rewrite_rule[get_spec¬¥‰2®] (get_spec¬TableComputations®)]
-	THEN PC_T1 "hol2" REPEAT strip_tac);
