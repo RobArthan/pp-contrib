@@ -25,29 +25,136 @@ xpp -f refcalc.doc -c pp -d refcalc &
 \def\ZOtherLabel{}
 \def\ZSchemaLabel{}
 \def\Hide#1{\relax}
+%Macros for references (to be converted to bibtex presently).
+\def\Unifying{{\it Hoare \& He}}
+\def\Methods{{\it Jones}}
 \title{On Refinement Calculus and Partial Correctness \\ (DRAFT)}
 \author{R.D. Arthan}
 \makeindex
 \begin{document}
 \maketitle
 \section{Introduction}\label{Intro}
+\subsection{Background and Motivation}
 
-This note is concerned with a style of program specification in which
-the claims that can be verified have the form ``program $p$
-satisfies specification $s$ whenever it terminates''.
+This note is the first of a series concerned with a style of system specification in which
+the claims that can be verified have the form ``system $p$
+satisfies specification $s$ under normal circumstances''.
 This notion of correctness is traditionally referred to as partial correctness,
 although a more impartial term such as ``algorithmic correctness'' is
 preferred by some.
-A total correctness claim has the form ``program $p$
-satisfies specification $s$ and it always terminates''.
-For many practical purposes, partial correctness can be
+A total correctness claim has the form ``system $p$
+always satisfies specification $s$''.
+
+I should explain what is meant by ``normal circumstances'':
+we have in a mind some notion of mathematically rigorous system
+specification. Such a notion will always be relative to some conventions
+and assumptions about the relationship between the mathematical model
+and the physical systems under consideration. For example, in
+program specification, the modelling conventions might be the abstractions
+involved in a formal semantics for the programming language and the modelling
+assumptions might include an assumption that  no exceptions are raised causing control to pass
+from the programming language execution environment to the operating
+system under which it runs. We take normal circumstances to be those
+in which the modelling assumptions hold --- abnormal circumstances are those
+in which the model breaks down and something external to the model is required
+to deal with the situation.
+
+
+For many practical purposes, partial correctness is
 a much more useful notion than total correctness.
-For example, tools other than formal specification and proof may be
-better suited to automatic analysis of termination.
+For example, in program analysis, tools other than formal specification and proof may be
+better suited to automatic analysis of normal termination.
 Furthermore, partial correctness claims have the clear advantage
 of sometimes being true in physical reality, whereas total
-correctness claims never are (e.g., consider what happens when the
-power supply fails).
+correctness claims never are (e.g., consider what happens when a
+power supply fails). We believe the partial correctness approach
+is much closer in spirit to normal engineering practice: no engineered
+artefact is perfect. Much of the work in any engineering task is
+in combining potentially faulty subsystems so as to
+produce a system that is adequately resilient for its intended
+purpose. 
+
+Some technologies, such as programming languages, apparently offer
+the possibility of formal proof of total correctness. However, such a proof
+is always relative to some mathematical model which is invariably an idealisation
+of the physical reality of the delivered artefact. While this possibility is
+of considerable theoretical importance, we believe that there is considerable
+practical value in having a mathematically rigorous theory that reflects the
+potential for failure in any engineered component.
+
+The original motivation for this work lay in program specification.
+However, it became clear that with just a little additional abstraction,
+much of the theory has a much wider domain of application.
+In this first note, we look at a very general class of systems and system
+specifications. 
+
+The most general notion of the act of specifying a system is first to identify some
+set $P$ of possible systems and then to identify a subset $A \subseteq P$
+of acceptable systems. We may call this the {\it property-based} approach.
+It is advocated in {\Methods}
+as a general method for specifying and verifying critical system properties.
+The advantages and disadvantages of this view both lie in its
+generality: on the one hand, it is clearly adequate to deal with any system property
+that is amenable to any form of mathematical specification, on the other hand
+it gives no guidance whatsoever as to how to proceed: the modelling conventions
+and assumptions in any given situation need to be carefully designed and inspected
+to ensure they are fit for their intended purpose.
+
+An approach that has a very long tradition, particularly in program verification,
+is to observe that almost any system can be viewed as some kind of binary
+relation, say between inputs and outputs, or between successive states
+of a state transition machine. This {\it relational} approach leads to a notion
+of {\em refinement} whereby implementations are viewed as
+binary relations of the same kind  as are used for specifications and refinement
+rules are given defining what a valid implementation of a specification is.
+(The corresponding notion for the property-based approach is just set-theoretic
+inclusion or membership. The refinement rules give more useful insights
+in the relational approach.)
+
+
+In a relatively recent work, {\Unifying}, this approach is advocated
+as providing a unifying framework for dealing with a wide class of programming
+languages and programs. However, the approach as described in {\Unifying} is
+heavily biased towards the total correctness viewpoint. This actually leads to
+considerable technical complications and the solutions taken in {\Unifying}
+lead to counter-intuitive results: for example,  they preclude the design of
+a system which can create order from chaos --- a very common engineering
+requirement.
+
+It is certainly possible to adapt the relational approach to give a notion
+of partial correctness. Indeed, the approach we will take in this note
+embraces this as a special case. However, viewing specifications as
+binary relations leads to a significant loss of expressiveness in
+the partial correctness version. The problem is that when dealing with
+the possibility of failure, the specifier may need to
+demand failure under certain circumstances. Unfortunately, the relational approach
+gives no way of distinguishing between cases where failure is required
+and cases where the behaviour is unspecified.
+Our approach is to augment the binary relation with a set indicating
+the domain in which the specifier has a definite interest in behaviour.
+This is, essentially just the pre- and post-condition style of
+specification that is familiar from Floyd-Hoare logic and notations like
+VDM. However, the partial correctness interpretation of the pre-condition
+makes it play a much more important role than it does in a total
+correctness approach (which is why {\Unifying} is able to do without it,
+except as a syntactic convention).
+
+
+Please note this is work-in-progress and the current version of
+this note lacks any serious attempt to cite the literature or
+compare the results with other work.
+
+
+\subsection{Notation}
+
+We will develop our theory using the Z notation. We will give definitions in Z and
+state our theorems as Z conjectures. The Z definitions have all been type-checked 
+and the conjectures have all been proved using the {\Product} system. The master
+of this document is in fact a {\Product} literate script which can be processed
+automatically to check the definitions and replay the proofs. For brevity, the
+proof commands are suppressed from the printed form of the document.
+
+
 \Hide{
 The following ML sets up a context for giving the {\ProductZ} specifications.
 =SML
@@ -62,7 +169,7 @@ ReaderWriterSupport.PrettyNames.add_new_symbols[
 =TEX
 }
 
-The Z specification uses infix notation for the following relation
+We use infix notation for the following relation
 and function symbols:
 ¹Z
 Ü rel _ Ã _, _ %models% _, _ é_, _ â _
@@ -70,22 +177,19 @@ and function symbols:
 ¹Z
 Ü fun 7 _ %sqcap% _, _ %sqcup% _, _ ç$ê
 °
+We use postfix notation for the following function symbol:
 ¹Z
-Ü fun 7 _ ÀÀ _, _ ¡¡ _
+Ü fun 7 _ ç$ê
 °
 
-The specification contains a number of conjectures. All of these
-have been proved with {\Product} and the resulting theory listing
-is included as an appendix to this document.
-
-Please note this is work-in-progress and the current version of
-this note lacks any serious attempt to cite the literature or
-compare the results with other work.
 
 
 
 
 \section{States , Pre-conditions, Post-conditions}\label{STATE}
+
+[TBD: in the following the term ``state'' needs to be replaced by a more neutral term. ]
+
 We wish to construct a semantic model of specification of state transformations
 via pre- and post-conditions.
 The internal structure of states is not relevant to our purposes for the time being
@@ -156,8 +260,8 @@ variable, $T$; and, {\em(b)} a fragment of code that divides one variable, $Y$, 
 another, $X$, subject to the pre-condition that $X$ be positive.
 
 =GFT
-	„ X, Y , T [true, X = Y‰0 ± Y = X‰0]			 (a)
-	„ Y [X > 0, Y = Y‰0 / X ]					 (b)
+	„ X, Y , T [true, X = Y‰0 ± Y = X‰0]			(a)
+	„ Y [X > 0, Y = Y‰0 / X ]				(b)
 =TEX
 
 In our semantic view, a syntactic specification statement of this sort denotes a specification
