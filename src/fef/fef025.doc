@@ -1,0 +1,536 @@
+=TEX
+% TQtemplate.tex
+\documentstyle[hol1,11pt,TQ]{article}
+\def\Hide#1{}
+\def\Bool{``$\it{:}bool\,$''}
+\makeindex
+\TPPproject{DRA FRONT END FILTER PROJECT}  %% Mandatory field
+%\TPPvolume{}
+%\TPPpart{}
+\TPPtitle{Representation of an SSQL State as a TSQL State}  %% Mandatory field
+\TPPref{DS/FMU/FEF/025}  %% Mandatory field
+\def\SCCSversion{$Revision$
+}
+\TPPissue{\SCCSversion}  %% Mandatory field
+\TPPdate{\FormatDate{$Date$
+}}  %% Mandatory field (with sensible default)
+\TPPstatus{Draft}			%% Mandatory field
+\TPPtype{Specification}
+\TPPkeywords{}
+\TPPauthor{G.~M.~Prout & WIN01}  %% Mandatory field
+%\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
+\TPPauthorisation{R.B.~Jones & HAT Manager}
+\TPPabstract{The formal specification of a mapping from 
+an SSQL abstract machine state to the TSQL state which represents it. This is for the
+DRA front end filter project RSRE 1C/6130.}
+%\TPPabstractB{}
+%\TPPabstractC{}
+%\TPPabstractD{}
+%\TPPabstractE{}
+%\TPPabstractF{}
+\TPPdistribution{\parbox[t]{4.0in}{%
+	HAT FEF File \\
+	Simon Wiseman
+}}
+%\TPPclass{CLASSIFICATION}
+\newfont{\icllogo}{icllogo50}
+\def\TPPheadlhs{$\vcenter{\halign{##\cr\icllogo ICL\cr}}$}
+%\def\TPPheadlhs{}
+%\def\TPPheadcentre{}
+%def\TPPheadrhs{}
+%\def\TPPfootlhs{}
+%\def\TPPfootcentre{}
+%\def\TPPfootrhs{}
+
+\begin{document}
+\TPPsetsizes
+\makeTPPfrontpage
+
+\vfill
+\begin{centering}
+
+%\bf Copyright \copyright\ : International Computers Ltd \number\year
+
+\end{centering}
+
+\newpage
+\section {DOCUMENT CONTROL}
+\subsection{Contents List}
+\tableofcontents
+\subsection{Document Cross References}
+\bibliographystyle{fmu}
+\bibliography{fmu,fef}
+
+\subsection{Changes History}
+\begin{description}
+\item[Issue \SCCSversion ({\FormatDate{$Date$
+}}) ] First version.
+\end{description}
+
+\subsection{Changes Forecast}
+None.
+\pagebreak
+\section{GENERAL}
+\subsection{Scope}
+This document gives a formal specification of a 
+mapping from an SSQL abstract machine state to the TSQL 
+state which represents it.
+
+\subsection{Introduction}
+In \cite{DS/FMU/FEF/022} a description of the SWORD 
+architectural model is given. The top level structure 
+of the Front 
+End implementation 
+of SWORD is 
+captured in its definition as 
+the combination of appropriate subsystems to make a behavioural
+ model in the sense 
+of the formal 
+security policy of \cite{DS/FMU/FEF/003}. This model 
+requires the availability of a function 
+which maps any state of the SSQL 
+abstract machine of \cite{DS/FMU/FEF/006} to 
+the TSQL state which represents it.
+
+In \cite{DS/FMU/FEF/021} we defined the semantics of TSQL as a subset of SSQL
+ with all classes in the state, except those that are 
+actually stored as data, set at the lowest 
+possible classification, $lattice\_bottom$. Given an 
+SSQL state with $n$ columns, this will be represented as 
+a TSQL state with between $n$ and $3n\ +\ 1$ columns. The first column in
+the TSQL state
+will contain a value corresponding to the row existence 
+class in the SSQL state, unless this is constant(i.e. when
+the maximum row existence class is the same as the table
+class. Then for each SSQL 
+column there  will be one, two or three TSQL columns. There 
+will always be a column corresponding to the sterling value of 
+the SSQL value. The second  column corresponds to 
+the dinary value of the SSQL value, except in the case 
+where all values in this column would be null whence 
+it is omitted. The next column corresponds to the classification of the SSQL value, except in the case where the maximum and minimum field
+ classes for a column are the same whence, again,
+it is omitted. If the SSQL value 
+is of type $NullItem$ then the TSQL sterling and dinary 
+values will be $null$.  Otherwise, if the  SSQL value is dinary then the TSQL sterling value 
+will be $null$ and the TSQL dinary value will  be the SSQL value and if the 
+the SSQL value is sterling then the TSQL sterling value 
+will be the SSQL value and the TSQL dinary value will  be 
+$null$. 
+
+\section{PRELIMINARIES}
+The following \Product{} instructions set up the new theory $fef025$  and set the context 
+for the proof tools.
+=SML 
+open_theory "fef021";
+new_theoryÛ"fef025"İ;
+push_pc "hol";
+=TEX
+\section{REPRESENTING AN SSQL STATE AS A TSQL STATE}
+
+First a function which takes a value and
+returns sterling data classified at bottom.
+
+¹HOLCONST
+Ü	ÛMkData‰tİ : Val  ­ Data
+÷üüüüüüüüüüüüüü
+Ü	µ v · MkData‰t v = newData lattice_bottom sterling v 
+°
+$MkNullData‰t$ is a sterling null value classified at bottom.
+
+¹HOLCONST
+Ü	ÛMkNullData‰tİ : Data
+÷üüüüüüüüüüüüüü
+Ü	MkNullData‰t = MkData lattice_bottom (NullItemItem null) 
+°
+A function which makes a sterling value classified at bottom from a class.
+
+¹HOLCONST
+Ü	ÛMkClassValİ : Class ­ Data
+÷üüüüüüüüüüüüüü
+Ü	µ c : Class · MkClassVal c = MkData‰t(ClassVal c) 
+°
+
+The function $repr\_data$  takes a value and returns the 
+sterling value, the 
+dinary value and the class value.
+¹HOLCONST
+Ü	Ûrepr_dataİ 		: Data ­ Data ¸ Data ¸ Data
+÷üüüüüüüüüüüüüü
+Ü	µ d : Data ·
+Ü	repr_data d = 	
+Ü		let i = Dat_item d
+Ü		in let c = Dat_class d
+Ü		in 	
+Ü		if isNullItem i
+Ü		then (MkNullData‰t,MkNullData‰t,MkClassVal c)
+Ü		else 
+Ü		let v = destValuedItem i
+Ü		in if VI_worth v = sterling
+Ü		then (MkData‰t (VI_val v),MkNullData‰t,MkClassVal c)
+Ü		else if VI_worth v = dinary
+Ü		then (MkNullData‰t,MkData‰t (VI_val v),MkClassVal c)
+Ü		else  (MkNullData‰t,MkNullData‰t,MkClassVal c)
+°
+All column existence classes in the state will be at bottom.
+
+¹HOLCONST
+Ü	ÛRepr_colConİ 		: ColCon ­ ColCon
+÷üüüüüüüüüüüüüü
+Ü	µ cc : ColCon · 
+Ü	Repr_colCon cc = MkColCon
+Ü				lattice_bottom
+Ü				(CC_uniform cc)
+Ü				(CC_unique cc)
+Ü				(CC_classLimited cc)
+Ü				(CC_primary cc)
+Ü				(CC_secondary cc)
+Ü				(CC_referential cc)	
+°
+
+
+We need functions to generate new names for the 
+new columns in the TSQL state.
+
+¹HOLCONST
+Ü	ÛRan‰fİ 		: ('a ­ 'b) ­ 'b ğ
+÷üüüüüüüüüüüüüü
+Ü	µ f · Ran‰f f = {b|¶ a· f a = b}
+°
+
+
+¹HOLCONST
+Ü	ÛRowExistNameİ 	: Ide ­ Ide;
+Ü	ÛSterlingNameİ 	: Ide ­ Ide;
+Ü	ÛDinaryNameİ 	: Ide ­ Ide;
+Ü	ÛClassNameİ 	: Ide ­ Ide
+÷üüüüüüüüüüüüüü
+Ü	OneOne RowExistName
+Ü±	OneOne SterlingName
+Ü±	OneOne DinaryName
+Ü±	OneOne ClassName
+Ü±	Ran‰f RowExistName ¡ Ran‰f SterlingName ¡ 
+Ü		Ran‰f DinaryName ¡ Ran‰f ClassName = {}
+°
+
+A new $ColSpec$ for the row\_existence column of a
+table may be required. In TSQL, all values will be
+ sterling, so  the type of dinary values in TSQL should be null. 
+Since there is no null type 
+in SSQL, we use type $monolean$ to model the null type.
+
+
+
+¹HOLCONST
+Ü	ÛrowExistColİ 		: Ide ­ ColSpec
+÷üüüüüüüüüüüüüü
+Ü	µ tab : Ide ·
+Ü	rowExistCol tab = MkColSpec
+Ü				(RowExistName tab)
+Ü				1
+Ü				monoleanType
+Ü				classType
+Ü				false
+Ü				MkNullData‰t
+Ü				1
+Ü				lattice_bottom
+Ü				lattice_bottom
+°
+A new set of constraints for the row\_existence column, if required.
+¹HOLCONST
+Ü	ÛrowExistColConİ 		: ColCon
+÷üüüüüüüüüüüüüü
+Ü	rowExistColCon = MkColCon
+Ü				lattice_bottom
+Ü				false
+Ü				false
+Ü				false
+Ü				false
+Ü				false
+Ü				[]
+°
+The function $f‰1$ takes a table and a column position and if
+that column exists in the table returns its $ColSpec$.
+
+¹HOLCONST
+Ü	Ûf‰1İ : TableSpec ­ Num ­ ColSpec + ONE
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ t n · f‰1 t n =	if ¶‰1 c · c  TS_colspecs t ± CS_posn c = n
+Ü					then InL (Å c· c  TS_colspecs t ± CS_posn c = n)
+Ü					else InR One
+°
+$ColNeeds$ determines the number of TSQL columns 
+needed for a particular SSQL column by checking the relevant
+ $ColSpec$ components.
+
+¹HOLCONST
+Ü	ÛColNeedsİ : TableSpec ­ Num ­ Num + ONE
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ t n · ColNeeds  t n = 
+Ü		if IsL (f‰1 t n) then 
+Ü			let c = OutL (f‰1 t n)
+Ü			in let ans = 	if CS_dinaryType c = monoleanType
+Ü					then 	if CS_min c = CS_max c
+Ü						then 1
+Ü						else 2
+Ü					else 3
+Ü			in InL ans
+Ü		else InR(OutR(f‰1 t n))
+°
+Given an SSQL column position we need the first column position 
+for the TSQL columns representing it.
+
+¹HOLCONST
+Ü	ÛNextNumİ : TableSpec ­ Num ­ Num 
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ t n · NextNum t n = (1 + (#{i|i < n ± IsL(ColNeeds t i)
+Ü				± OutL(ColNeeds t i)=3})*3
+Ü				+ (#{i|i < n ± IsL(ColNeeds t i)
+Ü				± OutL(ColNeeds t i)=2})*2
+Ü				+ #{i|i < n ± IsL(ColNeeds t i)
+Ü				± OutL(ColNeeds t i)=1})
+°
+
+From each SSQL $ColSpec$, generate a list of TSQL $ColSpec$s.
+This list will always contain a sterling $ColSpec$, and 
+may contain a dinary $ColSpec$ and a class $ColSpec$. If an 
+extra $ColSpec$ is required for the row existence 
+classifications,
+ then we increment each column position by one.
+
+
+¹HOLCONST
+Ü	Ûf‰2İ :  TableSpec ­ ColSpec ­ ColSpec LIST
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ t cs · f‰2 t cs = 
+Ü		let n = CS_posn cs
+Ü		in let rc = if TS_class t = TS_maxRow t then 0 else 1	
+Ü		in let next = rc + NextNum t n
+Ü		in let cs‰s = MkColSpec
+Ü				(SterlingName (CS_ide cs))
+Ü				next
+Ü				monoleanType
+Ü				(CS_sterlingType cs)
+Ü				(CS_nullType cs)
+Ü				(CS_default cs)
+Ü				(rc + CS_consGroup cs)
+Ü				lattice_bottom
+Ü				lattice_bottom
+Ü		in let (l‰1,next‰1) = 
+Ü			if CS_dinaryType cs = monoleanType
+Ü			then ([cs‰s],next + 1)
+Ü			else (Cons cs‰s[MkColSpec
+Ü				(DinaryName (CS_ide cs))
+Ü				(next + 1)
+Ü				monoleanType
+Ü				(CS_dinaryType cs)
+Ü				(CS_nullType cs)
+Ü				(CS_default cs)
+Ü				(rc + CS_consGroup cs)
+Ü				lattice_bottom
+Ü				lattice_bottom],next + 2)
+		in if CS_min  cs = CS_max cs
+Ü			then l‰1
+Ü			else l‰1 ë [MkColSpec
+Ü				(ClassName (CS_ide cs))
+Ü				next‰1
+Ü				monoleanType
+Ü				classType
+Ü				(CS_nullType cs)
+Ü				(CS_default cs)
+Ü				(rc + CS_consGroup cs)
+Ü				lattice_bottom
+Ü				lattice_bottom]
+°
+
+From each SSQL column position/data pair we generate a list of 
+column position/data pairs containing one, two or three elements.
+
+
+¹HOLCONST
+Ü	Ûf‰3İ 		: TableSpec ­ Num ¸ Data ­ (Num ¸ Data) LIST
+÷üüüüüüüüüüüüüü
+Ü	µ t n d · f‰3 t (n,d) =
+Ü		let rc = if TS_class t = TS_maxRow t then 0 else 1	
+Ü		in let next = rc + NextNum t n
+Ü		in let cs = OutL(f‰1 t n)
+Ü		in let d‰s = Fst(repr_data d)
+Ü		in let (l‰1,next‰1) = 
+Ü			if CS_dinaryType cs = monoleanType
+Ü			then ([(next,d‰s)],next + 1)
+Ü			else (Cons (next,d‰s)[(next + 1,Fst(Snd (repr_data d)))],next + 2)
+Ü		in if CS_min  cs = CS_max cs
+Ü			then l‰1
+Ü			else l‰1 ë  [(next‰1,Snd(Snd (repr_data d)))]
+°
+Represent a row of SSQL data in a table as a row of TSQL data.
+
+¹HOLCONST
+Ü	Ûrepr_rowİ 		: TableSpec ­ Row ­ Row 
+÷üüüüüüüüüüüüüü
+Ü	µ t r · repr_row t r = MkRow
+Ü				lattice_bottom
+Ü				(let prs = R_data r
+Ü				in let prs' = {pr'|¶ pr · pr  prs ± pr'  Elems(f‰3 t pr)} 
+Ü				in if TS_class t = TS_maxRow t
+Ü				then prs'
+Ü				else prs' À {(1,MkClassVal (R_exist r))})
+°
+Represent a table of SSQL data as a row of TSQL data.
+
+¹HOLCONST
+Ü	Ûrepr_tableİ 		: Ide ­ TableSpec ­  TableSpec 
+÷üüüüüüüüüüüüüü
+Ü	µ i t · repr_table i t = 
+Ü		let css = {cs'|¶ cs · cs  TS_colspecs t ± cs'  Elems(f‰2 t cs)}
+Ü		in let ccs = {(n,cc)|n  Dom(TS_cons t) ± 
+Ü				cc = Repr_colCon ((TS_cons t) @ n)}
+Ü		in let (css',ccs') = 	
+Ü			if TS_class t = TS_maxRow t
+Ü			then  (css,ccs)
+Ü			else (css À {rowExistCol i},
+Ü				{1,rowExistColCon} À 
+Ü				{(n',cc')|¶ n cc · (n,cc)  ccs ± n' = n + 1 ± cc' = cc})
+Ü		in MkTableSpec
+Ü			lattice_bottom
+Ü			lattice_bottom
+Ü			css'
+Ü			ccs'
+Ü			(Map (repr_row t) (TS_rows t))	
+°
+
+
+¹HOLCONST
+Ü	Ûrepr_dirİ 		: Directory ­  Directory 
+÷üüüüüüüüüüüüüü
+Ü	µ d · repr_dir d = 
+Ü	    MkDirectory
+Ü		{(id,tab)|id  Dom(Dir_tables d)  ±  tab = repr_table id (Dir_tables d @ id)}
+		lattice_bottom
+Ü		lattice_bottom	
+°
+
+Finally $repr$ from an SSQL state to a TSQL state.
+
+¹HOLCONST
+Ü	Ûreprİ 		: State ­  State‰t 
+÷üüüüüüüüüüüüüü
+Ü	µ s · repr s = 
+Ü		let s' = repState s
+Ü		in absState‰t(absState{(i,dir)|i  Dom s' ± dir = repr_dir(s' @ i)})
+°
+
+\newpage
+\twocolumn[\section{INDEX} \label{INDEX}]
+\small
+\printindex
+
+\end{document}
+=SML
+die;
+¹HOLCONST
+Ü	ÛRowExistNameİ 	: Ide ­ Ide;
+Ü	ÛSterlingNameİ 	: Ide ­ Ide;
+Ü	ÛDinaryNameİ 	: Ide ­ Ide
+Ü	ÛClassNameİ 	: Ide ­ Ide
+÷üüüüüüüüüüüüüü
+Ü	OneOne RowExistName
+Ü±	OneOne SterlingName
+Ü±	OneOne DinaryName
+Ü±	OneOne ClassName
+Ü±	µ i · ³(RowExistName i = SterlingName i) 
+Ü±	µ i · ³(RowExistName i = DinaryName i) 
+Ü±	µ i · ³(RowExistName i = ClassName i)
+Ü±	µ i · ³(SterlingName i = DinaryName i) 
+Ü±	µ i · ³(SterlingName i = ClassName i) 
+Ü±	µ i · ³(DinaryName i = ClassName i) 
+°
+
+¹HOLCONST
+Ü	ÛNextNumİ : TableSpec ­ Num ­ Num 
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ t n · NextNum t n = (1 + (#{i|i < n ± IsL(ColumnNeeds t i)
+Ü				± OutL(ColumnNeeds t i)=3})*3
+Ü				+ (#{i|i < n ± IsL(ColumnNeeds t i)
+Ü				± OutL(ColumnNeeds t i)=2})*2
+Ü				+ #{i|i < n ± IsL(ColumnNeeds t i)
+Ü				± OutL(ColumnNeeds t i)=1})
+°
+
+¹HOLCONST
+Ü	Ûf‰2İ :  ColSpec ­ ColSpec LIST
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ cs · f‰2 cs = 
+Ü		let cs‰s = MkColSpec
+Ü				(SterlingName (CS_ide cs))
+Ü				(CS_posn cs)
+Ü				monoleanType
+Ü				(CS_sterlingType cs)
+Ü				(CS_nullType cs)
+Ü				(CS_default cs)
+Ü				(CS_consGroup cs)
+Ü				lattice_bottom
+Ü				lattice_bottom
+Ü		in let cs‰d = MkColSpec
+Ü				(DinaryName (CS_ide cs))
+Ü				(CS_posn cs)
+Ü				monoleanType
+Ü				(CS_dinaryType cs)
+Ü				(CS_nullType cs)
+Ü				(CS_default cs)
+Ü				(CS_consGroup cs)
+Ü				lattice_bottom
+Ü				lattice_bottom
+Ü		in let cs‰c = MkColSpec
+Ü				(DinaryName (CS_ide cs))
+Ü				(CS_posn cs)
+Ü				monoleanType
+Ü				(CS_dinaryType cs)
+Ü				(CS_nullType cs)
+Ü				(CS_default cs)
+Ü				(CS_consGroup cs)
+Ü				lattice_bottom
+Ü				lattice_bottom
+Ü		in 
+Ü		Cons cs‰s
+Ü		if CS_dinaryType cs = monoleanType
+Ü		then 	if CS_min = CS_max
+Ü			then []
+Ü			else [cs‰d]
+Ü		else [cs‰d;cs‰c]
+°
+¹HOLCONST
+Ü	ÛColumnNeedsİ : TableSpec ­ Num ­ Num + ONE
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ t n · ColumnNeeds  t n = 
+Ü		if IsL (f‰1 t n) then InL(Length(f‰2(OutL (f‰1 t n))))
+Ü		else InR(OutR(f‰1 t n))
+°
+
+¹HOLCONST
+Ü	ÛColumnNeedsİ : TableSpec ­ Num ­ Num + ONE
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ t n · ColumnNeeds  t n = 
+Ü		if IsL (f‰1 t n) then InL(Length(f‰2(OutL (f‰1 t n))))
+Ü		else InR(OutR(f‰1 t n))
+°
+
+¹HOLCONST
+Ü	ÛColNeedsİ : TableSpec ­ Num ­ Num + ONE
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ t n · ColNeeds  t n = 
+Ü		if IsL (f‰1 t n) then 
+Ü			let c = OutL (f‰1 t n)
+Ü			in let ans = 	if CS_dinaryType c = monoleanType
+Ü					then 	if CS_min c = CS_max c
+Ü						then 1
+Ü						else 2
+Ü					else 3
+Ü			in InL ans
+Ü		else InR(OutR(f‰1 t n))
+°
+
+
+
+
+
