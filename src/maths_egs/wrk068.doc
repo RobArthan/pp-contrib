@@ -74,7 +74,7 @@ doctex wrk068 wrk068.th; texdvi -b wrk068; texdvi wrk068; texdvi wrk068
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2004/04/17 16:02:32 $%
+\date{\FormatDate{$Date: 2004/04/26 20:21:59 $%
 }}
 
 \begin{document}
@@ -82,14 +82,20 @@ doctex wrk068 wrk068.th; texdvi -b wrk068; texdvi wrk068; texdvi wrk068
 \maketitle
 \begin{abstract}
 This {\ProductHOL} script contains definitions and proofs concerning
-group theory.
+the elements of group theory.
+What is currently covered is what is covered in the first chapter of any good text on the subject:
+in preparation for the introduction of quotient groups, we begin with a purely set-theoretical study of equivalance relations and the quotient of a set with respect to an equivalence relation.
+This is followed by the definitions of the concepts of group, homomorphism between groups, subgroups, normal subgroups, kernels of homomorphisms, congruence modulo a subgroup, cosets, and quotient groups.
+We then demonstrate a few examples of groups and go on to show that the various abstract notions lead to the expected theorems: e.g., that the quotient group construction is consistent and does indeed give rise to a group.
 
+The treatment in {\ProductHOL} raises some interesting methodological problems and we give our preferred solutions to these problems.
+These issues are mostly not specific to {\ProductHOL} but are likely to apply to any development of the material in a typed logic with Millner-style polymorphism.
 \end{abstract}
 \vfill
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK068; issue $Revision: 1.3 $%
+Reference: LEMMA1/HOL/WRK068; issue $Revision: 1.2 $%
 
 
 \end{centering}
@@ -133,7 +139,7 @@ This document gives specifications and proofs relating to group theory.
 
 \subsection{Equivalence Relations}
 
-\subsection{Technical Prelude}
+\subsubsection{Technical Prelude}
 
 First of all, we must give the the ML commands to  introduce the new theory ``equiv\_rel'' as a child of the theory ``orders'' of ordered sets (whence comes our definition of transitivity,
 see \cite{LEMMA1/HOL/DTD115}).
@@ -155,6 +161,10 @@ new_theory"equiv_rel";
 %%%%
 %%%%
 \subsubsection{The Definitions}
+We need to define the notion of an equivalence relation, i.e., a binary relation that is transitive, reflexive and symmetric.
+Transitivity is defined elsewhere, but we now need the notions of refliexivity and symmetry to support the definition of an equivalence relation.
+We follow the theory of orders in making these notions properties of set-relation pairs.
+
 =SML
 declare_infix(210, "¶");
 πHOLCONST
@@ -178,6 +188,7 @@ declare_infix(210, "¶");
 ‹	Equiv(X, $¶)
 ‹ §	Refl(X, $¶) ± Sym(X, $¶) ± Trans(X, $¶)
 ∞
+
 πHOLCONST
 ‹ €EquivClass› : ('a SET ∏ ('a ≠ 'a ≠ BOOL)) ≠ 'a ≠ 'a SET
 ˜¸¸¸¸¸¸
@@ -219,7 +230,7 @@ declare_postfix(330, "Á-Í");
 ∞
 \subsection{Groups}
 
-\subsection{Technical Prelude}
+\subsubsection{Technical Prelude}
 
 First of all, we must give the the ML commands to  introduce the new theory ``groups'' as a child of the theory ``equiv\_rel'' of equivalence relations.
 
@@ -334,7 +345,7 @@ declare_alias("//", ¨QuotientGroupÆ);
 \newpage
 \subsection{Examples of Groups}
 
-\subsection{Technical Prelude}
+\subsubsection{Technical Prelude}
 
 First of all, we must give the the ML commands to  introduce the new theory ``group\_egs'' as a child of the theory `groups'' of groups.
 
@@ -417,7 +428,7 @@ val €refl_def› = get_spec¨ReflÆ;
 val €sym_def› = get_spec¨SymÆ;
 val €equiv_def› = get_spec¨EquivÆ;
 val €equiv_class_def› = get_spec¨EquivClassÆ;
-val €quotient_def› = get_spec¨$//Æ;
+val €quotient_set_def› = get_spec¨$//Æ;
 val €respects_def› = get_spec¨$RespectsÆ;
 val €induced_def› = get_spec¨$Á-ÍÆ;
 =SML
@@ -524,14 +535,14 @@ set_goal([], ¨
 	¥	µA∑ A ç X // ($¶) ¥ ∂x∑ x ç X ± A = EquivClass(X, $¶) x
 
 Æ);
-a(rewrite_tac[ quotient_def]);
+a(rewrite_tac[ quotient_set_def]);
 val €quotient_map_onto_thm› = save_pop_thm "quotient_map_onto_thm";
 =TEX
 =SML
 set_goal([], ¨
 	µX $¶∑ A ç X // ($¶) ± x ç A ¥ x ç X
 Æ);
-a(rewrite_tac[ quotient_def, equiv_class_def] THEN REPEAT strip_tac);
+a(rewrite_tac[ quotient_set_def, equiv_class_def] THEN REPEAT strip_tac);
 a(all_var_elim_asm_tac1);
 val €quotient_ç_thm› = save_pop_thm "quotient_ç_thm";
 =TEX
@@ -541,7 +552,7 @@ set_goal([], ¨
 		Equiv(X, $¶)
 	¥	A ç X // ($¶) ¥ ∂x∑ x ç X ± x ç A
 Æ);
-a(rewrite_tac[ quotient_def, equiv_class_def, equiv_def, refl_def] THEN REPEAT strip_tac);
+a(rewrite_tac[ quotient_set_def, equiv_class_def, equiv_def, refl_def] THEN REPEAT strip_tac);
 a(all_var_elim_asm_tac1);
 a(∂_tac¨xÆ THEN REPEAT strip_tac THEN all_asm_fc_tac[]);
 val €quotient_rep_∂_thm› = save_pop_thm "quotient_rep_∂_thm";
@@ -580,7 +591,7 @@ set_goal([], ¨
 	±	(f Respects $¶) X
 	¥	µA x∑ A ç X // $¶ ± x ç A ¥ (f Á-Í) A = f x
 Æ);
-a(rewrite_tac[quotient_def] THEN REPEAT strip_tac THEN all_var_elim_asm_tac1);
+a(rewrite_tac[quotient_set_def] THEN REPEAT strip_tac THEN all_var_elim_asm_tac1);
 a(TOP_ASM_T (strip_asm_tac o rewrite_rule[equiv_class_def]));
 a(ALL_FC_T  rewrite_tac[conv_rule(ONCE_MAP_C eq_sym_conv) equiv_class_eq_thm,
 	induced_fun_thm1]);
@@ -684,14 +695,15 @@ val €dyadic_induced_fun_∂_unique_thm› = save_pop_thm "dyadic_induced_fun_∂_uniqu
 %%%%
 =SML
 open_theory"groups";
-set_merge_pcs["basic_hol1", "'sets_ext"];
+set_merge_pcs["basic_hol1", "'sets_alg"];
 =TEX
 =SML
 val €group_ops_def› = get_spec¨OneÆ;
 val €group_def› = get_spec¨GroupÆ;
 val €homomorphism_def› = get_spec¨HomomorphismÆ;
 val €subgroup_def› = get_spec¨SubgroupÆ;
-val €normal_subgroup_def› = get_spec¨NormalSubgroupÆ;
+val €subgroup_def1› = pc_rule1 "sets_ext1" rewrite_rule[] (get_spec¨SubgroupÆ);
+val €normal_subgroup_def1› = get_spec¨NormalSubgroupÆ;
 val €kernel_def› = get_spec¨KernelÆ;
 val €right_congruent_def› = get_spec¨RightCongruentÆ;
 val €right_coset_def› = get_spec¨RightCosetÆ;
@@ -729,7 +741,7 @@ val €˙_ones_group_thm› = save_pop_thm "˙_ones_group_thm";
 %%%%
 =SML
 open_theory"groups";
-set_merge_pcs["basic_hol1", "'sets_ext"];
+set_merge_pcs["basic_hol1", "'sets_alg"];
 =TEX
 =SML
 set_goal([], ¨
@@ -742,7 +754,7 @@ set_goal([], ¨
 ±	(x . (x õ~)G) G = One G
 Æ);
 a(rewrite_tac[group_def] THEN REPEAT strip_tac THEN all_asm_fc_tac[]);
-val €group_clauses_lemma1› = save_pop_thm"group_clauses_lemma1";
+val €group_clauses1› = save_pop_thm"group_clauses1";
 =TEX
 =SML
 set_goal([], ¨
@@ -752,7 +764,7 @@ set_goal([], ¨
 ±	µz∑ z ç Car G ¥ ((x.y)G.z)G = (x. (y.z)G)G
 Æ);
 a(rewrite_tac[group_def] THEN REPEAT strip_tac THEN all_asm_fc_tac[]);
-val €group_clauses_lemma2› =  save_pop_thm"group_clauses_lemma2";
+val €group_clauses2› =  save_pop_thm"group_clauses2";
 =TEX
 =SML
 set_goal([], ¨
@@ -761,10 +773,10 @@ set_goal([], ¨
 ¥	(x = y § (x.(y õ~)G)G = One G)
 Æ);
 a(REPEAT strip_tac THEN1
-	(ALL_FC_T asm_rewrite_tac[group_clauses_lemma1]));
+	(ALL_FC_T asm_rewrite_tac[group_clauses1]));
 a(LEMMA_T ¨((x . (y õ~) G) G .y)G = (One G.y)GÆ ante_tac THEN1 asm_rewrite_tac[]);
-a(lemma_tac¨(y õ~)G  ç Car GÆ THEN1 all_fc_tac[group_clauses_lemma1]);
-a(ALL_FC_T rewrite_tac[group_clauses_lemma1, group_clauses_lemma2]);
+a(lemma_tac¨(y õ~)G  ç Car GÆ THEN1 all_fc_tac[group_clauses1]);
+a(ALL_FC_T rewrite_tac[group_clauses1, group_clauses2]);
 val €group_eq_thm› = save_pop_thm"group_eq_thm";
 =TEX
 =SML
@@ -774,11 +786,11 @@ set_goal([], ¨
 ¥	(x = y § ((x õ~)G.y)G = One G)
 Æ);
 a(REPEAT strip_tac THEN1
-	(ALL_FC_T asm_rewrite_tac[group_clauses_lemma1]));
+	(ALL_FC_T asm_rewrite_tac[group_clauses1]));
 a(LEMMA_T ¨(x.((x õ~) G . y) G)G = (x.One G)GÆ ante_tac THEN1 asm_rewrite_tac[]);
-a(lemma_tac¨(x õ~)G  ç Car GÆ THEN1 all_fc_tac[group_clauses_lemma1]);
-a(ALL_FC_T rewrite_tac[group_clauses_lemma1, 
-	conv_rule (ONCE_MAP_C eq_sym_conv) group_clauses_lemma2]);
+a(lemma_tac¨(x õ~)G  ç Car GÆ THEN1 all_fc_tac[group_clauses1]);
+a(ALL_FC_T rewrite_tac[group_clauses1, 
+	conv_rule (ONCE_MAP_C eq_sym_conv) group_clauses2]);
 a(REPEAT strip_tac THEN asm_rewrite_tac[]);
 val €group_eq_thm1› = save_pop_thm"group_eq_thm1";
 =TEX
@@ -789,10 +801,10 @@ set_goal([], ¨
 ¥	( (x.y) G = (x.z) G § y = z)
 Æ);
 a(REPEAT strip_tac THEN_LIST [id_tac, asm_rewrite_tac[]]);
-a(lemma_tac¨ (x õ~) G ç Car GÆ THEN1 all_fc_tac[group_clauses_lemma1]);
+a(lemma_tac¨ (x õ~) G ç Car GÆ THEN1 all_fc_tac[group_clauses1]);
 a(LEMMA_T¨(( (x õ~) G. x) G. y) G = (( (x õ~) G. x) G. z) G Æ ante_tac THEN1
-	ALL_FC_T asm_rewrite_tac[group_clauses_lemma2]);
-a(ALL_FC_T rewrite_tac[group_clauses_lemma1]);
+	ALL_FC_T asm_rewrite_tac[group_clauses2]);
+a(ALL_FC_T rewrite_tac[group_clauses1]);
 val €left_cancel_thm› = save_pop_thm"left_cancel_thm";
 =TEX
 =SML
@@ -802,10 +814,10 @@ set_goal([], ¨
 ¥	((x õ~)G õ~)G = x
 Æ);
 a(REPEAT strip_tac);
-a(lemma_tac¨ (x õ~) G ç Car GÆ THEN1 all_fc_tac[group_clauses_lemma1]);
+a(lemma_tac¨ (x õ~) G ç Car GÆ THEN1 all_fc_tac[group_clauses1]);
 a(lemma_tac¨ ((x õ~) G. (((x õ~)G õ~)G)) G = ((x õ~) G. x)  G Æ THEN1
-	ALL_FC_T asm_rewrite_tac[group_clauses_lemma1]);
-a(lemma_tac¨ ((x õ~) G õ~)G ç Car GÆ THEN1 all_fc_tac[group_clauses_lemma1]);
+	ALL_FC_T asm_rewrite_tac[group_clauses1]);
+a(lemma_tac¨ ((x õ~) G õ~)G ç Car GÆ THEN1 all_fc_tac[group_clauses1]);
 a(all_fc_tac[left_cancel_thm]);
 val €inverse_inverse_thm› = save_pop_thm"inverse_inverse_thm";
 =TEX
@@ -817,16 +829,16 @@ set_goal([], ¨
 ±	((x õ~)G.(x.y)G)G = y
 Æ);
 a(REPEAT strip_tac THEN
-	(lemma_tac¨((x:'a) õ~)G ç Car GÆ THEN1 all_fc_tac[group_clauses_lemma1]));
+	(lemma_tac¨((x:'a) õ~)G ç Car GÆ THEN1 all_fc_tac[group_clauses1]));
 (* *** Goal "1" *** *)
 a(LEMMA_T¨(x.((x õ~)G.y)G)G = ((x.(x õ~)G)G.y)GÆ rewrite_thm_tac THEN1
-	ALL_FC_T rewrite_tac[group_clauses_lemma2]);
-a(ALL_FC_T rewrite_tac[group_clauses_lemma1]);
+	ALL_FC_T rewrite_tac[group_clauses2]);
+a(ALL_FC_T rewrite_tac[group_clauses1]);
 (* *** Goal "2" *** *)
 a(LEMMA_T¨((x õ~)G.(x.y)G)G = (((x õ~)G.x)G.y)GÆ rewrite_thm_tac THEN1
-	ALL_FC_T rewrite_tac[group_clauses_lemma2]);
-a(ALL_FC_T rewrite_tac[group_clauses_lemma1]);
-val €group_clauses_lemma3› = save_pop_thm"group_clauses_lemma3";
+	ALL_FC_T rewrite_tac[group_clauses2]);
+a(ALL_FC_T rewrite_tac[group_clauses1]);
+val €group_clauses3› = save_pop_thm"group_clauses3";
 =TEX
 =SML
 set_goal([], ¨
@@ -836,17 +848,17 @@ set_goal([], ¨
 Æ);
 a(REPEAT strip_tac);
 a(lemma_tac¨(x.y)G ç Car G ±  (x õ~) G ç Car G  ±  (y õ~) G ç Car GÆ THEN1 
-	(all_fc_tac[group_clauses_lemma1, group_clauses_lemma2] THEN REPEAT strip_tac));
+	(all_fc_tac[group_clauses1, group_clauses2] THEN REPEAT strip_tac));
 a(lemma_tac¨((x.y)G.((x . y) G õ~) G)G = ((x.y)G.((y õ~) G . (x õ~) G) G)GÆ);
 (* *** Goal "1" *** *)
-a(ALL_FC_T rewrite_tac[group_clauses_lemma1]);
-a(lemma_tac¨((y õ~) G . (x õ~) G) G ç Car GÆ THEN1 all_fc_tac[arb_gen group_clauses_lemma2]);
-a(ALL_FC_T rewrite_tac[ group_clauses_lemma1,
-	arb_gen group_clauses_lemma2, arb_gen group_clauses_lemma3]);
+a(ALL_FC_T rewrite_tac[group_clauses1]);
+a(lemma_tac¨((y õ~) G . (x õ~) G) G ç Car GÆ THEN1 all_fc_tac[arb_gen group_clauses2]);
+a(ALL_FC_T rewrite_tac[ group_clauses1,
+	arb_gen group_clauses2, arb_gen group_clauses3]);
 (* *** Goal "2" *** *)
 a(lemma_tac¨((x . y) G õ~) G ç Car G ±  ((y õ~) G . (x õ~) G) G ç Car G Æ THEN1
-	(all_fc_tac[arb_gen group_clauses_lemma1,
-		arb_gen group_clauses_lemma2] THEN REPEAT strip_tac));
+	(all_fc_tac[arb_gen group_clauses1,
+		arb_gen group_clauses2] THEN REPEAT strip_tac));
 a(all_fc_tac[arb_gen left_cancel_thm]);
 val €times_inverse_thm› = save_pop_thm"times_inverse_thm";
 =TEX
@@ -857,10 +869,10 @@ set_goal([], ¨
 ¥	((x.y)G = One G § y = (x õ~)G)
 Æ);
 a(REPEAT strip_tac THEN_LIST [id_tac,
-	all_var_elim_asm_tac1 THEN all_fc_tac[group_clauses_lemma1]]);
+	all_var_elim_asm_tac1 THEN all_fc_tac[group_clauses1]]);
 a(lemma_tac¨(x.y) G = (x.(x õ~)G)GÆ THEN1
-	ALL_FC_T asm_rewrite_tac[group_clauses_lemma1]);
-a(lemma_tac¨(x õ~)G ç Car GÆ THEN1 all_fc_tac[group_clauses_lemma1]);
+	ALL_FC_T asm_rewrite_tac[group_clauses1]);
+a(lemma_tac¨(x õ~)G ç Car GÆ THEN1 all_fc_tac[group_clauses1]);
 a(all_fc_tac[left_cancel_thm]);
 val €inverse_unique_thm› = save_pop_thm"inverse_unique_thm";
 =TEX
@@ -871,7 +883,7 @@ set_goal([], ¨
 ¥	One G ç Car G
 Æ);
 a(rewrite_tac[group_def] THEN REPEAT strip_tac THEN asm_rewrite_tac[]);
-val €one_clauses_lemma› = save_pop_thm"one_clauses_lemma";
+val €one_clauses_lemma› = pop_thm();
 =TEX
 =SML
 set_goal([], ¨
@@ -881,10 +893,10 @@ set_goal([], ¨
 ±	((One G) õ~)G = One G
 Æ);
 a(REPEAT strip_tac THEN all_fc_tac[one_clauses_lemma]);
-a(lemma_tac¨(One G.One G)G = One GÆ THEN1 ALL_FC_T rewrite_tac[group_clauses_lemma1]);
+a(lemma_tac¨(One G.One G)G = One GÆ THEN1 ALL_FC_T rewrite_tac[group_clauses1]);
 a(all_fc_tac[inverse_unique_thm]);
 a(conv_tac eq_sym_conv THEN REPEAT strip_tac);
-val €one_clauses_thm› = save_pop_thm"one_clauses_thm";
+val €group_clauses4› = save_pop_thm"group_clauses4";
 =TEX
 =SML
 set_goal([], ¨
@@ -893,10 +905,10 @@ set_goal([], ¨
 ¥	( (x.y)G = x § y = One G )
 Æ);
 a(REPEAT strip_tac THEN_LIST [id_tac,
-	all_var_elim_asm_tac1 THEN all_fc_tac[group_clauses_lemma1]]);
+	all_var_elim_asm_tac1 THEN all_fc_tac[group_clauses1]]);
 a(lemma_tac ¨(x . y) G = (x. One G) GÆ THEN1
-	ALL_FC_T asm_rewrite_tac[group_clauses_lemma1]);
-a(all_fc_tac[one_clauses_thm] THEN all_fc_tac[left_cancel_thm]);
+	ALL_FC_T asm_rewrite_tac[group_clauses1]);
+a(all_fc_tac[group_clauses4] THEN all_fc_tac[left_cancel_thm]);
 val €one_unique_thm› = save_pop_thm"one_unique_thm";
 =TEX
 Some proof automation is now in order. A really good conditional rewriting tool could do
@@ -942,12 +954,12 @@ This will normally be a conjunction of atomic membership assertions which will a
 First of all we extract the lemmas we need from the various portmanteau theorems:
 =SML
 val all_thms =  (fc_canon( list_±_intro [
-	group_clauses_lemma1,
-	group_clauses_lemma2,
+	group_clauses1,
+	group_clauses2,
 	inverse_inverse_thm,
-	group_clauses_lemma3,
+	group_clauses3,
 	times_inverse_thm,
-	one_clauses_thm
+	group_clauses4
 ]));
 val eq_thms = map (all_undisch_rule o all_µ_elim o rewrite_rule[]) all_thms drop (not o is_eq o concl);
 val ç_thms = map §_t_intro (map (all_undisch_rule o all_µ_elim o rewrite_rule[])
@@ -1018,7 +1030,7 @@ set_goal([], ¨
 a(rewrite_tac[homomorphism_def,
 	group_ops_def] THEN
 	REPEAT strip_tac);
-a(lemma_tac ¨One G ç Car GÆ THEN1 all_fc_tac[one_clauses_thm]);
+a(lemma_tac ¨One G ç Car GÆ THEN1 all_fc_tac[group_clauses4]);
 a(LEMMA_T ¨f( (One G.One G)G) = f(One G)Æ ante_tac THEN1
 	(group_eq_tac THEN REPEAT strip_tac));
 a(ALL_ASM_FC_T rewrite_tac[]);
@@ -1065,7 +1077,7 @@ set_goal([], ¨
 ±	One H = One G
 ±	(x ç Car H  ¥ (x õ~)H = (x õ~)G)
 Æ);
-a(rewrite_tac[subgroup_def] THEN REPEAT µ_tac THEN ¥_tac);
+a(rewrite_tac[subgroup_def1] THEN REPEAT µ_tac THEN ¥_tac);
 a(lemma_tac¨One H ç Car HÆ THEN1 (group_ç_tac THEN REPEAT strip_tac));
 a(lemma_tac¨One H ç Car GÆ THEN1 all_asm_fc_tac[]);
 a(LEMMA_T¨(One H.One H)G = (One H.One H)HÆ ante_tac THEN1 asm_rewrite_tac[]);
@@ -1087,18 +1099,18 @@ set_goal([], ¨
 	G ç Group ± H ç Group ± f ç Homomorphism(G, H)
 ¥	Kernel f (G, H) ç NormalSubgroup G
 Æ);
-a(rewrite_tac[kernel_def, normal_subgroup_def, subgroup_def, group_ops_def] THEN
+a(rewrite_tac[kernel_def, normal_subgroup_def1, subgroup_def1, group_ops_def] THEN
 	REPEAT strip_tac THEN1
 	rewrite_tac[group_def, group_ops_def] THEN REPEAT strip_tac
 	THEN_TRY (SOLVED_T ((group_eq_tac ORELSE group_ç_tac)THEN REPEAT strip_tac)));
 (* *** Goal "1" *** *)
-a(ALL_FC_T asm_rewrite_tac[group_clauses_lemma1, homomorphism_times_thm]);
-a(all_fc_tac[one_clauses_thm]);
+a(ALL_FC_T asm_rewrite_tac[group_clauses1, homomorphism_times_thm]);
+a(all_fc_tac[group_clauses4]);
 a(group_eq_tac THEN REPEAT strip_tac);
 (* *** Goal "2" *** *)
 a(all_fc_tac[homomorphism_one_thm]);
 (* *** Goal "3" *** *)
-a(ALL_FC_T asm_rewrite_tac[homomorphism_inverse_thm, one_clauses_thm]);
+a(ALL_FC_T asm_rewrite_tac[homomorphism_inverse_thm, group_clauses4]);
 (* *** Goal "4" *** *)
 a(lemma_tac¨(y õ~) G ç Car G ± (x.y) G ç Car GÆ THEN1 
 	(group_ç_tac THEN REPEAT strip_tac));
@@ -1115,25 +1127,25 @@ set_goal([], ¨
 ¥	Equiv(Car G, RightCongruent H G)
 Æ);
 a(rewrite_tac[equiv_def, refl_def, sym_def, trans_def, right_congruent_def] THEN REPEAT strip_tac 
-	THEN all_fc_tac[subgroup_def]);
+	THEN all_fc_tac[subgroup_def1]);
 (* *** Goal "1" *** *)
-a(ALL_FC_T rewrite_tac[group_clauses_lemma1]);
+a(ALL_FC_T rewrite_tac[group_clauses1]);
 a(LEMMA_T ¨One G = One HÆ rewrite_thm_tac THEN1 ALL_FC_T rewrite_tac[subgroup_clauses]);
-a(all_fc_tac [one_clauses_thm]);
+a(all_fc_tac [group_clauses4]);
 (* *** Goal "2" *** *)
 a(LEMMA_T ¨((((x õ~) G . y) G)  õ~)H ç Car HÆ ante_tac
-	THEN1 all_fc_tac[arb_gen group_clauses_lemma1]);
+	THEN1 all_fc_tac[arb_gen group_clauses1]);
 a(ALL_FC_T rewrite_tac[subgroup_clauses]);
-a(lemma_tac¨(x õ~)G ç Car GÆ THEN1 all_fc_tac[group_clauses_lemma1]);
+a(lemma_tac¨(x õ~)G ç Car GÆ THEN1 all_fc_tac[group_clauses1]);
 a(ALL_FC_T rewrite_tac[times_inverse_thm, inverse_inverse_thm]);
 (* *** Goal "3" *** *)
 a(LEMMA_T ¨(((x õ~) G . y) G . ((y õ~) G . z) G) H ç Car HÆ ante_tac
-	THEN1 all_fc_tac[arb_gen group_clauses_lemma2]);
+	THEN1 all_fc_tac[arb_gen group_clauses2]);
 a(ALL_FC_T rewrite_tac[arb_gen subgroup_clauses]);
-a(lemma_tac¨(x õ~)G ç Car GÆ THEN1 all_fc_tac[group_clauses_lemma1]);
-a(lemma_tac¨(y õ~)G ç Car GÆ THEN1 all_fc_tac[group_clauses_lemma1]);
-a(ALL_FC_T rewrite_tac[group_clauses_lemma2, arb_gen group_clauses_lemma3]);
-val €right_congruent_thm› = save_pop_thm "right_congruent_thm";
+a(lemma_tac¨(x õ~)G ç Car GÆ THEN1 all_fc_tac[group_clauses1]);
+a(lemma_tac¨(y õ~)G ç Car GÆ THEN1 all_fc_tac[group_clauses1]);
+a(ALL_FC_T rewrite_tac[group_clauses2, arb_gen group_clauses3]);
+val €right_congruent_equiv_thm› = save_pop_thm "right_congruent_equiv_thm";
 =TEX
 =SML
 set_goal([], ¨
@@ -1144,12 +1156,12 @@ set_goal([], ¨
 		Respects	(RightCongruent H G)
 	) (Car G)
 Æ);
-a(rewrite_tac[respects_def, normal_subgroup_def, right_coset_def, right_congruent_def,
+a(rewrite_tac[respects_def, normal_subgroup_def1, right_coset_def, right_congruent_def,
 	equiv_class_def]
-	THEN REPEAT strip_tac);
+	THEN PC_T1 "sets_ext1" REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(∂_tac¨(((y õ~)G.(((y' õ~)G.x)G.y)G)G.z)HÆ);
-a(GET_NTH_ASM_T 8 (strip_asm_tac o rewrite_rule[subgroup_def]));
+a(GET_NTH_ASM_T 8 (strip_asm_tac o rewrite_rule[subgroup_def1]));
 a(group_ç_tac THEN REPEAT strip_tac);
 (* *** Goal "1.1" *** *)
 a(GET_NTH_ASM_T 11 bc_thm_tac);
@@ -1162,7 +1174,7 @@ a(asm_rewrite_tac[] THEN group_eq_tac THEN REPEAT strip_tac);
 a(all_asm_fc_tac[]);
 (* *** Goal "2" *** *)
 a(∂_tac¨(((y õ~)G.(((x õ~)G.y')G.y)G)G.z)HÆ);
-a(GET_NTH_ASM_T 8 (strip_asm_tac o rewrite_rule[subgroup_def]));
+a(GET_NTH_ASM_T 8 (strip_asm_tac o rewrite_rule[subgroup_def1]));
 a(group_ç_tac THEN REPEAT strip_tac);
 (* *** Goal "2.1" *** *)
 a(GET_NTH_ASM_T 11 bc_thm_tac);
@@ -1171,7 +1183,7 @@ a(REPEAT strip_tac);
 a(asm_rewrite_tac[] THEN group_eq_tac THEN REPEAT strip_tac);
 (* *** Goal "2.2" *** *)
 a(all_asm_fc_tac[]);
-val €right_congruence_lemma1› = save_pop_thm "right_congruence_lemma1";
+val €times_respects_right_congruent_lemma1› = save_pop_thm "times_respects_right_congruent_lemma1";
 =TEX
 =SML
 set_goal([], ¨
@@ -1182,12 +1194,12 @@ set_goal([], ¨
 		Respects	(RightCongruent H G)
 	) (Car G)
 Æ);
-a(rewrite_tac[respects_def, normal_subgroup_def, right_coset_def, right_congruent_def,
+a(rewrite_tac[respects_def, normal_subgroup_def1, right_coset_def, right_congruent_def,
 	equiv_class_def]
-	THEN REPEAT strip_tac);
+	THEN PC_T1 "sets_ext1" REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(∂_tac¨(((y õ~)G.x')G.z)HÆ);
-a(GET_NTH_ASM_T 8 (strip_asm_tac o rewrite_rule[subgroup_def]));
+a(GET_NTH_ASM_T 8 (strip_asm_tac o rewrite_rule[subgroup_def1]));
 a(group_ç_tac THEN REPEAT strip_tac);
 (* *** Goal "1.1" *** *)
 a(LEMMA_T ¨((y õ~) G . x')G = (((x' õ~)G.y)G õ~)HÆ rewrite_thm_tac
@@ -1198,11 +1210,11 @@ a(asm_rewrite_tac[] THEN group_eq_tac THEN REPEAT strip_tac);
 a(all_asm_fc_tac[]);
 (* *** Goal "2" *** *)
 a(∂_tac¨(((x' õ~)G.y)G.z)HÆ);
-a(GET_NTH_ASM_T 8 (strip_asm_tac o rewrite_rule[subgroup_def]));
+a(GET_NTH_ASM_T 8 (strip_asm_tac o rewrite_rule[subgroup_def1]));
 a(group_ç_tac THEN REPEAT strip_tac);
 a(asm_rewrite_tac[] THEN group_eq_tac THEN REPEAT strip_tac);
 a(all_asm_fc_tac[]);
-val €right_congruence_lemma2› = save_pop_thm "right_congruence_lemma2";
+val €times_respects_right_congruent_lemma2› = save_pop_thm "times_respects_right_congruent_lemma2";
 =TEX
 =SML
 set_goal([], ¨
@@ -1213,12 +1225,12 @@ set_goal([], ¨
 		Respects	(RightCongruent H G)
 	) (Car G)
 Æ);
-a(rewrite_tac[respects_def, normal_subgroup_def, right_coset_def, right_congruent_def,
+a(rewrite_tac[respects_def, normal_subgroup_def1, right_coset_def, right_congruent_def,
 	equiv_class_def]
-	THEN REPEAT strip_tac);
+	THEN PC_T1 "sets_ext1" REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(∂_tac¨((y.(x õ~)G)G.z)HÆ);
-a(GET_NTH_ASM_T 7 (strip_asm_tac o rewrite_rule[subgroup_def]));
+a(GET_NTH_ASM_T 7 (strip_asm_tac o rewrite_rule[subgroup_def1]));
 a(group_ç_tac THEN REPEAT strip_tac);
 (* *** Goal "1.1" *** *)
 a(LEMMA_T ¨(y . (x õ~) G) G = (x .(((x õ~) G.y)G.(x õ~)G)G)GÆ rewrite_thm_tac
@@ -1234,7 +1246,7 @@ a(asm_rewrite_tac[] THEN group_eq_tac THEN REPEAT strip_tac);
 a(all_asm_fc_tac[]);
 (* *** Goal "2" *** *)
 a(∂_tac¨((x.(y õ~)G)G.z)HÆ);
-a(GET_NTH_ASM_T 7 (strip_asm_tac o rewrite_rule[subgroup_def]));
+a(GET_NTH_ASM_T 7 (strip_asm_tac o rewrite_rule[subgroup_def1]));
 a(group_ç_tac THEN REPEAT strip_tac);
 (* *** Goal "2.1" *** *)
 a(LEMMA_T ¨(x . (y õ~) G) G = (y .(((y õ~) G.x)G.(y õ~)G)G)GÆ rewrite_thm_tac
@@ -1253,7 +1265,7 @@ a(group_ç_tac THEN REPEAT strip_tac);
 (* *** Goal "2.2" *** *)
 a(asm_rewrite_tac[] THEN group_eq_tac THEN REPEAT strip_tac);
 a(all_asm_fc_tac[]);
-val €right_congruence_lemma3› = save_pop_thm "right_congruence_lemma3";
+val €inverse_respects_right_congruent_lemma› = save_pop_thm "inverse_respects_right_congruent_lemma";
 =TEX
 =SML
 set_goal([], ¨
@@ -1261,9 +1273,9 @@ set_goal([], ¨
 	G ç Group ± H ç Subgroup G ± x ç Car G
 ¥	RightCoset H G x = EquivClass(Car G, RightCongruent H G) x
 Æ);
-a(rewrite_tac[respects_def, subgroup_def, right_coset_def, right_congruent_def,
+a(rewrite_tac[respects_def, subgroup_def1, right_coset_def, right_congruent_def,
 	equiv_class_def]
-	THEN REPEAT strip_tac);
+	THEN PC_T1 "sets_ext1" REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(asm_rewrite_tac[] THEN group_ç_tac THEN REPEAT strip_tac);
 a(all_asm_fc_tac[]);
@@ -1273,17 +1285,16 @@ a(all_asm_fc_tac[]);
 (* *** Goal "3" *** *)
 a(∂_tac¨((x õ~)G.x')GÆ THEN REPEAT strip_tac);
 a(group_eq_tac THEN REPEAT strip_tac);
-val €right_coset_thm› = save_pop_thm "right_coset_thm";
+val €right_coset_equiv_class_thm› = save_pop_thm "right_coset_equiv_class_thm";
 =TEX
 =SML
-push_pc"basic_hol1";
 (drop_main_goal(); ()) handle Fail _ => ();
 push_consistency_goal¨QuotientGroupÆ;
 a(prove_∂_tac THEN REPEAT strip_tac);
 a(cases_tac¨G' ç Group ± H' ç NormalSubgroup G'Æ THEN asm_rewrite_tac[]);
-a(TOP_ASM_T (strip_asm_tac o rewrite_rule[normal_subgroup_def]));
+a(TOP_ASM_T (strip_asm_tac o rewrite_rule[normal_subgroup_def1]));
 a(lemma_tac¨Equiv (Car G', RightCongruent H' G')Æ THEN1
-	ALL_FC_T rewrite_tac[right_congruent_thm]);
+	ALL_FC_T rewrite_tac[right_congruent_equiv_thm]);
 a(LEMMA_T¨
 	∂ times∑ µ A x B y∑
 	A ç Car G' // RightCongruent H' G' ± x ç A ±
@@ -1292,15 +1303,15 @@ a(LEMMA_T¨
 	(strip_asm_tac o rewrite_rule[]) THEN1 bc_thm_tac dyadic_induced_fun_∂_thm);
  (* ** Goal "1" *** *)
 a(REPEAT strip_tac THEN ALL_FC_T rewrite_tac[
-	right_congruence_lemma1,
-	right_congruence_lemma2]);
+	times_respects_right_congruent_lemma1,
+	times_respects_right_congruent_lemma2]);
 (* *** Goal "2" *** *)
 a(LEMMA_T¨
 	∂ inverse∑ µ A x∑ A ç Car G' // RightCongruent H' G' ± x ç A¥
 	inverse A = (Ã a∑ RightCoset H' G' ((a õ~) G')) xÆ 
 	(strip_asm_tac o rewrite_rule[]) THEN1 bc_thm_tac induced_fun_∂_thm);
 (* *** Goal "2.1" *** *)
-a(REPEAT strip_tac THEN ALL_FC_T rewrite_tac[right_congruence_lemma3]);
+a(REPEAT strip_tac THEN ALL_FC_T rewrite_tac[inverse_respects_right_congruent_lemma]);
 (* *** Goal "2.2" *** *)
 a(∂_tac¨ (Car G' // RightCongruent H' G', times, inverse, RightCoset H' G' (One G'))Æ);
 a(rewrite_tac[group_ops_def] THEN PC_T1 "sets_ext1" once_rewrite_tac[] THEN
@@ -1309,19 +1320,18 @@ a(rewrite_tac[group_ops_def] THEN PC_T1 "sets_ext1" once_rewrite_tac[] THEN
 a(PC_T1 "sets_ext1" REPEAT strip_tac);
 a(all_fc_tac[quotient_rep_∂_thm]);
 a(∂_tac¨x'Æ THEN REPEAT strip_tac);
-a(ALL_FC_T rewrite_tac[right_coset_thm]);
+a(ALL_FC_T rewrite_tac[right_coset_equiv_class_thm]);
 a(all_fc_tac [quotient_map_onto_thm] THEN all_var_elim_asm_tac1);
 a(ALL_FC_T1 fc_§_canon rewrite_tac[equiv_class_eq_thm]);
 a(DROP_NTH_ASM_T 2 ante_tac THEN rewrite_tac[equiv_class_def]);
 a(PC_T1 "sets_ext1" asm_rewrite_tac[]);
 (* *** Goal "2.2.2" *** *)
-a(POP_ASM_T ante_tac THEN rewrite_tac[quotient_def]);
-a(PC_T1 "sets_ext1" once_rewrite_tac[] THEN REPEAT strip_tac);
 a(all_var_elim_asm_tac1);
-a(ALL_FC_T rewrite_tac[right_coset_thm]);
+a(ALL_FC_T rewrite_tac[right_coset_equiv_class_thm]);
+a(rewrite_tac[quotient_set_def]);
 a(∂_tac¨x'Æ THEN REPEAT strip_tac);
 (* *** Goal "2.2.3" *** *)
-a(POP_ASM_T ante_tac THEN ALL_FC_T rewrite_tac[right_coset_thm]);
+a(POP_ASM_T ante_tac THEN ALL_FC_T rewrite_tac[right_coset_equiv_class_thm]);
 a(LEMMA_T ¨
 	times
                  (EquivClass (Car G', RightCongruent H' G') x)
@@ -1329,14 +1339,13 @@ a(LEMMA_T ¨
 	RightCoset H' G' ((x . y) G')Æ rewrite_thm_tac);
 a(GET_NTH_ASM_T 4 bc_thm_tac);
 a(ALL_FC_T rewrite_tac[equiv_class_ç_thm]);
-a(rewrite_tac[quotient_def]);
-a(PC_T1 "sets_ext1" once_rewrite_tac[] THEN REPEAT strip_tac);
+a(rewrite_tac[quotient_set_def] THEN REPEAT strip_tac);
 (* *** Goal "2.2.3.1" *** *)
 a(∂_tac¨xÆ THEN REPEAT strip_tac);
 (* *** Goal "2.2.3.2" *** *)
 a(∂_tac¨yÆ THEN REPEAT strip_tac);
 (* *** Goal "2.2.4" *** *)
-a(ALL_FC_T rewrite_tac[right_coset_thm]);
+a(ALL_FC_T rewrite_tac[right_coset_equiv_class_thm]);
 a(LEMMA_T ¨
 	times
                  (EquivClass (Car G', RightCongruent H' G') x)
@@ -1344,39 +1353,33 @@ a(LEMMA_T ¨
 	RightCoset H' G' ((x . y) G')Æ asm_rewrite_thm_tac);
 a(GET_NTH_ASM_T 5 bc_thm_tac);
 a(ALL_FC_T rewrite_tac[equiv_class_ç_thm]);
-a(rewrite_tac[quotient_def]);
-a(PC_T1 "sets_ext1" once_rewrite_tac[] THEN REPEAT strip_tac);
+a(rewrite_tac[quotient_set_def]  THEN REPEAT strip_tac);
 (* *** Goal "2.2.4.1" *** *)
 a(∂_tac¨xÆ THEN REPEAT strip_tac);
 (* *** Goal "2.2.4.2" *** *)
 a(∂_tac¨yÆ THEN REPEAT strip_tac);
 (* *** Goal "2.2.5" *** *)
-a(POP_ASM_T ante_tac THEN ALL_FC_T rewrite_tac[right_coset_thm]);
+a(POP_ASM_T ante_tac THEN ALL_FC_T rewrite_tac[right_coset_equiv_class_thm]);
 a(LEMMA_T ¨
 	inverse(EquivClass (Car G', RightCongruent H' G') x) =
 	RightCoset H' G' ((x õ~) G')Æ rewrite_thm_tac);
 a(GET_NTH_ASM_T 2 bc_thm_tac);
 a(ALL_FC_T rewrite_tac[equiv_class_ç_thm]);
-a(rewrite_tac[quotient_def]);
-a(PC_T1 "sets_ext1" once_rewrite_tac[] THEN REPEAT strip_tac);
+a(rewrite_tac[quotient_set_def] THEN REPEAT strip_tac);
 a(∂_tac¨xÆ THEN REPEAT strip_tac);
 (* *** Goal "2.2.6" *** *)
-a(ALL_FC_T rewrite_tac[right_coset_thm]);
+a(ALL_FC_T rewrite_tac[right_coset_equiv_class_thm]);
 a(LEMMA_T ¨
 	inverse(EquivClass (Car G', RightCongruent H' G') x) =
 	RightCoset H' G' ((x õ~) G')Æ asm_rewrite_thm_tac);
 a(GET_NTH_ASM_T 3 bc_thm_tac);
 a(ALL_FC_T rewrite_tac[equiv_class_ç_thm]);
-a(rewrite_tac[quotient_def]);
-a(PC_T1 "sets_ext1" once_rewrite_tac[] THEN REPEAT strip_tac);
+a(rewrite_tac[quotient_set_def] THEN REPEAT strip_tac);
 a(∂_tac¨xÆ THEN REPEAT strip_tac);
 val _ = save_consistency_thm ¨QuotientGroupÆ (pop_thm());
-pop_pc();
 val €quotient_group_def› = save_thm("quotient_group_def", get_spec¨QuotientGroupÆ);
 =TEX
 =SML
-(*
-push_pc"basic_hol";
 set_goal([], ¨
 	µG : 'a GROUP; H : 'a GROUP∑
 	G ç Group ± H ç NormalSubgroup G
@@ -1386,16 +1389,42 @@ a(REPEAT strip_tac THEN rewrite_tac[group_def]);
 a(strip_asm_tac(list_µ_elim[¨HÆ, ¨GÆ]quotient_group_def));
 a(asm_rewrite_tac[] THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
-a(POP_ASM_T ante_tac THEN POP_ASM_T ante_tac);
-a(MERGE_PCS_T1 ["basic_hol", "'sets_alg"] REPEAT strip_tac);
 a(∂_tac¨(x'.x'')GÆ THEN1 group_ç_tac THEN REPEAT strip_tac);
-
 a(all_var_elim_asm_tac1);
-a(GET_NTH_ASM_T 5 bc_thm_tac THEN REPEAT strip_tac);
-
+a(ALL_ASM_FC_T rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(all_var_elim_asm_tac1);
+a(lemma_tac¨(x'.x'') G ç Car G ± (x''.x''')G ç Car GÆ THEN1
+	(group_ç_tac THEN REPEAT strip_tac));
+a(ALL_ASM_FC_T rewrite_tac[]);
+a(group_eq_tac THEN REPEAT strip_tac);
+(* *** Goal "3" *** *)
+a(∂_tac¨One GÆ THEN group_ç_tac THEN REPEAT strip_tac);
+(* *** Goal "4" *** *)
+a(all_var_elim_asm_tac1);
+a(lemma_tac¨One G ç Car GÆ THEN1 (group_ç_tac THEN REPEAT strip_tac));
+a(ALL_ASM_FC_T rewrite_tac[]);
+a(group_eq_tac THEN REPEAT strip_tac);
+(* *** Goal "5" *** *)
+a(all_var_elim_asm_tac1);
+a(lemma_tac¨One G ç Car GÆ THEN1 (group_ç_tac THEN REPEAT strip_tac));
+a(ALL_ASM_FC_T rewrite_tac[]);
+a(group_eq_tac THEN REPEAT strip_tac);
+(* *** Goal "6" *** *)
+a(∂_tac¨(x' õ~)GÆ THEN1 group_ç_tac THEN REPEAT strip_tac);
+a(all_var_elim_asm_tac1);
+a(ALL_ASM_FC_T rewrite_tac[]);
+(* *** Goal "7" *** *)
+a(lemma_tac¨(x' õ~)G ç Car GÆ THEN1 (group_ç_tac THEN REPEAT strip_tac));
+a(all_var_elim_asm_tac1);
+a(ALL_ASM_FC_T rewrite_tac[]);
+a(group_eq_tac THEN REPEAT strip_tac);
+(* *** Goal "8" *** *)
+a(lemma_tac¨(x' õ~)G ç Car GÆ THEN1 (group_ç_tac THEN REPEAT strip_tac));
+a(all_var_elim_asm_tac1);
+a(ALL_ASM_FC_T rewrite_tac[]);
+a(group_eq_tac THEN REPEAT strip_tac);
 val €quotient_group_group_thm› = save_pop_thm "quotient_group_group_thm";
-pop_pc();
-*)
 =TEX
 %%%%
 =TEX
@@ -1418,22 +1447,3 @@ open_theory "groups";
 =TEX
 \end{document}
 =IGN
-
-set_goal([], ¨
-	µG : 'a GROUP; x y z∑
-	G ç Group ± x ç Car G ± y ç Car G ± z ç Car G
-¥	(((y.(x.(x õ~)G)G)G.z)G õ~)G = ((z õ~)G.(y õ~)G)G
-Æ);
-a(REPEAT strip_tac);
-a(group_eq_tac THEN REPEAT strip_tac);
-
-		
-
-
-val t = TOP_MAP_C eq_rw_conv ¨
-	(z.((((x õ~)G . x)G. z)G. (z õ~)G) G)G
-Æ;
-
-
-all_¥_intro (asm_±_intro_rule (iterate simplify_asm t));
-
