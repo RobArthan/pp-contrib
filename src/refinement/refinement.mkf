@@ -1,0 +1,222 @@
+######################################################################
+#
+#	$IdL$
+#	refinement.mkf
+#	makefile for the Z case studies on the theory of refinement
+######################################################################
+
+# suffixes known
+.SUFFIXES: .db .doc .dvi .ldd .log .lot .sh .doc .tex .tch
+
+# Control for RCS checking out: expand keywords to values only
+# (needed for document dates)
+COFLAGS=-kv
+
+# default make target.  displays a list of more useful targets
+
+default:
+	@echo "This is the make file for PPRefinement: a case study"
+	@echo "in Z of the theory of refinement."
+	@echo " "
+	@echo "ProofPower version 2.7.3 or later is required."
+	@echo " "
+	@echo "The following are the two most useful make commands:"
+	@echo " "
+	@echo "make -f refinement.mkf dvi      - builds the database and typesets the documents"
+	@echo "make -f refinement.mkf bld      - builds the database"
+	@echo " "
+	@echo "The following are useful for developers:"
+	@echo " "
+	@echo "make -f refinement.mkf doc      - builds the document distribution"
+	@echo "make -f refinement.mkf rcs      - build the source with RCS"
+	@echo "make -f refinement.mkf dist     - build the source without RCS"
+	@echo " "
+	@echo "The make commands that build the database create a new ProofPower database"
+	@echo "called refinement and load the documents into it, thus typechecking the"
+	@echo "specifications and replaying the proofs."
+	@echo " "
+	@echo " "
+	@echo "If your ProofPower system is not installed in /usr/local/pp, use for example:"
+	@echo " "
+	@echo "    PPHOME=/opt/pp make -f refinement.mkf dvi"
+	@echo " "
+	@echo "ProofPower runs on some systems, e.g., Solaris, that"
+	@echo "do not have the RCS or CVS software installed as standard."
+	@echo "The public download for the examples is therefore supplied"
+	@echo "without the RCS repository."
+
+######################################################################
+#
+#	Makefile Definitions
+#
+######################################################################
+
+PPHOME=$(shell echo $${PPHOME:-/usr/local/pp})
+PRODNAME=PPRefinement
+SHORTNAME=refinement
+PRODUCT=$(PRODNAME)
+CWD=$(shell pwd)
+HAVERCS=$(shell (test -d RCS && echo y ) || echo n)
+
+DBNAME=	refinement
+
+RELDIR=release
+
+# The documents
+SMLDOCS=
+SMLDOCS+=	wrk069.doc
+SMLDOCS+=	wrk070.doc
+
+# Variations on the documents
+SMLFILES=	$(SMLDOCS:.doc=.sml)
+LDDFILES=	$(SMLDOCS:.doc=.ldd)
+DVIFILES=	$(SMLDOCS:.doc=.dvi)
+PDFFILES=	$(SMLDOCS:.doc=.pdf)
+
+# packing list for a source release (target src)
+PACKINGLIST=
+PACKINGLIST+= wrk069.doc
+PACKINGLIST+= wrk070.doc
+PACKINGLIST+= fmu.bib
+PACKINGLIST+= refinement.mkf
+
+DISTPACKINGLIST=$(PACKINGLIST) README.txt
+
+######################################################################
+#
+# Dependencies - determining the order of compilation
+#
+######################################################################
+wrk069.ldd: refinementdb.ldd
+wrk070.ldd: wrk069.ldd
+$(DVIFILES): fmu.bib
+README.txt: wrk069.sml
+
+######################################################################
+#
+#	Building the database
+#
+######################################################################
+
+bld: wrk070.ldd
+
+refinementdb.ldd:
+	pp_make_database -f -p zed $(DBNAME)
+	touch refinementdb.ldd
+# useful target to print out the names of all the files in the source $(RELDIR)
+packinglist:
+	@echo $(PACKINGLIST)
+
+######################################################################
+#
+#	Building the documents
+#
+######################################################################
+
+dvi: $(DVIFILES)
+
+pdf: $(PDFFILES)
+
+######################################################################
+#
+#	Constructing source release directories
+#
+######################################################################
+
+reldir:
+	if [ "$${PPTARGETDIR:-}" = "" ]; \
+	then \
+		rm -rf $(RELDIR); \
+	fi
+	[ -d   $(RELDIR) ] || mkdir $(RELDIR)
+	
+
+srcdir:	reldir
+	[ -d   $(RELDIR)/src ] || mkdir $(RELDIR)/src
+
+docdir:	reldir
+	[ -d   $(RELDIR)/doc ] || mkdir $(RELDIR)/doc
+
+
+rcsrel:	srcdir
+	[ -d   $(RELDIR)/src/RCS ] || mkdir $(RELDIR)/src/RCS
+	@for f in $(PACKINGLIST); \
+	do \
+		cp RCS/$$f,v $(RELDIR)/src/RCS/$$f,v; \
+	done
+	chmod -R a-w $(RELDIR)
+	chmod -R g-w $(RELDIR)
+	chmod -R u+w $(RELDIR)
+
+rcs:	rcsrel
+	cd $(RELDIR) && tar cvf $(CWD)/$(PRODUCT).rcs.tar ./*
+	cd $(CWD) && gzip $(PRODUCT).rcs.tar && \
+	mv $(PRODUCT).rcs.tar.gz $(PRODUCT).rcs.tgz
+
+srcrel: srcdir $(DISTPACKINGLIST)
+	@for f in $(DISTPACKINGLIST); \
+	do \
+		cp $$f $(RELDIR)/src/$$f; \
+	done
+	chmod -R a-w $(RELDIR)
+	chmod -R g-w $(RELDIR)
+	chmod -R u+w $(RELDIR)
+
+docrel: docdir $(DVIFILES)
+	@for f in $(DVIFILES); \
+	do \
+		cp $$f $(RELDIR)/doc/$$f; \
+	done
+	chmod -R a-w $(RELDIR)
+	chmod -R g-w $(RELDIR)
+	chmod -R u+w $(RELDIR)
+
+src:	srcrel
+	cd $(RELDIR) && tar cvf $(CWD)/$(PRODUCT).tar ./*
+	cd $(CWD) && gzip $(PRODUCT).tar && \
+	mv $(PRODUCT).tar.gz $(PRODUCT).tgz
+
+dist:	src
+
+doc:	docrel srcrel
+	cd $(RELDIR) && tar cvf $(CWD)/$(PRODUCT).doc.tar ./*
+	cd $(CWD) && gzip $(PRODUCT).doc.tar && \
+	mv $(PRODUCT).doc.tar.gz $(PRODUCT).doc.tgz
+
+######################################################################
+#
+#	Tidying Up
+#
+######################################################################
+
+clean:
+	rcsclean
+	rm -f $(SMLFILES) $(LDDFILES)
+	rm -f *.aux *.bbl *.blg *.idx *.log *.lot *.sid *.sml *.tex *.toc refinementdb.ldd *.th.doc
+
+######################################################################
+#
+#	Generic Rules
+#
+######################################################################
+
+%.ldd: %.sml
+	@rm -f $@ $*.err 2>/dev/null
+	@echo "Compiling (code)" $<
+	@pp -d $(DBNAME) -f $< >$*.err
+	@mv $*.err $@
+
+
+%.sml: %.doc
+	docsml $*
+
+%.tex: %.doc %.ldd
+	doctex $* $**.th.doc
+
+%.dvi: %.tex
+	TEXINPUTS=.:$(PPHOME)/tex: \
+	BSTINPUTS=.:$(PPHOME)/tex: \
+	BIBINPUTS=.:$(PPHOME)/tex: docdvi $*
+
+%.pdf: %.dvi
+	dvipdf -sPAPERSIZE=a4 $*
