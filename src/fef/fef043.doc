@@ -156,7 +156,7 @@ declare_infix (250, "»‰f");
 °
 
 The informal description in \cite[section 2.3]{securityprops} indicates what aspects of the processing of a query are to contribute to the information provided at each level in the structured output.
-While we do not intend here to fully capture this information, we do express some constraints on which level of the output of a query are affected by a factor.
+While we do not intend here to fully capture this information, we do express some constraints on which levels of the output of a query are affected by a factor.
 
 \Hide{
 An auxiliary used in expressing these contraints is {\it same_below_level}.
@@ -219,7 +219,7 @@ Thus even a level-0 factor may not change the top-level classification of the ob
 A factorisation is a collection of four factors:
 
 ¹HOLLABPROD ÛFactorisationİüüüüüüüüüüüüüüüüüüüüüü
-Ü	Ûfactor1İ Ûfactor2İ Ûfactor3İ Ûfactor4İ	: 'State Factor
+Ü	Ûfactor0İ Ûfactor1İ Ûfactor2İ Ûfactor3İ	: 'State Factor
 °üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
 
 The factors in a factorisation can be composed as follows:
@@ -228,7 +228,7 @@ The factors in a factorisation can be composed as follows:
 Ü	Ûcompositeİ : ('State Factorisation) ­ 'State Factor
 ÷üüüüüüüüüüüüüüüüüüü
 Ü	µf :'State Factorisation ·
-Ü	composite f = (factor1 f) »‰f (factor2 f) »‰f (factor3 f) »‰f (factor4 f)
+Ü	composite f = (factor0 f) »‰f (factor1 f) »‰f (factor2 f) »‰f (factor3 f)
 °
 
 A factor can be converted into the output component of a machine as follows:
@@ -247,10 +247,10 @@ A factorisation is {\it levelled} if the factors each have appropriate levels:
 ÷üüüüüüüüüüüüüüüüüüü
 Ü	µfactors :'State Factorisation ·
 Ü	factors  levelled_factorisation ¤
-Ü		factor1 factors  factor_level 0
-Ü	±	factor2 factors  factor_level 1
-Ü	±	factor3 factors  factor_level 2
-Ü	±	factor4 factors  factor_level 3
+Ü		factor0 factors  factor_level 0
+Ü	±	factor1 factors  factor_level 1
+Ü	±	factor2 factors  factor_level 2
+Ü	±	factor3 factors  factor_level 3
 °
 
 For a factorisation to be correct it must also fail to pre-evaluate levels in the query, however, this detail can only be specified by reference to the form of a query in greater detail than is considered appropriate here.
@@ -280,7 +280,7 @@ A factored machine is {\it well_factored} if the factors form a {\it levelled_fa
 The labelling property is formalised as follows.
 For any input history and single request we consider the behaviour of the machine.
 A separate property is required for label correctness at each level in the output.
-The property for level n is obtained by constructing a machine which maps input histories to outputs and asserting the information flow security of that machine.
+The property for level n is obtained by constructing a machine which maps input histories to outputs and then asserting the information flow security of that machine.
 These machines will be constructed so that they first operate in the normal way on the input history to determine the state in which the query under consideration will be evaluated.
 The {\it partially} evaluated query will then be evaluated to completion in this state.
 The effect of this construction is to ignore the information flows which take place in the initial stage of the query and confine the security constraint to the information flows occuring in the subsequent evaluation of the query.
@@ -344,12 +344,12 @@ To express the flow contraints required on these special machines we need a same
 Ü		}
 °
 
-A binary factorisation of a machine is then {\it label_secure_n} for some particular level if the special machine constructed using that binary factorisation is always {ml_secure} relative to sameness below level n.
+A binary factorisation of a machine is then {\it label_secure_to} some particular level if the special machine constructed using that binary factorisation is always {\it ml_secure} relative to sameness below level n.
 
 ¹HOLCONST
-Ü	Ûlabel_secure_nİ : î ­ ('State Machine ¸ 'State Factor ¸ 'State Factor) ğ
+Ü	Ûlabel_secure_toİ : î ­ ('State Machine ¸ 'State Factor ¸ 'State Factor) ğ
 ÷üüüüüüüüüüüüüüüüüüü
-Ü µ n :î ·	label_secure_n n =
+Ü µ n :î ·	label_secure_to n =
 Ü	{	mff
 Ü	|	µ rl : Req LIST; r : Req ·
 Ü		let sm = special_machine mff rl r
@@ -366,18 +366,57 @@ A fully factorised machine is {\it label_secure} if the three binary factorisati
 Ü	{	fm : 'State FactoredMachine
 Ü	|	let m = machine fm and fs = factors fm
 Ü		in 
-Ü		let lf1 = (factor1 fs)
-Ü		and lf2 = (factor1 fs) »‰f (factor2 fs)
-Ü		and lf3 = (factor1 fs) »‰f (factor2 fs) »‰f (factor3 fs)
-Ü		and rf1 = (factor4 fs)
-Ü		and rf2 = (factor3 fs) »‰f (factor4 fs)
-Ü		and rf3 = (factor2 fs) »‰f (factor3 fs) »‰f (factor4 fs)
-Ü		in	(m, lf1, rf1)  label_secure_n 1
-Ü		   ±	(m, lf2, rf2)  label_secure_n 2 
-Ü		   ±	(m, lf3, rf3)  label_secure_n 3 
+Ü		let lf1 = (factor0 fs)
+Ü		and lf2 = (factor0 fs) »‰f (factor1 fs)
+Ü		and lf3 = (factor0 fs) »‰f (factor1 fs) »‰f (factor2 fs)
+Ü		and rf1 = (factor1 fs) »‰f (factor2 fs) »‰f (factor3 fs)
+Ü		and rf2 = (factor2 fs) »‰f (factor3 fs)
+Ü		and rf3 = (factor3 fs)
+Ü		in	(m, lf1, rf1)  label_secure_to 1
+Ü		   ±	(m, lf2, rf2)  label_secure_to 2 
+Ü		   ±	(m, lf3, rf3)  label_secure_to 3 
 Ü	}
 °
 
+\section{CONSISTENCY PROOF}
+
+The simplest consistency proof is obtained by using a constant function as follows.
+
+¹HOLCONST
+Ü	Ûsimplest_witnessİ : 'State FactoredMachine
+÷üüüüüüüüüüüüüüüüüüü
+Ü    simplest_witness =
+Ü	let next = Ì sr · Arbitrary
+Ü	and output = Ì sr ·  Arbitrary
+Ü	and init = Arbitrary
+Ü	and f0 = Ì c ob s · Arbitrary
+Ü	in	let (f1,f2,f3) = (f0,f0,f0)
+Ü	in	let	mach = MkMachine next output init
+Ü		and	facs = MkFactorisation f0 f1 f2 f3
+Ü		in	MkFactoredMachine mach facs
+°
+
+=SML
+set_goal([],¬
+	machine simplest_witness = MkMachine (Ì sr · Arbitrary) (Ì sr ·  Arbitrary) Arbitrary
+ ±	factors simplest_witness = MkFactorisation (Ì c ob s · Arbitrary) (Ì c ob s · Arbitrary) (Ì c ob s · Arbitrary) (Ì c ob s · Arbitrary)
+ ®);
+a (rewrite_tac (let_def::(map get_spec [¬simplest_witness®,¬machine®])));
+val lemma_043_1 = save_pop_thm "lemma_043_1";
+=SML
+set_goal([],¬simplest_witness  label_secure®);
+a (rewrite_tac ((map get_spec [
+	¬label_secure® , ¬label_secure_to®, ¬factor0®
+	])@[let_def, lemma_043_1]));
+a (rewrite_tac ([let_def]@(map get_spec [
+	¬ml_secure®,¬x_ml_secure®,¬special_machine®,¬machine®,¬Next®,¬$»‰f®])));
+a (REPEAT strip_tac);
+(* *** Goal "1" *** *)
+(* a (rewrite_tac [let_def]);
+a (rewrite_tac (map get_spec [¬LiftRel®]));
+a (rewrite_tac (map get_spec [¬lift_machine®]));
+*)
+=TEX
 \Hide{
 \section{INPUT SIMILARITY}
 
@@ -440,6 +479,20 @@ To express the additional constraints on the labels relative to some factorisati
 \section{CLOSING DOWN}
 
 The following \Product{} instruction restores the previous proof context.
+=SML
+push_consistency_goal¬lift_machine®;
+a (prove_¶_tac THEN strip_tac);
+a (lemma_tac ¬¶ lm · 
+	(lm [] = Ìs·([], s))
+ ± (µ r rl ·
+	lm (Cons r rl) =
+	Ì s · (let out = Output mch' (s, r) and s' = Next mch' (s, r)
+             in let (outl, final_state) = lm rl s'
+                in (Cons out outl, final_state)))®
+	THEN1 prove_¶_tac);
+a (¶_tac ¬Ìs rl· lm rl s®);
+a (asm_rewrite_tac[]);
+save_consistency_thm¬lift_machine®(pop_thm());
 =SML
 pop_pc();
 =TEX
