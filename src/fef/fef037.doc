@@ -201,6 +201,7 @@ $(FEFDVIO) : $$(@:.dvio=.tex) fef.bib
 =TEX
 
 \subsection{Processing Theory Documents}
+
 These documents all create SML files. Those which create hol
 theories create theory listings to be included in the \LaTeX{} processing.
 =DUMPMORE Makefile
@@ -475,9 +476,12 @@ were produced for a presentation on the Phase I formal treatment.
 	doctex fef030 fef030_slides
 	slitex fef030
 =TEX
-\subsection{Complete $fef$ Theory Listing}
+
+\subsection{Complete $fef$ Theory Listing and Constant Index}
+
 Produce a dvi file which is a listing of all \Product{} and fef theories. 
 This may be viewed by $dvipage\ fef017$.
+
 =DUMPMORE Makefile
 €listall› : fef017.doc
 	hol_list -d fef `hol_list -d fef` > ! all_theories.doc&
@@ -487,6 +491,159 @@ This may be viewed by $dvipage\ fef017$.
 	texdvi fef017
 	texdvi fef017
 =TEX
+
+=DUMP xref.sml
+datatype €THEORY_ITEM›	=	€Alias›
+			|	€Axiom›
+			|	€Constant› 
+			|	€Definition›
+			|	€Fixity›
+			|	€Terminator›
+			|	€Theorem›
+			|	€TypeAbbrev›
+			|	€TypeConstructor›
+			|	€UndeclaredAlias›
+			|	€UndeclaredTerminator›
+			|	€UndeclaredTypeAbbrev›;
+
+local
+
+open Sort;
+
+fun €string_of_ti› (ti : THEORY_ITEM) : string = (
+	case ti of
+		Alias => "alias"
+	|	Axiom => "axiom"
+	|	Constant => "constant"
+	|	Definition => "definition"
+	|	Fixity => "fixity"
+	|	Terminator => "terminator"
+	|	Theorem => "theorem"
+	|	TypeAbbrev => "type abbreviation"
+	|	TypeConstructor => "type constructor"
+	|	UndeclaredAlias => "undeclared alias"
+	|	UndeclaredTerminator => "undeclared terminator"
+	|	UndeclaredTypeAbbrev => "undeclared type abbreviation"
+);
+
+fun €ti_order› (ti1 : THEORY_ITEM) (ti2 : THEORY_ITEM) : int = (
+	let	fun aux ti = (
+			case ti of
+				Alias => 0
+			|	Axiom => 1
+			|	Constant => 2
+			|	Definition => 3
+			|	Fixity => 4
+			|	Terminator => 5
+			|	Theorem => 6
+			|	TypeAbbrev => 7
+			|	TypeConstructor => 8
+			|	UndeclaredAlias => 9
+			|	UndeclaredTerminator => 11
+			|	UndeclaredTypeAbbrev => 10
+		);
+	in	aux ti1 - aux ti2
+	end
+);
+
+type €ITEM_REC› = {name : string, cat : THEORY_ITEM, theory : string};
+
+fun €ir_order› (ir1 : ITEM_REC) (ir2 : ITEM_REC) : int = (
+	let	val {name=name1, cat=cat1, theory=theory1} = ir1;
+		val {name=name2, cat=cat2, theory=theory2} = ir2;
+	in	case string_order name1 name2 of
+			0	=>	(case ti_order cat1 cat2 of
+						0 => string_order theory1 theory2
+					|	x => x)
+		|	x	=>	x
+	end
+);
+
+fun get_thy_recs (what : THEORY_ITEM list) (thypar : string) : ITEM_REC list = (
+	let	val thy = if thypar = "-" then get_current_theory_name()else thypar;
+		fun aux [] = []
+		|   aux (ti :: tis) = (
+			let 	val names = (
+			(case ti of
+				Alias => map fst (get_aliases thy)
+			|	Axiom => flat (map fst (get_axioms thy))
+			|	Constant => map (fst o dest_const) (get_consts thy)
+			|	Definition => flat (map fst (get_defns thy))
+			|	Fixity => map snd (get_infixes thy) @
+					map snd(get_prefixes thy) @
+					map snd(get_postfixes thy) @
+					get_binders thy @
+					get_nonfixes thy
+			|	Terminator => get_terminators thy
+			|	Theorem => flat (map fst (get_thms thy))
+			|	TypeAbbrev => map fst (get_type_abbrevs thy)
+			|	TypeConstructor => map (fst o dest_ctype) (get_types thy)
+			|	UndeclaredAlias => map fst (get_undeclared_aliases thy)
+			|	UndeclaredTerminator => get_undeclared_terminators thy
+			|	UndeclaredTypeAbbrev =>	get_undeclared_type_abbrevs thy)
+			);
+			in	map (fn n => {name=n, cat=ti, theory=thy}) names
+				@ aux tis
+			end
+		);
+	in	aux what
+	end
+);
+
+
+fun get_thys_recs (what : THEORY_ITEM list)
+		(thys : string list) : ITEM_REC list = (
+	sort ir_order (flat(map (get_thy_recs what) thys))
+);
+
+
+
+fun output_index
+	(what : THEORY_ITEM list)
+	{theories : string list, out_file : string}  : unit = (
+	let	val recs = get_thys_recs what theories;
+		val chan = open_out out_file;
+		fun aux s = (case explode s of "=" :: _ => " " ^ s | _ => s);
+		fun outln s = output(chan, aux(translate_for_output s) ^ "\n"); 
+		fun do1 {name, cat, theory} = (
+			outln (name ^ "\t" ^ string_of_ti cat ^ "\t" ^ theory)
+		);
+	in	output(chan, "=GFT\n");
+		map do1 recs;
+		output(chan, "=TEX\n");
+		close_out chan
+	end
+);
+
+
+in
+
+fun output_ol_index {theories : string list, out_file : string}  : unit = (
+	let	val what =[TypeConstructor, Constant, Alias, TypeAbbrev,
+			UndeclaredAlias, UndeclaredTypeAbbrev]
+	in	output_index what {theories=theories, out_file=out_file}
+	end
+);
+
+end;
+
+output_ol_index {theories = (get_ancestors "fef044"), out_file = "listall.doc"};
+=TEX
+
+=DUMPMORE Makefile
+
+€listall.doc› : fef008.doc fef044.th 
+	pp_compile -d $(FEF) -i load_fef_files -c xref.sml
+	
+€fef008.dvi› : fef008.tex listall.tex 
+	doctex $(@:.dvi=)th
+	texdvi $(@:.dvi=)
+	- bibtex $(@:.dvi=)
+	texdvi $(@:.dvi=)
+	texdvi $(@:.dvi=)
+	
+=TEX
+
 \subsection{Tidying up the Filestore}
 
 Rule $texclean$ removes all recreatable \TeX{} and \LaTeX{}
