@@ -22,10 +22,9 @@
 \TPPauthors{R.~D.~Arthan & WIN01\\G.~M.~Prout & WIN01}
 \TPPauthorisation{R.B.~Jones & HAT Manager}
 \TPPabstract{This document  completes the table computations security
-proof and uses it with the partial proof of the execution model security
-to provide the best partial 
-proof for Phase II of the
-DRA front end filter project RSRE 1C/6130.}
+proof and uses it with the partial results on the execution model
+security to complete the programme of partial proof work for Phase II
+of the DRA front end filter project RSRE 1C/6130.}
 %\TPPabstractB{}
 %\TPPabstractC{}
 %\TPPabstractD{}
@@ -67,7 +66,7 @@ DRA front end filter project RSRE 1C/6130.}
 \subsection{Changes History}
 \begin{description}
 \item[Issue \SCCSversion(\FormatDate{$Date$
-})] Some explanation added.
+})] First draft for review by DRA.
 \end{description}
 
 \subsection{Changes Forecast}
@@ -104,7 +103,7 @@ and during the process of proving that they satisfy their identified critical
 properties,
 errors in the underlying query transformation specifications of \cite{trans}
 came to light. These errors are significant in that they if they are mirrored
-in the implementation then, the implementation wil not be secure.
+in the implementation then, the implementation will not be secure.
 We give a brief account of measures taken to
 correct the specifications.
 
@@ -227,7 +226,7 @@ prove:
 ?Ù	µ cc∑	TableComputations cc Ä OK_TCâd cc
 =TEX
 
-We prove the above by an induction ``over the syntax'' of table computations.
+We prove the above by an induction over the syntax of table computations.
 Now the set of table computations is defined in \cite{DS/FMU/FEF/032}
 simultaneously with the set of value computations. Moreover, it turns out
 that in the inductive steps for the $AllTuple$ form of table computation we
@@ -289,8 +288,6 @@ To apply the induction principle of the previous section, we need
 to use the various lemmas of \cite{DS/FMU/FEF/033,DS/FMU/FEF/035}
 to derive the precise form needed for the theorems giving the inductive steps.
 For example, we need the following for the $Case$ form:
-
-
 =GFT
 		Ù µ c cel ee
 		  ∑ Elems (Map Fst cel) Ä OK_VCâd c ° OK_VCâc c
@@ -307,11 +304,12 @@ In the rest of this section, we do this.
 
 
 First of all, we set an ML variable $ok\_vc\_tc\_conjs$ to hold terms
-expressing the desired inductive steps (at the loss of some clarity this
-could be done more automatically by substitution into the constituents of
-the theorem expressing the induction principle):
+expressing the desired inductive steps.
+At the cost of some clarity these terms could alternatively all be computed
+by substitution into the constituents of the theorem expressing the
+induction principle.
 =SML
-val €ok_vc_tc_conjs› = map (curry mk_µ ¨c:ClassÆ)
+val €ok_vc_tc_conjs› : TERM list = map (curry mk_µ ¨c:ClassÆ)
 [
 ¨µci∑ DenoteConstant ci ç OK_VCâd c ° OK_VCâc cÆ,
 ¨µi∑ Contents i ç OK_VCâd c ° OK_VCâc cÆ,
@@ -360,22 +358,26 @@ val €ok_vc_tc_conjs› = map (curry mk_µ ¨c:ClassÆ)
          	 ¥ AllTuples c esl tel e1 ml nl e2 ç OK_TCâd c ° OK_TCâc cÆ
 ];
 =TEX
-We will use the following theorems as rewrite rules to eliminate $°$.
+We will need some theorems to use as rewrite rules to eliminate $°$.
+The following commands cause these theorems to be proved automatically
+and held in the ML variable $°\_thms$ for future reference.
 =SML
-val ths = map (pc_rule1"sets_ext1"prove_rule[]) [
+val €°_thms› : THM list = map (pc_rule1"sets_ext1"prove_rule[]) [
 	¨µx a b∑x ç a ° b § x ç a ± x ç bÆ,
 	¨µc a b∑c Ä a ° b § c Ä a ± c Ä bÆ];
 =TEX
 We now retrieve all the lemmas from \cite{DS/FMU/FEF/033} 
 and \cite{DS/FMU/FEF/035} where the right hand side of the conclusion
 is of the form $ç\ OK\_VCâd$, $ç\ OK\_VCâc$, $ç\ OK\_TCâd$, or $ç\ OK\_TCâd$.
-We set an ML variable $ok\_vc\_tc\_thms$ to hold this list of lemmas.
+We set an ML variable $ok\_vc\_tc\_thms$ to hold this list of lemmas,
+each lemma having any uses of ° expanded out and each being tagged with
+a term indicating which language construct the lemma is concerned with.
 
 =SML
-val €ok_vc_tc_thms› = 
+val €ok_vc_tc_thms› : (TERM * THM) list = 
 	map
 	(fn (_, t) =>
-		((hd o rev o strip_¥ o snd o strip_µ o concl) t, rewrite_rule ths t
+		((hd o rev o strip_¥ o snd o strip_µ o concl) t, rewrite_rule °_thms t
 								handle Fail _ => t))
 	((get_thms"fef033" @ get_thms"fef035")
 	drop
@@ -403,12 +405,12 @@ val €ok_vc_tc_tac› : TACTIC = (fn gl as (_, cnc) =>
 =TEX
 The following rule (i.e. theorem-computing function) is intended
 to be given a term expressing one of the inductive steps as its
-arguemnt, it eliminates $°$ from the term and then uses $ok\_vc\_tc\_tac$
+argument; it eliminates $°$ from the term and then uses $ok\_vc\_tc\_tac$
 to prove it.
 
 =SML
 fun €ok_vc_tc_rule› (t : TERM) : THM = (
-	tac_proof(([], t), once_rewrite_tac ths THEN REPEAT strip_tac THEN ok_vc_tc_tac)
+	tac_proof(([], t), once_rewrite_tac °_thms THEN REPEAT strip_tac THEN ok_vc_tc_tac)
 );
 =TEX
 The list of theorems giving the inductive steps are
@@ -418,7 +420,7 @@ theorem (using $list\_±\_intro$) for later use.
 The theorem is saved in the theory as $ok\_vc\_tc\_lemmas $
 and may be seen in the theory listing at the end of this document.
 =SML
-val €ok_vc_tc_lemmas› = save_thm("ok_vc_tc_lemmas", 
+val €ok_vc_tc_lemmas› : THM = save_thm("ok_vc_tc_lemmas", 
 	list_±_intro(map ok_vc_tc_rule ok_vc_tc_conjs));
 =TEX
 Now we can carry out the inductive proof of $TableComputationsSecure$.
@@ -434,7 +436,7 @@ a(ante_tac(list_µ_elim[
 			¨OK_VCâd cc ° OK_VCâc ccÆ]
 		table_computation_induction_thm)
 	THEN asm_rewrite_tac [ok_vc_tc_lemmas]);
-val fef036_main_lemma = save_pop_thm"fef036_main_lemma";
+val €fef036_main_lemma› = save_pop_thm"fef036_main_lemma";
 =TEX
 The proof of $TableComputationsSecure$ is now easily completed:
 =SML
