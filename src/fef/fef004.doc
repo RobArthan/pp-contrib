@@ -116,6 +116,7 @@ The following \Product{} instructions set up the new theory $fef004$  and set th
 for the proof tools.
 =SML 
 open_theory "fef003";
+(force_delete_theory "fef004" handle _ => ());
 new_theoryÛ"fef004"Ý;
 push_pc "hol";
 =TEX
@@ -679,6 +680,104 @@ this function will not be applied to a $Select$ effect.
 
 The functionality of SSQL is modelled with $processQuery$, specified in \cite{DS/FMU/FEF/014}.
 
+\section{AUXILIARY PROOF WORK}
+For convenience, we provide some consistency proofs will be required by
+later proof documents.
+\subsection{Consistency Proof for $dominates$}
+We prove the consistency of $dominates$, $lattice\_bottom$, 
+$lattice\_top$ and $lub$. 
+=SML
+push_consistency_goal¬$dominates®;
+a(cases_tac¬µ top bot:Class · top = bot®);
+(* *** Goal "1" *** *)
+=TEX
+This is the case where $Class$ has only one element:
+=SML
+a(¶_tac¬(Ì x y · T),top,top,(Ì x y · x),(Ì x y · x)®);
+a(asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+=TEX
+In this case, $top$ and $bot$ are given to be distinct elements of $Class$,
+we take the so-called flat lattice with $top$ as top, $bot$ as bottom and
+everything else incomparable (and in between).
+=SML
+a(¶_tac¬(
+	(Ì c‰1 c‰2 · c‰1 = top ² c‰2 = bot ² c‰1 = c‰2),
+	bot,
+	top,
+	(Ì c‰1 c‰2 ·  	if	c‰1 = top
+			then	top
+			else if	c‰1 = bot
+			then	c‰2
+			else if	c‰2 = c‰1 ² c‰2 = bot
+			then	c‰1
+			else	top),
+	(Ì c‰1 c‰2 ·  	if	c‰1 = bot
+			then	bot
+			else if	c‰1 = top
+			then	c‰2
+			else if	c‰2 = c‰1 ² c‰2 = top
+			then	c‰1
+			else	bot))
+
+®);
+a(rewrite_tac[] THEN REPEAT strip_tac
+	THEN_TRY asm_rewrite_tac[]
+	THEN_TRY SOLVED_T (PC_T1 "prop_eq" asm_prove_tac[])
+	THEN_TRY all_var_elim_asm_tac);
+=TEX
+This produces 11 subgoals but the proof is fairly mechanical:
+=SML
+(* *** Goal "2.1" *** *)
+a(all_asm_ante_tac THEN cases_tac¬x = top® THEN asm_rewrite_tac[]);
+a(cases_tac¬x = bot® THEN asm_rewrite_tac[]);
+a(cases_tac¬y = x® THEN asm_rewrite_tac[]);
+a(cases_tac¬y = bot® THEN asm_rewrite_tac[]);
+(* *** Goal "2.2" *** *)
+a(all_asm_ante_tac THEN cases_tac¬x = top® THEN asm_rewrite_tac[]);
+a(cases_tac¬x = bot® THEN asm_rewrite_tac[]);
+a(cases_tac¬y = x® THEN asm_rewrite_tac[]);
+a(cases_tac¬y = bot® THEN asm_rewrite_tac[]);
+(* *** Goal "2.3" *** *)
+a(GET_ASM_T ¬³ top = bot® (strip_asm_tac o conv_rule (ONCE_MAP_C eq_sym_conv)));
+a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2.4" *** *)
+a(GET_ASM_T ¬³ top = bot® (strip_asm_tac o conv_rule (ONCE_MAP_C eq_sym_conv)));
+a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2.5" *** *)
+a(cases_tac¬x = top® THEN asm_rewrite_tac[]);
+a(cases_tac¬x = bot® THEN asm_rewrite_tac[]);
+(* *** Goal "2.6" *** *)
+a(cases_tac¬y = top® THEN asm_rewrite_tac[]);
+a(cases_tac¬y = bot® THEN asm_rewrite_tac[]);
+(* *** Goal "2.7" *** *)
+a(POP_ASM_T ante_tac THEN asm_rewrite_tac[]);
+a(cases_tac¬x = bot® THEN asm_rewrite_tac[]);
+a(cases_tac¬y = x® THEN asm_rewrite_tac[]);
+a(cases_tac¬y = top® THEN asm_rewrite_tac[]);
+(* *** Goal "2.8" *** *)
+a(POP_ASM_T ante_tac THEN asm_rewrite_tac[]);
+a(cases_tac¬x = bot® THEN asm_rewrite_tac[]);
+a(cases_tac¬x = top® THEN asm_rewrite_tac[]);
+a(cases_tac¬y = x® THEN asm_rewrite_tac[]);
+(* *** Goal "2.9" *** *)
+a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2.10" *** *)
+a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[]);
+a(cases_tac¬z = top® THEN asm_rewrite_tac[]);
+(* *** Goal "2.11" *** *)
+a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[]);
+a(cases_tac¬z = top® THEN asm_rewrite_tac[]);
+save_consistency_thm¬$dominates®(pop_thm());
+=TEX
+Now we retrieve the definition of $dominates$ with
+the consistency obligation satisfied.
+=SML
+val Ûdominates_defÝ = prove_rule[get_spec¬$dominates®]
+	¬µ x y z · x dominates x
+	± (x dominates y ± y dominates x ´ x = y)
+	± (x dominates y ± y dominates z ´ x dominates z)®;
+=TEX
 \section{CLOSING DOWN}
 The following \Product{} instruction restores the previous proof context.
 =SML
