@@ -21,7 +21,7 @@
 %\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
 \TPPauthorisation{R.B.~Jones & HAT Manager}
 \TPPabstract{This document contains the formal proofs relating to 
-DS/FMU/FEF/026; it forms part of the Phase II proofs for the
+DS/FMU/FEF/033; it forms part of the Phase II proofs for the
 DRA front end filter project RSRE 1C/6130.}
 %\TPPabstractB{}
 %\TPPabstractC{}
@@ -90,13 +90,13 @@ $fef010$ defined in \cite{DS/FMU/FEF/010} and so this is made a parent of
 the theory $fef033$.
 
 =SML 
-open_theory "fef026";
+open_theory "fef032";
 new_theory€"fef033"›;
 new_parent"fef010";
 set_pc"hol";
 =TEX
 \section{MISCELLANY}
-=SML
+\subsection{Consistency Proofs}
 =SML
 push_consistency_goal¨TableComputationsÆ;
 a(prove_∂_tac);
@@ -104,6 +104,7 @@ a(strip_tac THEN rewrite_tac[tac_proof(([], ¨µx∑∂z y∑ (y, z) = xÆ),
 		strip_tac THEN ∂_tac¨Snd xÆ THEN ∂_tac¨Fst xÆ THEN rewrite_tac[])]);
 save_consistency_thm¨TableComputationsÆ (pop_thm());
 =TEX
+\subsection{Induction Principle}
 The following theorem takes a minute or so to compute so we give
 a name to it here (to make the proof of the induction theorem easier
 to modify, e.g. if the definitions change).
@@ -148,12 +149,12 @@ set_goal([], ¨µq : TABLE_COMP ≠ BOOL; p : VALUE_COMP ≠ BOOL∑ µcc : Class ∑
 	±	(µesl tel e1 ml nl e2∑ (µe∑e ç Elems(Map Fst esl) ¥ p e)
 			± (µte∑te ç Elems tel ¥ q te) ± p e1 ± p e2
 				¥ q(AllTuples cc esl tel e1 ml nl e2))
-	±	(µesl tel e1 ml nl e2∑ (µe∑e ç Elems(Map Fst esl) ¥ p e)
+(*	±	(µesl tel e1 ml nl e2∑ (µe∑e ç Elems(Map Fst esl) ¥ p e)
 			± (µte∑te ç Elems tel ¥ q te) ± p e1 ± p e2
 				¥ q(DistinctTuples cc esl tel e1 ml nl e2))
 	±	(µesl tel e1 ml nl e2∑ (µe∑e ç Elems(Map Fst esl) ¥ p e)
 			± (µte∑te ç Elems tel ¥ q te) ± p e1 ± p e2
-				¥ q(Evaluate cc esl tel e1 ml nl e2))
+				¥ q(Evaluate cc esl tel e1 ml nl e2))	*)
 	¥	(µte∑ te ç TableComputations cc ¥ q te)
 	±	(µe∑ e ç ValueComputations cc ¥ p e)
 Æ);
@@ -174,12 +175,50 @@ a(swap_asm_concl_tac ¨e ç ValueComputations ccÆ
 	THEN ∂_tac¨{te | q te}Æ THEN asm_rewrite_tac[]);
 val table_computation_induction_thm =
 	save_pop_thm"table_computation_induction_thm";
-
-
 =TEX
-=IGN
-set_goal([], ¨
-	µe∑ µ
+\section{AUXILIARY DEFINITIONS}
+πHOLCONST
+‹	OK_TC : Class ≠ TABLE_COMP 
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹µc tc∑	tc ç OK_TC c §
+‹	µtlâ0 tlâ1∑
+‹		Map (HideDerTable c) tlâ0 = Map (HideDerTable c) tlâ1
+‹	±	≥HideDerTable c (Snd(tc tlâ0)) = HideDerTable c (Snd(tc tlâ1))
+‹	¥	≥c dominates Fst(tc tlâ0)
+∞
+πHOLCONST
+‹	OK_VC : Class ≠ VALUE_COMP 
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹µc vc∑	vc ç OK_VC c §
+‹	µtlâ0 tlâ1 rlâ0 rlâ1 râ0 râ1∑
+‹		Map (HideDerTable c) tlâ0 = Map (HideDerTable c) tlâ1
+‹	±	Map (HideDerTableRow c) rlâ0 = Map (HideDerTableRow c) rlâ1
+‹	±	HideDerTableRow c râ0 = HideDerTableRow c râ1
+‹	±	≥Snd(vc tlâ0 rlâ0 râ0) = Snd(vc tlâ1 rlâ1 râ1)
+‹	¥	≥c dominates Fst(vc tlâ0 rlâ0 râ0)
+∞
+\section{PROOFS}
+=SML
+set_goal([], ¨µc∑ OK_TC c Ä OkTableComputation cÆ);
+a(PC_T1"hol2"
+	rewrite_tac(map get_spec[¨OK_TCÆ, ¨OkTableComputationÆ, ¨RiskInputsÆ, ¨LetÆ])
+	THEN REPEAT strip_tac);
+a(DROP_NTH_ASM_T 2 (strip_asm_tac o eq_sym_rule));
+a(DROP_NTH_ASM_T 2 (strip_asm_tac o conv_rule(RAND_C eq_sym_conv)));
+a(all_asm_fc_tac[]);
+val €OK_TC_lemma› = save_pop_thm"OK_TC_lemma";
+=SML
+set_goal([], ¨µc ci∑ DenoteConstant ci ç OK_VC cÆ);
+a(rewrite_tac(map get_spec[¨OK_VCÆ, ¨DenoteConstantÆ]) THEN REPEAT strip_tac);
+val €DenoteConstant_OK_lemma› = save_pop_thm"DenoteConstant_OK_lemma";
+=TEX
+=SML
+set_goal([], ¨µc f vc∑ vc ç OK_VC c ¥ MonOp f vc ç OK_VC cÆ);
+a(rewrite_tac(map get_spec[¨OK_VCÆ, ¨MonOpÆ, ¨LetÆ]) THEN REPEAT strip_tac);
+a(lemma_tac¨≥Snd (vc tlâ0 rlâ0 râ0) = Snd (vc tlâ1 rlâ1 râ1)Æ
+	THEN1 PC_T1 "prop_eq" asm_prove_tac[]);
+a(all_asm_fc_tac[]);
+val €MonOp_OK_lemma› = save_pop_thm"MonOp_OK_lemma";
 =TEX
 \section{CLOSING DOWN}
 The following \Product{} instruction restores the previous proof context.
