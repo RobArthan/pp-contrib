@@ -26,8 +26,11 @@ xpp -f refcalc.doc -c pp -d refcalc &
 \def\ZSchemaLabel{}
 \def\Hide#1{\relax}
 %Macros for references (to be converted to bibtex presently).
-\def\Unifying{{\it Hoare \& He}}
-\def\Methods{{\it Jones}}
+\def\Unifying{{Hoare \& He \cite{hoare98}}}
+\def\Methods{{Jones \cite{jones92}}}
+\def\TwoJims{{Woodcock and Davies\cite{woodcock96}}}
+
+
 \title{On Refinement Calculus and Partial Correctness \\ (DRAFT)}
 \author{R.D. Arthan}
 \makeindex
@@ -36,7 +39,7 @@ xpp -f refcalc.doc -c pp -d refcalc &
 \section{Introduction}\label{Intro}
 \subsection{Background and Motivation}
 
-This note is the first of a series concerned with a style of system specification in which
+This note is intended as the first of a series concerned with a style of system specification in which
 the claims that can be verified have the form ``system $p$
 satisfies specification $s$ under normal circumstances''.
 This notion of correctness is traditionally referred to as partial correctness,
@@ -172,54 +175,61 @@ ReaderWriterSupport.PrettyNames.add_new_symbols[
 We use infix notation for the following relation
 and function symbols:
 πZ
-‹ rel _ √ _, _ %models% _, _ È_, _ ‚ _
+‹ rel _ √ _, _ %models% _, _ È_
 ∞
 πZ
 ‹ fun 7 _ %sqcap% _, _ %sqcup% _, _ Á$Í
 ∞
-We use postfix notation for the following function symbol:
+We use postfix notation for the following function and generic symbols:
 πZ
 ‹ fun 7 _ Á$Í
+∞
+πZ
+‹ gen 9 _ Á‚Í
 ∞
 
 
 
 
 
-\section{States , Pre-conditions, Post-conditions}\label{STATE}
+\section{Inputs, Outputs , Pre-conditions, Post-conditions}\label{STATE}
 
-[TBD: in the following the term ``state'' needs to be replaced by a more neutral term. ]
-
-We wish to construct a semantic model of specification of state transformations
+We wish to construct a semantic model of specification of operations
 via pre- and post-conditions.
-The internal structure of states is not relevant to our purposes for the time being
---- our definitions will be generic with respect to the set, $S$, of all states.
-For a conventional imperative programming language, the states will be
-assignments of values to program variables.
+Our operations have inputs and outputs that could be memory states, or data streams or anything
+else appropriate  to the modelling task at hand.
+The internal structure of inputs and outputs is not relevant to our purposes for the time being
+--- our definitions will be generic with respect to the set, $X$, of inputs and the set, $Y$, of outputs.
 
-In our model, a predicate on states is just a set of states, i.e., the denotation of the
+For modelling the semantics of a conventional imperative programming language,
+the inputs and outputs would both be
+assignments of values to program variables.
+We take this as our motivating example in this section.
+
+In our formulation, a predicate on a is just a subset of it, i.e., the denotation of the
 usual syntactic notion of a predicate.
 
 πZ
 ‹ €PRED›[X] ¶ X
 ∞
 
-Syntactically, a pre-condition is a predicate whose free variables are program variables and a post-condition is a predicate whose free variables are
+For the programming language example, a pre-condition would be given
+syntactically as a predicate whose free variables are program variables and a post-condition as a predicate whose free variables are
 program variables with optional decoration to distinguish values in the before-state
 from values in the after-state.
 A pre-condition denotes the set of assignments, $\alpha$, in which the program
 variables satisfy the pre-condition and a post-condition denotes
-the relation, $\rho$, which holds between two states $s$ and $s'$ when $s \times s'$
+the relation, $\rho$, which holds between a before-state $s$ and an after-state $s'$ when $s \times s'$
 satisfies the post-condition after makihng the appropriate binding of before- and after-values
 to the variables in the post-condition.
 
-Taken together, we can often think of the pre- and post-condition as denoting the state transformer
+Taken together, we can often think of the pre- and post-condition as denoting the relatioin
 =INLINEFT
 ¡ Ú “
 =TEX
 .
 However,as we will be making
-formal presently, our reading of a specification requires the program
+formal presently, our reading of a specification will require the program
 not to terminate in before-states that satisfy the pre-condition but to
 which the post-condition cannot respond.
 Consequently we lose some expressiveness if we throw away the pre-condition,
@@ -227,7 +237,8 @@ for example, if the post-condition is unsatisfiable, the pre-condition
 defines a set of states in which the program must not terminate.
 We therefore keep a separate record of the pre-condition. 
 So a specification is a pair comprising a predicate giving the pre-condition
-and a binary relation on states giving the post-condition.
+and a binary relation between inputsw and outputs giving the post-condition.
+
 πZ
 ‹ €PRE_COND›[X] ¶ PRED[X]
 ∞
@@ -241,7 +252,7 @@ and a binary relation on states giving the post-condition.
 To give examples in the sequel, we will borrow some syntax from the Compliance Notation, in 
 which states comprise assignments of values to program variables representing the execution
 state of an Ada program.
-In the Compliance Notation, specifications using {\em specification statements}
+In the Compliance Notation, specifications are written using {\em specification statements}
 which have the following general form:
 {
 \vertbarfalse
@@ -477,7 +488,17 @@ state transitions that $s$ forbids forbids:
 ‹µs : SPEC[X, Y]∑
 ‹	Forbidden s = CHAOS (s.1) \ s.2
 à¸¸¸¸¸¸¸¸¸¸¸¸¸¸
-A more explicit equation for fobidden sets is useful:
+A more explicit equation for fobidden sets is useful\footnote{
+For convenience in stating this and other theorems, we use the generic constant $U$ which is
+defined as part of the {\Product} Z library as if by the
+generic definition
+=INLINEFT
+U[X] ¶ X
+=TEX
+, so that $U$ with the generic parameter left implicit denotes the
+universal set of whatever type is required by the context.
+}:
+
 πZ
 ‹ forbidden_def_cnj ?Ù 
 ‹	µ s : SPEC∑ 
@@ -551,7 +572,88 @@ The following formulae for binary meets and joins are often simpler to use
 ‹	 ¿	((sâ1.1 \ sâ2.1) Ú sâ1.2)
 ‹	 ¿	((sâ2.1 \ sâ1.1) Ú sâ2.2))
 ∞
+\section{Relations with Other Approaches}
+In [Hoare and Ji Feng], a theory based on total correctness is developed.
+This theory is syntactic and involves various artifices that are on the face of it mainly introduced to
+obtain various algebraic laws. 
+A semantics and rather simpler account is given in {\TwoJims}.
+Total correctness effectively means restricting attention to specification in our sense
+in which the domain of the post-condition contains the pre-condition.
+This has the advantage that, if we take the canonical representation, we can
+discard the pre-condition since it may be recovered as the domain of the post-condition.
 
+{\TwoJims} proceed to point out that for total relations, the notion of
+refinement reduces to set-theoretic inclusion of relations. In this section we show that
+this idea generalises to our partial correctness notion.  To do this we first introduce
+some more notation:
+=INLINEFT
+XÁ‚Í
+=TEX
+\ is to be the result of augmenting a set $X$ with an additional element ‚.
+We represent
+=INLINEFT
+XÁ‚Í
+=TEX
+\ as the set of all subsets of $X$ with at most one element:
+
+πZ
+‹ X €Á‚Í› ¶ { A : X | µx, y : A∑ x  = y}
+∞
+
+$\iota$ and ‚ are then defined as follows (and act very much as if they were constructors
+of a generic free type).
+
+ù[ X ]úúúúúúúúúúú
+‹ €‚› : X Á‚Í ;
+‹ €…› : X ≠ X Á‚Í 
+˜¸¸¸¸¸¸
+‹	‚ = ö;
+‹µx : X∑ 	… x = {x}
+à¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+
+The function {\it lift} maps a specification in our sense to the relation between
+augmented inputs and augmented outputs which agrees with the post-condition
+where the pre-condition holds and is chaos outside the pre-condition.
+This definition agrees with the one given in {\TwoJims} on specifications
+that happen to be total\footnote{
+In fact, we do not actually need to augment the input set $X$, an
+analogue of {\it lift} could be defined mapping specifications to
+relations between $X$ and
+=INLINEFT
+YÁ‚Í
+=TEX
+\ and this would carry refinements to inclusions just like the formulation here.
+We have chosen to augment $X$ for uniformity with {\TwoJims} and because
+this formulation seems likely to have nicer compositionality properties.
+}.
+
+ù[ X, Y ]úúúúúúúúúúú
+‹ €lift› : SPEC[X, Y] ≠ X Á‚Í  ™ Y Á‚Í
+˜¸¸¸¸¸¸
+‹ µprec : PRE_COND[X]; postc : POST_COND[X, Y]∑
+‹	lift(prec, postc) = 
+‹	{ xa : XÁ‚Í; ya : YÁ‚Í
+‹	|	xa = ‚
+‹	≤	(∂x : X∑ ≥x ç prec ± xa = … x)
+‹	≤	(∂x : X; y : Y∑ x ç prec ± (x, y) ç postc ± xa = … x± ya = … y) }
+à¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+
+We can now claim the theorem that refinement as we have defined it is equivalent to
+inclusion of the lifted relations.
+
+πZ
+‹ refinement_lift_cnj ?Ù µsâ1, sâ2: SPEC∑ sâ1 √ sâ2 § lift sâ2 Ä lift sâ1
+∞
+Together with earlier results this shows that our refinement ordering is isomorphic
+to a complete sublattice of the lattice of relations on the sets of augmented inputs and outputs.
+Our final theorem characterises this sublattice.
+πZ
+‹ ran_lift_cnj ?Ù
+‹	ran lift = { r : (_Á‚Í) ™ (_Á‚Í) | µx:(_Á‚Í); y : (_Á‚Í)∑ (‚, y) ç r ± ((x, ‚) ç r ¥ (x, y) ç r)}
+∞
+
+\bibliographystyle{plain}
+\bibliography{bookspapers}
 \newpage
 \appendix
 =TEX
@@ -844,6 +946,158 @@ a(rewrite_tac[reduce_def, forbidden_def1, refcalc_u_thm]);
 a(PC_T1"z_library_ext" prove_tac[]);
 val €join2_thm› = save_pop_thm "join2_thm";
 =TEX
+The proofs concerned with lifting are a bit fiddly. Life would be much easier if Z did support
+generic free types. Unfortunately (and inevitably) with Z as it is, the set theoretic representation
+of the augmented sets means that the proof contexts which use extensionality will cut
+too deep.
+=SML
+set_goal([], Ò
+	(µx: U∑ ≥ … x  = ‚  ± ≥ ‚ = … x) 
+±	(µx, y: U∑ … x  = … y § x = y) 
+Æ);
+a(rewrite_tac[z_get_u_specÒ…Æ]);
+a(PC_T1 "z_library_ext"prove_tac[]);
+val …_clauses = save_pop_thm "…_clauses";
+=TEX
+=SML
+set_goal([], Ò
+	(µx: U∑  … x  ç (_Á‚Í)) 
+±	‚ ç (_Á‚Í)
+Æ);
+a(rewrite_tac[z_get_u_specÒ…Æ, z_get_u_specÒ(_Á‚Í)Æ]);
+a(PC_T1 "z_library_ext"prove_tac[]);
+val …_ç_clauses = save_pop_thm "…_ç_clauses";
+=TEX
+=SML
+set_goal([], Ò
+	(µt: X Á‚Í∑ t = ‚ ≤ (∂x:X∑t = … x)) 
+Æ);
+a(rewrite_tac[z_get_specÒ(_Á‚Í)Æ, z_get_u_specÒ…Æ, z_get_u_specÒ‚Æ]);
+a(PC_T1 "z_library_ext" REPEAT strip_tac);
+a(z_∂_tacÒx1Æ THEN PC_T1 "z_library_ext" asm_prove_tac[]);
+val augmented_cases_thm = save_pop_thm "augmented_cases_thm";
+=TEX
+=SML
+set_goal([], Ò
+	(µt: (_ Á‚Í)∑ t = ‚ ≤ (∂x:U∑t = … x)) 
+Æ);
+a(rewrite_tac[z_get_specÒ(_Á‚Í)Æ, z_get_u_specÒ…Æ, z_get_u_specÒ‚Æ]);
+a(PC_T1 "z_library_ext" REPEAT strip_tac);
+a(z_∂_tacÒx1Æ THEN PC_T1 "z_library_ext" asm_prove_tac[]);
+val augmented_u_cases_thm = save_pop_thm "augmented_u_cases_thm";
+=TEX
+=SML
+set_goal([], Ò 
+µs: SPEC∑
+	lift s =
+	{ xa : (_Á‚Í); ya : (_Á‚Í)
+	|	xa = ‚
+	≤	(∂x : U∑ ≥x ç s.1 ± xa = … x)
+	≤	(∂x : U; y : U∑ x ç s.1 ± (x, y) ç s.2 ± xa = … x± ya = … y) }
+Æ);
+a(REPEAT strip_tac);
+a(LEMMA_T Òs = (s.1, s.2)Æ once_rewrite_thm_tac THEN1 PC_T1 "z_library_ext" prove_tac[]);
+a(rewrite_tac[z_get_u_specÒliftÆ]);
+val lift_u_def_thm = save_pop_thm "lift_u_def_thm";
+=TEX
+=SML
+set_goal([], get_conjecture"-" "refinement_lift_cnj");
+a(rewrite_tac[refines_def, lift_u_def_thm] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(PC_T "z_library_ext" strip_tac THEN REPEAT strip_tac);
+(* *** Goal "1.1" *** *)
+a(i_contr_tac THEN POP_ASM_T ante_tac THEN rewrite_tac[] THEN REPEAT strip_tac);
+a(z_∂_tacÒxÆ THEN REPEAT strip_tac);
+a(LIST_GET_NTH_ASM_T [3, 7] (MAP_EVERY ante_tac) THEN PC_T1 "z_sets_ext" prove_tac[]);
+(* *** Goal "1.2" *** *)
+a(z_spec_nth_asm_tac 1 ÒxÆ);
+a(z_∂_tacÒ(x ¶ x, y ¶ y)Æ THEN REPEAT strip_tac);
+a(LIST_GET_NTH_ASM_T [1, 6, 10] (MAP_EVERY ante_tac) THEN PC_T1 "z_library_ext" prove_tac[]);
+(* *** Goal "2" *** *)
+a(POP_ASM_T (PC_T1 "z_library_ext" strip_asm_tac));
+a(PC_T "z_sets_ext" strip_tac THEN REPEAT strip_tac);
+a(contr_tac);
+a(DROP_NTH_ASM_T 3 (ante_tac o z_µ_elimÒ(x1 ¶ …  x1, x2 ¶ (‚ ∫ (ran (sâ1.2) Á‚Í)))Æ));
+a(asm_rewrite_tac[…_ç_clauses] THEN REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(z_spec_nth_asm_tac 1 Òx1Æ);
+(* *** Goal "2.2" *** *)
+a(rewrite_tac[…_clauses]);
+(* *** Goal "2.3" *** *)
+a(all_fc_tac[…_clauses] THEN all_var_elim_asm_tac1);
+(* *** Goal "2.4" *** *)
+a(all_fc_tac[…_clauses]);
+(* *** Goal "3" *** *)
+a(POP_ASM_T (PC_T1 "z_library_ext" strip_asm_tac));
+a(PC_T "z_sets_ext" strip_tac THEN REPEAT strip_tac);
+a(contr_tac);
+a(DROP_NTH_ASM_T 3 (ante_tac o z_µ_elimÒ(x1 ¶ …  x1, x2 ¶  … x2)Æ));
+a(asm_rewrite_tac[…_clauses, …_ç_clauses] THEN REPEAT strip_tac);
+(* *** Goal "3.1" *** *)
+a(z_spec_nth_asm_tac 1 Òx1Æ);
+a(z_∂_tacÒ(x ¶  x1, y ¶  x2)Æ THEN PC_T1 "z_library_ext" asm_prove_tac[]);
+(* *** Goal "3.2" *** *)
+a(all_var_elim_asm_tac THEN PC_T1 "z_library_ext" asm_prove_tac[]);
+(* *** Goal "3.3" *** *)
+a(all_var_elim_asm_tac THEN PC_T1 "z_library_ext" asm_prove_tac[]);
+val refinement_lift_thm = save_pop_thm"refinement_lift_thm";
+=TEX
+=SML
+set_goal([], get_conjecture"-" "ran_lift_cnj");
+a(PC_T1 "z_library_ext" once_rewrite_tac[] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(POP_ASM_T (PC_T1 "z_library_ext" strip_asm_tac));
+a(asm_tac (prove_rule[]Òx ç SPECÆ));
+a(strip_asm_tac(±_left_elim(z_get_u_specÒliftÆ)));
+a(all_fc_tac[z_fun_ç_clauses]);
+a(all_fc_tac[z_fun_app_clauses] THEN all_var_elim_asm_tac1);
+(* *** Goal "2" *** *)
+a(DROP_NTH_ASM_T 3 (PC_T1 "z_library_ext" strip_asm_tac));
+a(asm_tac (prove_rule[]Òx' ç SPECÆ));
+a(strip_asm_tac(±_left_elim(z_get_u_specÒliftÆ)));
+a(all_fc_tac[z_fun_app_clauses] THEN all_var_elim_asm_tac1);
+a(all_asm_ante_tac THEN rewrite_tac[lift_u_def_thm, …_ç_clauses] THEN REPEAT strip_tac);
+(* *** Goal "3" *** *)
+a(DROP_NTH_ASM_T 4 (PC_T1 "z_library_ext" strip_asm_tac));
+a(asm_tac (prove_rule[]Òx' ç SPECÆ));
+a(strip_asm_tac(±_left_elim(z_get_u_specÒliftÆ)));
+a(all_fc_tac[z_fun_app_clauses] THEN all_var_elim_asm_tac1);
+a(all_asm_ante_tac THEN rewrite_tac[lift_u_def_thm] THEN REPEAT strip_tac);
+(* *** Goal "3.1" *** *)
+a(DROP_NTH_ASM_T 4 discard_tac THEN all_var_elim_asm_tac1);
+a(z_spec_nth_asm_tac 1 Òx''Æ);
+(* *** Goal "3.2" *** *)
+a(all_fc_tac[…_clauses]);
+(* *** Goal "4" *** *)
+a(PC_T1 "z_library_ext" once_rewrite_tac[] THEN REPEAT strip_tac);
+a(z_∂_tacÒ
+	({I:U | ≥(… I, ‚)ç x1}, {I:U; O:U | (… I, … O) ç x1})
+Æ THEN REPEAT strip_tac);
+a(asm_tac (prove_rule[]Ò({I:U | ≥(… I, ‚)ç x1}, {I:U; O:U | (… I, … O) ç x1}) ç SPECÆ));
+a(strip_asm_tac(±_left_elim(z_get_u_specÒliftÆ)));
+a(ALL_FC_T1 fc_§_canon rewrite_tac[z_≠_ç_rel_§_app_eq_thm]);
+a(rewrite_tac[lift_u_def_thm] THEN REPEAT strip_tac);
+a(PC_T1 "z_library_ext" once_rewrite_tac[] THEN REPEAT strip_tac);
+(* *** Goal "4.1" *** *)
+a(all_var_elim_asm_tac1 THEN ALL_ASM_FC_T rewrite_tac[]);
+(* *** Goal "4.2" *** *)
+a(all_var_elim_asm_tac1 THEN ALL_ASM_FC_T rewrite_tac[]);
+(* *** Goal "4.3" *** *)
+a(all_var_elim_asm_tac1 THEN ALL_ASM_FC_T rewrite_tac[]);
+(* *** Goal "4.4" *** *)
+a(LIST_GET_NTH_ASM_T [1, 5] (MAP_EVERY ante_tac) THEN PC_T1 "z_library_ext" prove_tac[]);
+(* *** Goal "4.5" *** *)
+a(LIST_GET_NTH_ASM_T [1, 5] (MAP_EVERY ante_tac) THEN PC_T1 "z_library_ext" prove_tac[]);
+(* *** Goal "4.6" *** *)
+a(lemma_tacÒx2 ç (_Á‚Í) ± x3 ç (_Á‚Í)Æ THEN1
+	(LIST_GET_NTH_ASM_T [3, 7] (MAP_EVERY ante_tac) THEN PC_T1 "z_library_ext" prove_tac[]));
+a(all_fc_tac[augmented_u_cases_thm] THEN all_var_elim_asm_tac1);
+a(z_spec_nth_asm_tac 3 ÒxÆ);
+a(cases_tacÒx3 = ‚Æ THEN1 all_var_elim_asm_tac1);
+a(all_fc_tac[augmented_u_cases_thm] THEN all_var_elim_asm_tac1);
+a(z_∂_tacÒ(x'' ¶ x, y ¶ x')Æ THEN REPEAT strip_tac);
+val ran_lift_thm = save_pop_thm"ran_lift_thm";
+=TEX
 \section{Epilogue}
 =SML
 z_output_theory{out_file="refcalc.th.doc", theory="-"};
@@ -854,101 +1108,3 @@ z_output_theory{out_file="refcalc.th.doc", theory="-"};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PROOF SCRIPTS END HERE
 =TEX
 \end{document}
-=IGN
-val tm = concl (z_get_specÒ(_√_)Æ);
-term_vars tm;
-
-val tm2 = concl refines_def;
-term_tyvars tm2;
-
-term_vars tm2;
-term_consts tm2;
-val it =
-   [("Z'\181", îBOOL ≠ BOOLÆ),
-      ("\181", î(('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]" ≠ BOOL) ≠ BOOLÆ),
-      ("Z'\181Body", îBOOL ≠ BOOL ≠ BOOL ≠ BOOLÆ),
-      ("Z'Decl", îBOOL LIST ≠ BOOLÆ),
-      ("Cons", îBOOL ≠ BOOL LIST ≠ BOOL LISTÆ),
-      ("Z'Dec",
-         î('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]" LIST
-             ∏ ('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]" SET
-           ≠ BOOLÆ),
-      (",",
-         î('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]" LIST
-           ≠ ('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]" SET
-           ≠ ('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]" LIST
-             ∏ ('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]" SETÆ),
-      ("Cons",
-         î('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]"
-           ≠ ('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]" LIST
-           ≠ ('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]" LISTÆ),
-      ("Nil", î('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]" LISTÆ),
-      ("z'U",
-         î('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]" SET $"Z'T[1]"
-           ≠ ('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]" SETÆ),
-      ("Z'Mk_T[1]",
-         î('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]" SET
-           ≠ ('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]" SET $"Z'T[1]"Æ),
-      ("Totality", î('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]" SETÆ),
-      ("Nil", îBOOL LISTÆ), ("T", îBOOLÆ), ("=", îBOOL ≠ BOOL ≠ BOOLÆ),
-      ("\141",
-         î(('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]",
-             ('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]") $"Z'T[2]"
-           ≠ (('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]",
-               ('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]") $"Z'T[2]" SET
-           ≠ BOOLÆ),
-      ("Z'Mk_T[2]",
-         î('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]"
-           ≠ ('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]"
-           ≠ (('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]",
-             ('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]") $"Z'T[2]"Æ),
-      ("z'_ \195 _",
-         î'b SET $"Z'T[1]"
-           ≠ (('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]",
-               ('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]") $"Z'T[2]" SETÆ),
-      ("z'U", î'b SET $"Z'T[1]" ≠ 'b SETÆ),
-      ("Z'Mk_T[1]", î'b SET ≠ 'b SET $"Z'T[1]"Æ), ("Totality", î'b SETÆ),
-      ("\177", îBOOL ≠ BOOL ≠ BOOLÆ),
-      ("\141",
-         î('a SET, 'a SET) $"Z'T[2]"
-           ≠ ('a SET, 'a SET) $"Z'T[2]" SET
-           ≠ BOOLÆ),
-      ("z'_ \128 _", î'a SET $"Z'T[1]" ≠ ('a SET, 'a SET) $"Z'T[2]" SETÆ),
-      ("\141",
-         î(('a, 'a) $"Z'T[2]" SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]"
-           ≠ (('a, 'a) $"Z'T[2]" SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]" SET
-           ≠ BOOLÆ),
-      ("Z'Mk_T[2]",
-         î('a, 'a) $"Z'T[2]" SET
-           ≠ ('a, 'a) $"Z'T[2]" SET
-           ≠ (('a, 'a) $"Z'T[2]" SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]"Æ),
-      ("Z'App",
-         î(('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]",
-               ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]" SET
-           ≠ ('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]"
-           ≠ ('a, 'a) $"Z'T[2]" SETÆ),
-      ("z'_ \242 _",
-         î('a SET, 'a SET) $"Z'T[2]"
-           ≠ (('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]",
-               ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]" SETÆ),
-      ("Z'Mk_T[2]", î'a SET ≠ 'a SET ≠ ('a SET, 'a SET) $"Z'T[2]"Æ),
-      ("z'U", î'a SET $"Z'T[1]" ≠ 'a SETÆ),
-      ("Z'Mk_T[1]", î'a SET ≠ 'a SET $"Z'T[1]"Æ), ("Totality", î'a SETÆ),
-      ("Z'Mk_T[2]",
-         î'a SET
-           ≠ ('a, 'a) $"Z'T[2]" SET
-           ≠ ('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]"Æ),
-      ("Z'T[2]1", î('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]" ≠ 'a SETÆ),
-      ("Z'T[2]2",
-         î('a SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]"
-           ≠ ('a, 'a) $"Z'T[2]" SETÆ),
-      ("z'_ \128 _",
-         î('a, 'a) $"Z'T[2]" SET $"Z'T[1]"
-           ≠ (('a, 'a) $"Z'T[2]" SET, ('a, 'a) $"Z'T[2]" SET) $"Z'T[2]"
-           SETÆ),
-      ("z'U", î('a, 'a) $"Z'T[2]" SET $"Z'T[1]" ≠ ('a, 'a) $"Z'T[2]" SETÆ),
-      ("Z'Mk_T[1]",
-         î('a, 'a) $"Z'T[2]" SET ≠ ('a, 'a) $"Z'T[2]" SET $"Z'T[1]"Æ),
-      ("Totality", î('a, 'a) $"Z'T[2]" SETÆ)]
-: (string * icl'TypesAndTerms.TYPE) list
-:) 
