@@ -20,8 +20,9 @@
 \TPPauthor{G.~M.~Prout & WIN01}  %% Mandatory field
 %\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
 \TPPauthorisation{R.B.~Jones & HAT Manager}
-\TPPabstract{This document completes the formal proof of security of 
-the SSQL Abstract Machine for the
+\TPPabstract{This document provides a formal proof for two of the conjuncts
+of the security property
+on the relationship between $hide$ and $updateState$ for the
 DRA front end filter project RSRE 1C/6130.}
 %\TPPabstractB{}
 %\TPPabstractC{}
@@ -73,25 +74,34 @@ during  the transcription of the specification.
 \pagebreak
 \section{GENERAL}
 \subsection{Scope}
-This document provides a formal proof  that the components $hide$ and $updateState$ satisfy their critical 
+This document provides a formal proof  that the components $hide$ and $updateState$ 
+satisfy some of their critical 
 requirements, as specified in 
-the proof strategy \cite{DS/FMU/FEF/007}. It constitutes part of deliverable D5 
+the proof strategy \cite{DS/FMU/FEF/007}. It constitutes part of deliverable D6 
 of work package 1a, as given
 in section 7 of the Secure Database Technical Proposal, \cite{DS/FMU/017}.
 
 \subsection{Introduction}
 
-This document is a proof script which provides a formal proof of the second conjunct of $Lemma1$,
+This document is a proof script which provides a formal proof which contributes to the proof
+ of the second conjunct of $Lemma1$,
 the requirement on the critical components  $hide$ and $updateState$, described in the proof strategy document \cite{DS/FMU/FEF/007}.
 
 {\bf Lemma1}
-=GFT
+=GFT 
 	?ô 	hide  secureHide ± (hide,updateState)  secureUpdate
 =TEX
 
-In this document, we give a proof of
+In this document, we give proofs of the third and fourth conjuncts of $secureUpdate$:
 =GFT
-	?ô 	(hide,updateState)  secureUpdate
+	?ô 	µ c s e · Fst(Snd(updateState (c,e,s))) = c
+=TEX
+
+and
+
+=GFT
+	?ô 	µ c s‰1 s‰2 e · hide (c, s‰1) = hide (c, s‰2)
+			 ´ Snd (updateState (c, e, s‰1)) = Snd (updateState (c, e, s‰2))
 =TEX
 
 
@@ -114,6 +124,15 @@ a(rewrite_tac[]);
 save_consistency_thm¬destInsert®(top_thm());
 val ÛdestInsert_defÝ = get_spec¬destInsert®;
 =TEX
+=GFT HOL output
+destInsert_def = 
+ô µ i d u s
+  · destInsert (InsertEffect i) = i
+      ± destDelete (DeleteEffect d) = d
+      ± destUpdate (UpdateEffect u) = u
+      ± destSelect (SelectEffect s) = s
+=TEX
+
 =SML
 push_consistency_goal¬tabFromEffect®;
 a(rewrite_tac[get_spec¬InsertEffect®]);
@@ -127,6 +146,14 @@ a(rewrite_tac[sum_clauses]);
 save_consistency_thm¬tabFromEffect®(top_thm());
 val ÛtabFromEffect_defÝ = get_spec¬tabFromEffect®;
 =TEX
+=GFT HOL output
+tabFromEffect_def = 
+ô µ i d u
+  · tabFromEffect (InsertEffect i) = Fst i
+      ± tabFromEffect (DeleteEffect d) = Fst d
+      ± tabFromEffect (UpdateEffect u) = Fst u
+=TEX
+
 =SML
 push_consistency_goal¬giveVal®;
 a(¶_tac¬InL,InR,OutL,OutR,IsL,IsR®);
@@ -137,12 +164,21 @@ a(¶_tac¬OutR ve®THEN asm_rewrite_tac[]);
 save_consistency_thm¬giveVal®(top_thm());
 val ÛgiveVal_defÝ = get_spec¬giveVal®;
 =TEX
+=GFT HOL output
+giveVal_def = 
+ô µ v e ve
+  · giveVal v = InL v
+      ± giveError e = InR e
+      ± destVal (giveVal v) = v
+      ± destError (giveError e) = e
+      ± (isVal ve ¤ (¶ v‰1· ve = giveVal v‰1))
+      ± (isError ve ¤ (¶ e‰1· ve = giveError e‰1))
+=TEX
 \subsection{Retrieving the Remaining Definitions of Constants}
 
 =SML
 val ÛchangeSpec_defÝ = conv_rule(MAP_C let_conv)(get_spec¬changeSpec®);
 val ÛreplaceRows_defÝ = get_spec¬replaceRows®;
-val ÛinsertQuery_defÝ = get_spec¬insertQuery®;
 val ÛupdateQuery_defÝ = get_spec¬updateQuery®;
 val ÛisInsert_defÝ = get_spec¬isInsert®;
 val ÛisDelete_defÝ = get_spec¬isDelete®;
@@ -180,23 +216,27 @@ val Ûval_or_error_typeÝ = new_axiom(["val_or_error_type"],
 	² (isError v ± ³ isVal v)®);
 =TEX
 
-=SML
-val Û³isError_giveValÝ = new_axiom(["³isError_giveVal"],
-	¬µv· ³ isError(giveVal v)®);
-=TEX
-=SML
-val Û³isVal_giveErrorÝ = new_axiom(["³isVal_giveError"],
-	¬µe· ³ isVal(giveError e)®);
-=TEX
 
 =SML
 val ÛgiveVal_eq_thmÝ = save_thm("giveVal_eq_thm",prove_rule[giveVal_def]
 	¬µ x y · giveVal x = giveVal y ¤ x = y®);
 val ÛgiveError_eq_thmÝ = save_thm("giveError_eq_thm",prove_rule[giveVal_def]
 	¬µ x y · giveError x = giveError y ¤ x = y®);
+val Û³isError_giveVal_thmÝ = save_thm("³isError_giveVal_thm",
+	prove_rule[get_spec¬isError®]¬µ v · ³isError(giveVal v)®);
+val Û³isVal_giveError_thmÝ = save_thm("³isVal_giveError_thm",
+	prove_rule[get_spec¬isError®]¬µ e · ³isVal(giveError e)®);
+val ÛisVal_defÝ = all_µ_intro(nth 4 (strip_±_rule (all_µ_elim giveVal_def)));
+val ÛisError_defÝ = all_µ_intro(nth 5 (strip_±_rule (all_µ_elim giveVal_def)));
 =TEX
-
-
+=GFT HOL output
+giveVal_eq_thm = ô µ x y· giveVal x = giveVal y ¤ x = y
+giveError_eq_thm = ô µ x y· giveError x = giveError y ¤ x = y
+³isError_giveVal_thm = ô µ v· ³ isError (giveVal v)
+³isVal_giveError_thm = ô µ e· ³ isVal (giveError e)
+isVal_def = ô µ ve· isVal ve ¤ (¶ v‰1· ve = giveVal v‰1)
+isError_def = ô µ ve· isError ve ¤ (¶ e‰1· ve = giveError e‰1)
+=TEX
 
 \section{PROOF OF SECURITY OF CRITICAL COMPONENTS}
 \subsection{Proof of Conjunct 4}
@@ -213,9 +253,12 @@ a(EVERY[strip_asm_tac(µ_elim ¬Fst e® query_type),
 	asm_rewrite_tac[],
 	cases_tac¬c dominates TS_class (getTable (tabFromEffect (Fst e)) (repState s))®,
 	asm_rewrite_tac[]]);
-val ÛupdateState_classÝ = save_pop_thm"updateState_class";
+val Ûconjunct4Ý = save_pop_thm"conjunct4";
 =TEX
-\subsection{Proof of Conjunct 3}
+=GFT HOL output
+conjunct4 = ô µ c s e· Fst (Snd (updateState (c, e, s))) = c
+=TEX
+\subsection{Conjunct 3}
 \subsubsection{Auxiliary Lemmas}
 =SML
 push_goal([],¬µ c s · isState(hideR(c, repState s))®);
@@ -224,7 +267,7 @@ a(strip_asm_tac (µ_elim¬s®isState_lemma));
 a(strip_asm_tac (list_µ_elim[¬c®,¬repState s®]hideR_lemma));
 val ÛisState_lemma3Ý = save_pop_thm"isState_lemma3";
 =TEX
-=GFT
+=GFT HOL output
 isState_lemma3 = ô µ c s· isState (hideR (c, repState s))
 =TEX
 =SML
@@ -236,7 +279,7 @@ a(rewrite_tac[hide_def,rewrite_rule[isState_lemma3]
 	(list_µ_elim[¬hideR (c, repState s‰1)®,¬hideR (c, repState s‰2)®]isState_lemma2)]);
 val Ûhide_eq_lemmaÝ = save_pop_thm"hide_eq_lemma";
 =TEX
-=GFT
+=GFT HOL output
 hide_eq_lemma = 
 ô µ c s‰1 s‰2
   · hide (c, s‰1) = hide (c, s‰2)
@@ -328,7 +371,13 @@ a(¶_tac¬y'® THEN  asm_rewrite_tac[]);
 (* *** Goal "2.2.2" *** *)
 a(DROP_NTH_ASM_T 2 ante_tac THEN POP_ASM_T rewrite_thm_tac THEN ´_tac);
 a(¶_tac¬z'®THEN asm_rewrite_tac[]);
-val tabExists_lemma = save_pop_thm"tabExists_lemma";
+val ÛtabExists_lemmaÝ = save_pop_thm"tabExists_lemma";
+=TEX
+=GFT HOL output
+tabExists_lemma = 
+ô µ c s‰1 s‰2
+  · hide (c, s‰1) = hide (c, s‰2)
+      ´ (µ i· tabExists c i (repState s‰1) ¤ tabExists c i (repState s‰2))
 =TEX
 
 =SML
@@ -341,6 +390,14 @@ a(asm_rewrite_tac[cleanTable_def,tab_components,get_spec¬MkTableSpec®]
 	THEN strip_tac THEN asm_rewrite_tac[]);
 val ÛupdateRow_lemmaÝ = save_pop_thm"updateRow_lemma";
 =TEX
+=GFT HOL output
+updateRow_lemma = 
+ô µ c t‰1 t‰2
+  · cleanTable c t‰1 = cleanTable c t‰2
+      ´ c dominates TS_class t‰1 ± c dominates TS_class t‰2
+      ´ updateRow c (TS_class t‰1) = updateRow c (TS_class t‰2)
+=TEX
+
 
 =SML
 push_goal([],¬µ c tc d‰1 d‰2 u · 
@@ -366,39 +423,17 @@ a(DROP_NTH_ASM_T 4 ante_tac THEN rewrite_tac[updateField_def]);
 a(cases_tac¬c = tc®THEN asm_rewrite_tac[]);
 a(cases_tac¬isItem u®THEN asm_rewrite_tac[]);
 a(cases_tac¬isClass u®THEN asm_rewrite_tac[]);
-a(cases_tac¬destClass u dominates Dat_class d‰2®THEN asm_rewrite_tac[³isError_giveVal]);
+a(cases_tac¬destClass u dominates Dat_class d‰2®
+	THEN asm_rewrite_tac[³isError_giveVal_thm]);
 val ÛisError_updateField_lemmaÝ = save_pop_thm"isError_updateField_lemma";
 =TEX
-=SML
-push_goal([],¬µ c tc d‰1 d‰2 u · 
-	(isVal(updateField c tc (u,d‰1)) ± replaceData c d‰1 = replaceData c d‰2)
-	´  isVal(updateField c tc (u,d‰2))®);
-a(REPEAT strip_tac);
-a(POP_ASM_T (ante_tac o rewrite_rule[replaceData_def]));
-a(cases_tac¬c dominates Dat_class d‰1® THEN 
-	cases_tac¬c dominates Dat_class d‰2® THEN asm_rewrite_tac[]THEN strip_tac);
-(* *** Goal "1" *** *)
-a(POP_ASM_T (rewrite_thm_tac o eq_sym_rule) THEN asm_rewrite_tac[]);
-(* *** Goal "2" *** *)
-a(POP_ASM_T(strip_asm_tac o rewrite_rule[get_spec¬MkData®,data_components]));
-a(DROP_NTH_ASM_T 4 ante_tac THEN asm_rewrite_tac[]);
+=GFT HOL output
+isError_updateField_lemma =
+ô µ c tc d‰1 d‰2 u
+  · isError (updateField c tc (u, d‰1))
+        ± replaceData c d‰1 = replaceData c d‰2
+      ´ updateField c tc (u, d‰1) = updateField c tc (u, d‰2)
 =TEX
-=SML
-(* *** Goal "3" *** *)
-a(POP_ASM_T(strip_asm_tac o rewrite_rule[get_spec¬MkData®,data_components]));
-a(DROP_NTH_ASM_T 4 ante_tac THEN asm_rewrite_tac[]);
-(* *** Goal "4" *** *)
-a(POP_ASM_T(strip_asm_tac o rewrite_rule[get_spec¬MkData®,data_components]));
-a(DROP_NTH_ASM_T 4 ante_tac THEN rewrite_tac[updateField_def]);
-a(cases_tac¬c = tc®THEN asm_rewrite_tac[]);
-a(cases_tac¬isItem u®THEN asm_rewrite_tac[]);
-a(cases_tac¬isClass u®THEN asm_rewrite_tac[]);
-a(cases_tac¬destClass u dominates Dat_class d‰2®
-	THEN asm_rewrite_tac[³isVal_giveError,giveVal_def]);
-a(´_tac THEN prove_¶_tac);
-val ÛisVal_updateField_lemmaÝ = save_pop_thm"isVal_updateField_lemma";
-=TEX
-
 
 =SML
 push_goal([],¬µ c r‰1 r‰2 t u ·
@@ -416,24 +451,17 @@ a(DROP_NTH_ASM_T 5 ante_tac THEN DROP_NTH_ASM_T 4 ante_tac
 	THEN rewrite_tac[updateRow_def]);
 =TEX
 =SML
-a(cases_tac¬RelList
-                         (Squash
-                             (((RelCombine u (R_data r‰1)
+a(cases_tac¬((RelCombine u (R_data r‰1)
                                      » Graph (updateField c (TS_class t)))
                                    ’ {x|isError x})
-                                 » Graph destError))
-                       = []®
-	THEN cases_tac¬RelList
-                         (Squash
-                             (((RelCombine u (R_data r‰2)
+                                 » Graph destError = {}®
+	THEN cases_tac¬((RelCombine u (R_data r‰2)
                                      » Graph (updateField c (TS_class t)))
                                    ’ {x|isError x})
-                                 » Graph destError))
-                       = []®
-	THEN asm_rewrite_tac[³isError_giveVal]);
+                                 » Graph destError = {}®
+	THEN asm_rewrite_tac[³isError_giveVal_thm,giveError_eq_thm]);
 a(´_T (fn _ => id_tac) THEN ´_T (fn _ => id_tac) THEN 
-	POP_ASM_T (fn _ => id_tac) THEN POP_ASM_T (fn _ => id_tac) 
-	THEN rewrite_tac[giveError_eq_thm]);
+	POP_ASM_T (fn _ => id_tac) THEN POP_ASM_T (fn _ => id_tac));
 =TEX
 =SML
 a(lemma_tac¬((RelCombine u (R_data r‰1)
@@ -509,6 +537,13 @@ a(asm_rewrite_tac[]);
 a(asm_rewrite_tac[]);
 val ÛisError_updateRow_lemmaÝ = save_pop_thm"isError_updateRow_lemma";
 =TEX
+=GFT HOL output
+isError_updateRow_lemma = 
+ô µ c tc d‰1 d‰2 u
+  · isError (updateField c tc (u, d‰1))
+        ± replaceData c d‰1 = replaceData c d‰2
+      ´ updateField c tc (u, d‰1) = updateField c tc (u, d‰2)
+=TEX
 =SML
 push_goal([],¬µ c r‰1 r‰2 t u ·
 	(isVal (updateRow c (TS_class t) (u, r‰1)) 
@@ -523,30 +558,22 @@ a(DROP_NTH_ASM_T 2 (strip_asm_tac o rewrite_rule
 a(DROP_NTH_ASM_T 4 ante_tac THEN rewrite_tac[updateRow_def]);
 =TEX
 =SML
-a(cases_tac¬RelList
-                         (Squash
-                             (((RelCombine u (R_data r‰1)
+a(cases_tac¬((RelCombine u (R_data r‰1)
                                      » Graph (updateField c (TS_class t)))
                                    ’ {x|isError x})
-                                 » Graph destError))
-                       = []®
-	THEN cases_tac¬RelList
-                         (Squash
-                             (((RelCombine u (R_data r‰2)
+                                 » Graph destError = {}®
+	THEN cases_tac¬((RelCombine u (R_data r‰2)
                                      » Graph (updateField c (TS_class t)))
                                    ’ {x|isError x})
-                                 » Graph destError))
-                       = []®
-	THEN asm_rewrite_tac[³isVal_giveError,giveVal_def]);
+                                 » Graph destError = {}®
+	THEN asm_rewrite_tac[³isVal_giveError_thm,giveVal_def]);
 =TEX
 =SML
 (* *** Goal "1" *** *)
-a(POP_ASM_T (fn _ => id_tac) THEN POP_ASM_T (fn _ => id_tac));
 a(´_tac THEN prove_¶_tac);
 (* *** Goal "2" *** *)
 a(swap_nth_asm_concl_tac 1);
 a(POP_ASM_T (fn _ => id_tac) THEN POP_ASM_T ante_tac);
-a(rewrite_tac[rel_list_null_ax,squash_null_ax]);
 a(rewrite_tac[rel_ext_clauses,r_»_r_thm,rel_combine_def,graph_thm,’_thm]);
 a(REPEAT strip_tac);
 a(swap_nth_asm_concl_tac 5);
@@ -568,6 +595,8 @@ a(¶_tac¬Fst z'® THEN asm_rewrite_tac[]);
 (* *** Goal "2.1.2" *** *)
 a(DROP_NTH_ASM_T 2 ante_tac THEN POP_ASM_T rewrite_thm_tac THEN 
 	´_T asm_tac);
+=TEX
+=SML
 (* *** Goal "2.2" *** *)
 a(DROP_NTH_ASM_T 3 ante_tac THEN POP_ASM_T rewrite_thm_tac THEN ´_tac);
 a(¶_tac¬x® THEN REPEAT strip_tac);
@@ -582,7 +611,16 @@ a(strip_asm_tac (list_µ_elim[¬c®,¬TS_class t®,¬Snd z'®,¬z''®,¬Fst z'®]
 a(asm_rewrite_tac[]);
 val ÛisVal_updateRow_lemmaÝ = save_pop_thm"isVal_updateRow_lemma";
 =TEX
-What I really need is :
+=GFT HOL output
+isVal_updateRow_lemma =
+ô µ c r‰1 r‰2 t u
+  · isVal (updateRow c (TS_class t) (u, r‰1))
+        ± cleanRow c (Snd (cleanColCons c t)) r‰1
+          = cleanRow c (Snd (cleanColCons c t)) r‰2
+        ± Dom u € {n|¶ c'· c'  visibleCols c t ± CS_posn c' = n}
+      ´ isVal (updateRow c (TS_class t) (u, r‰2))
+=TEX
+
 =SML
 push_goal([],¬µ c r‰1 r‰2 t u ·
 	(cleanRow c (Snd (cleanColCons c t)) r‰1
@@ -603,7 +641,14 @@ a(strip_asm_tac(list_µ_elim[¬c®,¬r‰1®,¬r‰2®,¬t®,¬u®]isVal_updateRow_lemma));
 a(strip_asm_tac(µ_elim¬(updateRow c (TS_class t) (u, r‰2))®val_or_error_type));
 val ÛisError_¤_updateRow_lemmaÝ = save_pop_thm"isError_¤_updateRow_lemma";
 =TEX
-
+=GFT HOL output
+ô µ c r‰1 r‰2 t u
+  · cleanRow c (Snd (cleanColCons c t)) r‰1
+          = cleanRow c (Snd (cleanColCons c t)) r‰2
+        ± Dom u € {n|¶ c'· c'  visibleCols c t ± CS_posn c' = n}
+      ´ (isError (updateRow c (TS_class t) (u, r‰1))
+        ¤ isError (updateRow c (TS_class t) (u, r‰2)))
+=TEX
 =SML
 push_goal([],¬µ  x y (u : î ª (î ª Update)) · ((x, y)  u ± Dom (Þ (Ran u))
              € {n|¶ c'· c'  Snd (cleanColCons c t‰2) ± CS_posn c' = n})
@@ -617,6 +662,14 @@ a(¶_tac¬y'® THEN ¶_tac¬y® THEN asm_rewrite_tac[]);
 a(¶_tac¬x® THEN asm_rewrite_tac[]);
 a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[visibleCols_def]);
 val Ûdom_Þ_ran_lemmaÝ = save_pop_thm"dom_Þ_ran_lemma";
+=TEX
+=GFT HOL output
+dom_Þ_ran_lemma = 
+ô µ x y u
+  · (x, y)  u
+        ± Dom (Þ (Ran u))
+          € {n|¶ c'· c'  Snd (cleanColCons c t‰2) ± CS_posn c' = n}
+      ´ Dom y € {n|¶ c'· c'  visibleCols c t‰2 ± CS_posn c' = n}
 =TEX
 =SML
 push_goal([],¬µ(l:Row LIST) (last:Row) (s : Row ð) (u : î ª (î ª Update)) · Dom(InvRel
@@ -632,6 +685,14 @@ a(rewrite_tac[¡_def,sets_ext_clauses] THEN REPEAT strip_tac);
 a(DROP_NTH_ASM_T 7 ante_tac THEN asm_rewrite_tac[]);
 val Ûdoms_null_lemma1Ý = save_pop_thm"doms_null_lemma1";
 =TEX
+=GFT HOL output
+doms_null_lemma1 = 
+ô µ l last s u
+  · Dom (InvRel (Squash (Id (Dom (ListRel l ’ s)))) » u)
+        ¡ Dom {(Length l + 1, last)}
+      = {}
+=TEX
+
 =SML
 push_goal([],¬µ(l:Row LIST) (s : Row ð) (u : î ª (î ª Update)) · Dom(InvRel
                                    {(Size
@@ -648,6 +709,18 @@ a(DROP_NTH_ASM_T 3 ante_tac THEN asm_rewrite_tac
 	[list_rel_def,’_thm,ò_thm,dot_dot_def]);
 val Ûdoms_null_lemma2Ý = save_pop_thm"doms_null_lemma2";
 =TEX
+=GFT HOL output
+doms_null_lemma2 = 
+ô µ l s u
+  · Dom
+          (InvRel
+                {(Size (Squash (Id (Dom (ListRel l ’ s)))) + 1,
+                      Length l + 1)}
+              » u)
+        ¡ Dom (ListRel l)
+      = {}
+=TEX
+
 =SML
 push_goal([],¬µ(l:Row LIST) (last:Row)(s : Row ð) (u : î ª (î ª Update)) · 
 	µ n‰1 n‰2 · (n‰1  Dom (((RelCombine
@@ -683,6 +756,30 @@ a(REPEAT strip_tac);
 a(asm_rewrite_tac[less_def]);
 val Ûsquash_doms_lemmaÝ = save_pop_thm"squash_doms_lemma";
 =TEX
+=GFT HOL output
+squash_doms_lemma = 
+ô µ l last s u n‰1 n‰2
+  · n‰1
+           Dom
+            (((RelCombine
+                      (InvRel (Squash (Id (Dom (ListRel l ’ s)))) » u)
+                      (ListRel l)
+                    » Graph (updateRow c (TS_class t‰2)))
+                  ’ {x|isError x})
+                » Graph destError)
+        ± n‰2
+           Dom
+            (((RelCombine
+                      (InvRel
+                            {(Size (Squash (Id (Dom (ListRel l ’ s)))) + 1,
+                                  Length l + 1)}
+                          » u)
+                      {(Length l + 1, last)}
+                    » Graph (updateRow c (TS_class t‰2)))
+                  ’ {x|isError x})
+                » Graph destError)
+      ´ n‰2 > n‰1
+=TEX
 =SML
 push_goal([],¬µ c t‰1 t‰2 · 
 	cleanRows c (Snd (cleanColCons c t‰2)) (TS_rows t‰1)
@@ -705,22 +802,8 @@ a(µ_tac THEN ´_T (asm_tac o rewrite_rule
 	[all_µ_intro(eq_sym_rule(all_µ_elim list_rel_list_thm))]));
 a(asm_rewrite_tac[list_rel_null_thm,’_null_thm]);
 (* *** Goal "2" *** *)
-a(rewrite_tac[µ_reorder_conv¬µ l' last· Map
-                   (cleanRow c (Snd (cleanColCons c t‰2)))
-                   ((l ë [last]) ù {r|c dominates R_exist r})
-                 = Map
-                   (cleanRow c (Snd (cleanColCons c t‰2)))
-                   (l' ù {r|c dominates R_exist r})
-               ´ Size (ListRel (l ë [last]) ’ {r|c dominates R_exist r})
-                 = Size (ListRel l' ’ {r|c dominates R_exist r})®¬µ last l'· Map
-                   (cleanRow c (Snd (cleanColCons c t‰2)))
-                   ((l ë [last]) ù {r|c dominates R_exist r})
-                 = Map
-                   (cleanRow c (Snd (cleanColCons c t‰2)))
-                   (l' ù {r|c dominates R_exist r})
-               ´ Size (ListRel (l ë [last]) ’ {r|c dominates R_exist r})
-                 = Size (ListRel l' ’ {r|c dominates R_exist r})®]);
-a µ_tac;
+a(REPEAT µ_tac);
+a(intro_µ_tac(¬last®,¬last®));
 a(REV_LIST_INDUCTION_T¬l'®asm_tac);
 =TEX
 =SML
@@ -728,19 +811,19 @@ a(REV_LIST_INDUCTION_T¬l'®asm_tac);
 a(rewrite_tac[map_def,map_null_thm]);
 a(µ_tac THEN cases_tac¬c dominates R_exist last® THEN  asm_rewrite_tac[]);
 a(´_T (asm_tac o rewrite_rule[all_µ_intro(eq_sym_rule(all_µ_elim list_rel_list_thm))]));
-a(asm_rewrite_tac[list_rel_ë_ax,list_rel_null_thm,’_null_thm,’_À_thm,’_single_lemma]);
+a(asm_rewrite_tac[list_rel_ë_thm,list_rel_null_thm,’_null_thm,’_À_thm,’_single_lemma]);
 (* *** Goal "2.2" *** *)
 a(REPEAT µ_tac);
 a(cases_tac¬c dominates R_exist last'®	THEN asm_rewrite_tac[] THEN
 	cases_tac¬c dominates R_exist last® THEN asm_rewrite_tac[map_ë_thm]);
-=TEX
-=SML
 (* *** Goal "2.2.1" *** *)
 a(´_tac THEN DROP_NTH_ASM_T 6 (ante_tac o µ_elim¬l'®) THEN asm_rewrite_tac[]
 	THEN ´_tac);
-a(asm_rewrite_tac[list_rel_ë_ax,’_À_thm,’_single_lemma]);
+a(asm_rewrite_tac[list_rel_ë_thm,’_À_thm,’_single_lemma]);
 a(lemma_tac¬µ l last · (ListRel l ’ {r|c dominates R_exist r}) ¡ {(Length l + 1, last)} 
 	= {}®);
+=TEX
+=SML
 (* *** Goal "2.2.1.1" *** *)
 a(REPEAT µ_tac THEN rewrite_tac
 	[list_rel_def,’_thm,ò_thm,dot_dot_def,¡_def,rel_ext_clauses]);
@@ -779,34 +862,37 @@ a(asm_rewrite_tac[list_rel_ë_’_ax]);
 a(asm_rewrite_tac[list_rel_ë_’_ax]);
 val ÛcleanRows_size_lemmaÝ = save_pop_thm"cleanRows_size_lemma";
 =TEX
+=GFT HOL output
+cleanRows_size_lemma = 
+ô µ c t‰1 t‰2
+  · cleanRows c (Snd (cleanColCons c t‰2)) (TS_rows t‰1)
+        = cleanRows c (Snd (cleanColCons c t‰2)) (TS_rows t‰2)
+      ´ Size (ListRel (TS_rows t‰1) ’ {r|c dominates R_exist r})
+        = Size (ListRel (TS_rows t‰2) ’ {r|c dominates R_exist r})
+=TEX
 =SML
 push_goal([],¬µ c t‰1 t‰2 u · 
 	(Dom (Þ (Ran u)) € {n|¶ c'· c'  visibleCols c t‰2 ± CS_posn c' = n} ±
 	cleanRows c (Snd (cleanColCons c t‰2)) (TS_rows t‰1)
                = cleanRows c (Snd (cleanColCons c t‰2)) (TS_rows t‰2))
-	´ (RelList
-               (Squash
-                   (((RelCombine
+	´ (((RelCombine
                              (InvRel (revealRow c t‰1) » u)
                              (ListRel (TS_rows t‰1))
                            » Graph (updateRow c (TS_class t‰2)))
                          ’ {x|isError x})
-                       » Graph destError))
-             = [] ¤ RelList
-               (Squash
-                   (((RelCombine
+                       » Graph destError
+             = {} ¤ ((RelCombine
                              (InvRel (revealRow c t‰2) » u)
                              (ListRel (TS_rows t‰2))
                            » Graph (updateRow c (TS_class t‰2)))
                          ’ {x|isError x})
-                       » Graph destError))
-             = [])®);
+                       » Graph destError = {})®);
 =TEX
 =SML
 a(REPEAT µ_tac THEN ´_tac);
 a(strip_asm_tac(list_µ_elim[¬c®,¬t‰1®,¬t‰2®]cleanRows_size_lemma));
 a(POP_ASM_T ante_tac THEN POP_ASM_T ante_tac);
-a(rewrite_tac[rel_list_null_ax,squash_null_ax,revealRow_def]);
+a(rewrite_tac[revealRow_def]);
 a(lemma_tac¬¶ l · TS_rows t‰1 = l®THEN_LIST
 	[prove_¶_tac,POP_ASM_T rewrite_thm_tac]);
 a(lemma_tac¬¶ l1 · TS_rows t‰2 = l1®THEN_LIST
@@ -829,84 +915,8 @@ a(rewrite_tac[list_rel_null_thm,rel_combine_null_thm1,»_graph_null_thm,»_null_th
 =TEX
 =SML
 (* *** Goal "2" *** *)
-a(rewrite_tac[µ_reorder_conv¬µ l' last
-	· Map
-                   (cleanRow c (Snd (cleanColCons c t‰2)))
-                   ((l ë [last]) ù {r|c dominates R_exist r})
-                 = Map
-                   (cleanRow c (Snd (cleanColCons c t‰2)))
-                   (l' ù {r|c dominates R_exist r})
-               ´ Size (ListRel (l ë [last]) ’ {r|c dominates R_exist r})
-                 = Size (ListRel l' ’ {r|c dominates R_exist r})
-		´ (((RelCombine
-                           (InvRel
-                                 (Squash
-                                     (Id
-                                         (Dom
-                                             (ListRel (l ë [last])
-                                                 ’ {r
-                                                 |c dominates R_exist r}))))
-                               » u)
-                           (ListRel (l ë [last]))
-                         » Graph (updateRow c (TS_class t‰2)))
-                       ’ {x|isError x})
-                     » Graph destError
-                   = {}
-                 ¤ ((RelCombine
-                           (InvRel
-                                 (Squash
-                                     (Id
-                                         (Dom
-                                             (ListRel l'
-                                                 ’ {r
-                                                 |c dominates R_exist r}))))
-                               » u)
-                           (ListRel l')
-                         » Graph (updateRow c (TS_class t‰2)))
-                       ’ {x|isError x})
-                     » Graph destError
-                   = {})®
-=TEX
-=SML
-	¬µ last l'· Map
-                   (cleanRow c (Snd (cleanColCons c t‰2)))
-                   ((l ë [last]) ù {r|c dominates R_exist r})
-                 = Map
-                   (cleanRow c (Snd (cleanColCons c t‰2)))
-                   (l' ù {r|c dominates R_exist r})
-               ´ Size (ListRel (l ë [last]) ’ {r|c dominates R_exist r})
-                 = Size (ListRel l' ’ {r|c dominates R_exist r})
-		´ (((RelCombine
-                           (InvRel
-                                 (Squash
-                                     (Id
-                                         (Dom
-                                             (ListRel (l ë [last])
-                                                 ’ {r
-                                                 |c dominates R_exist r}))))
-                               » u)
-                           (ListRel (l ë [last]))
-                         » Graph (updateRow c (TS_class t‰2)))
-                       ’ {x|isError x})
-                     » Graph destError
-                   = {}
-                 ¤ ((RelCombine
-                           (InvRel
-                                 (Squash
-                                     (Id
-                                         (Dom
-                                             (ListRel l'
-                                                 ’ {r
-                                                 |c dominates R_exist r}))))
-                               » u)
-                           (ListRel l')
-                         » Graph (updateRow c (TS_class t‰2)))
-                       ’ {x|isError x})
-                     » Graph destError
-                   = {})®]);
-=TEX
-=SML
-a µ_tac;
+a(REPEAT µ_tac);
+a(intro_µ_tac(¬last®,¬last®));
 a(REV_LIST_INDUCTION_T¬l'®asm_tac);
 (* *** Goal "2.1" *** *)
 a(µ_tac THEN cases_tac¬c dominates R_exist last®
@@ -929,27 +939,14 @@ a(DROP_NTH_ASM_T 7(ante_tac o µ_elim¬l'®)THEN asm_rewrite_tac[]
 a(DROP_NTH_ASM_T 7 (fn _ => id_tac));
 a(DROP_NTH_ASM_T 4 (fn _ => id_tac));
 a(asm_rewrite_tac[squash_ë_ax,inv_rel_À_thm,rel_combine_À_thm1,»_À_thm]);
-a(asm_rewrite_tac[list_rel_ë_ax,rel_combine_À_thm]);
+a(asm_rewrite_tac[list_rel_ë_thm,rel_combine_À_thm]);
 a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[size_list_rel_ë_’_ax]);
 a(´_tac THEN DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[] 
 	THEN ´_T asm_tac);
-a(lemma_tac¬µ l (last : Row)· Dom (InvRel
-                           (Squash
-                               (Id
-                                   (Dom
-                                       (ListRel l
-                                           ’ {r|c dominates R_exist r}))))
-                         » u) ¡ Dom {(Length l + 1, last)} = {}®);
-(* *** Goal "2.2.1.1" *** *)
-a(REPEAT µ_tac);
-a(rewrite_tac[dom_def,inv_rel_def,r_»_r_thm,id_def,squash_def,’_thm]);
-a(rewrite_tac[¡_def,sets_ext_clauses] THEN REPEAT strip_tac);
-a(POP_ASM_T  ante_tac THEN asm_rewrite_tac[list_rel_def,’_thm,ò_thm,dot_dot_def]);
 =TEX
 =SML
-(* *** Goal "2.2.1.2" *** *)
-a(TOP_ASM_T(strip_asm_tac o list_µ_elim[¬l'®,¬last®]));
-a(DROP_NTH_ASM_T 2(strip_asm_tac o list_µ_elim[¬l®,¬last'®]));
+a(strip_asm_tac(list_µ_elim[¬l'®,¬last®,¬{r|c dominates R_exist r}®,¬u®]doms_null_lemma1));
+a(strip_asm_tac(list_µ_elim[¬l®,¬last'®,¬{r|c dominates R_exist r}®,¬u®]doms_null_lemma1));
 a(strip_asm_tac(list_µ_elim[¬(InvRel
                        (Squash
                            (Id (Dom (ListRel l' ’ {r|c dominates R_exist r}))))
@@ -960,29 +957,10 @@ a(strip_asm_tac(list_µ_elim[¬(InvRel
                            (Id (Dom (ListRel l ’ {r|c dominates R_exist r}))))
                      » u)®,¬{(Length l + 1, last')}®]rel_combine_lemma));
 a(POP_ASM_T rewrite_thm_tac);
-a(lemma_tac¬µ l · Dom (InvRel
-                         {(Size
-                                     (Squash
-                                         (Id
-                                             (Dom
-                                                 (ListRel l
-                                                     ’ {r
-                                                     |c
-                                                         dominates R_exist
-                                                           r}))))
-                                   + 1, Length l + 1)}
-                       » u) ¡ Dom (ListRel l) = {}®);
-(* *** Goal "2.2.1.2.1" *** *)
-a µ_tac;
-a(rewrite_tac[dom_def,inv_rel_def,r_»_r_thm]);
-a(rewrite_tac[¡_def,sets_ext_clauses] THEN REPEAT strip_tac);
-a(DROP_NTH_ASM_T 3 ante_tac THEN asm_rewrite_tac
-	[list_rel_def,’_thm,ò_thm,dot_dot_def]);
 =TEX
 =SML
-(* *** Goal "2.2.1.2.2" *** *)
-a(TOP_ASM_T(strip_asm_tac o µ_elim¬l'®));
-a(DROP_NTH_ASM_T 2(strip_asm_tac o µ_elim¬l®));
+a(strip_asm_tac(list_µ_elim[¬l'®,¬{r|c dominates R_exist r}®,¬u®]doms_null_lemma2));
+a(strip_asm_tac(list_µ_elim[¬l®,¬{r|c dominates R_exist r}®,¬u®]doms_null_lemma2));
 a(strip_asm_tac(list_µ_elim[¬(InvRel
                        {(Size
                                    (Squash
@@ -994,6 +972,8 @@ a(strip_asm_tac(list_µ_elim[¬(InvRel
                                  + 1, Length l + 1)}
                      » u)®,¬ListRel l®]rel_combine_lemma));
 a(POP_ASM_T rewrite_thm_tac);
+=TEX
+=SML
 a(strip_asm_tac(list_µ_elim[¬(InvRel
                        {(Size
                                    (Squash
@@ -1045,7 +1025,7 @@ a(LEMMA_T¬(((RelCombine
 a(POP_ASM_T (fn _ => id_tac));
 a(rewrite_tac[rel_ext_clauses,rel_combine_def,r_»_r_thm,inv_rel_def,’_thm,graph_thm]);
 a(REPEAT strip_tac);
-(* *** Goal "2.2.1.2.2.1" *** *)
+(* *** Goal "2.2.1.1" *** *)
 a(swap_nth_asm_concl_tac 7);
 a(REPEAT strip_tac);
 a(¶_tac¬Length l + 1® THEN rewrite_tac[]);
@@ -1054,23 +1034,13 @@ a(¶_tac¬y® THEN rewrite_tac[]);
 a(¶_tac¬z® THEN asm_rewrite_tac[]);
 a(¶_tac¬(Fst z',last')® THEN rewrite_tac[]);
 a(DROP_NTH_ASM_T 2 ante_tac);
+=TEX
+=SML
 a(LEMMA_T¬z' = (Fst z',Snd z')® pure_once_asm_rewrite_thm_tac 
 	THEN_LIST[rewrite_tac[],pure_asm_rewrite_tac[] THEN ´_tac]);
 a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[] THEN ´_tac);
-a(lemma_tac¬Dom (Fst z') € {n|¶ c'· c'  visibleCols c t‰2 ± CS_posn c' = n}®);
-(* *** Goal "2.2.1.2.2.1.1" *** *)
-a(DROP_NTH_ASM_T 12 ante_tac THEN rewrite_tac
-	[sets_ext_clauses,dom_def,ran_def,Þ_def] THEN REPEAT strip_tac);
-a(DROP_NTH_ASM_T 2 (asm_tac o µ_elim¬x'®));
-a(LEMMA_T¬(¶ y s· (x', y)  s ± (¶ x· (x, s)  u))®asm_tac);
-=TEX
-=SML
-(* *** Goal "2.2.1.2.2.1.1.1" *** *)
-a(¶_tac¬y'® THEN ¶_tac¬Fst z'® THEN asm_rewrite_tac[]);
-a(¶_tac¬z''® THEN asm_rewrite_tac[]);
-(* *** Goal "2.2.1.2.2.1.1.2" *** *)
-a(DROP_NTH_ASM_T 2 ante_tac THEN POP_ASM_T rewrite_thm_tac);
-(* *** Goal "2.2.1.2.2.1.2" *** *)
+a(DROP_NTH_ASM_T 12 (asm_tac o rewrite_rule[visibleCols_def]));
+a(strip_asm_tac(list_µ_elim[¬z''®,¬Fst z'®,¬u®]dom_Þ_ran_lemma));
 a(strip_asm_tac(list_µ_elim[¬c®,¬last'®,¬last®,¬t‰2®,¬Fst z'®]isError_¤_updateRow_lemma));
 a(strip_asm_tac(list_µ_elim[¬c®,¬last'®,¬last®,¬t‰2®,¬Fst z'®]isError_updateRow_lemma));
 a(asm_rewrite_tac[]);
@@ -1079,7 +1049,7 @@ a(strip_asm_tac(list_µ_elim[¬l®,¬l'®,¬{r|c dominates R_exist r}®]size_squash_id_
 a(asm_rewrite_tac[]);
 =TEX
 =SML
-(* *** Goal "2.2.1.2.2.2" *** *)
+(* *** Goal "2.2.1.2" *** *)
 a(swap_nth_asm_concl_tac 7);
 a(REPEAT strip_tac);
 a(¶_tac¬Length l' + 1® THEN rewrite_tac[]);
@@ -1091,20 +1061,8 @@ a(DROP_NTH_ASM_T 2 ante_tac);
 a(LEMMA_T¬z' = (Fst z',Snd z')® pure_once_asm_rewrite_thm_tac 
 	THEN_LIST[rewrite_tac[],pure_asm_rewrite_tac[] THEN ´_tac]);
 a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[] THEN ´_tac);
-a(lemma_tac¬Dom (Fst z') € {n|¶ c'· c'  visibleCols c t‰2 ± CS_posn c' = n}®);
-(* *** Goal "2.2.1.2.2.2.1" *** *)
-a(DROP_NTH_ASM_T 12 ante_tac THEN rewrite_tac
-	[sets_ext_clauses,dom_def,ran_def,Þ_def] THEN REPEAT strip_tac);
-a(DROP_NTH_ASM_T 2 (asm_tac o µ_elim¬x'®));
-a(LEMMA_T¬(¶ y s· (x', y)  s ± (¶ x· (x, s)  u))®asm_tac);
-=TEX
-=SML
-(* *** Goal "2.2.1.2.2.2.1.1" *** *)
-a(¶_tac¬y'® THEN ¶_tac¬Fst z'® THEN asm_rewrite_tac[]);
-a(¶_tac¬z''® THEN asm_rewrite_tac[]);
-(* *** Goal "2.2.1.2.2.1.1.2" *** *)
-a(DROP_NTH_ASM_T 2 ante_tac THEN POP_ASM_T rewrite_thm_tac);
-(* *** Goal "2.2.1.2.2.2.2" *** *)
+a(DROP_NTH_ASM_T 12 (asm_tac o rewrite_rule[visibleCols_def]));
+a(strip_asm_tac(list_µ_elim[¬z''®,¬Fst z'®,¬u®]dom_Þ_ran_lemma));
 a(strip_asm_tac(list_µ_elim[¬c®,¬last'®,¬last®,¬t‰2®,¬Fst z'®]isError_¤_updateRow_lemma));
 a(strip_asm_tac(list_µ_elim[¬c®,¬last'®,¬last®,¬t‰2®,¬Fst z'®]isError_updateRow_lemma));
 a(asm_rewrite_tac[]);
@@ -1118,20 +1076,8 @@ a(DROP_NTH_ASM_T 3(ante_tac o µ_elim¬last'®)THEN
 a(´_T asm_tac THEN REPEAT ´_tac);
 a(DROP_NTH_ASM_T 3 ante_tac THEN asm_rewrite_tac[]);
 a(´_T rewrite_thm_tac);
-a(asm_rewrite_tac[list_rel_ë_’_ax]THEN rewrite_tac[list_rel_ë_ax,rel_combine_À_thm]);
-a(lemma_tac¬Dom(InvRel
-                               (Squash
-                                   (Id
-                                       (Dom
-                                           (ListRel l'
-                                               ’ {r|c dominates R_exist r}))))
-                             » u) ¡ Dom{(Length l' + 1, last)}={}®);
-(* *** Goal "2.2.2.1" *** *)
-a(rewrite_tac[enumerate_def,r_»_r_thm,inv_rel_def,dom_def,id_def,squash_def,
-	list_rel_def,’_thm,ò_thm,dot_dot_def]);
-a(rewrite_tac[¡_def,sets_ext_clauses] THEN REPEAT strip_tac);
-a(DROP_NTH_ASM_T 7 ante_tac THEN asm_rewrite_tac[]);
-(* *** Goal "2.2.2.2" *** *)
+a(asm_rewrite_tac[list_rel_ë_’_ax]THEN rewrite_tac[list_rel_ë_thm,rel_combine_À_thm]);
+a(strip_asm_tac(list_µ_elim[¬l'®,¬last®,¬{r|c dominates R_exist r}®,¬u®]doms_null_lemma1));
 a(strip_asm_tac(list_µ_elim[¬(InvRel
                        (Squash
                            (Id (Dom (ListRel l' ’ {r|c dominates R_exist r}))))
@@ -1145,20 +1091,8 @@ a(DROP_NTH_ASM_T 4(ante_tac o µ_elim¬l' ë [last]®) THEN
 a(´_T asm_tac THEN REPEAT ´_tac);
 a(DROP_NTH_ASM_T 3 ante_tac THEN asm_rewrite_tac[]);
 a(´_T (rewrite_thm_tac o eq_sym_rule));
-a(asm_rewrite_tac[list_rel_ë_’_ax]THEN rewrite_tac[list_rel_ë_ax,rel_combine_À_thm]);
-a(lemma_tac¬Dom(InvRel
-                               (Squash
-                                   (Id
-                                       (Dom
-                                           (ListRel l
-                                               ’ {r|c dominates R_exist r}))))
-                             » u) ¡ Dom{(Length l + 1, last')}={}®);
-(* *** Goal "2.2.3.1" *** *)
-a(rewrite_tac[enumerate_def,r_»_r_thm,inv_rel_def,dom_def,id_def,squash_def,
-	list_rel_def,’_thm,ò_thm,dot_dot_def]);
-a(rewrite_tac[¡_def,sets_ext_clauses] THEN REPEAT strip_tac);
-a(DROP_NTH_ASM_T 7 ante_tac THEN asm_rewrite_tac[]);
-(* *** Goal "2.2.3.2" *** *)
+a(asm_rewrite_tac[list_rel_ë_’_ax]THEN rewrite_tac[list_rel_ë_thm,rel_combine_À_thm]);
+a(strip_asm_tac(list_µ_elim[¬l®,¬last'®,¬{r|c dominates R_exist r}®,¬u®]doms_null_lemma1));
 a(strip_asm_tac(list_µ_elim[¬(InvRel
                        (Squash
                            (Id (Dom (ListRel l ’ {r|c dominates R_exist r}))))
@@ -1167,35 +1101,37 @@ a(POP_ASM_T rewrite_thm_tac);
 =TEX
 =SML
 (* *** Goal "2.2.4" *** *)
-a(asm_rewrite_tac[list_rel_ë_’_ax]THEN rewrite_tac[list_rel_ë_ax,rel_combine_À_thm]);
-a(lemma_tac¬µl (last:Row) · Dom(InvRel
-                               (Squash
-                                   (Id
-                                       (Dom
-                                           (ListRel l
-                                               ’ {r|c dominates R_exist r}))))
-                             » u) ¡ Dom{(Length l + 1, last)}={}®);
-(* *** Goal "2.2.4.1" *** *)
-a(REPEAT µ_tac);
-a(rewrite_tac[enumerate_def,r_»_r_thm,inv_rel_def,dom_def,id_def,squash_def,
-	list_rel_def,’_thm,ò_thm,dot_dot_def]);
-a(rewrite_tac[¡_def,sets_ext_clauses] THEN REPEAT strip_tac);
-a(DROP_NTH_ASM_T 7 ante_tac THEN asm_rewrite_tac[]);
-(* *** Goal "2.2.4.2" *** *)
-a(TOP_ASM_T(strip_asm_tac o list_µ_elim[¬l'®,¬last®]));
+a(asm_rewrite_tac[list_rel_ë_’_ax]THEN rewrite_tac[list_rel_ë_thm,rel_combine_À_thm]);
+a(strip_asm_tac(list_µ_elim[¬l'®,¬last®,¬{r|c dominates R_exist r}®,¬u®]doms_null_lemma1));
 a(strip_asm_tac(list_µ_elim[¬(InvRel
                        (Squash
                            (Id (Dom (ListRel l' ’ {r|c dominates R_exist r}))))
                      » u)®,¬{(Length l' + 1, last)}®]rel_combine_lemma));
 a(POP_ASM_T rewrite_thm_tac);
-a(POP_ASM_T (fn _ => id_tac) THEN POP_ASM_T
-	(strip_asm_tac o list_µ_elim[¬l®,¬last'®]));
+a(strip_asm_tac(list_µ_elim[¬l®,¬last'®,¬{r|c dominates R_exist r}®,¬u®]doms_null_lemma1));
 a(strip_asm_tac(list_µ_elim[¬(InvRel
                        (Squash
                            (Id (Dom (ListRel l ’ {r|c dominates R_exist r}))))
                      » u)®,¬{(Length l + 1, last')}®]rel_combine_lemma));
 a(asm_rewrite_tac[]);
 val ÛcleanRows_errors_or_vals_lemmaÝ = save_pop_thm"cleanRows_errors_or_vals_lemma";
+=TEX
+=GFT HOL output
+cleanRows_errors_or_vals_lemma = 
+ô µ c t‰1 t‰2 u
+  · Dom (Þ (Ran u)) € {n|¶ c'· c'  visibleCols c t‰2 ± CS_posn c' = n}
+        ± cleanRows c (Snd (cleanColCons c t‰2)) (TS_rows t‰1)
+          = cleanRows c (Snd (cleanColCons c t‰2)) (TS_rows t‰2)
+      ´ (((RelCombine (InvRel (revealRow c t‰1) » u) (ListRel (TS_rows t‰1))
+                » Graph (updateRow c (TS_class t‰2)))
+              ’ {x|isError x})
+            » Graph destError
+          = {}
+        ¤ ((RelCombine (InvRel (revealRow c t‰2) » u) (ListRel (TS_rows t‰2))
+                » Graph (updateRow c (TS_class t‰2)))
+              ’ {x|isError x})
+            » Graph destError
+          = {})
 =TEX
 
 =SML
@@ -1212,6 +1148,8 @@ a(lemma_tac¬cleanColCons c t‰1 = cleanColCons c t‰2®
 	DROP_NTH_ASM_T 3(fn _ => id_tac) 
 	THEN  DROP_NTH_ASM_T 2(fn _ => id_tac)]);
 a(TOP_ASM_T rewrite_thm_tac THEN ´_tac);
+=TEX
+=SML
 a(strip_asm_tac(list_µ_elim[¬c®,¬t‰1®,¬t‰2®]cleanRows_size_lemma));
 a(POP_ASM_T ante_tac THEN POP_ASM_T ante_tac);
 a(LEMMA_T¬u = (Fst u,Snd u)® pure_once_asm_rewrite_thm_tac 
@@ -1267,84 +1205,8 @@ a(asm_rewrite_tac[list_rel_null_thm,rel_combine_null_thm,»_graph_null_thm,’_null
 =TEX
 =SML
 (* *** Goal "2" *** *)
-a(rewrite_tac[µ_reorder_conv¬µ l' last
-		· Map
-                   (cleanRow c (Snd (cleanColCons c t‰2)))
-                   ((l ë [last]) ù {r|c dominates R_exist r})
-                 = Map
-                   (cleanRow c (Snd (cleanColCons c t‰2)))
-                   (l' ù {r|c dominates R_exist r})
-             ´ Size (ListRel (l ë [last]) ’ {r|c dominates R_exist r})
-                 = Size (ListRel l' ’ {r|c dominates R_exist r})
-                ´ Squash
-                   (((RelCombine
-                             (InvRel
-                                   (Squash
-                                       (Id
-                                           (Dom
-                                               (ListRel (l ë [last])
-                                                   ’ {r
-                                                   |c dominates R_exist r}))))
-                                 » Snd u)
-                             (ListRel (l ë [last]))
-                           » Graph (updateRow c (TS_class t‰2)))
-                         ’ {x|isError x})
-                       » Graph destError)
-                 = Squash
-                   (((RelCombine
-                             (InvRel
-                                   (Squash
-                                       (Id
-                                           (Dom
-                                               (ListRel l'
-                                                   ’ {r
-                                                   |c dominates R_exist r}))))
-                                 » Snd u)
-                             (ListRel l')
-                           » Graph (updateRow c (TS_class t‰2)))
-                         ’ {x|isError x})
-                       » Graph destError)®
-=TEX
-=SML
-	¬µ last l'· Map
-                   (cleanRow c (Snd (cleanColCons c t‰2)))
-                   ((l ë [last]) ù {r|c dominates R_exist r})
-                 = Map
-                   (cleanRow c (Snd (cleanColCons c t‰2)))
-                   (l' ù {r|c dominates R_exist r})
-              ´ Size (ListRel (l ë [last]) ’ {r|c dominates R_exist r})
-                 = Size (ListRel l' ’ {r|c dominates R_exist r})
-               ´ Squash
-                   (((RelCombine
-                             (InvRel
-                                   (Squash
-                                       (Id
-                                           (Dom
-                                               (ListRel (l ë [last])
-                                                   ’ {r
-                                                   |c dominates R_exist r}))))
-                                 » Snd u)
-                             (ListRel (l ë [last]))
-                           » Graph (updateRow c (TS_class t‰2)))
-                         ’ {x|isError x})
-                       » Graph destError)
-                 = Squash
-                   (((RelCombine
-                             (InvRel
-                                   (Squash
-                                       (Id
-                                           (Dom
-                                               (ListRel l'
-                                                   ’ {r
-                                                   |c dominates R_exist r}))))
-                                 » Snd u)
-                             (ListRel l')
-                           » Graph (updateRow c (TS_class t‰2)))
-                         ’ {x|isError x})
-                       » Graph destError)®]);
-=TEX
-=SML
-a µ_tac;
+a(REPEAT µ_tac);
+a(intro_µ_tac(¬last®,¬last®));
 a(REV_LIST_INDUCTION_T¬l'®asm_tac);
 (* *** Goal "2.1" *** *)
 a(µ_tac THEN cases_tac¬c dominates R_exist last®
@@ -1365,10 +1227,12 @@ a(DROP_NTH_ASM_T 7(ante_tac o µ_elim¬l'®)THEN asm_rewrite_tac[]
 a(DROP_NTH_ASM_T 7 (fn _ => id_tac));
 a(DROP_NTH_ASM_T 4 (fn _ => id_tac));
 a(asm_rewrite_tac[squash_ë_ax,inv_rel_À_thm,rel_combine_À_thm1,»_À_thm]);
-a(asm_rewrite_tac[list_rel_ë_ax,rel_combine_À_thm]);
+a(asm_rewrite_tac[list_rel_ë_thm,rel_combine_À_thm]);
 a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[size_list_rel_ë_’_ax]);
 a(´_tac THEN DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[] 
 	THEN ´_T asm_tac);
+=TEX
+=SML
 a(strip_asm_tac(list_µ_elim[¬l®,¬last'®,¬{r|c dominates R_exist r}®,¬Snd u®]doms_null_lemma1));
 a(strip_asm_tac(list_µ_elim[¬(InvRel
                        (Squash
@@ -1395,6 +1259,8 @@ a(strip_asm_tac(list_µ_elim[¬(InvRel
                                  + 1, Length l + 1)}
                      » Snd u)®,¬ListRel l®]rel_combine_lemma));
 a(POP_ASM_T rewrite_thm_tac THEN POP_ASM_T (fn _ => id_tac));
+=TEX
+=SML
 a(strip_asm_tac(list_µ_elim[¬l'®,¬{r|c dominates R_exist r}®,¬Snd u®]doms_null_lemma2));
 a(strip_asm_tac(list_µ_elim[¬(InvRel
                        {(Size
@@ -1449,6 +1315,8 @@ a(¶_tac¬Length l' + 1® THEN rewrite_tac[]);
 a(¶_tac¬z® THEN asm_rewrite_tac[]);
 a(¶_tac¬(Fst z',last)® THEN rewrite_tac[]);
 a(DROP_NTH_ASM_T 2 ante_tac);
+=TEX
+=SML
 a(LEMMA_T¬z' = (Fst z',Snd z')® pure_once_asm_rewrite_thm_tac 
 	THEN_LIST[rewrite_tac[],pure_asm_rewrite_tac[] THEN ´_tac]);
 a(DROP_NTH_ASM_T 7 ante_tac THEN asm_rewrite_tac[] THEN ´_tac);
@@ -1720,7 +1588,7 @@ a(DROP_NTH_ASM_T 3(ante_tac o µ_elim¬last'®)THEN
 a(´_T asm_tac THEN REPEAT ´_tac);
 a(DROP_NTH_ASM_T 3 ante_tac THEN asm_rewrite_tac[]);
 a(´_T rewrite_thm_tac);
-a(asm_rewrite_tac[list_rel_ë_’_ax]THEN rewrite_tac[list_rel_ë_ax,rel_combine_À_thm]);
+a(asm_rewrite_tac[list_rel_ë_’_ax]THEN rewrite_tac[list_rel_ë_thm,rel_combine_À_thm]);
 a(lemma_tac¬Dom(InvRel
                                (Squash
                                    (Id
@@ -1747,7 +1615,7 @@ a(DROP_NTH_ASM_T 4(ante_tac o µ_elim¬l' ë [last]®) THEN
 a(´_T asm_tac THEN REPEAT ´_tac);
 a(DROP_NTH_ASM_T 3 ante_tac THEN asm_rewrite_tac[]);
 a(´_T (rewrite_thm_tac o eq_sym_rule));
-a(asm_rewrite_tac[list_rel_ë_’_ax]THEN rewrite_tac[list_rel_ë_ax,rel_combine_À_thm]);
+a(asm_rewrite_tac[list_rel_ë_’_ax]THEN rewrite_tac[list_rel_ë_thm,rel_combine_À_thm]);
 a(lemma_tac¬Dom(InvRel
                                (Squash
                                    (Id
@@ -1769,7 +1637,7 @@ a(POP_ASM_T rewrite_thm_tac);
 =TEX
 =SML
 (* *** Goal "2.2.4" *** *)
-a(asm_rewrite_tac[list_rel_ë_’_ax]THEN rewrite_tac[list_rel_ë_ax,rel_combine_À_thm]);
+a(asm_rewrite_tac[list_rel_ë_’_ax]THEN rewrite_tac[list_rel_ë_thm,rel_combine_À_thm]);
 a(lemma_tac¬µl (last:Row) · Dom(InvRel
                                (Squash
                                    (Id
@@ -1798,6 +1666,15 @@ a(strip_asm_tac(list_µ_elim[¬(InvRel
                      » Snd u)®,¬{(Length l + 1, last')}®]rel_combine_lemma));
 a(asm_rewrite_tac[]);
 val ÛcleanTable_updateQuery_lemmaÝ = save_pop_thm"cleanTable_updateQuery_lemma";
+=TEX
+=GFT HOL output
+cleanTable_updateQuery_lemma = 
+ô µ c t‰1 t‰2 s‰1 s‰2 u
+  · c dominates TS_class t‰1
+        ± c dominates TS_class t‰2
+        ± cleanTable c t‰1 = cleanTable c t‰2
+      ´ Snd (updateQuery (c, u, s‰1, t‰1))
+        = Snd (updateQuery (c, u, s‰2, t‰2))
 =TEX
 =SML
 push_goal([],¬µ c s‰1 s‰2 · hide (c, s‰1) = hide (c, s‰2) ´ 	
@@ -1889,7 +1766,7 @@ a(REPEAT strip_tac THEN contr_tac);
 a(DROP_NTH_ASM_T 6 ante_tac THEN asm_rewrite_tac[]);
 val ÛtabExists_cleanTable_lemmaÝ = save_pop_thm"tabExists_cleanTable_lemma";
 =TEX
-=GFT
+=GFT HOL output
 tabExists_cleanTable_lemma = ô µ c s‰1 s‰2
   · hide (c, s‰1) = hide (c, s‰2)
       ´ (µ i
@@ -1899,6 +1776,7 @@ tabExists_cleanTable_lemma = ô µ c s‰1 s‰2
               ± (c dominates TS_class (getTable i (repState s‰1))
                 ¤ c dominates TS_class (getTable i (repState s‰2))))
 =TEX
+\subsubsection{Proof of Conjunct 3}
 
 =SML
 push_goal([],¬µ c s‰1 s‰2 e
@@ -1937,30 +1815,15 @@ a(EVERY[strip_asm_tac(µ_elim ¬Fst e® query_type),
 	asm_rewrite_tac[],
 	cases_tac¬³ Snd e = []®,
 	asm_rewrite_tac[]]);
-(* Select and Delete automatically proven *)
-(* *** Goal "3.2.1" *** *)
-(* *** Insert *** *)
-a(DROP_NTH_ASM_T 5 (strip_asm_tac o rewrite_rule[isInsert_def]));
-a(LIST_DROP_NTH_ASM_T[10,9,7,6](MAP_EVERY ante_tac) 
-	THEN TOP_ASM_T rewrite_thm_tac);
-a(rewrite_tac[destInsert_def,tabFromEffect_def,getTable_def] THEN REPEAT ´_tac);
-a(LEMMA_T¬i = (Fst i,Snd i)® once_asm_rewrite_thm_tac 
-	THEN_LIST[rewrite_tac[],rewrite_tac[insertQuery_def]]);
-a(POP_ASM_T ante_tac THEN POP_ASM_T ante_tac 
-	THEN rewrite_tac[tabExists_def,dom_thm] THEN REPEAT strip_tac);
-a(conv_tac(MAP_C let_conv));
-a(rewrite_tac[changeSpec_def]);
-=TEX
-=SML
-(* *** Goal "3.2.2" *** *)
+(* Select Delete and Insert automatically proven *)
 (* *** Update *** *)
 a(strip_asm_tac(list_µ_elim[¬c®,¬getTable (tabFromEffect (Fst e)) (repState s‰1)®,
 	¬getTable (tabFromEffect (Fst e)) (repState s‰2)®,
 	¬repState s‰1®,¬repState s‰2®,¬destUpdate (Fst e)®]cleanTable_updateQuery_lemma));
-val ÛupdateState_out_eqÝ = save_pop_thm"updateState_out_eq";
+val Ûconjunct3Ý = save_pop_thm"conjunct3";
 =TEX
-=GFT
-updateState_out_eq = ô µ c s‰1 s‰2 e
+=GFT HOL output
+conjunct3 = ô µ c s‰1 s‰2 e
   · hide (c, s‰1) = hide (c, s‰2)
       ´ Snd (updateState (c, e, s‰1)) = Snd (updateState (c, e, s‰2))
 =TEX
