@@ -233,6 +233,38 @@ a(LEMMA_T¨Length(Map(Ã (c', i) ∑ if c dominates c'
 val €HideDerTableRow_Length_lemma› = save_pop_thm"HideDerTableRow_Length_lemma";
 =TEX
 =SML
+set_goal([], ¨µc r i∑
+	1 º i ± i º Length (DTR_cols r) ¥
+	Nth (DTR_cols (HideDerTableRow c r)) i =
+	(Fst (Nth (DTR_cols r) i),
+	if	c dominates (Fst (Nth (DTR_cols r) i))
+	then	Snd(Nth (DTR_cols r) i)
+	else	ValuedItemItem (MkValuedItem sterling dummyVal))Æ);
+a(REPEAT µ_tac);
+a(rewrite_tac(map get_spec[¨LetÆ, ¨DTR_colsÆ, ¨HideDerTableRowÆ]));
+a(LEMMA_T ¨∂cols∑ DTR_cols r = colsÆ
+	(REPEAT_TTCL STRIP_THM_THEN rewrite_thm_tac)
+	THEN1 prove_∂_tac);
+a(intro_µ_tac(¨iÆ, ¨iÆ) THEN list_induction_tac¨colsÆ);
+(* *** Goal "1" *** *)
+a(rewrite_tac(map get_spec[¨LengthÆ]));
+a(REPEAT strip_tac THEN all_var_elim_asm_tac);
+(* *** Goal "2" *** *)
+a(rewrite_tac(map get_spec[¨LengthÆ, ¨NthÆ]));
+a(REPEAT µ_tac);
+a(cases_tac ¨i = 1Æ THEN asm_rewrite_tac(map get_spec[¨MapÆ, ¨NthÆ])
+	THEN REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(CASES_T ¨c dominates Fst xÆ rewrite_thm_tac);
+(* *** Goal "2.2" *** *)
+a(GET_ASM_T ¨1 º iÆ (strip_asm_tac o rewrite_rule[get_spec¨$ºÆ]));
+a(LEMMA_T¨i = i' + 1Æ rewrite_thm_tac THEN1
+	(POP_ASM_T (rewrite_thm_tac o eq_sym_rule)));
+a(lemma_tac¨1 º i' ± i' º Length colsÆ THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(all_asm_fc_tac[]);
+val €Nth_HideDerTableRow_lemma› = save_pop_thm"Nth_HideDerTableRow_lemma";
+=TEX
+=SML
 set_goal([], ¨µf a b c∑ f(if a then b else c) = (if a then f b else f c)Æ);
 a(REPEAT strip_tac THEN cases_tac¨a:BOOLÆ THEN asm_rewrite_tac[]);
 val €fun_if_thm› = save_pop_thm"fun_if_thm";
@@ -646,6 +678,12 @@ val €CaseVal_OK_lemma› = save_pop_thm"CaseVal_OK_lemma";
 \subsection{Set Functions}
 The main lemma (the second of the two below) is an example of
 strengthening an induction hypothesis almost beyond belief.
+The point is that, in the goal as stated, both $rl\sb{0}$ and
+$rl\sb{1}$ appear in two different ways, viz. as an argument
+to the ``recursive'' call on $vc$ and as the operand for what
+we're doing. To get a strong enough induction hypothesis we
+have to quantify separately over the the row lists appearing in
+these different roles.
 =SML
 set_goal([], ¨µc f vc∑ vc ç OK_VC c ¥ SetFuncAll f vc ç OK_VC cÆ);
 a(rewrite_tac(map get_spec[¨SetFuncAllÆ, ¨OK_VCÆ, ¨LetÆ])
@@ -737,27 +775,16 @@ TBA
 set_goal([], ¨µc i∑ Contents i ç OK_VC cÆ);
 a(rewrite_tac(map get_spec[¨OK_VCÆ, ¨ContentsÆ])
 	THEN REPEAT strip_tac);
-(* *** Goal "1" *** *)
-a(cases_tac¨≥HideDerTable c (Snd (tc tlâ0)) = HideDerTable c (Snd (tc tlâ1))Æ
-	THEN1 all_asm_fc_tac[]);
-a(strip_asm_tac (µ_elim
-	¨DT_rows (Snd (tc tlâ0)) ˘
-		{r|c dominates DTR_row r ± c dominates DTR_where r}Æ
-	list_cases_thm));
-a(swap_nth_asm_concl_tac 2 THEN asm_rewrite_tac(
-	MkDerTable_lemma::dominates_lub_lemma::
-	map get_spec[¨HideDerTableÆ, ¨HideDerTableDataÆ, ¨$˘Æ, ¨LetÆ, ¨MapÆ]));
-(* *** Goal "2" *** *)
-a(cases_tac¨≥HideDerTable c (Snd (tc tlâ0)) = HideDerTable c (Snd (tc tlâ1))Æ
-	THEN1 all_asm_fc_tac[]);
-a(strip_asm_tac (µ_elim
-	¨DT_rows (Snd (tc tlâ1)) ˘
-		{r|c dominates DTR_row r ± c dominates DTR_where r}Æ
-	list_cases_thm));
-a(swap_nth_asm_concl_tac 2 THEN asm_rewrite_tac(
-	MkDerTable_lemma::dominates_lub_lemma::
-	map get_spec[¨HideDerTableÆ, ¨HideDerTableDataÆ, ¨$˘Æ, ¨LetÆ, ¨MapÆ]));
-val €ExistsTuples_OK_lemma› = save_pop_thm"ExistsTuples_OK_lemma";
+a(POP_ASM_T ante_tac THEN all_fc_tac[HideDerTableRow_Length_lemma]);
+a(cases_tac ¨1 º i ± i º # (DTR_cols râ1)Æ THEN asm_rewrite_tac[]);
+a(lemma_tac¨i º # (DTR_cols râ0)Æ THEN1 asm_rewrite_tac[]);
+a(ALL_FC_T (MAP_EVERY(asm_tac o µ_elim¨cÆ)) [Nth_HideDerTableRow_lemma]);
+a(contr_tac);
+a(swap_nth_asm_concl_tac 4 THEN LIST_DROP_NTH_ASM_T [3, 8] rewrite_tac);
+a(cases_tac ¨Fst (Nth (DTR_cols râ1) i) = Fst (Nth (DTR_cols râ0) i)Æ
+	THEN asm_rewrite_tac[]);
+a(conv_tac (RAND_C eq_sym_conv) THEN asm_rewrite_tac[]);
+val €Contents_OK_lemma› = save_pop_thm"Contents_OK_lemma";
 =TEX
 \section{CLOSING DOWN}
 =TEX
@@ -772,6 +799,3 @@ val €ExistsTuples_OK_lemma› = save_pop_thm"ExistsTuples_OK_lemma";
 \printindex
 
 \end{document}
-push_goal([], ¨µc cl∑ glbl [] = lattice_top ± glbl (Cons c cl) = c glb glbl clÆ);
-a(REPEAT µ_tac THEN rewrite_tac(map get_spec[¨glblÆ, ¨FoldÆ]));
-val €glbl_lemma› = save_pop_thm"glbl_lemma";
