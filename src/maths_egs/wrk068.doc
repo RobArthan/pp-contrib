@@ -78,7 +78,7 @@ doctex wrk068 wrk068.th; texdvi -b wrk068; texdvi wrk068; texdvi wrk068
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2004/05/06 18:41:29 $%
+\date{\FormatDate{$Date: 2004/05/06 19:29:24 $%
 }}
 
 \begin{document}
@@ -97,7 +97,7 @@ We exhibit a few examples of groups and show that the various abstract notions l
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK068; issue $Revision: 1.15 $%
+Reference: LEMMA1/HOL/WRK068; issue $Revision: 1.16 $%
 
 
 \end{centering}
@@ -567,7 +567,7 @@ homomorphism_inverse_thm
 =TEX
 }{%
 =GFT
-homomorphism_times_thm
+homomorphism_clauses
 homomorphism_ç_car_thm
 =TEX
 }
@@ -594,6 +594,33 @@ The following theorem extends the equations in the above definition to add the s
 \ThmsI{%
 =GFT
 subgroup_clauses
+=TEX
+}
+
+The unit subgroup of a group is the subgroup whose carrier set comprises only the unit element.
+
+πHOLCONST
+‹ €UnitSubgroup› : 'a GROUP  ≠ 'a GROUP
+˜¸¸¸¸¸¸
+‹ µ G∑
+‹	UnitSubgroup G = ({One G}, (Ãx y∑(x.y)G), One G, (Ãx∑(x õ~)G))
+∞
+
+Iif $G$ is a group then $G$ itself and its unit subgroup are both subgroups of $G$.
+The inclusion of a subgroup, $H$, of $G$, is a homomorphism from $H$ to $G$
+In particular, the identity function on $G$ is a homomorphism from $G$ to $G$.s
+
+\ThmsIII{%
+=GFT
+trivial_subgroups_thm
+=TEX
+}{%
+=GFT
+subgroup_homomorphism_thm
+=TEX
+}{%
+=GFT
+id_homomorphism_thm
 =TEX
 }
 
@@ -724,7 +751,8 @@ The following image group construction is needed in the statement of the first i
 πHOLCONST
 ‹ €Image› : ('a ≠ 'b) ≠ 'a SET ≠ 'b GROUP  ≠ 'b GROUP
 ˜¸¸¸¸¸¸
-‹ µ f X G∑ Image f X G = ({y | ∂x∑x ç X ± y = f x}, (Ãx y∑ (x.y)G), One G, (Ãx∑ (x õ~)G))
+‹ µ f X G∑
+‹	Image f X G = ({y | ∂x∑x ç X ± y = f x}, (Ãx y∑ (x.y)G), One G, (Ãx∑ (x õ~)G))
 ∞
 
 The next theorem states that the image of a group homomorphism is a subgroup of the range of the homomorphism:
@@ -756,7 +784,7 @@ The following theorms lead up to the proof of the first isomorphism theorem (whi
 =GFT
 mage_subgroup_thm
 equiv_right_congruent_kernel_thm
-homomorphism_respects_right_congruent_kernel_thm
+homomorphism_respects_kernel_thm
 =TEX
 }{%
 =GFT
@@ -1141,6 +1169,7 @@ val €group_def› = get_spec¨GroupÆ;
 val €homomorphism_def› = get_spec¨HomomorphismÆ;
 val €subgroup_def› = get_spec¨SubgroupÆ;
 val €subgroup_def1› = pc_rule1 "sets_ext1" rewrite_rule[] (get_spec¨SubgroupÆ);
+val €unit_subgroup_def› = get_spec¨UnitSubgroupÆ;
 val €normal_subgroup_def› = get_spec¨NormalSubgroupÆ;
 val €kernel_def› = get_spec¨KernelÆ;
 val €right_congruent_def› = get_spec¨RightCongruentÆ;
@@ -1493,15 +1522,17 @@ val €homomorphism_inverse_thm› = save_pop_thm "homomorphism_inverse_thm";
 =TEX
 =SML
 set_goal([], ¨
-	µG : 'a GROUP; H : 'b GROUP; f : 'a ≠ 'b; x y : 'a∑
-	G ç Group ± H ç Group ± f ç Homomorphism(G, H) ± x ç Car G ± y ç Car G
-¥	 f ((x . y) G) = (f x . f y) H
+	µG : 'a GROUP; H : 'b GROUP; f : 'a ≠ 'b ∑
+	G ç Group ± H ç Group ± f ç Homomorphism(G, H) 
+¥	f(One G) = One H
+±	(µx∑ x ç Car G ¥ f((x õ~)G) = ((f x) õ~) H)
+±	(µx y∑x ç Car G ± y ç Car G ¥  f ((x . y) G) = (f x . f y) H)
 Æ);
-a(rewrite_tac[homomorphism_def,
-		group_ops_def] THEN
-		REPEAT strip_tac);
-a(ALL_ASM_FC_T rewrite_tac[]);
-val €homomorphism_times_thm› = save_pop_thm "homomorphism_times_thm";
+a(REPEAT µ_tac THEN ¥_tac THEN TOP_ASM_T ante_tac THEN
+	rewrite_tac[homomorphism_def, group_ops_def] THEN
+		REPEAT strip_tac THEN_TRY
+		ALL_ASM_FC_T rewrite_tac[homomorphism_one_thm, homomorphism_inverse_thm]);
+val €homomorphism_clauses› = save_pop_thm "homomorphism_clauses";
 =TEX
 =SML
 set_goal([], ¨
@@ -1529,6 +1560,41 @@ a(group_eq_tac THEN1 strip_tac);
 a(ALL_FC_T1 fc_§_canon asm_rewrite_tac[one_unique_thm]);
 val €subgroup_clauses› = save_pop_thm "subgroup_clauses";
 =TEX
+=SML
+set_goal([], ¨
+	µG : 'a GROUP∑ G ç Group
+¥	G ç Subgroup G
+±	UnitSubgroup G ç Subgroup G
+Æ);
+a(rewrite_tac[subgroup_def1, unit_subgroup_def, group_ops_def] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_var_elim_asm_tac1 THEN group_ç_tac THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(rewrite_tac[group_def, group_ops_def]);
+a(REPEAT strip_tac THEN_TRY all_var_elim_asm_tac1 THEN_TRY
+	group_eq_tac THEN REPEAT strip_tac);
+val €trivial_subgroups_thm› = save_pop_thm "trivial_subgroups_thm";
+=TEX
+=SML
+set_goal([], ¨
+	µG : 'a GROUP; H : 'a GROUP∑
+	G ç Group ± H ç Subgroup G
+¥	(Ãx∑ x) ç Homomorphism (H, G)
+Æ);
+a(rewrite_tac[homomorphism_def, subgroup_def1] THEN REPEAT strip_tac
+	THEN ALL_ASM_FC_T asm_rewrite_tac[]);
+val €subgroup_homomorphism_thm› = save_pop_thm "subgroup_homomorphism_thm";
+=TEX
+=SML
+set_goal([], ¨
+	µG : 'a GROUP∑
+	G ç Group
+¥	(Ãx∑ x) ç Homomorphism (G, G)
+Æ);
+a(REPEAT strip_tac THEN all_fc_tac[trivial_subgroups_thm] THEN
+	all_fc_tac[subgroup_homomorphism_thm]);
+val €id_homomorphism_thm› = save_pop_thm "id_homomorphism_thm";
+=TEX
 Without the custom tactics for groups, the first strip in the next theorem produces 13 subgoals rather than 4.
 =SML
 set_goal([], ¨
@@ -1541,7 +1607,7 @@ a(rewrite_tac[kernel_def, normal_subgroup_def, subgroup_def1, group_ops_def] THE
 	rewrite_tac[group_def, group_ops_def] THEN REPEAT strip_tac
 	THEN_TRY (SOLVED_T ((group_eq_tac ORELSE group_ç_tac)THEN REPEAT strip_tac)));
 (* *** Goal "1" *** *)
-a(ALL_FC_T asm_rewrite_tac[group_clauses1, homomorphism_times_thm]);
+a(ALL_FC_T asm_rewrite_tac[group_clauses1, homomorphism_clauses]);
 a(all_fc_tac[group_clauses4]);
 a(group_eq_tac THEN REPEAT strip_tac);
 (* *** Goal "2" *** *)
@@ -1551,10 +1617,10 @@ a(ALL_FC_T asm_rewrite_tac[homomorphism_inverse_thm, group_clauses4]);
 (* *** Goal "4" *** *)
 a(lemma_tac¨(y õ~) G ç Car G ± (x.y) G ç Car GÆ THEN1 
 	(group_ç_tac THEN REPEAT strip_tac));
-a(ALL_FC_T asm_rewrite_tac[arb_gen homomorphism_times_thm,
+a(rename_tac[(¨yÆ, "yy")] THEN  ALL_FC_T asm_rewrite_tac[arb_gen homomorphism_clauses,
 	arb_gen homomorphism_inverse_thm]);
-a(all_fc_tac[homomorphism_def]);
 a(group_eq_tac THEN REPEAT strip_tac);
+a(all_fc_tac[homomorphism_ç_car_thm]);
 val €kernel_normal_subgroup_thm› = save_pop_thm "kernel_normal_subgroup_thm";
 =TEX
 =SML
@@ -2011,8 +2077,8 @@ a(DROP_NTH_ASM_T 4 ante_tac);
 a(lemma_tac¨(x õ~)G ç Car GÆ THEN1 (group_ç_tac THEN REPEAT strip_tac));
 a(GET_NTH_ASM_T 10 (strip_asm_tac o rewrite_rule[homomorphism_def]));
 a(rename_tac[] THEN ALL_ASM_FC_T rewrite_tac[homomorphism_inverse_thm]);
-val €homomorphism_respects_right_congruent_kernel_thm› =
-	save_pop_thm "homomorphism_respects_right_congruent_kernel_thm";
+val €homomorphism_respects_kernel_thm› =
+	save_pop_thm "homomorphism_respects_kernel_thm";
 =TEX
 =SML
 set_goal([], ¨
@@ -2046,7 +2112,7 @@ a(lemma_tac ¨∂g∑µx∑x  ç Car G ¥ g (RightCoset (Kernel f (G, H)) G x) = f  xÆ);
 (* *** Goal "1" *** *)
 a(REPEAT strip_tac THEN all_fc_tac[
 	equiv_right_congruent_kernel_thm,
-	homomorphism_respects_right_congruent_kernel_thm]);
+	homomorphism_respects_kernel_thm]);
 a(all_fc_tac[arb_gen induced_fun_∂_thm, kernel_normal_subgroup_thm]);
 a(∂_tac¨gÆ THEN REPEAT strip_tac);
 a(DROP_NTH_ASM_T 2 bc_thm_tac);
@@ -2067,7 +2133,7 @@ a(∂_tac¨x'Æ THEN ALL_ASM_FC_T asm_rewrite_tac[]);
 a(all_var_elim_asm_tac1);
 a(ALL_FC_T rewrite_tac[quotient_group_def]);
 a(lemma_tac¨(x' . x'') G ç Car GÆ THEN1 (group_ç_tac THEN REPEAT strip_tac));
-a(ALL_ASM_FC_T asm_rewrite_tac[homomorphism_times_thm]);
+a(ALL_ASM_FC_T asm_rewrite_tac[homomorphism_clauses]);
 (* *** Goal "2.3" *** *)
 a(all_var_elim_asm_tac1 THEN POP_ASM_T ante_tac);
 a(GET_NTH_ASM_T 3 (strip_asm_tac o rewrite_rule[normal_subgroup_def]));
@@ -2075,7 +2141,7 @@ a(ALL_ASM_FC_T1 fc_§_canon rewrite_tac[right_coset_eq_thm]);
 a(rewrite_tac[right_congruent_def, kernel_def, group_ops_def]);
 a(group_ç_tac THEN REPEAT strip_tac);
 a(lemma_tac¨(x' õ~) G ç Car GÆ THEN1 (group_ç_tac THEN REPEAT strip_tac));
-a(ALL_FC_T rewrite_tac[homomorphism_inverse_thm, homomorphism_times_thm]);
+a(ALL_FC_T rewrite_tac[homomorphism_inverse_thm, homomorphism_clauses]);
 a(all_fc_tac[homomorphism_ç_car_thm]);
 a(asm_rewrite_tac[] THEN group_eq_tac THEN REPEAT strip_tac);
 (* *** Goal "2.4" *** *)
