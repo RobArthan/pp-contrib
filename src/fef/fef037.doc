@@ -2,6 +2,7 @@
 sccs get fef037.doc pp_compile load_fef_files.sml
 chmod u+x pp_compile
 sieve sml < fef037.doc
+cp fef.mkf makefile
 =TEX
 \documentstyle[hol1,11pt,TQ]{article}
 \ftlinepenalty=9999
@@ -105,6 +106,7 @@ makefile $fef.mkf$ is called with no arguments.
 Read fef037.doc for a full description of this makefile.
 
 f.dvi		make a dvi file with three passes from "f.doc"
+f.dvio	make a dvi file without reloading the theory
 f.prt		print "f.dvi" using pstex
 f.th		creates a theory in a hol database using file f.sml
 fef.db		build the initial fef database
@@ -130,7 +132,8 @@ fef.mkf		extracts makefile from fef037.doc as fef.mkf
 
 =DUMPMORE fef.mkf
 # files for which no theory will be created
-FEFDOCS		= fef001.doc fef002.doc fef037.doc fef016.doc fef018.doc
+FEFDOCS		= fef001.doc fef002.doc fef037.doc fef016.doc fef018.doc \
+				fef041.doc
 # files which produce SML specifications	
 FEFSMLDOCS	= fef019.doc fef020.doc fef023.doc
 # files which produce hol theories	
@@ -138,11 +141,12 @@ FEFTHYDOCS	= fef003.doc fef004.doc fef005.doc fef014.doc fef006.doc \
 				fef007.doc fef009.doc fef010.doc fef011.doc fef012.doc \
 				fef013.doc fef015.doc fef022.doc fef024.doc fef021.doc \
 				fef025.doc fef028.doc fef029.doc fef026.doc fef032.doc \
-				fef034.doc fef031.doc fef033.doc fef035.doc fef036.doc
-# external work files 
+				fef034.doc fef031.doc fef033.doc fef035.doc fef036.doc \
+				fef040.doc fef042.doc fef043.doc
+# external work files from PP 0.4
 XWRKDOCS		= wrk044.doc wrk046.doc
-# work files which are not part of fef
-WRKDOCS		= wrk049.doc
+# work files which are not part of PP 0.4
+WRKDOCS		= wrk049.doc wrk057.doc
 ALLFEFDOCS 	= $(FEFDOCS) $(FEFSMLDOCS) $(FEFTHYDOCS)
 # all fef sml files 
 FEFSMLFILES 	= $(FEFTHYDOCS:.doc=.sml) $(FEFSMLDOCS:.doc=.sml)
@@ -151,7 +155,6 @@ PRTFILES 		= $(ALLFEFDOCS:.doc=.prt)
 # files which will be kept under sccs control
 SCCSFILES		= $(ALLFEFDOCS) $(WRKDOCS) \
 			 fef030.doc fef030_slides.doc fef017.doc fef.bib
-
 
 # Set the make variable INSTALLDIR to the environment variable $INSTALLDIR
 # which should be set to the pp installation directory before calling make.
@@ -176,6 +179,7 @@ These documents will only be processed by \LaTeX.
 =DUMPMORE fef.mkf
 FEFTEX = $(FEFSMLDOCS:.doc=.tex) $(FEFDOCS:.doc=.tex)
 FEFDVI = $(FEFSMLDOCS:.doc=.dvi) $(FEFDOCS:.doc=.dvi)
+FEFDVIO = $(ALLFEFDOCS:.doc=.dvio)
 
 $(FEFTEX) : $$(@:.tex=.doc)
 	doctex $(@:.tex=)
@@ -185,6 +189,10 @@ $(FEFDVI) : $$(@:.dvi=.tex) fef.bib
 	- bibtex $(@:.dvi=)
 	texdvi $(@:.dvi=)
 	texdvi $(@:.dvi=)
+
+$(FEFDVIO) : $$(@:.dvio=.tex) fef.bib 
+	texdvi $(@:.dvio=)
+	
 =TEX
 
 \subsection{Processing Theory Documents}
@@ -193,7 +201,6 @@ theories create theory listings to be included in the \LaTeX{} processing.
 =DUMPMORE fef.mkf
 ALLSML = $(FEFSMLFILES) $(XWRKDOCS:.doc=.sml) $(WRKDOCS:.doc=.sml)
 THYTEX = $(FEFTHYDOCS:.doc=.tex) 
-
 
 $(ALLSML) : $$(@:.sml=.doc)
 	docsml $(@:.sml=)
@@ -208,6 +215,7 @@ $(THYDVI) : $$(@:.dvi=.tex) fef.bib $$(@:.dvi=th.doc)
 	- bibtex $(@:.dvi=)
 	texdvi $(@:.dvi=)
 	texdvi $(@:.dvi=)
+	
 =TEX
 
 \subsection{Fetching External Documents}
@@ -403,8 +411,24 @@ fef035.th: fef035.sml fef033.th
 fef036.th: fef036.sml fef035.th
 	pp_compile -d $(FEF) -i load_fef_files -c fef036.sml
 	touch fef036.th
-=TEX
 
+fef040.th: fef040.sml fef003.th fef010.th
+	pp_compile -d $(FEF) -i load_fef_files -c fef040.sml
+	touch fef040.th
+
+fef042.th: fef042.sml fef040.th fef036.th wrk057.th
+	pp_compile -d $(FEF) -i load_fef_files -c fef042.sml
+	touch fef042.th
+
+fef043.th: fef043.sml fef042.th
+	pp_compile -d $(FEF) -i load_fef_files -c fef043.sml
+	touch fef043.th
+
+wrk057.th: wrk057.sml db_made
+	pp_compile -d $(FEF) -i load_fef_files -c wrk057.sml
+	touch wrk057.th
+
+=TEX
 
 \subsection{Omnibus Entries}
 
