@@ -1,0 +1,211 @@
+=TEX
+% $Date$ $Id$ $Revision$
+\documentstyle[hol1,11pt,TQ]{article}
+\long\def\Hide#1{}
+\def\Bool{``$\it{:}bool\,$''}
+\def\Note#1{{\small\bf[Note: #1]}}
+\makeindex
+\underscoreoff
+\TPPproject{DRA FRONT END FILTER PROJECT}  %% Mandatory field
+%\TPPvolume{}
+%\TPPpart{}
+\TPPtitle{Phase 3 Technical Overview and Final Report}  %% Mandatory field
+\TPPref{DS/FMU/FEF/046}  %% Mandatory field
+\def\SCCSversion{$Revision$
+}
+\TPPissue{\SCCSversion}  %% Mandatory field
+\TPPdate{\FormatDate{$Date$
+}}  %% Mandatory field (with sensible default)
+\TPPstatus{Approved}			%% Mandatory field
+\TPPtype{Specification}
+\TPPkeywords{}
+\TPPauthor{R.~D.~Arthan & WIN01}  %% Mandatory field
+%\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
+\TPPauthorisation{R.B.~Jones & HAT Manager}
+\TPPabstract{This document gives an overview of the formal work carried out under the phase 3 of the FEF project and serves as the final report on that work.
+It also discusses the relationship between the phase 2 and phase 3 work and suggests some possible directions for future research.
+The work described was carried out under the DRA Front End Filter project RSRE 1C/6130.}
+%\TPPabstractB{}
+%\TPPabstractC{}
+%\TPPabstractD{}
+%\TPPabstractE{}
+%\TPPabstractF{}
+\TPPdistribution{\parbox[t]{4.0in}{%
+	HAT FEF File \\
+	Simon Wiseman
+}}
+%\TPPclass{CLASSIFICATION}
+\newfont{\icllogo}{icllogo50}
+\def\TPPheadlhs{$\vcenter{\halign{##\cr\icllogo ICL\cr}}$}
+%\def\TPPheadlhs{}
+%\def\TPPheadcentre{}
+%def\TPPheadrhs{}
+%\def\TPPfootlhs{}
+%\def\TPPfootcentre{}
+%\def\TPPfootrhs{}
+
+\begin{document}
+\TPPsetsizes
+\makeTPPfrontpage
+
+\vfill
+\begin{centering}
+
+%\bf Copyright \copyright\ : International Computers Ltd \number\year
+
+\end{centering}
+
+\newpage
+\section {DOCUMENT CONTROL}
+\subsection{Contents List}
+\tableofcontents
+\subsection{Document Cross References}
+\bibliographystyle{fmu}
+\bibliography{fmu,fef}
+
+\subsection{Changes History}
+\begin{description}
+\item[Issue \SCCSversion ({\FormatDate{$Date$
+}}) ] First draft. 
+
+\end{description}
+
+\subsection{Changes Forecast}
+None.
+
+\pagebreak
+\section{GENERAL}
+
+\subsection{Scope}
+
+This document gives an overview of the formal work carried out under the phase 3 of the FEF project and serves as the final report on that work.
+It also discusses the relationship between the phase 2 and phase 3 work and suggests some possible directions for future research.
+It constitutes deliverable D19 asked for in the phase 3 proposal \cite{DS/FMU/FEF/039}.
+
+\subsection{Introduction}
+This document is organised into sections as follows:
+
+\begin{description}
+\item[Section \ref{overview}] gives an overview of the formal work.
+It is intended to serve as an introduction to the documents \cite{DS/FMU/FEF/040,DS/FMU/FEF/042,DS/FMU/FEF/043}.
+\item[Section \ref{comparison}] describes the relationship between the phase 2 and phase 3 work. In particular, it discusses how the model of table computations used in phase 2 might be adapted to the multi-level policy like those considered in phase 3.
+\item[Section \ref{conclusions}] gives some conclusions drawn from the phase 3 work and suggests possible future directions.
+\end{description}
+
+
+\section{OVERVIEW OF THE FORMAL TREATMENT}\label{overview}
+Sections \ref{policy}, \ref{architecture} and \ref{labelling} below discuss the specifications and conjectures made in the documents \cite{DS/FMU/FEF/040}, \cite{DS/FMU/FEF/042} and \cite{DS/FMU/FEF/043} respectively.
+
+The proof scripts relating to these three specification documents are collected together in one document \cite{DS/FMU/FEF/044} which causes the each theorem to be saved in the theory containing the specification to which it relates.
+This is a slight variation on the approach used in phases 1 and 2, enabling the hierarchy of theories to reflect slightly more accurately the dependencies between the specifications and the proofs.
+A collected theory listing is supplied in \cite{DS/FMU/FEF/045}.
+
+\subsection{Multi-level Formal Security Policy}\label{policy}
+The document \cite{DS/FMU/FEF/040} is concerned with a generic formulation of the no-flows-down policy which can be instantiated to cover both the single level (as in \cite{DS/FMU/FEF/003}) and the multi-level case (as in \cite{securityprops}).
+
+Section 2 of \cite{DS/FMU/FEF/040} gives the definition of the generic policy and various ancillary objects;
+section 3 describes a first (and far from complete) attack on the result labelling problem in a general context (the treatment of result labelling in \cite{DS/FMU/FEF/043} is more fully worked out).
+Section 3 largely serves to give some proof opportunities which help to validate the definitions in section 2 and to suggest some directions from some further general theoretical work.
+Sections 2 and 3 of \cite{DS/FMU/FEF/040} are discussed more fully in sections \ref{genericpolicy} and \ref{componentextraction} below.
+
+\subsubsection{The Generic Policy}\label{genericpolicy}
+
+The single level policy of \cite{DS/FMU/FEF/003} is formulated for ``behavioural models'', that is to say systems viewed as functions mapping input sequences to output sequences.
+Since in the multi-level case, we can treat an input sequence or an output sequence a single object with an appropriate multi-level structure, it makes little difference in a multi-level formulation whether we model systems as functions mapping sequences to sequences or as functions mapping input objects to output objects.
+In the following discussion, therefore, we just talk of inputs and outputs.
+
+Informally then, the non-interference style statement of the multi-level no-flows-down policy should read something like:
+
+\begin{quotation}
+\em
+A {\em multi-level secure system} is a function, $b$ say, such that for any classification $c$ and pair of inputs $i_1$ and $i_2$, which appear the same at and below $c$, the corresponding outputs $b(i_1)$ and $b(i_2)$ also appear the same at and below $c$.
+\end{quotation}
+
+Now, suitably formalised, this definition has a number of technical advantages over the single level one.
+In particular, the functional composition of two systems which are multi-level secure in the above sense will again be multi-level secure.
+As already mentioned, the generality of the definition means that we no longer need to worry about sequences of inputs and outputs;
+moreover, because of the compositionality property, one can hope to handle information flows in a state-based system in a uniform way: if there are no illicit flows from the inputs to the state and no illicit flows from the state to the outputs, then one can expect the system to be secure (and could expect a general proof of this fact, given an appropriate rigorous formulation).
+
+Here then, the only thing left to explain is what it means to be the ``same at and below classification $c$''.
+It is therefore formulation of this notion in a general way which is the first goal of \cite{DS/FMU/FEF/040}.
+Much of the treatment there by an informal notion of ``classified information space''.
+Very informally, the idea is that a classified information space is to be a set, $X$ say, endowed with the right additional structure to serve as the domain or range of a multi-level secure system in the above sense.
+That is to say, $X$ must come supplied with a way of determining when two elements $x_1$ and $x_2$ appear the same at and below a give classification $c$.
+One approach to capturing such a property would be to say:
+
+\begin{quotation}
+\em
+A {\em classified information space}, $X$, is a set given as the product,  $\prod_{c \in \mbox{{\it Class}}} V$, where $V$ is some set of values.
+I.e., the elements of $X$ are functions, $x$ say, on the set {\it Class};
+the value $x_c$ of such an element at a class $c$ represents the information in $x$ which is classified at $c$.
+Two elements $x$ and $y$ are then defined to be the {\em same at and below classification $c$} iff. $x_d = y_d$ for any classification $d$ dominated by $c$.
+\end{quotation}
+
+There are however problems with this, in particular:
+
+\begin{enumerate}
+\item
+In practice, the domains and ranges of systems are not usually presented this way:
+e.g., the single-level policy is couched in terms of an equivalence relation on the input and output sequences parameterised by the classification ({\it same\_ins} and {\it same\_outs}).
+Indeed, one might feel that the definition suggested poly-instantiation too strongly to be natural for a system such as SWORD.
+\item
+The definition does not allow for certain invariants which are likely to be imposed.
+Now, in some ways this is a good thing, because the non-interference style formulation of the no-flows-down policy may well fail to capture the right intuitions given ill-chosen invariants.
+E.g., consider a input contains components at two disjoint classifications, $c$ and $d$ say, which are constrained to have the same value (so the invariant is $x_c = x_d$);
+while it is far from clear what the intention behind such an invariant would be, it certainly prevents the non-interference from properly constraining the potential flows between information classified at $c$ and information classified at $d$.
+However, actual systems such as SWORD may have benign invariants of various sorts (e.g. relating to the structure of a database table) and so a definition general enough to allow invariants is required).
+\end{enumerate}
+
+As a result the above considerations, \cite{DS/FMU/FEF/040} formulates the multi-level policy on the assumption that the domain and range of a system are given the structure of what are called in  \cite{DS/FMU/FEF/040} ``indexed equivalence relations''.
+This notion is informally defined as follows:
+
+\begin{quotation}
+\em
+An {\em indexed equivalence relation} is a family $s$ of equivalence relations on a set $X$ indexed by sets of classifications in such a way that if $A \subseteq B$ are two sets of classes, the equivalence relations $s_B$ associated with $B$ is finer than that associated with $A$.
+\end{quotation}
+
+The idea is that the the indexed equivalence relation will be chosen so that, for any set $A$ of classes, two values $x$ and $y$ are related by $s_A$ iff. $x$ and $y$ appear to be the same at all classifications in $A$.
+This notion of indexed equivalence relation certainly addresses the problems mentioned above.
+It turns out to be straightforward to prove that the resulting generic policy generalises the single level ones and the formulation allows for arbitrary invariants to be imposed.
+In fact, the definition is, perhaps, a little too liberal in that it permits invariants of the malign sort discussed under item 2 above.
+It is an open question whether there is any natural condition that one can impose which ensures that invariants are benign (see the end of section \ref{componentextraction} for more discussion of this point).
+
+\cite{DS/FMU/FEF/040} therefore defines a generic version of the multi-level security policy using a formulation of the structure required on inputs and outputs based on this notion of indexed equivalence relation.
+It is conjectured in \cite{DS/FMU/FEF/040} and proved in \cite{DS/FMU/FEF/044} that the generic definition does indeed embrace the single level policy of \cite{DS/FMU/FEF/003} as a special case  (see {\it conj\_040\_1} in \cite{DS/FMU/FEF/040}).
+
+\subsubsection{Component Extraction}\label{componentextraction}
+
+Section 3  of \cite{DS/FMU/FEF/040} is concerned with exploring one approach to the result labelling property which was initially considered.
+However, further work on the problem suggested that it would be more useful in the short term to try an approach which exploited more of the specific details of \cite{securityprops}.
+Thus apart from any intrinsic intereset it may have, section 3 of \cite{DS/FMU/FEF/040} mainly serves to validate some of the definitions in the earlier parts of the document.
+
+The idea in section 3 of \cite{DS/FMU/FEF/040} is to consider the question: when is the operation of extracting a labelled component from an object a secure operation?
+Here, by labelled component, we mean a value extracted from the object together with a label giving the classification of that value.
+More formally, extraction of a labelled component is modelled by two functions $V$ and $C$ say.
+For an object $x$, $V(x)$ is the value at $x$ and $C(x)$ is the classification label.
+
+Now, given an arbitrary function, $f$ say on a set, $X$ endowed with an indexed equivalence relation $s$ and given an element $x$ one may consider the set of classes at or above which information has flowed into the result when $f(x)$ is computed.
+This notion permits a non-interference style formulation given as the definition of a constant {\it Influenced} in  \cite{DS/FMU/FEF/040} which is somewhat reminiscent of the definition of {\em RESULT\_INFLUENCES} in \cite{securityprops}.
+Given $s$, $x$ and $f$, $\mbox{{\it Influenced}} s\,x\,f$ is the set of classes at or above which information has flowed into $f(x)$.
+Loosely speaking, one would hope that a pair of functions $V$ and $C$ would gived a secure means of extracting a labelled component if for each $x$, $\mbox{{\it Influenced}} s\,x\,V$ was a set of classes dominated by $C(x)$.
+That is to say extraction of a labelled component is secure if the label dominates every class at or above which information may have flowed into the extracted value.
+
+It turns out that a little bit of extra machinery is required to make these ideas work properly: the labelling function $C$ is itself a possible source of information flow and so must itself be classified; for simplicity, \cite{DS/FMU/FEF/040} takes the clearance of the client extracting the component as given and uses that to classify $C$.
+With this extra twist, it turns out that a condition like the one mentionened in the previous paragraph is necessary, but not sufficient.
+The necessity is is conjectured in \cite{DS/FMU/FEF/040} and proved in \cite{DS/FMU/FEF/044} (see {\it conj\_040\_1} in \cite{DS/FMU/FEF/040}).
+The fact that the condition is not sufficient is shown informally by an example in \cite{DS/FMU/FEF/040}.
+The lack of sufficiency is closely connected with the issue of invariants which undermine the non-interference style formulation of no-flows-down mentioned in section \ref{genericpolicy} above.
+It seems likely that if there are natural criteria under which the condition would be sufficient, then those criteria would be precisely what distingueishes benign invariants from malign ones.
+However, it is by no means certain whether natural criteria of this sort can be formulated and more work would need to be done to explore this question.
+In any specific case, one can check the particular indexed equivalence relations used allow enough freedom for the formulation of the policy to mean what is intended.
+
+\subsection{Multi-level Architectural Model}\label{architecture}
+\subsection{The Labelling Property for SWORD}\label{labelling}
+
+\section{PHASES 2 AND 3 COMPARED}\label{comparison}
+\section{CONCLUSIONS AND FUTURE DIRECTIONS}\label{conclusions}
+\twocolumn[\section{INDEX} \label{INDEX}]
+\small
+\printindex
+
+\end{document}
