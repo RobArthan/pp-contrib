@@ -6023,7 +6023,7 @@ The ratio test  in terms of limits is often useful (and this is what we call the
 set_goal([], ¬
 	µs b n·
 	(µm·³s m = î¯ 0)
-±	î¯ 0 < b ± b < î¯ 1
+±	î¯ 0 ¼ b ± b < î¯ 1
 ±	(Ìn· Abs(s (n+1) / s n)) -> b
 ´	¶c · Series s -> c
 ®);
@@ -6115,7 +6115,7 @@ set_goal([], ¬
 ´	¶c · Series (Ìm· î¯ (m + 1) * b ^ m) -> c
 ®);
 a(REPEAT strip_tac THEN bc_thm_tac ratio_test_thm);
-a(¶_tac¬b® THEN asm_rewrite_tac[]);
+a(¶_tac¬b® THEN asm_rewrite_tac[¯_¼_def]);
 a(lemma_tac¬³ b = î¯ 0® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
 a(lemma_tac¬µm·³ b^m = î¯ 0® THEN1
 	(strip_tac THEN ALL_FC_T rewrite_tac [¯_î_exp_³_eq_0_thm]));
@@ -6377,6 +6377,133 @@ a(DROP_NTH_ASM_T 3 (strip_asm_tac o µ_elim¬B®));
 a(all_fc_tac[power_series_main_thm]);
 a(¶_tac¬f® THEN ¶_tac¬df® THEN asm_rewrite_tac[]);
 val Ûpower_series_main_thm1Ý = save_pop_thm "power_series_main_thm1";
+=TEX
+%%%%
+%%%%
+%%%%
+%%%%
+\subsection{Some Special Functions}
+=TEX
+The main theorem has the following useful consequence for power series that
+are convergent for all positive values of their argument:
+%%%%
+%%%%
+=SML
+set_goal([], ¬µm· î¯ 1 ¼ m! ± î¯ m ¼ m!®);
+a(REPEAT µ_tac THEN induction_tac¬m:î® THEN asm_rewrite_tac[factorial_def]);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(bc_thm_tac ¯_¼_trans_thm THEN ¶_tac ¬m!® THEN REPEAT strip_tac);
+a(conv_tac(LEFT_C(pure_once_rewrite_conv [prove_rule[]¬m! = î¯ 1 * m!®])));
+a(pure_once_rewrite_tac[¯_times_comm_thm]);
+a(bc_thm_tac ¯_¼_times_mono_thm);
+a(REPEAT strip_tac THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(rewrite_tac[¯_¼_def, î¯_less_thm, î¯_one_one_thm]);
+a(PC_T1 "lin_arith" prove_tac[]);
+(* *** Goal "2" *** *)
+a(conv_tac(LEFT_C(pure_once_rewrite_conv [prove_rule[]¬µx· x = x * î¯ 1®])));
+a(bc_thm_tac ¯_¼_times_mono_thm THEN REPEAT strip_tac);
+a(rewrite_tac[¯_¼_def, î¯_less_thm, î¯_one_one_thm]);
+val Ûfactorial_linear_estimate_thmÝ = save_pop_thm "factorial_linear_estimate_thm";
+=TEX
+The main theorem has the following useful consequence for power series that
+are convergent for all positive values of their argument:
+%%%%
+%%%%
+=SML
+set_goal([], ¬µm· î¯ 0 < m! ®);
+a(REPEAT strip_tac THEN bc_thm_tac ¯_less_¼_trans_thm
+	THEN ¶_tac¬î¯ 1® THEN rewrite_tac [factorial_linear_estimate_thm]
+	THEN REPEAT strip_tac);
+val Ûfactorial_0_less_thmÝ = save_pop_thm "factorial_0_less_thm";
+=TEX
+The main theorem has the following useful consequence for power series that
+are convergent for all positive values of their argument:
+%%%%
+%%%%
+=SML
+set_goal([], ¬µx·
+	î¯ 0 < x
+´	¶c· (Ìm· PowerSeries (Ìm· Abs(m ! ›-›1)) m x) -> c
+®);
+a(rewrite_tac [power_series_series_thm] THEN REPEAT strip_tac);
+a(conv_tac(BINDER_C (rewrite_conv[È_axiom])));
+a(bc_thm_tac ratio_test_thm);
+a(strip_asm_tac factorial_0_less_thm);
+a(lemma_tac¬µm·î¯ 0 < m ! ›-›1 ® THEN1
+	(strip_tac THEN bc_thm_tac ¯_0_less_0_less_recip_thm THEN rewrite_tac[factorial_0_less_thm]));
+a(lemma_tac¬µm·Abs(m ! ›-›1) = m ! ›-›1 ® THEN1
+	(asm_rewrite_tac[¯_abs_def, ¯_¼_def]));
+a(lemma_tac¬µm·î¯ 0 < x ^ m ® THEN1
+	(strip_tac THEN bc_thm_tac ¯_î_exp_0_less_thm THEN REPEAT strip_tac));
+a(lemma_tac¬µm·î¯ 0 < Abs(m ! ›-›1) * x ^ m ® THEN1
+	(strip_tac THEN bc_thm_tac ¯_0_less_0_less_times_thm THEN asm_rewrite_tac[]));
+a(¶_tac¬î¯ 0® THEN REPEAT strip_tac THEN asm_rewrite_tac[]);
+(* *** Goal "1" *** *)
+a(POP_ASM_T (ante_tac o µ_elim¬m®) THEN asm_rewrite_tac[] THEN PC_T1 "¯_lin_arith"  prove_tac[]);
+(* *** Goal "2" *** *)
+a(POP_ASM_T ante_tac THEN asm_rewrite_tac[] THEN strip_tac);
+a(LEMMA_T¬µm y·y/ (m ! ›-›1 * x ^ m) = y *  (m ! ›-›1 * x ^ m)›-›1®  rewrite_thm_tac);
+(* *** Goal "2.1" *** *)
+a(REPEAT strip_tac);
+a(spec_nth_asm_tac 1 ¬m®);
+a(lemma_tac ¬³ m ! ›-›1 * x ^ m = î¯ 0® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(rename_tac[(¬x®, "xx")] THEN ALL_FC_T rewrite_tac[¯_over_times_recip_thm]);
+(* *** Goal "2.2" *** *)
+a(asm_rewrite_tac[¯_abs_times_thm]);
+a(LEMMA_T¬µm·(m ! ›-›1 * x ^ m) ›-›1 = m ! * (x ^ m) ›-›1®  rewrite_thm_tac);
+(* *** Goal "2.2.1" *** *)
+a(REPEAT strip_tac);
+a(spec_nth_asm_tac 5 ¬m®);
+a(spec_nth_asm_tac 5 ¬m®);
+a(spec_nth_asm_tac 4 ¬m®);
+a(ALL_FC_T (MAP_EVERY (strip_asm_tac o conv_rule(ONCE_MAP_C eq_sym_conv)))
+	[pc_rule1"¯_lin_arith" prove_rule[]¬µa b:¯·a < b ´ ³a = b®]);
+a(ALL_FC_T rewrite_tac[¯_recip_clauses]);
+(* *** Goal "2.2.2" *** *)
+a(asm_rewrite_tac[¯_abs_times_thm, ¯_abs_¯_î_exp_thm]);
+a(lemma_tac¬µm·î¯ 0 < (x ^ m) ›-›1®  THEN1
+	(strip_tac THEN bc_thm_tac ¯_0_less_0_less_recip_thm THEN asm_rewrite_tac[]));
+a(asm_rewrite_tac[¯_abs_def, ¯_¼_def, factorial_0_less_thm]);
+a(rewrite_tac[pc_rule1"¯_lin_arith" prove_rule[]¬µa b c d:¯·(a * b) * c * d = a * c * b * d®]);
+a(rewrite_tac[¯_î_exp_def, factorial_def]);
+a(LEMMA_T¬µm·(î¯(m+1) * m !) ›-›1 =î¯ (m+1)  ›-›1 * m! ›-›1®  rewrite_thm_tac);
+(* *** Goal "2.2.2.1" *** *)
+a(REPEAT strip_tac);
+a(lemma_tac¬³î¯(m+1) = î¯ 0® THEN1 rewrite_tac[î¯_one_one_thm]);
+a(spec_nth_asm_tac 7 ¬m®);
+a(ALL_FC_T (MAP_EVERY (strip_asm_tac o conv_rule(ONCE_MAP_C eq_sym_conv)))
+	[pc_rule1"¯_lin_arith" prove_rule[]¬µa b:¯·a < b ´ ³a = b®]);
+a(ALL_FC_T rewrite_tac[¯_recip_clauses]);
+(* *** Goal "2.2.2.2" *** *)
+a(rewrite_tac[¯_times_assoc_thm]);
+a(LEMMA_T¬µm·x ^ m * (x ^ m) ›-›1 = î¯ 1®  rewrite_thm_tac);
+(* *** Goal "2.2.2.2.1" *** *)
+a(REPEAT strip_tac);
+a(spec_nth_asm_tac 3 ¬m®);
+a(ALL_FC_T (MAP_EVERY (strip_asm_tac o conv_rule(ONCE_MAP_C eq_sym_conv)))
+	[pc_rule1"¯_lin_arith" prove_rule[]¬µa b:¯·a < b ´ ³a = b®]);
+a(ALL_FC_T rewrite_tac[¯_recip_clauses]);
+(* *** Goal "2.2.2.2.2" *** *)
+a(once_rewrite_tac[pc_rule1"¯_lin_arith" prove_rule[]¬µa b c d:¯·a * b * c * d = a * d * b * c®]);
+a(LEMMA_T¬µm·m ! ›-›1 * m ! = î¯ 1®  rewrite_thm_tac);
+(* *** Goal "2.2.2.2.2.1" *** *)
+a(REPEAT strip_tac);
+a(spec_nth_asm_tac 6 ¬m®);
+a(ALL_FC_T (MAP_EVERY (strip_asm_tac o conv_rule(ONCE_MAP_C eq_sym_conv)))
+	[pc_rule1"¯_lin_arith" prove_rule[]¬µa b:¯·a < b ´ ³a = b®]);
+a(ALL_FC_T rewrite_tac[¯_recip_clauses]);
+(* *** Goal "2.2.2.2.2.2" *** *)
+a(conv_tac(LEFT_C Ì_un_Â_rands_conv));
+a(pure_once_rewrite_tac[prove_rule[]¬î¯ 0 = î¯ 0 * x®]);
+a(bc_thm_tac times_lim_seq_thm THEN rewrite_tac[const_lim_seq_thm]);
+a(rewrite_tac[rewrite_rule[](µ_elim¬î¯ 0® lim_seq_recip_î_thm)]);
+val Ûexp_series_convergence_thmÝ = save_pop_thm "exp_series_convergence_thm";
+=TEX
+%%%%
+%%%%
+%%%%
+%%%%
 =TEX
 \subsection{Epilogue}
 =TEX
