@@ -108,22 +108,22 @@ on behavioural models of systems.
 The inputs and outputs of systems will be thought of as structured objects whose components may be labelled with security classes.
 For example, an input might be an abstract syntax tree for an SSQL query with the nodes labelled with classes.
 An output might be an SSQL table with nodes labelling the cells.
-As in the single level model, a `behaviour' of a system is a single sequence of inputs and the resulting sequence of outputs.
-A behavioural model is the set of all possible behaviours.
-This is formalised  as a function from the sequences of inputs to sequences of outputs.
+As in the single level model, a {\em behaviour} of a system is a single sequence of inputs and the resulting sequence of outputs.
+The {\em behavioural model} of a system is the set of all its possible behaviours.
+Since we are only concerned with deterministic systems, this is formalised  as a function from the sequences of inputs to sequences of outputs.
 For simplicity, we model inputs and outputs as having the same type; the behavioural model is generic in the type $'OBJ$ used to represent them. 
 =SML
 declare_type_abbrev(Û"ML_BEHAVIOURS"İ,["'OBJ"], ¬: ('OBJ)LIST ­ ('OBJ )LIST®);
 =TEX
 
 \subsection{Classes}
-We use the lattice of security classes defined in \cite{DS/FMU/FEF/003}.
+We use the lattice of security classes defined in \cite{DS/FMU/FEF/003} as the type $Class$ togeth with operations $dominates$, $lub$, etc.
 We will need the notion of the down-set of a class:
 
 ¹HOLCONST
 Ü	ÛDownSetİ : Class ­ Class ğ
 ÷üüüüüüüüüüüüüü
-Üµc·	DownSet c = { d | c dominates d}
+Üµc·	DownSet c = { d | c dominates d }
 °
 
 
@@ -147,15 +147,15 @@ This would mean that if the input and output objects have to satisfy some invari
 
 In \cite{DS/FMU/FEF/003,securityprops}, two objects, $x$ and $y$, are take to be identical viewed from a class, $c$, if they become the same when components whose classification is not dominated by $c$ are ``purged''.
 I.e., $x$ and $y$ are taken as the same at $c$ iff. they become identical when we treat components whose classification is not in $Downset(c)$ as being equal. 
-To tackle the result labelling property, it is useful to have available the analogous notion for an arbitrary set of classes, not just a down-set of some class $c$.
-To do this we use the idea of a {\em filter}.
-A filter is to be a function, $s$ associating with each set, $A$, of classes, an equivalence relation $s(A)$.
+To tackle the result labelling property, it is useful to have available the analogous notion for any set of classes, not just down-sets.
+To do this we introduce the idea of an {\em indexed equivalence relation}.
+This is to be a function, $s$ associating with each set, $A$, of classes, an equivalence relation $s(A)$.
 We require that $s$ be antimonotonic with respect to inclusion, that is to say, the bigger $A$ is, the finer is the equivalence relation $s(A)$:
 
 ¹HOLCONST
-Ü	ÛFilterİ : (Class ğ ­ ('a ª 'a)) ğ
+Ü	ÛIndexedEquivİ : (Class ğ ­ ('a ª 'a)) ğ
 ÷üüüüüüüüüüüüüü
-Ü	Filter =
+Ü	IndexedEquiv =
 Ü	{	s
 Ü	|	(µa· s(a)  Equivalence)
 Ü	±	(µa b· a € b ´ s(b) € s(a))}
@@ -164,51 +164,78 @@ We require that $s$ be antimonotonic with respect to inclusion, that is to say, 
 
 \Note{There are extra conditions one might choose to impose. E.g. that $f\{\}$ is the complete relation and that $f\,Universe$ is the identity relation.}
 
+\Note{Offers for a better name than ``indexed equivalence relation'' would be gratefully received.
+I have tried ``purging relation'' and ``filter'' and didn't like them much.}
+
 \subsection{Security Policy} \label{CRITICAL}
 
-The general multi-level security policy is parameterised by a filter as defined in the previous section.
+The general multi-level security policy is parameterised by an indexed equivalence relation as defined in the previous section.
 
 ¹HOLCONST
-Ü	Ûml_secureİ: (Class ğ ­ ('OBJ LIST ª 'OBJ LIST)) ­ ('OBJ) ML_BEHAVIOURS ğ
+Ü	Ûml_secureİ: (Class ğ ­ ('OBJ LIST ª 'OBJ LIST)) ­ 'OBJ ML_BEHAVIOURS ğ
 ÷üüüüüüüüüüüüüüüüüüüüüüü
 Ü	µs b
 Ü	·	b  ml_secure(s) 
-Ü	¤	s  Filter
+Ü	¤	s  IndexedEquiv
 Ü		±	µc i‰1 i‰2·
 Ü				(i‰1, i‰2)  s (DownSet c)
 Ü			´	(b i‰1, b i‰2)  s (DownSet c)
 °
 
-Note that $ml\_secure(s)$ is empty if $s$ is not a filter.
+Note that $ml\_secure(s)$ is empty if $s$ is not a indexed equivalence relation.
 
-\section{STATE MACHINES}
-Behavioural models for systems are obtained from state machines.
-We model a state machine as a pair comprising an initial state and a transition function:
-=SML
-¹HOLLABPROD ÛMACHINEİ
-Ü	Init	: 'STATE;
-Ü	TrF	: 'OBJ ¸ 'STATE ­ 'STATE ¸ 'OBJ
-°
-=TEX
-Given such a state machine, we may construct its behavioural model as follows:
-¹HOLCONST
-Ü	Ûml_behavioursİ : ('OBJ, 'STATE) MACHINE ­ 'OBJ ML_BEHAVIOURS
-÷üüüüüüüüüüüüüüü
-Üµm : ('OBJ, 'STATE) MACHINE·
-Ü	ml_behaviours m =
-Ü	let	step i (st, resl) =
-Ü		let	(st', res) = TrF(m)(i, st)
-Ü		in	(st', resl ë [res])
-Ü	in	Ìil· Snd(Fold step (Rev il) (Init m, []))
-°
 \section{RESULT LABELLING}
 \subsection{Observations}
 The general way we are modelling structured multi-level objects requires us to use indirect means to handle the idea of a component of an object labelled with a class.
-We think of the component as being modelled by the function which maps an object oto the class-value pair held in the component.
-A little more generally, let us say that that an {\em observation} is any function mapping objects to class-object pairs:
+We think of the component as being modelled by the function which maps an object, or a sequence of same, to the class-value pair held in the component.
+For present purposes, it is convenient to think of such a function as a pair of functions, one returning a class and the other as a value.
 
+In general, given an arbitrary function on a set endowed with an indexed equivalence relation, we consider the set of (minimal) sets of classes which may influence the value taken by the function on a particular element of its domain.
+This notion may be formalised as follows:
+
+¹HOLCONST
+Ü	ÛInfluencesİ: (Class ğ ­ ('a ª 'a)) ­ 'a ­ ('a ­ 'b) ­ Class ğ ğ
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Üµs x f·
+Ü	Influences s x f =
+Ü	{	A : Class ğ
+Ü	| 	(¶y· (x, y)  s(A) ± ³f(x) = f(y))
+Ü	±	µB· B   A ´ ³¶y· (x, y)  s(B) ± ³f(x) = f(y)}
+°
+
+\Note{Should one be using uncurried functions here: $Influences(s, x, f)$?}
+
+We model the process of examining a labelled component of an object in the output of a system by a pair of functions, $(C, V)$: $C$ computing the class; and $V$ computing the value.
+We will call such a pair an observation:
 =SML
-declare_type_abbrev(Û"OBSERVATION"İ,["'OBJ"], ¬: 'OBJ ­ Class ¸ 'OBJ®);
+declare_type_abbrev(Û"OBSERVATION"İ,["'a", "'b"], ¬: ('a ­ Class) ¸ ('a ­ 'b)®);
+=TEX
+
+We can now consider the question of when the process of making an observation is secure.
+When a client makes an observation, we assume that some trusted part of the overall system will check the class which is returned and will prevent revelation of the value to clients who are not cleared to see it.
+Thus the value may depend on information a client is not cleared to see, but this does not matter provided the class returned is such as to prevent the client being given the value.
+However, since the class is itself intended to be part of what the client making the observation sees, the class must not depend on information the client is not allowed to know.
+These ideas may be formalised as follows:
+
+¹HOLCONST
+Ü	SecureObs : (Class ğ ­ ('a ª 'a)) ­ ('a, 'b) OBSERVATION ğ
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Üµs·	SecureObs s =
+Ü	{	(C, V) : ('a, 'b) OBSERVATION
+Ü	|	µx·	Ş(Influences s x C) = {}
+Ü		±	Ş(Influences s x V) € DownSet(C x) }
+Ü
+°
+\Note{In some sense, it is having to use $Ş$ above which ``fixes'' the problem with using greatest lower bounds in \cite{securityprops}; the extent to which it usefully saves the situation is yet to be seen.}
+
+We now make a conjecture:
+=SML
+val Ûml_secure_conjİ = ¬
+µs: (Class ğ ­ ('OBJ LIST ª 'OBJ LIST)); b : 'OBJ ML_BEHAVIOURS·
+	b  ml_secure s ¤
+	s  IndexedEquiv
+	±	µ(C, V)· (C, V)  SecureObs s ´ (C o b, V o b)  SecureObs s
+®;
 =TEX
 \section{CLOSING DOWN}
 The following \Product{} instruction restores the previous proof context.
@@ -228,7 +255,60 @@ output_theory{theory = "fef040",out_file = "fef040th.doc"};
 \printindex
 
 \end{document}
+=IGN SML
+=TEX 
+=IGN SML
+set_goal([], ¬µs x f g·
+	Graph g Image Influences s x (f o g) € Influences s x f®);
+a(rewrite_tac(map get_spec[¬Influences®, ¬Graph®, ¬$Image®]) THEN
+	REPEAT strip_tac);
+a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)`
+a(var_elim_nth_asm_tac 1);
 
+a(¶_tac¬y® ]);
+
+val Ûinfluences_o_thmİ = save_pop_thm"influences_o_thm";
+
+=TEX 
+=IGN SML
+val ÛŞ_€_thmİ = pc_rule1 "sets_ext" prove_rule[]¬µa b· a € b ´ Şa € Şb®;
+=IGN SML
+set_goal([], ml_secure_conj);
+a(rewrite_tac(map get_spec[¬ml_secure®, ¬SecureObs®]) THEN REPEAT strip_tac);
+a(lemma_tac¬Influences s x (C o b) € Influences s x C®
+	THEN1 rewrite_tac[influences_o_thm]);
+ 
+(* *** Goal "1" *** *)
+a(spec_nth_asm_tac 1 ¬b x®);
+a(PC_T "sets_ext" contr_tac);
+a(rename_tac[(¬s'®, "D")]);
+a(GET_NTH_ASM_T 6 (PC_T1 "sets_ext" strip_asm_tac));
+a(spec_nth_asm_tac 1 ¬b x®);
+
+);
+
+=IGN
+\section{STATE MACHINES}
+Behavioural models for systems are obtained from state machines.
+We model a state machine as a pair comprising an initial state and a transition function:
+=SML
+=IGN ¹HOLLABPROD ÛMACHINEİ
+Ü	Init	: 'STATE;
+Ü	TrF	: 'OBJ ¸ 'STATE ­ 'STATE ¸ 'OBJ
+°
+=IGN
+Given such a state machine, we may construct its behavioural model as follows:
+=IGN ¹HOLCONST
+Ü	Ûml_behavioursİ : ('OBJ, 'STATE) MACHINE ­ 'OBJ ML_BEHAVIOURS
+÷üüüüüüüüüüüüüüü
+Üµm : ('OBJ, 'STATE) MACHINE·
+Ü	ml_behaviours m =
+Ü	let	step i (st, resl) =
+Ü		let	(st', res) = TrF(m)(i, st)
+Ü		in	(st', resl ë [res])
+Ü	in	Ìil· Snd(Fold step (Rev il) (Init m, []))
+°
 
 
 
