@@ -1441,17 +1441,22 @@ a(bc_thm_tac ¿_connected_thm);
 a(REPEAT strip_tac THEN PC_T "sets_ext1" contr_tac THEN all_asm_fc_tac[]);
 val €product_connected_thm› = save_pop_thm "product_connected_thm";
 =TEX
-\subsection{Example: the real numbers}
+\subsection{Examples and Applications}
 %%%%
 %%%%
 =SML
 =SML
-force_delete_theory"topologyâR" handle Fail _ => ();
+force_delete_theory"topology_examples" handle Fail _ => ();
 open_theory"topology";
-new_theory"topologyâR";
+new_theory"topology_examples";
 new_parent"analysis";
 set_merge_pcs["basic_hol1", "'sets_alg", "'˙", "'Ø"];
 =TEX
+\subsection{The real numbers}
+We show that the open sets as defined in [Analysis]  do indeed comprise a topology on
+the real line with the expected basic properties. The proofs are very easy, because
+most of the work has already been done in [Analysis].
+First, the open sets do form a topology:
 %%%%
 %%%%
 =SML
@@ -1463,6 +1468,7 @@ a(all_fc_tac[ﬁ_open_Ø_thm]);
 a(all_fc_tac[°_open_Ø_thm]);
 val €open_Ø_topology_thm› = save_pop_thm "open_Ø_topology_thm";
 =TEX
+The underlying set of the topology is the entire real line:
 %%%%
 %%%%
 =SML
@@ -1472,6 +1478,7 @@ a(bc_thm_tac ç_space_thm);
 a(∂_tac¨UniverseÆ THEN rewrite_tac[open_Ø_topology_thm, empty_universe_open_closed_thm]);
 val €space_Ø_thm› = save_pop_thm "space_Ø_thm";
 =TEX
+The definition from [Analysis] of a closed set agrees with the abstract one:
 %%%%
 %%%%
 =SML
@@ -1485,6 +1492,7 @@ a(∂_tac¨~xÆ THEN
 	asm_rewrite_tac[pc_rule1"sets_ext1" prove_rule[complement_clauses]¨µa:'a SET∑~(~a) = aÆ]);
 val €closed_closed_Ø_thm› = save_pop_thm "closed_closed_Ø_thm";
 =TEX
+The definition from [Analysis] of a connected set agrees with the abstract one:
 %%%%
 %%%%
 =SML
@@ -1492,6 +1500,8 @@ set_goal([], ¨OpenâR Compact = CompactâRÆ);
 a(rewrite_tac[compact_def, compact_Ø_def, space_Ø_thm] THEN REPEAT strip_tac);
 val €compact_compact_Ø_thm› = save_pop_thm "compact_compact_Ø_thm";
 =TEX
+Finally (amongst the basic properties), functions are continuous in the abstract sense
+iff. they are everywhere continuous in the sense of [Analysis].
 %%%%
 %%%%
 =SML
@@ -1499,6 +1509,16 @@ set_goal([], ¨µf∑ f ç (OpenâR, OpenâR) Continuous § µx∑f CtsAt xÆ);
 a(rewrite_tac[continuous_def, cts_open_Ø_thm, space_Ø_thm] THEN REPEAT strip_tac);
 val €continuous_cts_at_Ø_thm› = save_pop_thm "continuous_cts_at_Ø_thm";
 =TEX
+With a distant view to doing some algebraic topology, we now look at connectedness,
+which was not much studied in [Analysis]. Our intention is to characterise the connected
+subsets of the real line. The plan is to use material from this document and from [Analysis]
+as appropriate to best effect. We show that the real line as a whole is connected using
+the intermediate value theorem, from which we infer that closed intervals are connected
+using a continous mapping of the real line onto a closed interval. From this we infer that
+a subset of the real line is connected iff. it contains the closed interval lying between
+any two of its points, using the pointwise characterisation of connectedness and the
+fact that closed intervals are connected.
+
 That the real line is topologically connected is a consequence of the intermediate
 value theorem: if the disjoint open sets $B$ and $C$ exhausted the real line,
 then the function which is 0 on $B$ and 1 on $C$ would be continuous but
@@ -1553,7 +1573,8 @@ a(∂_tac¨1/2Æ  THEN asm_rewrite_tac[]);
 val €universe_Ø_connected_thm› = save_pop_thm "universe_Ø_connected_thm";
 =TEX
 We can now apply the theorem that continuous images of connected sets are connected
-to show that closed intervals are connected.
+to show that closed intervals are connected, using a useful theorem from [Analysis]
+to construct a continuous mapping of the real line onto any given closed interval.
 %%%%
 %%%%
 =SML
@@ -1636,6 +1657,49 @@ a(ALL_FC_T rewrite_tac[closed_interval_connected_thm]);
 a(PC_T1 "sets_ext1" rewrite_tac[closed_interval_def]);
 a(REPEAT strip_tac THEN rename_tac[] THEN all_asm_fc_tac[] THEN asm_rewrite_tac[Ø_º_def]);
 val €connected_Ø_thm› = save_pop_thm "connected_Ø_thm";
+=TEX
+\subsection{Path Connectedness}
+Continuing along the way towards the elements of algebraic topology, we now consider
+path connectedness. Here is the definition of path connected set.
+This differs from the traditional one in taking th
+=SML
+declare_postfix(300, "PathConnected");
+πHOLCONST
+‹ €$PathConnected› : 'a SET SET ≠ 'a SET SET
+˜¸¸¸¸¸¸
+‹ µ‘∑ ‘ PathConnected =
+‹	{	A
+‹	|	A Ä Space ‘
+‹	±	µx y∑ x ç A ± y ç A 
+‹	¥	∂f∑  f ç (OpenâR, ‘) Continuous ± (µ t∑ f t ç A) ± f (ÓØ 0) = x ± f (ÓØ 1) = y}
+∞
+=SML
+val €path_connected_def› = get_spec¨$PathConnectedÆ;
+=TEX
+Path-connectedness implies connectedness, because a path, as the continuous image of
+a connected set is itself connected.
+%%%%
+%%%%
+=SML
+set_goal([], ¨µ‘ X∑
+	‘ ç Topology
+±	X ç ‘ PathConnected
+¥	X ç ‘ Connected
+Æ);
+a(rewrite_tac[path_connected_def] THEN REPEAT strip_tac);
+a(bc_thm_tac connected_pointwise_bc_thm THEN REPEAT strip_tac);
+a(list_spec_nth_asm_tac 3 [¨xÆ, ¨yÆ]);
+a(ante_tac(list_µ_elim[¨fÆ, ¨Universe:Ø SETÆ, ¨OpenâRÆ, ¨‘Æ] image_connected_thm));
+a(pure_asm_rewrite_tac[open_Ø_topology_thm, universe_Ø_connected_thm]);
+a(rewrite_tac[] THEN REPEAT strip_tac);
+a(∂_tac¨{y|∂ x∑ y = f x}Æ THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_var_elim_asm_tac1 THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(∂_tac¨ÓØ 0Æ THEN asm_rewrite_tac[]);
+(* *** Goal "3" *** *)
+a(∂_tac¨ÓØ 1Æ THEN asm_rewrite_tac[]);
+val €path_connected_connected_thm› = save_pop_thm "path_connected_connected_thm";
 =TEX
 \subsection{Epilogue}
 =TEX
