@@ -1,0 +1,313 @@
+
+=TEX
+% TQtemplate.tex
+\documentstyle[hol1,11pt,TQ]{article}
+\def\Hide#1{}
+\def\Bool{``$\it{:}bool\,$''}
+\makeindex
+\TPPproject{DRA FRONT END FILTER PROJECT}  %% Mandatory field
+%\TPPvolume{}
+%\TPPpart{}
+\TPPtitle{Phase II Proof Status}  %% Mandatory field
+\TPPref{DS/FMU/FEF/036}  %% Mandatory field
+\def\SCCSversion{$Revision$
+}
+\TPPissue{\SCCSversion}  %% Mandatory field
+\TPPdate{\FormatDate{$Date$
+}}  %% Mandatory field (with sensible default)
+\TPPstatus{Draft}			%% Mandatory field
+\TPPtype{Specification}
+\TPPkeywords{}
+%\TPPauthor{R.~D.~Arthan & WIN01}  %% Mandatory field
+\TPPauthors{R.~D.~Arthan & WIN01\\G.~M.~Prout & WIN01}
+\TPPauthorisation{R.B.~Jones & HAT Manager}
+\TPPabstract{This document identifies the current status of   the Phase II proofs for the
+DRA front end filter project RSRE 1C/6130.}
+%\TPPabstractB{}
+%\TPPabstractC{}
+%\TPPabstractD{}
+%\TPPabstractE{}
+%\TPPabstractF{}
+\TPPdistribution{\parbox[t]{4.0in}{%
+	HAT FEF File \\
+	Simon Wiseman
+}}
+%\TPPclass{CLASSIFICATION}
+\newfont{\icllogo}{icllogo50}
+\def\TPPheadlhs{$\vcenter{\halign{##\cr\icllogo ICL\cr}}$}
+%\def\TPPheadlhs{}
+%\def\TPPheadcentre{}
+%def\TPPheadrhs{}
+%\def\TPPfootlhs{}
+%\def\TPPfootcentre{}
+%\def\TPPfootrhs{}
+
+\begin{document}
+\TPPsetsizes
+\makeTPPfrontpage
+
+\vfill
+\begin{centering}
+
+%\bf Copyright \copyright\ : International Computers Ltd \number\year
+
+\end{centering}
+
+\newpage
+\section {DOCUMENT CONTROL}
+\subsection{Contents List}
+\tableofcontents
+\subsection{Document Cross References}
+\bibliographystyle{fmu}
+\bibliography{fmu,fef}
+
+\subsection{Changes History}
+\begin{description}
+\item[Issue \SCCSversion(\FormatDate{$Date$
+})] First draft.
+\end{description}
+
+\subsection{Changes Forecast}
+None.
+\pagebreak
+\section{GENERAL}
+\subsection{Scope}
+This document provides a formal proof relating
+to the specifications in ``An Execution Model for SWORD'' \cite{DS/FMU/FEF/026}.
+It constitutes part of deliverable D13 of work package 3, as given
+in section 3 of the Proposal for Phase 2, \cite{DS/FMU/FEF/018}.
+
+
+(The current version is a rough draft of proofs of some of the propositions
+produced as pilot work during the third stage of phase 2.)
+
+\subsection{Introduction}
+In \cite{DS/FMU/FEF/033} and \cite{DS/FMU/FEF/035}, formal proofs that the semantic
+functions for the value and table  computations defined in  \cite{DS/FMU/FEF/032}
+satisfy  the critical properties $OK\_VC‰d$,  $OK\_VC‰c$, $OK\_TC‰d$ and $OK\_TC‰c$,
+also defined in  \cite{DS/FMU/FEF/032}. These proofs are then brought together
+via an induction principle for the set of semantic functions to prove the conjecture
+$TableComputationsSecure$ of  the proof strategy, \cite{DS/FMU/FEF/034} .
+ 
+\section{PRELIMINARIES}
+The following \Product{} instructions set up a new theory $fef036$
+to hold the theorems to be proved and set up a proof context in which
+to carry out the proofs. 
+
+=SML 
+open_theory "fef035";
+new_theoryÛ"fef036"Ý;
+set_pc"hol";
+=TEX
+\section{INTERFACE}
+=TEX
+\subsection{Induction Principle}
+=SML
+val Ûtable_computation_rw_thmÝ =
+	rewrite_rule[get_spec¬¥‰2®] (get_spec¬TableComputations®);
+=TEX
+=SML
+set_goal([], ¬µcc:Class·
+	µtcs : TABLE_COMP SET; vcs : VALUE_COMP SET·
+		(µci· DenoteConstant ci  vcs)
+	±	(µi· Contents i  vcs)
+	±	(µi· Classification i  vcs)
+	±	CountAll  vcs
+
+	±	(µf e· e  vcs ´ MonOp f e  vcs)
+	±	(µf e1 e2· e1  vcs ± e2  vcs ´ BinOp f e1 e2  vcs)
+	±	(µf e1 e2 e3· e1  vcs ± e2  vcs ± e3  vcs ´ TriOp f e1 e2 e3  vcs)
+	±	(µel· Elems el € vcs ´ BinOpAnd cc el  vcs)
+	±	(µel· Elems el € vcs ´ BinOpOr cc el  vcs)
+
+	±	(µte cel ee· te  vcs ± Elems(Map Fst cel) € vcs ±
+				Elems(Map Snd cel) € vcs ± ee  vcs ´
+					CaseVal cc te cel ee  vcs)
+	±	(µcel ee· Elems(Map Fst cel) € vcs ±
+				Elems(Map Snd cel) € vcs ± ee  vcs  ´
+					Case cc cel ee  vcs)
+
+	±	(µe· e  vcs ´ SetFuncAllAnd cc e  vcs)
+	±	(µe· e  vcs ´ SetFuncAllOr cc e  vcs)
+	±	(µe· e  vcs ´ CountNonNull e  vcs)
+	±	(µe· e  vcs ´ CountDistinct e  vcs)
+	±	(µe· e  vcs ´ CommonValue e  vcs)
+
+	±	(µf e· e  vcs ´ SetFuncAll f e  vcs)
+	±	(µf e· e  vcs ´ SetFuncDistinct f e  vcs)
+
+	±	(µte· te  tcs ´ ExistsTuples cc te  vcs)
+	±	(µte· te  tcs ´ SingleValue cc te  vcs)
+
+	±	(JoinedRowExistence cc  vcs)
+=TEX
+=SML
+	±	(µi· TableContents i  tcs)
+
+	±	(µesl tel e1 ml nl e2· Elems(Map Fst esl) € vcs
+			± Elems tel € tcs ± e1  vcs ± e2  vcs
+				´ AllTuples cc esl tel e1 ml nl e2  tcs)
+(*	±	(µesl tel e1 ml nl e2· Elems(Map Fst esl) € vcs)
+			± Elems tel € tcs ± e1  vcs ± e2  vcs
+				´ DistinctTuples cc esl tel e1 ml nl e2  tcs)
+	±	(µesl tel e1 ml nl e2· Elems(Map Fst esl) € vcs)
+			± Elems tel € tcs) ± e1  vcs ± e2  vcs
+				´ Evaluate cc esl tel e1 ml nl e2  tcs)	*)
+	´	TableComputations cc € tcs
+	±	ValueComputations cc € vcs
+®);
+a(REPEAT µ_tac THEN strip_tac
+	THEN rewrite_tac[table_computation_rw_thm]
+	THEN PC_T1"sets_ext1" REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(POP_ASM_T (strip_asm_tac o µ_elim¬tcs®)
+	THEN POP_ASM_T (ante_tac o µ_elim¬vcs®)
+	THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(POP_ASM_T (strip_asm_tac o µ_elim¬vcs®)
+	THEN POP_ASM_T (ante_tac o µ_elim¬tcs®)
+	THEN asm_rewrite_tac[]);
+val Ûtable_computation_induction_thmÝ =
+	save_pop_thm"table_computation_induction_thm";
+=TEX
+\subsection{Proof of $TableComputationsSecure$}
+
+=SML
+val Ûok_vc_tc_conjsÝ = map (curry mk_µ ¬c:Class®)
+[
+¬µci· DenoteConstant ci  OK_VC‰d c ¡ OK_VC‰c c®,
+¬µi· Contents i  OK_VC‰d c ¡ OK_VC‰c c®,
+¬µi· Classification i  OK_VC‰d c ¡ OK_VC‰c c®,
+¬CountAll  OK_VC‰d c ¡ OK_VC‰c c®,
+
+¬µf e· e  OK_VC‰d c ¡ OK_VC‰c c ´ MonOp f e  OK_VC‰d c ¡ OK_VC‰c c®,
+¬µf e1 e2· e1  OK_VC‰d c ¡ OK_VC‰c c ± e2  OK_VC‰d c ¡ OK_VC‰c c ´ 
+		BinOp f e1 e2  OK_VC‰d c ¡ OK_VC‰c c®,
+¬µf e1 e2 e3· e1  OK_VC‰d c ¡ OK_VC‰c c ± e2  OK_VC‰d c ¡ OK_VC‰c c ± 
+	e3  OK_VC‰d c ¡ OK_VC‰c c ´ 
+	TriOp f e1 e2 e3  OK_VC‰d c ¡ OK_VC‰c c®,
+¬µel· Elems el € OK_VC‰d c ¡ OK_VC‰c c ´ BinOpAnd c el  OK_VC‰d c ¡ OK_VC‰c c®,
+¬µel· Elems el € OK_VC‰d c ¡ OK_VC‰c c ´ BinOpOr c el  OK_VC‰d c ¡ OK_VC‰c c®,
+
+¬µte cel ee·
+	te  OK_VC‰d c ¡ OK_VC‰c c ± Elems(Map Fst cel) € OK_VC‰d c ¡ OK_VC‰c c ±
+	Elems(Map Snd cel) € OK_VC‰d c ¡ OK_VC‰c c ± ee  OK_VC‰d c ¡ OK_VC‰c c ´
+			CaseVal c te cel ee  OK_VC‰d c ¡ OK_VC‰c c®,
+¬µcel ee· Elems(Map Fst cel) € OK_VC‰d c ¡ OK_VC‰c c ±
+	Elems(Map Snd cel) € OK_VC‰d c ¡ OK_VC‰c c ± ee  OK_VC‰d c ¡ OK_VC‰c c  ´
+		Case c cel ee  OK_VC‰d c ¡ OK_VC‰c c®,
+
+¬µe· e  OK_VC‰d c ¡ OK_VC‰c c ´ SetFuncAllAnd c e  OK_VC‰d c ¡ OK_VC‰c c®,
+¬µe· e  OK_VC‰d c ¡ OK_VC‰c c ´ SetFuncAllOr c e  OK_VC‰d c ¡ OK_VC‰c c®,
+¬µe· e  OK_VC‰d c ¡ OK_VC‰c c ´ CountNonNull e  OK_VC‰d c ¡ OK_VC‰c c®,
+¬µe· e  OK_VC‰d c ¡ OK_VC‰c c ´ CountDistinct e  OK_VC‰d c ¡ OK_VC‰c c®,
+¬µe· e  OK_VC‰d c ¡ OK_VC‰c c ´ CommonValue e  OK_VC‰d c ¡ OK_VC‰c c®,
+
+¬µf e· e  OK_VC‰d c ¡ OK_VC‰c c ´ SetFuncAll f e  OK_VC‰d c ¡ OK_VC‰c c®,
+¬µf e· e  OK_VC‰d c ¡ OK_VC‰c c ´ SetFuncDistinct f e  OK_VC‰d c ¡ OK_VC‰c c®,
+
+¬µte· te  OK_TC‰d c ¡ OK_TC‰c c ´ ExistsTuples c te  OK_VC‰d c ¡ OK_VC‰c c®,
+¬µte· te  OK_TC‰d c ¡ OK_TC‰c c ´ SingleValue c te  OK_VC‰d c ¡ OK_VC‰c c®,
+¬JoinedRowExistence c  OK_VC‰d c ¡ OK_VC‰c c®,
+=TEX
+=SML
+¬µ i· TableContents i  OK_TC‰d c ¡ OK_TC‰c c®,
+¬µ esl tel e1 ml nl e2·
+	Elems (Map Fst esl) € OK_VC‰d c ¡ OK_VC‰c c ±	
+	Elems tel € OK_TC‰d c ¡ OK_TC‰c c ±	e1  OK_VC‰d c ¡ OK_VC‰c c ±	
+	e2  OK_VC‰d c ¡ OK_VC‰c c
+         	 ´ AllTuples c esl tel e1 ml nl e2  OK_TC‰d c ¡ OK_TC‰c c®
+];
+=TEX
+=SML
+val ths = map (pc_rule1"sets_ext1"prove_rule[]) [
+	¬µx a b·x  a ¡ b ¤ x  a ± x  b®,
+	¬µc a b·c € a ¡ b ¤ c € a ± c € b®];
+=TEX
+=SML
+val Ûok_vc_tc_thmsÝ =
+	map
+	(fn (_, t) =>
+		((hd o rev o strip_´ o snd o strip_µ o concl) t, rewrite_rule ths t
+								handle Fail _ => t))
+	((get_thms"fef033" @ get_thms"fef035")
+	drop
+	(fn t =>
+		let	val x = (fst o dest_app o snd o dest_app o hd o rev o
+					strip_´ o snd o strip_µ o concl o snd) t
+		in	not(x =$ ¬OK_VC‰d®) andalso not(x =$ ¬OK_VC‰c®) 
+			andalso not(x =$ ¬OK_TC‰d®) andalso not(x =$ ¬OK_TC‰c®)
+		end	handle Fail _ => true));
+=TEX
+=SML
+val Ûok_vc_tc_tacÝ : TACTIC = (fn gl as (_, cnc) =>
+	let	val th = snd(find ok_vc_tc_thms
+			(fn (t, _) =>
+				(term_match cnc t; true) handle Fail _ => false));
+	in	SOLVED_T (all_fc_tac[th] THEN asm_rewrite_tac[])
+			ORELSE rewrite_tac[th]
+	end	gl
+);
+=TEX
+=SML
+fun Ûok_vc_tc_ruleÝ t = (
+	tac_proof(([], t), once_rewrite_tac ths THEN REPEAT strip_tac THEN ok_vc_tc_tac)
+);
+=TEX
+=SML
+val Ûok_vc_tc_lemmasÝ = map ok_vc_tc_rule ok_vc_tc_conjs;
+=TEX
+=SML
+new_parent"fef034";
+=TEX
+=SML
+set_goal([], ¬TableComputationsSecure®);
+a(lemma_tac¬µc·	TableComputations c € OK_TC‰d c®);
+(* *** Goal "1" *** *)
+a µ_tac;
+a(ante_tac(list_µ_elim[¬c:Class®, ¬OK_TC‰d c ¡ OK_TC‰c c®, ¬OK_VC‰d c ¡ OK_VC‰c c®]
+		table_computation_induction_thm)
+	THEN asm_rewrite_tac ok_vc_tc_lemmas);
+a(PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "2" *** *)
+a(strip_asm_tac OK_TC‰d_lemma);
+a(PC_T1 "sets_ext1" asm_prove_tac[get_spec¬TableComputationsSecure®]);
+val ÛTableComputationsSecure_thmÝ = save_pop_thm"TableComputationsSecure_thm";
+=TEX
+\section{PHASE II PROOF STATUS}
+We now use the proof of $TableComputationsSecure$ together with the proof
+from \cite{DS/FMU/FEF/031} of $EM\_SecureE$ to give the
+lowest level of partial proof of the overall system
+security.
+=SML
+set_goal(
+	[¬Architecture_Secure®,
+	 ¬Subsys_SecureA®,
+	 ¬Subsys_SecureB®,
+	 ¬Subsys_SecureC®,
+	 ¬Subsys_SecureD®,
+	 ¬View‰t_secureE®,
+	 ¬outputFilter_secureE®,
+	 ¬Correct_Compile_OkSTP®],
+				¬FE_SWORD_SYSTEM_secure®);
+=TEX
+=SML
+a(asm_tac EM_SecureE_thm THEN 
+	asm_tac TableComputationsSecure_thm THEN 
+	strip_asm_tac Theorem4);
+val ÛTheorem5Ý = save_pop_thm "Theorem5";
+=TEX
+
+\section{CLOSING DOWN}
+=TEX
+
+\newpage
+\HOLindexOff
+\input{fef036th.tex}
+\HOLindexOn
+\newpage
+\twocolumn[\section{INDEX} \label{INDEX}]
+\small
+\printindex
+
+\end{document}
