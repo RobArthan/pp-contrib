@@ -64,7 +64,8 @@ DRA front end filter project RSRE 1C/6130.}
 
 \subsection{Changes History}
 \begin{description}
-\item[1.1] First draft version.
+\item[\SCCSversion ({\FormatDate{$Date$
+}})] First draft version.
 \end{description}
 
 \subsection{Changes Forecast}
@@ -112,7 +113,8 @@ The following ICL HOL instructions set up the new theory $fef006$.
 open_theory "fef005";
 new_theory€"fef006"›;
 set_cache_theories ["hol"];
-push_merge_pcs ["sets_ext","prove_∂"];
+repeat pop_pc;
+push_pc "prove_∂";
 =TEX
 
 \section{CONSTRUCTION OF AN ABSTRACT MACHINE} \label{CONSTR}
@@ -137,8 +139,10 @@ declare_type_abbrev(€"USTATE"›,[],î Class ∏ Effect ∏ State ≠
 
 \subsection{Construction}
 
-We define a transition function, $mkTf$, in terms of three components: a component
-of type $HIDE$, a component of type $PROCESS$ and a component of type $USTATE$.
+We define a function, $mkTf$, which builds a transition function from three components: a component
+of type $HIDE$, a component of type $PROCESS$ and a component of type $USTATE$. The resulting transition function
+updates the original state of the database by using the
+result of processing a query on the hidden state of the database. 
 
 First, an abbreviation definition for the type of state transition functions.
 
@@ -153,8 +157,7 @@ declare_type_abbrev(€"STF"›,[],î (Query ∏ Class) ∏ State ≠
 ‹
 ‹	µh:HIDE; p:PROCESS; u:USTATE; q : Query; c : Class; s : State
 ‹	∑
-‹	(mkTf h p u) ((q,c),s) =  
-‹		u(c,p(q,c,h(c,s)),s)
+‹	(mkTf h p u) ((q,c),s) = u(c,p(q,c,h(c,s)),s)
 ∞ 
 
 We construct an abstract machine from a pair consisting of a 
@@ -181,9 +184,9 @@ two clearances $clearâ1$ and $clearâ2$ and we update
  the database at $clearâ1$ and a change is visible when hiding w.r.t $clearâ2$, then
 $clearâ2$ must dominate $clearâ1$. This requirement concerns the security of the 
 state of the database. We also need to address the issue of security of 
-the outputs to the user of the database. If we perform an update on the same state
-at $clearâ1$ and $clearâ2$ and the outputs differ, then
-$clearâ2$ must dominate $clearâ1$.
+the outputs from the database to the user. If we perform an update on two states
+$sâ1$ and $sâ2$ that are the same when viewed at a clearance $clear$,
+then the outputs must be the same.
 
 
 πHOLCONST
@@ -192,13 +195,18 @@ $clearâ2$ must dominate $clearâ1$.
 ‹	µ h : HIDE ;u : USTATE ∑
 ‹		(h,u) ç secureUpdate
 ‹		§
-‹		µclearâ1 clearâ2 : Class; s : State; e:Effect
+‹		µclear clearâ1 clearâ2 : Class; s  sâ1 sâ2: State; e:Effect
 ‹		∑	
-‹		let 	(s',outâ1) = (u(clearâ1,e,s)) 
-‹		and	outâ2 = Snd(u(clearâ2,e,s))
+‹		let 	s' = Fst(u(clearâ1,e,s)) 
 ‹		in
-‹			≥(h(clearâ2,s) = h(clearâ2,s')) ≤ ≥(outâ1 = outâ2)
-‹			¥ clearâ2 dominates clearâ1	
+‹			≥(h(clearâ2,s) = h(clearâ2,s'))
+‹			¥ 	clearâ2 dominates clearâ1	
+‹		±
+‹		let	oâ1 = Snd(u(clear,e,sâ1))
+‹		and 	oâ2 = Snd(u(clear,e,sâ2))
+‹		in
+‹			h(clear,sâ1) = h(clear,sâ2)
+‹			¥	oâ1 = oâ2
 ∞ 
 
 \subsection{Architecture Correctness} \label{ARCH}
@@ -257,7 +265,7 @@ We now formally state the architecture  correctness conjecture.
 
 We define the SSQL abstract machine , $SSQLam$, as an abstract machine constructed from the
 transition function built from the three components
-$hide$ and $updateState$, specified in  \cite{DS/FMU/FEF/004}, and  $processQuery$, specified in  \cite{DS/FMU/FEF/005}, and an initial state $isstate$. At this stage, we define the initial state without any state invariants.
+$hide$ and $updateState$, specified in  \cite{DS/FMU/FEF/004}, and  $processQuery$, specified in  \cite{DS/FMU/FEF/005}, and an initial state $isstate$. 
 
 
 πHOLCONST
