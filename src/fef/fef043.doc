@@ -1,10 +1,11 @@
 =TEX
-% TQtemplate.tex
+% $Date$ $Id$ $Revision$
 \documentstyle[hol1,11pt,TQ]{article}
-\def\Hide#1{}
+\long\def\Hide#1{}
 \def\Bool{``$\it{:}bool\,$''}
 \def\Note#1{{\small\bf[Note: #1]}}
 \makeindex
+\underscoreoff
 \TPPproject{DRA FRONT END FILTER PROJECT}  %% Mandatory field
 %\TPPvolume{}
 %\TPPpart{}
@@ -77,14 +78,14 @@ None.
 \subsection{Scope}
 
 Phases 1 and 2 of the FEF project dealt exclusively with the `No Flows Down' security policy as furmulated in \cite{DS/FMU/FEF/003}.
-In that formulation SSQL queries and their results are treated as containing information at a single security clearance.
-The security policy in \cite{DS/FMU/FEF/003} is extended in \cite{DS/FMU/FEF/040} and \cite{DS/FMU/FEF/042} to take account of the multilevel structure of SWORD queries.
+In that formulation, SSQL queries and their results are treated as containing information at a single security classification.
+The security policy in \cite{DS/FMU/FEF/003} is extended in \cite{DS/FMU/FEF/040} and \cite{DS/FMU/FEF/042} to take account of the multi-level structure of SWORD queries.
 The result returned to the client from SWORD also consists of a structured multi-level object.
 However, the way in which the classification fields are to be used in the result from a query, as described in \cite[section 2.3]{securityprops}, is not consistent with a flow policy which treats these as classification marks in a manner close to their use in the structured multi-level queries.
-For this reason the multi-level policy, as formulated in \cite{DS/FMU/FEF/040} treats queries and results differently in expressing the `No Flows Down' policy.
+For this reason the multi-level policy, as formulated in \cite{DS/FMU/FEF/040}, treats queries and results differently in expressing the `No Flows Down' policy.
 In effect, that policy formulation treats labels other than the outermost label on the result as being insignificant from the point of view of information flow.
 
-In this document we consider extending the policy with a result labelling property which expressed the intended significance of the labels in the result from a SWORD query.
+In this document we consider extending the policy with a result labelling property which expresses the intended significance of the labels in the result from a SWORD query.
 The intended significance of these labels in the output is described in \cite[section 2.3]{securityprops} and formalisation is attempted in section 4 of the same document.
 We discuss the problems associated with the formalisation of these additional labelling properties and propose an abstract framework which will permit this kind of property to be expressed.
 
@@ -94,7 +95,7 @@ in section 7 of the Proposal for Phase 3, \cite{DS/FMU/FEF/039}.
 \subsection{Introduction}
 
 The main source of difficulty in arriving at a satisfactory formalisation of the result labelling property is that the description of the required property in \cite[section 2.3]{securityprops} explicitly (and we believe essentially) refers to features specific to the query language under consideration.
-All the formulations of policy matters so far have avoided commitment to the details of the query language, and the complexity of this language would cause a very great impact on the clarity of the policy statment if the policy were to be expressed, as it appears to be informally, in terms of the syntax of queries.
+All the formulations of policy matters so far have avoided commitment to the details of the query language, and the complexity of this language would cause a very great impact on the clarity of the policy statment if the policy were to be expressed, as it appears to be informally, in terms of the syntax an semantics of queries.
 
 We therefore propose to define the required property relative to some factorisation of the the semantics of the query language which corresponds to the informal description in an appropriate way, without spelling out the details of this factorisation.
 
@@ -132,13 +133,15 @@ Each stage of the factorisation computes one level in a four level structured ou
 After evaluating the first factor we obtain an {\it Obj} of which the first level is as intended for the final result, and the second level (and below if present) is some representation of the residual query processing to be done by subsequent factors.
 
 After evaluating the second factor on the results of the first factor two layers of data in the resulting {\it Obj} are as required for the final result.
-And so on until the fourth factor computes values at the fourth level which should contain no further constituent {\it Obj}s.
+The fourth factor computes values at the fourth level which should contain no further constituent {\it Obj}s.
 
 In the following type the first {\it Obj} may be thought of a partially evaluated query and the second a query evaluated one level further.
 
 =SML
 declare_type_abbrev(Û"Factor"İ, ["'State"], ” Class ­ Obj ­ 'State ­ Obj®);
 =TEX
+
+We now define composition of factors, using which the complete output function can be obtained from a set of factors.
 
 =SML
 declare_infix (250, "»‰f");
@@ -152,7 +155,13 @@ declare_infix (250, "»‰f");
 Ü	(f1 »‰f f2) c obj s = f2 c (f1 c obj s) s
 °
 
-¹HOLCONST
+The informal description in \cite[section 2.3]{securityprops} indicates what aspects of the processing of a query are to contribute to the information provided at each level in the structured output.
+While we do not intend here to fully capture this information, we do express some constraints on which level of the output of a query are affected by a factor.
+
+\Hide{
+An auxiliary used in expressing these contraints is {\it same_below_level}.
+This is a relationship between objects indexed by natural numbers, and holds for any index {\it n} whenever two objects are identical below level {\it n}.
+ ¹HOLCONST
 Ü	Ûsame_below_levelİ : î ­ (Obj ¸ Obj)ğ
 ÷üüüüüüüüüüüüüüüüüüü
 Ü	µn :î; obj1 obj2 :Obj·
@@ -169,6 +178,13 @@ declare_infix (250, "»‰f");
 Ü			€ (same_below_level n)
 Ü		}
 °
+}%\Hide
+
+An auxiliary used in expressing these contraints is {\it same_to_level}.
+This is a relationship between objects indexed by natural numbers, and holds for any index {\it n} whenever two objects are identical down (or up!) to level {\it n} (down or up from the root, depending on which way you like to visualise a `tree').
+
+Note that the classification fields are not regarded as classifying themselves and are therefore regarded as being at one level lower than might otherwise have been expected.
+It is not clear from the sources whether this is intended, but this is consistent with the treatment of multi-level objects in {\it indenticalObj}.
 
 ¹HOLCONST
 Ü	Ûsame_to_levelİ : î ­ (Obj ¸ Obj)ğ
@@ -198,7 +214,9 @@ A factor has level n if it changes only information below level n.
 Ü		(obj, factor c obj state)  same_to_level n }
 °
 
-A fcatorisation is a collection of four factors:
+Thus even a level-0 factor may not change the top-level classification of the object.
+
+A factorisation is a collection of four factors:
 
 ¹HOLLABPROD ÛFactorisationİüüüüüüüüüüüüüüüüüüüüüü
 Ü	Ûfactor1İ Ûfactor2İ Ûfactor3İ Ûfactor4İ	: 'State Factor
@@ -235,9 +253,9 @@ A factorisation is {\it levelled} if the factors each have appropriate levels:
 Ü	±	factor4 factors  factor_level 3
 °
 
-For a factorisation to be correct it must also fail to pre-evaluate levels in the query, however, this detail can only be specified using more specific reference to the form of a query than is considered appropriate here.
+For a factorisation to be correct it must also fail to pre-evaluate levels in the query, however, this detail can only be specified by reference to the form of a query in greater detail than is considered appropriate here.
 
-A factorisation factors a particular machine if, when the factors are put together, the behaviour corresponds to that of the machine:
+A factorisation factors a particular machine if, when the factors are put together, the resulting output corresponds to that of the machine:
 
 A {\it FactoredMachine} is a {\it Machine} together with a factorisation of that machine.
 
@@ -246,7 +264,7 @@ A {\it FactoredMachine} is a {\it Machine} together with a factorisation of that
 Ü	Ûfactorsİ 	: 'State Factorisation
 °üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
 
-A factored machine is well-factored if the factors form a well-factorisation and the output function determined by the factors is the same as that in the machine.
+A factored machine is {\it well_factored} if the factors form a {\it levelled_factorisation} and the output function determined by the factors is the same as that in the machine.
 
 ¹HOLCONST
 Ü	Ûwell_factoredİ : ('State FactoredMachine)ğ
@@ -260,25 +278,57 @@ A factored machine is well-factored if the factors form a well-factorisation and
 \section{THE LABELLING PROPERTY}
 
 The labelling property is formalised as follows.
-For any input history and single input we consider the behaviour of the machine.
-A separate property is required for labels correctness at each level.
-The property for level n is obtained by constructing a machine which maps input histories to outputs and assering the security of that machine.
+For any input history and single request we consider the behaviour of the machine.
+A separate property is required for label correctness at each level in the output.
+The property for level n is obtained by constructing a machine which maps input histories to outputs and asserting the information flow security of that machine.
 These machines will be constructed so that they first operate in the normal way on the input history to determine the state in which the query under consideration will be evaluated.
-The {\it partially} evaluated query will then be evaluated in this state to completion.
+The {\it partially} evaluated query will then be evaluated to completion in this state.
+The effect of this construction is to ignore the information flows which take place in the initial stage of the query and confine the security constraint to the information flows occuring in the subsequent evaluation of the query.
 
-This definition is here pro-tem but should be in fef042 really.
+This definition is given here pro-tem but should be in fef042 really.
 
 ¹HOLCONST
 Ü	Ûlift_machineİ : 'State Machine ­ 'State ¸ Req LIST ­ Obj LIST ¸ 'State
 ÷üüüüüüüüüüüüüüüüüüüüüü
-Üµmch s r rs·
+Üµmch s r rl·
 Ü	lift_machine mch (s, []) = ([], s)
-Ü±	lift_machine mch (s, Cons r rs) =
+Ü±	lift_machine mch (s, Cons r rl) =
 Ü	let out	= Output mch (s, r)
 Ü	and s'	= Next mch (s, r)
-Ü	in	let (outl, final_state)	= lift_machine mch (s', rs)
+Ü	in	let	(outl, final_state) = lift_machine mch (s', rl)
 Ü		in	(Cons out outl, final_state)
 °
+
+For each combination of:
+\begin{itemize}
+\item
+a Machine ({\it m})
+\item
+a binary factorisation of the machine output function ({\it f1, f2})
+\item
+a request list (which determines a state) ({\it rl})
+\item
+a request (submitted in that state) ({\it r})
+\end{itemize}
+
+we construct a {\it special_machine}.
+
+The special machine will have pre-compiled into it the result of evaluating the first factor ({\it f1}) on the given request ({\it r}) in the state determined by the request list ({\it rl1}).
+It will complete the evaluation (using {\it f2}) in a possibly different state, as determined by some other request list ({\it rl2}), and return the resulting output as an {\it Obj}.
+
+¹HOLCONST
+Ü	Ûspecial_machineİ : ('State Machine ¸ 'State Factor ¸ 'State Factor)
+Ü		 ­ Req LIST ­ Req ­ (Req LIST ­ Obj)
+÷üüüüüüüüüüüüüüüüüüü
+Ü	µ(m, f1, f2); rl1 rl2 : Req LIST; r : Req ·
+Ü	special_machine (m, f1, f2) rl1 r rl2 =
+Ü		let s1 = Snd (lift_machine m (Init m, rl1))
+Ü		and s2 = Snd (lift_machine m (Init m, rl2))
+Ü		in	let pe_req = f1 (reqClearance r) (reqSsql r) s1
+Ü			in f2 (reqClearance r) pe_req s2
+°
+
+To express the flow contraints required on these special machines we need a sameness relation which concerns itself only with information below a certain level in the output object.
 
 ¹HOLCONST
 Ü	Ûsame_at_c_below_levelİ : î ­ Class ­ (Obj ª Obj)
@@ -294,17 +344,7 @@ This definition is here pro-tem but should be in fef042 really.
 Ü		}
 °
 
-¹HOLCONST
-Ü	Ûspecial_machineİ : ('State Machine ¸ 'State Factor ¸ 'State Factor)
-Ü		 ­ Req LIST ­ Req ­ (Req LIST ­ Obj)
-÷üüüüüüüüüüüüüüüüüüü
-Ü	µ(m, f1, f2); rl1 rl2 : Req LIST; r : Req ·
-Ü	special_machine (m, f1, f2) rl1 r rl2 =
-Ü		let s1 = Snd (lift_machine m (Init m, rl1))
-Ü		and s2 = Snd (lift_machine m (Init m, rl2))
-Ü		in	let pe_req = f1 (reqClearance r) (reqSsql r) s1
-Ü			in f2 (reqClearance r) pe_req s2
-°
+A binary factorisation of a machine is then {\it label_secure_n} for some particular level if the special machine constructed using that binary factorisation is always {ml_secure} relative to sameness below level n.
 
 ¹HOLCONST
 Ü	Ûlabel_secure_nİ : î ­ ('State Machine ¸ 'State Factor ¸ 'State Factor) ğ
@@ -316,6 +356,8 @@ This definition is here pro-tem but should be in fef042 really.
 Ü		in sm  ml_secure sameRequests (same_at_c_below_level n)
 Ü	}
 °
+
+A fully factorised machine is {\it label_secure} if the three binary factorisations which correspond to partial evaluation to levels 1, 2 and 3 are all {\it label_secure_n} at the appropriate levels.
 
 ¹HOLCONST
 Ü	Ûlabel_secureİ : ('State FactoredMachine) ğ
@@ -336,7 +378,7 @@ This definition is here pro-tem but should be in fef042 really.
 Ü	}
 °
 
-=IGN
+\Hide{
 \section{INPUT SIMILARITY}
 
 For the purposes of the labelling property we wish to impose more stringent conditions of similarity on the sequence of requests submitted to the machine.
@@ -393,8 +435,7 @@ We want to talk about the information flows arising in each factor of the query 
 
 To express the additional constraints on the labels relative to some factorisation of the query semantics we must separately asses the security of the information flow arising in each stage in the evaluation of the query results.
 
-
-
+}%\Hide
 
 \section{CLOSING DOWN}
 
