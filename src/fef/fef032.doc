@@ -1,0 +1,843 @@
+=TEX
+% TQtemplate.tex
+\documentstyle[hol1,11pt,TQ]{article}
+\def\Hide#1{}
+\def\Bool{``$\it{:}bool\,$''}
+\makeindex
+\TPPproject{DRA FRONT END FILTER PROJECT}  %% Mandatory field
+%\TPPvolume{}
+%\TPPpart{}
+\TPPtitle{Table Computations for SWORD}  %% Mandatory field
+\TPPref{DS/FMU/FEF/026}  %% Mandatory field
+\def\SCCSversion{$Revision$%
+}
+\TPPissue{\SCCSversion}  %% Mandatory field
+\TPPdate{\FormatDate{$Date$%
+}}  %% Mandatory field (with sensible default)
+\TPPstatus{Draft}			%% Mandatory field
+\TPPtype{Specification}
+\TPPkeywords{}
+\TPPauthor{R.~D.~Arthan & WIN01}  %% Mandatory field
+%\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
+\TPPauthorisation{R.B.~Jones & HAT Manager}
+\TPPabstract{A specification of the table computations allowed in the Front End
+implementation of SWORD for the DRA front end filter project RSRE 1C/6130.}
+%\TPPabstractB{}
+%\TPPabstractC{}
+%\TPPabstractD{}
+%\TPPabstractE{}
+%\TPPabstractF{}
+\TPPdistribution{\parbox[t]{4.0in}{%
+	HAT FEF File \\
+	Simon Wiseman
+}}
+%\TPPclass{CLASSIFICATION}
+\newfont{\icllogo}{icllogo50}
+\def\TPPheadlhs{$\vcenter{\halign{##\cr\icllogo ICL\cr}}$}
+%\def\TPPheadlhs{}
+%\def\TPPheadcentre{}
+%def\TPPheadrhs{}
+%\def\TPPfootlhs{}
+%\def\TPPfootcentre{}
+%\def\TPPfootrhs{}
+
+\begin{document}
+\TPPsetsizes
+\makeTPPfrontpage
+
+\vfill
+\begin{centering}
+
+%\bf Copyright \copyright\ : International Computers Ltd \number\year
+
+\end{centering}
+
+\newpage
+\section {DOCUMENT CONTROL}
+\subsection{Contents List}
+\tableofcontents
+
+\subsection{Document Cross References}
+\bibliographystyle{fmu}
+\bibliography{fmu,fef}
+
+\subsection{Changes History}
+\begin{description}
+\item[Issue \SCCSversion ({\FormatDate{$Date$%
+}}) ] Corrected $Condition\_E$ in light of pilot proof work.
+\end{description}
+
+\subsection{Changes Forecast}
+The current issue is a partial draft to promote discussion about the approach.
+\pagebreak
+\section{GENERAL}
+\subsection{Scope}
+This document gives a formal specification of part of the SWORD Front
+End reducing the security properties given in \cite{DS/FMU/FEF/026}
+to lower level properties more closely related to the detailed transformations
+of \cite{trans}.  It constitutes part of deliverable D12 of work package 3, as
+given in the Phase 2 Technical Proposal, \cite{DS/FMU/017}.
+
+Some of the material in this document was previously included in
+\cite{DS/FMU/FEF/026}. Now that the formal development has been further
+advanced it was felt more appropriate to collect this level of the
+treatment into a separate document.
+
+\subsection{Introduction}
+
+\cite{DS/FMU/FEF/026} gives a formal description of an Execution Model
+for the Front End Implementation of SWORD. The Execution Model affords
+a rather more concrete formulation of the critical requirements on the
+major subsystems of SWORD than the architectural model of \cite{DS/FMU/FEF/022}.
+In particular, it separates out the critical requirements
+(as regards the $select$ query) on the
+SSQL Query Transformation Processor of \cite{DS/FMU/FEF/022} so that they
+are completely determined by a model of a ``compiler'' for TSQL which
+maps a TSQL query onto the function on tables which it computes.
+
+The purpose of this document is to complete the formal treatment for the
+Phase 2 work by further reducing the critical requirements on the SSQL
+Query Transformation Processor by placing a bound on the allowed TSQL
+queries it produces. This is done using what is in effect a reformulation
+of the classification computations which underlie the transformations
+defined in \cite{trans} in terms of a relational algebra model of TSQL
+execution.
+
+
+\section{PRELIMINARIES}
+The following \Product{} instructions set the context for the proof
+tools and set up the new theory $fef032$, with parent the theory
+$fef026$ in which the Execution Model is defined.
+=SML 
+open_theory "fef026";
+new_theoryÛ"fef032"İ;
+push_pc "hol";
+=TEX
+\section{DISCUSSION}
+The objective of this document is to define a set of operations on the
+derived tables of \cite{DS/FMU/FEF/026} in terms
+of which it is possible to characterise the allowable results of
+compiling the queries produced by the SSQL Transformation processor.
+This is intended to give some insight into the intuitions about operations
+on tables which motivate the transformations.
+
+The idea is to identify the primitive operations on tables and on the
+security information in them which underlie the semantics of SSQL and
+its implementation via the transformations. This amounts to something like
+an SSQL analogue of the relational algebra in which clearances are
+computed along with the required data operations.
+
+The clearance computations are, at least informally, fairly directly
+related to the clearance computations which are implicit in the
+transformations of \cite{trans}.  The definitions are formally related to the
+security policy by using them to characterise a class of table
+computations for which the risk inputs are either empty or have a known
+form. This is then used to give a sufficient condition for the truth
+of the assertion
+=INLINEFT
+STP  STP_secure_E compile
+=TEX
+\ which plays an important role in \cite{DS/FMU/FEF/026}.
+This sufficient condition can be seen to relate more closely, at least informally,
+to the internal details of the transformations than the definition
+of $STP\_secure$ itself.
+
+\section{SELECT QUERY}
+To simplify matters, we will consider the $SELECT$ query to be broken
+down into more primitive operations. In this section,
+we to construct the top-level building blocks.
+These are parameterised by lower-level constructs (values and the like)
+which are discussed in sections \ref{SIMPLEEXPRESSIONS} and
+\ref{AGGREGATEEXPRESSIONS} below.
+
+In each case, we identify the origin in the specification of
+the transformations of the computation of the relevant clearances.
+\subsection{Join}
+The TSQL join operation is just cartesian product. The row class
+and where clause class in each tuple in the product is the least upper
+bound of the corresponding classes in each component tuple which contributes to
+that tuple. The joined table has no name and the maximum
+row class is the least upper bound of those in the component tables.
+
+
+Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
+¹HOLCONST
+Ü	ÛJoinSpecsİ : DerTableSpec LIST ­ DerTableSpec
+÷üüüüüüüüüüüüüüüüüü
+Ü	µsl·
+Ü	JoinSpecs sl =
+Ü	let	n = []
+Ü	and	mr = lubl (Map DTS_maxRow sl)
+Ü	and	csl = Flat (Map DTS_colSpecs sl)
+Ü	in	MkDerTableSpec n mr csl
+°
+¹HOLCONST
+Ü	ÛJoinRowsİ : DerTableRow ­ DerTableRow LIST ­ DerTableRow LIST
+÷üüüüüüüüüüüüüüüüüü
+Ü	µr rs·
+Ü	JoinRows r rs =
+Ü	let	join2 rr = (
+Ü			MkDerTableRow
+Ü			(DTR_where r lub DTR_where rr)
+Ü			(DTR_row r lub DTR_row rr)
+Ü			(DTR_cols r ë DTR_cols rr))
+Ü	in	Map join2 rs
+°
+¹HOLCONST
+Ü	ÛJoinDataİ : DerTableRow LIST LIST ­ DerTableRow LIST
+÷üüüüüüüüüüüüüüüüüü
+Ü	JoinData [] = []
+Ü±	µtab rest·
+Ü	JoinData (Cons tab rest) =
+Ü	if	rest = []
+Ü	then	tab
+Ü	else	let	jrest = JoinData rest
+Ü		in let	join_blk r = JoinRows r jrest
+Ü		in	Flat (Map join_blk tab)
+°
+¹HOLCONST
+Ü	ÛJoinİ : DerTable LIST ­ DerTable
+÷üüüüüüüüüüüüüüüüüü
+Ü	µtl·	Join tl
+Ü	=	MkDerTable
+Ü		(JoinSpecs (Map DT_spec tl))
+Ü		(JoinData (Map DT_rows tl))
+°
+\subsection{Projection}
+The projection operation is parameterised by a list
+of functions which compute class-item pairs from a row of a table,
+together with column specifications to use for the computed fields.
+(Note this is a more general than projection of a single field to form
+a one-column table but includes that as a special case).
+
+The operation acts on the first table in the argument list. 
+The argument functions are expected to assign appropriate classifications
+to the resulting fields. The computed table is anonymous.
+
+Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
+
+=SML
+declare_type_abbrev("PROJ_PAR", [],
+	”((DerTableRow ­ Class ¸ Item) ¸ DerColSpec) LIST®);
+=TEX
+¹HOLCONST
+Ü	ÛProjectSpecsİ	: PROJ_PAR
+Ü			 ­ DerTableSpec LIST
+Ü			 ­ DerTableSpec
+÷üüüüüüüüüüüüüüüüüü
+Ü	µps s ign·
+Ü	ProjectSpecs ps [] = MkDerTableSpec [] lattice_bottom []
+Ü	±
+Ü	ProjectSpecs ps (Cons s ign) =
+Ü	MkDerTableSpec [] (DTS_maxRow s) (Map Snd ps)
+°
+¹HOLCONST
+Ü	ÛProjectDataİ	: PROJ_PAR
+Ü			 ­ DerTableRow LIST LIST
+Ü			 ­ DerTableRow LIST
+÷üüüüüüüüüüüüüüüüüü
+Ü	µps tab ign·
+Ü	ProjectData ps [] = []
+Ü±	ProjectData ps (Cons tab ign) =
+Ü	let	fs = (Map Fst ps)
+Ü	in let	h r = MkDerTableRow (DTR_where r) (DTR_row r) (Map (Ìf·f r) fs)
+Ü	in	Map h tab
+°
+¹HOLCONST
+Ü	ÛProjectİ : PROJ_PAR ­ DerTable LIST ­ DerTable
+÷üüüüüüüüüüüüüüüüüü
+Ü	µps tl·	Project ps tl
+Ü	=	MkDerTable
+Ü		(ProjectSpecs ps (Map DT_spec tl))
+Ü		(ProjectData ps (Map DT_rows tl))
+°
+\subsection{$WHERE$}
+The $WHERE$ operation is parameterised by a
+function to compute a class and a truth value from a row of a table.
+The operation acts on the first table in the argument list. 
+The argument function is expected to give an appropriate classification
+for the where clause class. The specification of the computed table is
+the same as the original.
+
+Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
+
+=SML
+declare_type_abbrev(Û"WHERE_PAR"İ, [],
+	”DerTableRow ­ Class ¸ BOOL®);
+=TEX
+¹HOLCONST
+Ü	ÛWhereDataİ	: WHERE_PAR
+Ü			 ­ DerTableRow LIST LIST
+Ü			 ­ DerTableRow LIST
+÷üüüüüüüüüüüüüüüüüü
+Ü	µp tab ign·
+Ü	WhereData p [] = []
+Ü±	WhereData p (Cons tab ign) =
+Ü	let	w r = (DTR_where r lub Fst (p r))
+Ü	in let	h r = (Snd (p r), MkDerTableRow (w r) (DTR_row r) (DTR_cols r))
+Ü	in	Map Snd (Map h tab ù {(t, r) | t})
+°
+¹HOLCONST
+Ü	ÛWhereİ : WHERE_PAR ­ DerTable LIST ­ DerTable
+÷üüüüüüüüüüüüüüüüüü
+Ü	µp tl·	Where p tl
+Ü	=	MkDerTable
+Ü		(Hd (Map DT_spec tl))
+Ü		(WhereData p (Map DT_rows tl))
+°
+
+\subsection{$GROUPBY$/$HAVING$}
+The $GROUPBY$ and $HAVING$ operations are most naturally treated together.
+The combined operation is parameterised by four things:
+{\em (i)}, a function, $gpby$; to compute a comparison value from a row
+{\em (ii)}, a function, $eval$, to compute a row from a list of rows;
+{\em (iii)}, a function, $hasit$, to compute a truth value from a list of rows;
+and, {\em (iv)}, a table specification, $ts$.
+$gpby$ is used to decide whether two rows are in the
+same group;  $eval$ is the function which computes the row to be returned
+for a group;
+and $hasit$ is used to decide whether a group meets the
+$HAVING$ condition; $ts$ is the table specification for the result table.
+
+Since, in practice, $gpby$ is just projection onto 1 or more of the columns
+of the table, we take it that $gpby$ returns a table row as the value
+to be compared.
+
+Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
+
+=SML
+declare_type_abbrev(Û"GROUPBY_PAR"İ, [],
+	”	(DerTableRow ­ DerTableRow)
+	¸	(DerTableRow LIST ­ DerTableRow)
+	¸	(DerTableRow LIST ­ BOOL)
+	¸	DerTableSpec®);
+=TEX
+To define the grouping part of the operation, we need some list processing
+preliminaries:
+¹HOLCONST
+Ü	ÛPutInGroupİ :  ('a ­ 'b) ­ 'a ­ ('a LIST) LIST ­ ('a LIST) LIST
+÷üüüüüüüüüüüüüüüüüü
+Üµgpby x gp gps·
+Ü	PutInGroup gpby x [] = [[x]]
+Ü±	PutInGroup gpby x (Cons gp gps) =
+Ü	if	gpby x = gpby (Hd gp)
+Ü	then	Cons (Cons x gp) gps
+Ü	else	Cons gp (PutInGroup gpby x gps)
+°
+
+¹HOLCONST
+Ü	ÛMakeGroupsİ	: ('a ­ 'b)
+Ü			 ­ 'a LIST
+Ü			 ­ ('a LIST) LIST
+÷üüüüüüüüüüüüüüüüüü
+Üµgpby x xs·
+Ü	MakeGroups gpby [] = []
+Ü±	MakeGroups gpby (Cons x xs) = PutInGroup gpby x (MakeGroups gpby xs)
+°
+
+¹HOLCONST
+Ü	ÛGroupByDataİ	: GROUPBY_PAR
+Ü			 ­ DerTableRow LIST LIST
+Ü			 ­ DerTableRow LIST
+÷üüüüüüüüüüüüüüüüüü
+Üµgpby eval hasit ts tab ign·
+Ü	GroupByData (gpby, eval, hasit, ts) [] = []
+Ü±	GroupByData (gpby, eval, hasit, ts) (Cons tab ign) =
+Ü	let	gps = MakeGroups gpby tab
+Ü	in	Map eval (gps ù {r | hasit r})
+°
+
+¹HOLCONST
+Ü	ÛGroupByİ : GROUPBY_PAR ­ DerTable LIST ­ DerTable
+÷üüüüüüüüüüüüüüüüüü
+Üµgpby eval hasit ts tl·
+Ü		GroupBy (gpby, eval, hasit, ts) tl
+Ü	=	MkDerTable
+Ü		ts
+Ü		(GroupByData (gpby, eval, hasit, ts) (Map DT_rows tl))
+°
+
+\section{SIMPLE EXPRESSIONS}\label{SIMPLEEXPRESSIONS}
+We view (the semantics of) expressions (also called values in the SSQL
+documentation) as functions from table rows
+to class-item pairs.  E.g., if a table includes columns called $a$ and
+$b$, the semantics of $a + b$ will be the function which given a row
+in which the values of $a$ and $b$ are $\alpha$ and $\beta$ say,
+and the classifications of $a$ and $b$ are $c$ and $d$ say, returns
+$(c\,\hbox{lub}\,d, \alpha + \beta)$.
+
+
+
+The simpler forms of expression are therefore covered by the following
+type abbreviation:
+=SML
+declare_type_abbrev(Û"EXPR"İ, [],
+	”	(DerTableRow ­ (Class ¸ Item))®);
+=TEX
+
+We can now define the particular expression forms which model those of TSQL.
+The classifications follow those assigned in \cite{trans}.
+The classification information is taken from $internal\_value\sb{class}$
+in \cite{trans} unless otherwise noted below.
+The order of the treatment is also taken from $internal\_value\sb{class}$.
+Certain operations such as the set functions and nested selects operate
+on what is in effect a complete derived table as their operand.
+These are covered in section \ref{AGGREGATEEXPRESSIONS} below.
+
+
+
+As with operations on tables, we define the {\em risk inputs} of
+an expression $e$ at a class $c$ to be the set inputs for which $e$
+reveals information which should not be visible at class $c$.
+
+¹HOLCONST
+Ü	ÛExpRiskInputsİ	: Class ­ EXPR ­ DerTableRow ğ
+÷üüüüüüüüüüüüüüüüüü
+Üµcc e ·	ExpRiskInputs cc e
+Ü	=	{	r
+Ü		|	¶r‰0 ·
+Ü			HideDerTableRow cc r‰0 = HideDerTableRow cc r
+Ü		±	let	(c, i) = e r
+Ü			in let	(c‰0, i‰0) = e r‰0
+Ü			in	³i = i‰0
+Ü			±	³(c dominates cc ± c‰0 dom cc)}
+°
+
+=TEX
+
+\subsection{Constant Expression}\label{DenoteConstant}
+The function giving constant expressions is parameterised by the classification and value
+of the constant.
+¹HOLCONST
+Ü	ÛDenoteConstantİ	: (Class ¸ Item) ­ EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµci ·	DenoteConstant ci = Ìr· ci
+°
+
+\subsection{Monadic}\label{MonOp}
+The monadic forms are parameterised here by the actual item computation
+to perform and the expression which computes the operand.
+
+¹HOLCONST
+Ü	ÛMonOpİ	: (Item ­ Item) ­ EXPR ­ EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµf e·	MonOp f e = Ìr· let (c, v) = e r in (c, f v)
+°
+\subsection{Binary}\label{BinOp}
+The logical binary operators are treated specially. In particular, iterated
+$and$s and $or$s are effectively treated by $simplify\sb{ands}$ and
+$simplify\sb{ors}$in \cite{trans} as composite operators
+on lists of expressions, for the purpose of computing the classification.
+We model this directly here (althought this makes the name a misnomer).
+Thus $BinOpAnd$ and $BinOpOr$ below are parameterised by lists of
+expresions to compute the operands to be combined.
+
+We use the following to coerce $Item$s into truth values and vice versa:
+
+¹HOLCONST
+Ü	ÛItemBoolİ	: Item ­ Bool
+÷üüüüüüüüüüüüüüüüüü
+Üµv·	ItemBool v = (v = ValuedItemItem(MkValuedItem sterling (BoolVal true)))
+°
+¹HOLCONST
+Ü	ÛBoolItemİ	: Bool ­ Item
+÷üüüüüüüüüüüüüüüüüü
+Üµv·	BoolItem v = ValuedItemItem(MkValuedItem sterling (BoolVal v))
+°
+We use the following to compute iterated conjunctions and disjunctions:
+¹HOLCONST
+Ü	ÛListAndİ	: Bool LIST ­ Bool
+÷üüüüüüüüüüüüüüüüüü
+Üµb bs·	(ListAnd [] ¤ true)
+Ü±	(ListAnd (Cons b bs) ¤ b ± ListAnd bs)
+°
+¹HOLCONST
+Ü	ÛListOrİ	: Bool LIST ­ Bool
+÷üüüüüüüüüüüüüüüüüü
+Üµb bs·	(ListOr [] ¤ false)
+Ü±	(ListOr (Cons b bs) ¤ b ² ListOr bs)
+°
+Now, we define $BinOpAnd$ which embodies the algorithm of $simplify\sb{ands}$.
+As described in \cite{trans}, the idea is that if the expression evaluates
+to $true$, then the client knows that all the operands are 4true$ and the class
+is the l.u.b. of the classes of the operands, whereas if the expression evaluates
+to $false$ then the client knows that some operand is $false$ and the class
+can be taken to be the g.l.b. of the classes of the operands which are
+$false$.
+¹HOLCONST
+Ü	ÛBinOpAndİ	: EXPR LIST ­ EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµel·	BinOpAnd el =
+Ü		Ìr·	let	cvl = Map (Ìe·e r) el
+Ü			in let	v = ListAnd(Map (ItemBool o Snd) cvl)
+Ü			in let	makecase(c, u) =
+Ü				if ItemBool u then lattice_top else c
+Ü			in	((if	v
+Ü				  then	lubl (Map Fst cvl)
+Ü				  else	glbl (Map makecase cvl)),
+Ü				BoolItem v)
+°
+Now $BinOpOr$ which embodies the algorithm of $simplify\sb{ors}$.
+This is ``dual'' to $BinOpAnd$: if the expression evaluates
+to $false$, then the client knows that all the operands are $false$ and the class
+is the l.u.b. of the classes of the operands, whereas if the expression evaluates
+to $true$ then the client knows that some operand is $true$ and the class
+can be taken to be the g.l.b. of the classes of the operands which are
+$true$.
+¹HOLCONST
+Ü	ÛBinOpOrİ	: EXPR LIST ­ EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµel·	BinOpOr el =
+Ü		Ìr·	let	cvl = Map (Ìe·e r) el
+Ü			in let	v = ListAnd(Map (ItemBool o Snd) cvl)
+Ü			in let	makecase(c, u) =
+Ü				if ItemBool u then c else lattice_top
+Ü			in	((if	v
+Ü				  then	glbl (Map makecase cvl)
+Ü				  else	lubl (Map Fst cvl)),
+Ü				BoolItem v)
+°
+
+\subsection{Triadic}\label{TriOp}
+
+The triadic forms all use an unoptimised treatment of
+classifications and are parameterised by the actual item computation
+to perform and three expressions giving the operands.
+
+¹HOLCONST
+Ü	ÛTriOpİ	: (Item ­ Item ­ Item ­ Item) ­ EXPR ­ EXPR ­ EXPR ­ EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµf e1 e2 e3 ·	TriOp f e1 e2 e3 =
+Ü		Ìr·	let	(c1, v1) = e1 r
+Ü			in let	(c2, v2) = e2 r
+Ü			in let	(c3, v3) = e3 r
+Ü			in	(c1 lub (c2 lub c3), f v1 v2 v3)
+°
+\subsection{Conversions}\label{Convert}
+TBA
+\subsection{Sterling}\label{Sterling}
+TBA
+\subsection{Dinary}\label{Dinary}
+TBA
+\subsection{Declaration}\label{Declare}
+Since we are constructing a model of the semantics of expressions rather
+than the syntax, we do not model declarations.
+
+\subsection{Case Expressions}\label{Case}
+The class computation for case expressions
+is a little complicated. The idea is that evaluation of a case
+expression gives some information about all of the test conditions
+up to and including the one (if any) corresponding to the branch
+which is actually taken; if the client is not cleared to evaluate one of these
+test conditions, then the class of the whole expression is
+taken to be the class of the first such condition (which ensures that the client
+will not be cleared to see the result), otherwise the class of the
+whole expression is taken to be the class of the expression in the branch
+which is taken. 
+
+The two sorts of case expression are parameterised by the client clearance,
+and expressions and lists of pairs of expressions giving the operands.
+Lists of pairs are used rather than pairs of lists as in \cite{trans}
+to avoid the anomalous case where the two lists have different lengths
+(which is prohibited by the syntactic rules for TSQL in the context of \cite{trans}).
+
+The following two auxiliary functions are used to compute the class for
+the $caseVal$ form. They correspond to the calculations performed by
+the queries $check\_list$ and $check\_test$ defined in
+$internal\_value\sb{class}$ in \cite{trans} (with the work performed
+by the $limb$ functions expanded out).
+
+¹HOLCONST
+Ü	ÛCheckListİ	: Class ­ Item ­
+Ü			((Class ¸ Item) ¸ (Class ¸ Item)) LIST
+Ü			­ Class ­ Class 
+÷üüüüüüüüüüüüüüüüüü
+Üµcc ti cv cvs elsec ·
+Ü	CheckList cc ti [] elsec = elsec
+Ü±	CheckList cc ti (Cons cv cvs) elsec =
+Ü	let ((cec, cei), (vec, vei)) = cv
+Ü	in	if	³cc dom cec
+Ü		then	cec
+Ü		else if ti = cei
+Ü		then	vec
+Ü		else	CheckList cc ti cvs elsec	
+°
+
+
+¹HOLCONST
+Ü	ÛCheckTestİ	: Class ­ (Class ¸ Item) ­
+Ü			((Class ¸ Item) ¸ (Class ¸ Item)) LIST
+Ü			­ Class ­ Class 
+÷üüüüüüüüüüüüüüüüüü
+Üµcc ti tc cvs elsec ·
+Ü	CheckTest cc (tc, ti) cvs elsec =
+Ü	if	cc dom tc
+Ü	then	CheckList cc ti cvs elsec
+Ü	else	tc
+°
+The following function computes the value returned by the $caseVal$ form
+of case expression.
+¹HOLCONST
+Ü	ÛCaseValValueİ	: Item ­ ((Class ¸ Item) ¸ (Class ¸ Item)) LIST
+Ü			­ Item ­ Item 
+÷üüüüüüüüüüüüüüüüüü
+Üµti cv cvs elsev ·
+Ü	CaseValValue ti [] elsev = elsev
+Ü±	CaseValValue ti (Cons cv cvs) elsev =
+Ü	let ((cec, cei), (vec, vei)) = cv
+Ü	in	if	ti = cei
+Ü		then	vei
+Ü		else	CaseValValue ti cvs elsev	
+°
+
+¹HOLCONST
+Ü	ÛCaseValİ	: Class ­ EXPR ­ (EXPR ¸ EXPR) LIST ­ EXPR ­ EXPR 
+÷üüüüüüüüüüüüüüüüüü
+Üµcc tst casevals elseval ·
+Ü	CaseVal cc tst casevals elseval =
+Ü	Ìr·
+Ü	let	(tc, ti) = tst r
+Ü	in let	cvs = Map (Ì(c, v)· (c r, v r)) casevals
+Ü	in let	(ec, ei) = elseval r
+Ü	in let	c = CheckTest cc (tc, ti) cvs ec
+Ü	in let	v = CaseValValue ti cvs ei
+Ü	in	(c, v)
+°
+
+
+The following auxiliary functions is used to compute the class for
+the $case$ form. It corresponds to the calculations performed by
+the query $c$ $internal\_value\sb{class}$ in \cite{trans}
+(with the work performed by the $limb$ functions expanded out).
+
+¹HOLCONST
+Ü	ÛCaseCİ	: Class ­
+Ü			((Class ¸ Item) ¸ (Class ¸ Item)) LIST
+Ü			­ Class ­ Class 
+÷üüüüüüüüüüüüüüüüüü
+Üµcc cv cvs elsec ·
+Ü	CaseC cc [] elsec = elsec
+Ü±	CaseC cc (Cons cv cvs) elsec =
+Ü	let ((cec, cei), (vec, vei)) = cv
+Ü	in	if	³cc dom cec
+Ü		then	cec
+Ü		else if ItemBool cei
+Ü		then	vec
+Ü		else	CaseC cc cvs elsec	
+°
+
+The following function computes the value returned by the $case$ form
+of case expression.
+¹HOLCONST
+Ü	ÛCaseValueİ	: ((Class ¸ Item) ¸ (Class ¸ Item)) LIST
+Ü			­ Item ­ Item 
+÷üüüüüüüüüüüüüüüüüü
+Üµcv cvs elsev ·
+Ü	CaseValue [] elsev = elsev
+Ü±	CaseValue (Cons cv cvs) elsev =
+Ü	let ((cec, cei), (vec, vei)) = cv
+Ü	in	if	ItemBool cei
+Ü		then	vei
+Ü		else	CaseValue cvs elsev	
+°
+
+¹HOLCONST
+Ü	ÛCaseİ	: Class ­ (EXPR ¸ EXPR) LIST ­ EXPR ­ EXPR 
+÷üüüüüüüüüüüüüüüüüü
+Üµcc casevals elseval ·
+Ü	Case cc casevals elseval =
+Ü	Ìr·
+Ü	let	cvs = Map (Ì(c, v)· (c r, v r)) casevals
+Ü	in let	(ec, ei) = elseval r
+Ü	in let	c = CaseC cc cvs ec
+Ü	in let	v = CaseValue cvs ei
+Ü	in	(c, v)
+°
+\subsection{Contents}\label{Contents}
+The contents operator is parameterised by a number telling us which
+column to select. We must return a fixed value if this is out of
+range (a situation which never arises in the actual SWORD implementation
+since the column is identified by name rather than number and it is
+known at compile/transformation time whether or not the name is valid).
+
+¹HOLCONST
+Ü	ÛContentsİ	: î ­ EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµi ·	Contents i =
+Ü	Ìr·
+Ü	if	i < Length (DTR_cols r)
+Ü	then	Nth (DTR_cols r) i
+Ü	else	Arbitrary
+°
+
+\section{AGGREGATE EXPRESSIONS}\label{AGGREGATE EXPRESSIONS}
+The aggregate expressions such as the set functions
+have a list of rows as one of their operands. This list will either
+be the complete contents of a table or a group of rows selected from
+a table. We use the following type abbreviation for these aggregate expressions.
+
+=SML
+declare_type_abbrev(Û"AGGREG_EXPR"İ, [],
+	”	(DerTableRow LIST ­ (Class ¸ Item))®);
+=TEX
+
+\subsection{Set Functions}\label{SetFunctions}
+The logical set functions are treated in a similar fashion to
+the logical binary operators.
+
+¹HOLCONST
+Ü	ÛSetFuncAllAndİ		: EXPR ­ AGGREG_EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµe ·	SetFuncAllAnd e =
+Ü	Ìrl·
+Ü	let	cil = Map e rl
+Ü	in let	(cl, il) = Split cil
+Ü	in let	ri = ListAnd (Map ItemBool il)
+Ü	in let	makecase (c, u) = if ItemBool u then lattice_top else c
+Ü	in	if	ri
+Ü		then	(lubl cl, BoolItem ri)
+Ü		else	(glbl (Map makecase cil), BoolItem ri)
+°
+
+¹HOLCONST
+Ü	ÛSetFuncAllOrİ		: EXPR ­ AGGREG_EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµe ·	SetFuncAllOr e =
+Ü	Ìrl·
+Ü	let	cil = Map e rl
+Ü	in let	(cl, il) = Split cil
+Ü	in let	ri = ListOr (Map ItemBool il)
+Ü	in let	makecase (c, u) = if ItemBool u then c else lattice_top
+Ü	in	if	ri
+Ü		then	(glbl (Map makecase cil), BoolItem ri)
+Ü		else	(lubl cl, BoolItem ri)
+°
+
+
+The general set functions are parameterised by the operation on
+lists or sets of item pairs to be computed and by the expression to
+be computed for each row.
+¹HOLCONST
+Ü	ÛSetFuncAllİ		: (Item LIST ­ Item) ­ EXPR ­ AGGREG_EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµf e ·	SetFuncAll f e =
+Ü	Ìrl·
+Ü	let	(cl, il) = Split (Map e rl)
+Ü	in	(lubl cl, f il)
+°
+¹HOLCONST
+Ü	ÛSetFuncDistinctİ	: (Item SET ­ Item) ­ EXPR ­ AGGREG_EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµf e ·	SetFuncDistinct f e =
+Ü	Ìrl·
+Ü	let	(cl, il) = Split (Map e rl)
+Ü	in	(lubl cl, f (Elems il))
+°
+
+The ``distinct'' option of the logical set functions would appear
+to be semantically identical with the ``all'' option and so has
+not been given here.
+\subsection{Count Functions}\label{Count}
+Examination of \cite{trans} reveals that the first
+two count functions may be treated
+as instances of the general set functions for present purposes, although to
+do this we need the function which converts an HOL natural number into
+a TSQL item, the precise details of being unimportant:
+
+
+¹HOLCONST
+Ü	ÛNatItemİ	: î ­ Item
+÷üüüüüüüüüüüüüüüüüü
+Ü	true
+°
+
+¹HOLCONST
+Ü	ÛCountNonNullİ	: EXPR ­ AGGREG_EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµe ·	CountNonNull e =
+Ü	let	counter il = NatItem(Length (il ù {i | isValuedItem i}))
+Ü	in	SetFuncAll counter e
+°
+
+¹HOLCONST
+Ü	ÛCountDistinctİ	: EXPR ­ AGGREG_EXPR
+÷üüüüüüüüüüüüüüüüüü
+Üµe ·	CountDistinct e =
+Ü	let	counter is = NatItem(Size (is ¡ {i | isValuedItem i}))
+Ü	in	SetFuncDistinct counter e
+°
+
+
+\section{CLOSING DOWN}
+The following \Product{} instruction restores the previous proof context.
+=SML
+pop_pc();
+=TEX
+
+=IGN
+output_theory{theory = "fef026",out_file = "fef026th.doc"};
+output_theory{theory = "fef032",out_file = "fef032th.doc"};
+=TEX
+
+\newpage
+\HOLindexOff
+\ftlinepenalty=9999
+\input{fef026th.tex}
+\HOLindexOn
+\newpage
+\twocolumn[\section{INDEX} \label{INDEX}]
+\small
+\printindex
+=TEX
+\end{document}
+=IGN
+
+
+
+The set of computations on tables which are allowed to be produced
+when queries generates by the SQL Transformation Processor are
+compiled will essentially be defined
+by taking the closure under composition
+of a finite set of particular
+operations adequate to represent the primitive constructs of TSQL.
+The closure is formed using the following function:
+
+ ¹HOLCONST
+ Ü	ÛCompClosureİ	:	('a LIST ­ 'a) SET
+ Ü			­	('a LIST ­ 'a) SET
+ ÷üüüüüüüüüüüüüüüüüü
+ Ü	µfs·	CompClosure fs
+ Ü	=	¥
+ Ü		{	a
+ Ü		|	fs € a
+ Ü		±	µh gl il·
+ Ü				h  a ± Elems gl € a ± Elems il € 1 .. Length gl
+ Ü			´	let	irl tl = Map (Ìg·g tl) gl
+ Ü				in let	comp tl = h (Map (Nth(irl tl)) il)
+ Ü				in	comp  a}
+ °
+That is to say, the closure under composition of a set of functions, $fs$,
+is the smallest set of functions which contains $fs$ and is closed
+under the operation which given a function $h$, a list of functions $gl$,
+and a list of numbers $il$, returns the function which first applies
+each function in $gl$ to produce a list of intermediate results, uses
+$il$ as indices to select some or all of the intermediate results in some
+order and then applies $h$ to the result. For example, if
+=INLINEFT
+gl = [g‰1; g‰2; g‰3]
+=TEX
+\ and
+=INLINEFT
+il = [3; 1; 1; 2]
+=TEX
+, the composite function is
+=INLINEFT
+Ì tl· h [g‰3 tl; g‰1 tl; g‰1 tl; g‰2 tl]
+=TEX
+.
+=IGN
+PC_C1 "hol1" rewrite_conv(map get_spec[¬Map®, ¬Nth®, ¬Let®])
+¬let	irl tl = Map (Ìg·g tl) [g‰1; g‰2; g‰3]
+in let	comp tl = h (Map (Nth(irl tl)) [3; 1; 1; 2])
+in	comp®;
+=TEX
