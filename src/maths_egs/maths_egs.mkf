@@ -15,15 +15,35 @@ COFLAGS=-kv
 # default make target.  displays a list of more useful targets
 
 default:
-	@echo "The following are some of the more useful make commands:"
+	@echo "This is the make file for PPMathsEgs: a set of mathematical"
+	@echo "case studies for ProofPower."
 	@echo " "
-	@echo "make -f maths_egs.mkf build          - builds the database"
-	@echo "make -f maths_egs.mkf doc            - builds the documents"
-	@echo "make -f maths_egs.mkf rcs            - build the source with RCS repository"
-	@echo "make -f maths_egs.mkf src            - build the source"
-	@echo "make -f maths_egs.mkf packinglist    - list the Z source file names"
+	@echo "ProofPower version 2.7.3 or later is required."
+	@echo " "
+	@echo "The following are the two most useful make commands:"
+	@echo " "
+	@echo "make -f maths_egs.mkf dvi      - builds the database and typesets the documents"
+	@echo "make -f maths_egs.mkf bld      - builds the database"
+	@echo " "
+	@echo "The following are useful for developers:"
+	@echo " "
+	@echo "make -f maths_egs.mkf doc      - builds the document distribution"
+	@echo "make -f maths_egs.mkf rcs      - build the source with RCS"
+	@echo "make -f maths_egs.mkf dist     - build the source without RCS"
+	@echo " "
+	@echo "The make commands that build the database create a new ProofPower database"
+	@echo "called maths_egs and load the documents into it, thus typechecking the"
+	@echo "specifications and replaying the proofs."
 	@echo " "
 	@echo " "
+	@echo "If your ProofPower system is not installed in /usr/local/pp, use for example:"
+	@echo " "
+	@echo "    PPHOME=/opt/pp make -f maths_egs.mkf dvi"
+	@echo " "
+	@echo "ProofPower runs on some systems, e.g., Solaris, that"
+	@echo "do not have the RCS or CVS software installed as standard."
+	@echo "The public download for the examples is therefore supplied"
+	@echo "without the RCS repository."
 
 ######################################################################
 #
@@ -31,6 +51,7 @@ default:
 #
 ######################################################################
 
+PPHOME=$(shell echo $${PPHOME:-/usr/local/pp})
 PRODNAME=PPMathsEgs
 SHORTNAME=maths_egs
 PRODUCT=$(PRODNAME)
@@ -58,6 +79,8 @@ PACKINGLIST+= wrk067.doc
 PACKINGLIST+= fmu.bib
 PACKINGLIST+= maths_egs.mkf
 
+DISTPACKINGLIST=$(PACKINGLIST) README.txt
+
 ######################################################################
 #
 # Dependencies - determining the order of compilation
@@ -66,6 +89,7 @@ PACKINGLIST+= maths_egs.mkf
 wrk066.ldd: db.ldd
 wrk067.ldd: wrk066.ldd
 $(DVIFILES): fmu.bib
+README.txt: wrk066.sml
 
 ######################################################################
 #
@@ -73,7 +97,7 @@ $(DVIFILES): fmu.bib
 #
 ######################################################################
 
-db: wrk067.ldd
+bld: wrk067.ldd
 
 db.ldd:
 	pp_make_database -f -p hol $(DBNAME)
@@ -82,6 +106,13 @@ db.ldd:
 packinglist:
 	@echo $(PACKINGLIST)
 
+######################################################################
+#
+#	Building the documents
+#
+######################################################################
+
+dvi: wrk066.dvi wrk067.dvi
 
 ######################################################################
 #
@@ -142,6 +173,8 @@ src:	srcrel
 	cd $(CWD) && gzip $(PRODUCT).src.tar && \
 	mv $(PRODUCT).src.tar.gz $(PRODUCT).src.tgz
 
+dist:	src
+
 doc:	docrel srcrel
 	cd $(RELDIR) && tar cvf $(CWD)/$(PRODUCT).doc.tar ./*
 	cd $(CWD) && gzip $(PRODUCT).doc.tar && \
@@ -178,6 +211,6 @@ clean:
 	doctex $* $**.th.doc
 
 %.dvi: %.tex
-	BIBINPUTS=.:/usr/local/pp/tex: texdvi -b $* >/dev/null </dev/null
-	texdvi $* >/dev/null </dev/null
-	texdvi $*
+	TEXINPUTS=.:$(PPHOME)/tex: \
+	BSTINPUTS=.:$(PPHOME)/tex: \
+	BIBINPUTS=.:$(PPHOME)/tex: docdvi $*
