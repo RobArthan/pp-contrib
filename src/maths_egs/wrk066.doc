@@ -54,7 +54,20 @@ The subjects covered are the basic facts about:
 \item limits of sequences
 \item continuity of functions
 \item differentiation
+\item power series
+\item special functions such as the exponential function
 \end{itemize}
+
+TO DO:
+
+1) Some kind of tool to automate calculation of derivatives
+
+2) Definitions and basic properties of sine and cosine functions
+
+3) TIdy-up of the organisation of the last few results on power series (e.g.,
+to make it trivial to show that a function defined by a differential equation
+satisfied by some power series is the limit of that power series).
+
 %%%%
 %%%%
 =SML
@@ -349,7 +362,7 @@ than all the binary arithmetic operators.
 =SML
 declare_postfix(330, "!");
 ¹HOLCONST
-Ü Û$!Ý : î­ ¯
+Ü 	Û$!Ý : î­ ¯
 ÷üüüüüü
 Ü	0 ! = î¯ 1
 Ü ±	(µm·(m+1)! = î¯(m+1)*m!)
@@ -359,10 +372,20 @@ The exponential function, which we define by a differential equation.
 %%%%
 =SML
 ¹HOLCONST
-Ü ÛExpÝ : ¯ ­ ¯
+Ü 	ÛExpÝ : ¯ ­ ¯
 ÷üüüüüü
 Ü	Exp (î¯ 0) = î¯ 1
 Ü ±	(µx· (Exp HasDeriv Exp x) x)
+°
+The natural logarithm function, which we define as the right inverse of
+the exponential function:
+%%%%
+%%%%
+=SML
+¹HOLCONST
+Ü 	ÛLogÝ : ¯ ­ ¯
+÷üüüüüü
+Ü	µx· Log (Exp x) = x
 °
 =TEX
 %%%%
@@ -3686,6 +3709,25 @@ val Ûderiv_0_thmÝ = save_pop_thm"deriv_0_thm";
 =TEX
 %%%%
 %%%%
+=SML
+set_goal([], ¬µf a b·
+	a <  b
+±	(µx·a ¼  x ± x ¼ b ´ f CtsAt x)
+±	(µx·a <  x ± x < b ´ ¶c· (f HasDeriv c) x ± î¯ 0 < c)
+´	(f a < f b)®);
+a(REPEAT strip_tac);
+a(lemma_tac ¬µx·a <  x ± x < b ´ ¶c· (f HasDeriv c) x®  THEN1
+	(contr_tac THEN all_asm_fc_tac[] THEN all_asm_fc_tac[]));
+a(all_fc_tac [mean_value_thm]);
+a(LIST_DROP_NTH_ASM_T [6] all_fc_tac);
+a(all_fc_tac[deriv_unique_thm] THEN all_var_elim_asm_tac);
+a(LEMMA_T¬î¯ 0 < f b - f a® (fn th => ante_tac th THEN PC_T1 "¯_lin_arith" prove_tac[]));
+a(pure_asm_rewrite_tac[] THEN bc_thm_tac ¯_0_less_0_less_times_thm THEN REPEAT strip_tac);
+a(PC_T1 "¯_lin_arith" asm_prove_tac[]);
+val Ûderiv_0_less_thmÝ = save_pop_thm"deriv_0_less_thm";
+=TEX
+%%%%
+%%%%
 %%%%
 %%%%
 =TEX
@@ -6944,6 +6986,40 @@ a(LEMMA_T ¬Exp(x + y) * (Exp (x + y) ›-›1 * Exp y * Exp x) = Exp (x + y)® ante_t
 a(rewrite_tac[¯_times_assoc_thm1] THEN ALL_FC_T rewrite_tac[¯_recip_clauses]);
 a(STRIP_T (rewrite_thm_tac o once_rewrite_rule[¯_times_comm_thm]));
 val Ûexp_plus_thmÝ = save_pop_thm "exp_plus_thm";
+=TEX
+
+The exponential function is monotonic increasing:
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µx y·  x < y ´ Exp x < Exp y®);
+a(REPEAT strip_tac);
+a(bc_thm_tac deriv_0_less_thm);
+a(asm_rewrite_tac[exp_cts_thm]);
+a(REPEAT strip_tac THEN ¶_tac¬Exp x'® THEN rewrite_tac[exp_def, exp_0_less_thm]);
+val Ûexp_less_mono_thmÝ = save_pop_thm "exp_less_mono_thm";
+=TEX
+
+We show that the definition of the natural logarithm function is consistent:
+%%%%
+%%%%
+
+=SML
+push_consistency_goal ¬Log®;
+a(lemma_tac¬¶f· µx y· Exp y = x ´ f x = y® THEN1 prove_¶_tac);
+(* *** Goal "1" *** *)
+a(REPEAT strip_tac);
+a(cases_tac¬µy· ³Exp y = x'® THEN1 asm_rewrite_tac[]);
+a(¶_tac¬y® THEN REPEAT strip_tac);
+a(all_var_elim_asm_tac1 THEN contr_tac);
+a(contr_tac THEN1 lemma_tac¬y < y' ² y' < y® THEN all_fc_tac[exp_less_mono_thm]
+	THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(¶_tac¬f® THEN REPEAT strip_tac);
+a(POP_ASM_T bc_thm_tac THEN REPEAT strip_tac);
+val _ = save_consistency_thm ¬Log® (pop_thm());
+val Ûlog_defÝ = get_spec¬Log®;
 =TEX
 %%%%
 %%%%
