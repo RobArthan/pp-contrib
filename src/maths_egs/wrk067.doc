@@ -1,0 +1,523 @@
+pp_make_database -f -p hol topology
+docsml topology
+xpp -file topology.doc -com pp -d topology -i topology &
+doctex topology topology.th; texdvi topology
+=TEX
+\documentclass[10pt,a4paper]{article}
+\usepackage{latexsym}
+\usepackage{ProofPower}
+\ftlinepenalty=9999
+\usepackage{A4}
+\def\N{\mathbb{N}}
+\def\D{\mathbb{D}}
+\def\B{\mathbb{B}}
+\def\R{\mathbb{R}}
+\def\Z{\mathbb{Z}}
+\def\Q{\mathbb{Q}}
+\title{Homology of the Plane}
+\author{Rob Arthan}
+\makeindex
+\begin{document}
+\vfill
+\maketitle
+\begin{abstract}
+This {\ProductHOL} script contains definitions and proofs concerning the
+basics of point-set topology.
+\end{abstract}
+\vfill
+\newpage
+\tableofcontents
+\newpage
+%%%%
+%%%%
+%%%%
+%%%%
+\section{INTRODUCTION}
+%%%%
+%%%%
+%%%%
+%%%%
+=SML
+force_delete_theory"topology" handle Fail _ => ();
+open_theory"Ø";
+set_merge_pcs["basic_hol1", "'sets_alg", "'˙", "'Ø"];
+new_theory"topology";
+new_parent"fin_set";
+=TEX
+%%%%
+%%%%
+%%%%
+%%%%
+\section{DEFINITIONS}\label{DEFINITIONS}
+=TEX
+%%%%
+%%%%
+=SML
+πHOLCONST
+‹ €Topology› : 'a SET SET ≠ BOOL
+˜¸¸¸¸¸¸
+‹ µ‘∑ Topology ‘
+‹ §	(µV∑ V Ä ‘ ¥ ﬁ V ç ‘)
+‹ ±	(µA B∑A ç ‘ ± B ç ‘ ¥ A ° B ç ‘) 
+∞
+=TEX
+%%%%
+%%%%
+=SML
+declare_postfix(300, "Space");
+πHOLCONST
+‹ €$Space› : 'a SET SET ≠ 'a SET
+˜¸¸¸¸¸¸
+‹ µ‘∑ ‘ Space = ﬁ ‘
+∞
+=TEX
+%%%%
+%%%%
+=SML
+declare_postfix(300, "Closed");
+πHOLCONST
+‹ €$Closed› : 'a SET SET ≠ 'a SET SET
+˜¸¸¸¸¸¸
+‹ µ‘∑ ‘ Closed = {A | ∂B∑B ç ‘ ± A = ‘ Space \ B}
+∞
+=TEX
+%%%%
+%%%%
+=SML
+declare_postfix(300, "Connected");
+πHOLCONST
+‹ €$Connected› : 'a SET SET ≠ 'a SET SET
+˜¸¸¸¸¸¸
+‹ µ‘∑ ‘ Connected =
+‹	{A | A Ä ‘ Space
+‹	± µB C∑ B ç ‘ ± C ç ‘ ± B ¿ C = A ± B ° C = {} ¥ (B = A ≤ C = A)}
+∞
+=TEX
+%%%%
+%%%%
+=SML
+declare_postfix(300, "Compact");
+πHOLCONST
+‹ €$Compact› : 'a SET SET ≠ 'a SET SET
+˜¸¸¸¸¸¸
+‹ µ‘∑ ‘ Compact =
+‹	{A | A Ä ‘ Space ± µV∑ V Ä ‘ ± A Ä ﬁ V ¥ ∂W∑ W Ä V ± W ç Finite ± A Ä ﬁ W}
+∞
+=TEX
+%%%%
+%%%%
+=SML
+declare_infix(150, "∏âT");
+πHOLCONST
+‹ €$∏âT› : 'a SET SET ≠ 'b SET SET ≠ ('a ∏ 'b) SET SET
+˜¸¸¸¸¸¸
+‹ µ” ‘∑ 	(” ∏âT ‘)
+‹ =	{C | µ x y∑ (x, y) ç C ¥ ∂A B∑ A ç ” ±  B ç ‘ ± x ç A ± y ç B  ± (A ∏ B) Ä C}
+∞
+=TEX
+%%%%
+%%%%
+=SML
+πHOLCONST
+‹ €Hausdorff› : 'a SET SET ≠ BOOL
+˜¸¸¸¸¸¸
+‹ µ‘∑	Hausdorff ‘
+‹§	µx y∑ 	x ç ‘ Space ± y ç ‘ Space ± ≥x = y
+‹	¥	∂A B∑A ç ‘ ± B ç ‘ ± x ç A ± y ç B ± A ° B = {}
+∞
+=TEX
+%%%%
+%%%%
+{\HOLindexOff
+\include{topology.th}}
+=TEX
+%%%%
+%%%%
+\section{THEOREMS AND PROOFS}
+=TEX
+%%%%
+%%%%
+\subsection{Lemmas About Finite Sets}
+The following should definitely go in the finite sets theory ASAP. !!! TBD !!!
+=SML
+set_goal([], ¨µA B∑
+	 (A ¿ B) ç Finite § A ç Finite ± B ç Finite
+Æ);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(lemma_tac ¨A Ä A ¿ BÆ THEN1 PC_T1 "sets_ext1" asm_prove_tac[]);
+a(all_fc_tac[Ä_finite_thm]);
+(* *** Goal "2" *** *)
+a(lemma_tac ¨B Ä A ¿ BÆ THEN1 PC_T1 "sets_ext1" asm_prove_tac[]);
+a(all_fc_tac[Ä_finite_thm]);
+(* *** Goal "3" *** *)
+a(POP_ASM_T ante_tac THEN intro_µ_tac(¨BÆ, ¨BÆ));
+a(finite_induction_tac ¨AÆ THEN1 asm_rewrite_tac[]);
+a(REPEAT strip_tac);
+a(LEMMA_T¨({x} ¿ A) ¿ B = {x} ¿ A ¿ BÆ
+	rewrite_thm_tac
+	THEN1 PC_T1 "sets_ext1" asm_prove_tac[]);
+a(bc_thm_tac singleton_¿_finite_thm THEN REPEAT strip_tac);
+a(all_asm_fc_tac[]);
+val €¿_finite_thm› = save_pop_thm "¿_finite_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µ f : 'a ≠ 'b; A : 'a SET∑
+	 A ç Finite ¥ {y | ∂x∑x ç A ± y = f x} ç Finite
+Æ);
+a(REPEAT strip_tac);
+a(finite_induction_tac ¨AÆ THEN1 rewrite_tac[]);
+(* *** Goal "1" *** *)
+a(LEMMA_T¨{y:'b|F} = {}Æ (fn th => rewrite_tac[th, empty_finite_thm])
+	THEN1 PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "2" *** *)
+a(LEMMA_T ¨{y|∂ x'∑ x' ç {x} ¿ A ± y = f x'} = {f x} ¿ {y|∂ x'∑ x' ç A ± y = f x'}Æ
+	rewrite_thm_tac
+	THEN1 PC_T1 "sets_ext1" asm_prove_tac[]);
+a(bc_thm_tac singleton_¿_finite_thm THEN REPEAT strip_tac);
+val €finite_image_thm› = save_pop_thm "finite_image_thm";
+=TEX
+%%%%
+%%%%
+%%%%
+%%%%
+\subsection{The Definitions}
+=SML
+val €topology_def› = get_spec¨$TopologyÆ;
+val €space_def› = get_spec¨$SpaceÆ;
+val €closed_def› = get_spec¨$ClosedÆ;
+val €connected_def› = get_spec¨$ConnectedÆ;
+val €compact_def› = get_spec¨$CompactÆ;
+val €product_topology_def› = get_spec¨$∏âTÆ;
+val €hausdorff_def› = get_spec¨HausdorffÆ;
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µ‘ : 'a SET SET ∑ Topology ‘ ¥ {} ç ‘Æ);
+a(rewrite_tac[topology_def] THEN REPEAT strip_tac);
+a(SPEC_NTH_ASM_T 2 ¨{}: 'a SET SETÆ ante_tac);
+a(rewrite_tac[pc_rule1"sets_ext1" prove_rule[]¨ﬁ{} = {}Æ]);
+val €empty_open_thm› = save_pop_thm "empty_open_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µ‘ : 'a SET SET ∑ Topology ‘ ¥ ‘ Space ç ‘Æ);
+a(rewrite_tac[topology_def, space_def] THEN REPEAT strip_tac);
+a(SPEC_NTH_ASM_T 2 ¨‘: 'a SET SETÆ ante_tac);
+a(rewrite_tac[]);
+val €space_open_thm› = save_pop_thm "space_open_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µ‘ : 'a SET SET ∑ Topology ‘ ¥ {} ç ‘ ClosedÆ);
+a(rewrite_tac[closed_def] THEN REPEAT strip_tac);
+a(all_fc_tac[space_open_thm]);
+a(∂_tac¨‘ SpaceÆ THEN REPEAT strip_tac);
+a(PC_T1 "sets_ext1" prove_tac[]);
+val €empty_closed_thm› = save_pop_thm "empty_closed_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µ‘ : 'a SET SET ∑ Topology ‘ ¥ ‘ Space ç ‘ ClosedÆ);
+a(rewrite_tac[closed_def] THEN REPEAT strip_tac);
+a(all_fc_tac[empty_open_thm]);
+a(∂_tac¨{} : 'a SETÆ THEN REPEAT strip_tac);
+a(PC_T1 "sets_ext1" prove_tac[]);
+val €space_closed_thm› = save_pop_thm "space_closed_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µ‘ A ∑
+	Topology ‘ ¥
+	(A ç ‘ § µx∑x ç A ¥ ∂B∑ B ç ‘ ± x ç B ± B Ä A)Æ);
+a(rewrite_tac[topology_def, space_def] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(∂_tac¨AÆ THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(lemma_tac¨A = ﬁ{B | B ç ‘ ± B Ä A}Æ);
+(* *** Goal "2.1" *** *)
+a(PC_T1 "sets_ext1" REPEAT strip_tac THEN
+	contr_tac THEN all_asm_fc_tac[] THEN all_asm_fc_tac[]);
+(* *** Goal "2.2" *** *)
+a(POP_ASM_T once_rewrite_thm_tac THEN DROP_NTH_ASM_T 3 bc_thm_tac);
+a(PC_T1 "sets_ext1" prove_tac[]);
+val €open_open_neighbourhood_thm› = save_pop_thm "open_open_neighbourhood_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µ‘ A ∑
+	Topology ‘ ¥
+	(	A ç ‘ Closed
+	§ 	A Ä ‘ Space
+	±	µx∑x ç ‘ Space  ± ≥x ç A ¥ ∂B∑ B ç ‘ ± x ç B ± B ° A = {})Æ);
+a(rewrite_tac[closed_def] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(PC_T1 "sets_ext1" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(lemma_tac¨x ç BÆ THEN1 PC_T1 "sets_ext1" asm_prove_tac[]);
+a(all_fc_tac[open_open_neighbourhood_thm]);
+a(∂_tac¨B'Æ THEN PC_T1 "sets_ext1" asm_prove_tac[]);
+(* *** Goal "3" *** *)
+a(FC_T1 fc_§_canon once_rewrite_tac [open_open_neighbourhood_thm]);
+a(∂_tac¨‘ Space \ AÆ THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "3.1" *** *)
+a(all_asm_fc_tac[]);
+a(∂_tac¨BÆ THEN PC_T1 "sets_ext1" asm_rewrite_tac[]);
+a(rewrite_tac[space_def] THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "3.1.1" *** *)
+a(contr_tac THEN all_asm_fc_tac[]);
+(* *** Goal "3.1.2" *** *)
+a(REPEAT_N 2 (POP_ASM_T ante_tac) THEN PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "3.2" *** *)
+a(LIST_GET_NTH_ASM_T [1, 3] (MAP_EVERY ante_tac)  THEN PC_T1 "sets_ext1" prove_tac[]);
+val €closed_open_neighbourhood_thm› = save_pop_thm "closed_open_neighbourhood_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µ” : 'a SET SET; ‘ : 'b SET SET∑ 
+	Topology ”
+±	Topology ‘
+¥	Topology (” ∏âT ‘)Æ);
+a(rewrite_tac[topology_def, product_topology_def]
+	THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(LIST_DROP_NTH_ASM_T  [3] all_fc_tac);
+a(∂_tac¨AÆ  THEN ∂_tac ¨BÆ THEN REPEAT strip_tac);
+a(all_fc_tac[pc_rule1"sets_ext1" prove_rule[]¨µx y z∑x Ä y ± y ç z ¥ x Ä ﬁ zÆ]);
+(* *** Goal "2" *** *)
+a(LIST_DROP_NTH_ASM_T  [3, 4] all_fc_tac);
+a(∂_tac¨A' ° A''Æ  THEN ∂_tac ¨B' ° B''Æ THEN REPEAT strip_tac
+	THEN_TRY SOLVED_T (all_asm_fc_tac[]));
+a(MERGE_PCS_T1["'bin_rel", "sets_ext1"] asm_prove_tac[]);
+val €product_topology_thm› = save_pop_thm "product_topology_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µ‘ V∑ 
+	Topology ‘ ± V Ä ‘ ± ≥V = {} ± V ç Finite
+¥	•V ç ‘Æ);
+a(rewrite_tac[topology_def] THEN REPEAT strip_tac);
+a(POP_ASM_T (fn th => POP_ASM_T ante_tac THEN POP_ASM_T ante_tac THEN asm_tac th));
+a(finite_induction_tac¨VÆ);
+(* *** Goal "1" *** *)
+a(REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(PC_T1 "sets_ext1" asm_prove_tac[]);
+(* *** Goal "3" *** *)
+a(all_var_elim_asm_tac1 THEN rewrite_tac[]);
+a(rewrite_tac[pc_rule1"sets_ext1" prove_rule[]¨µx y∑{x} Ä y § x ç yÆ]);
+a(LEMMA_T¨•{x} = xÆ (fn th => rewrite_tac [th] THEN taut_tac));
+(* *** Goal "3" *** *)
+a(PC_T"sets_ext1" strip_tac THEN rewrite_tac[•_def] THEN prove_tac[]);
+(* *** Goal "4" *** *)
+a(rewrite_tac[pc_rule1"sets_ext1" prove_rule[]¨µx y z∑{x} ¿ z Ä y § x ç y ± z Ä yÆ]);
+a(LEMMA_T¨•({x} ¿ V) = x ° •VÆ rewrite_thm_tac);
+(* *** Goal "4.1" *** *)
+a(PC_T"sets_ext1" strip_tac THEN rewrite_tac[•_def, °_def, ¿_def] THEN prove_tac[]);
+(* *** Goal "4.2" *** *)
+a(REPEAT strip_tac THEN all_asm_fc_tac[]);
+val €finite_•_open_thm› = save_pop_thm "finite_•_open_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µ‘ V p∑ 
+	Topology ‘
+±	V Ä ‘
+±	V ç Finite
+±	p ç ‘ Space
+±	(µA∑ A ç V ¥ ∂B∑ B ç ‘ ± p ç B ± A ° B = {})
+¥	∂B∑ B ç ‘ ± p ç B ± B ° ﬁV = {}Æ);
+a(REPEAT strip_tac);
+a(lemma_tac¨
+	∂b∑µA∑A ç V ¥ b A ç ‘ ± p ç b A ± A ° b A = {}
+Æ THEN1 prove_∂_tac);
+(* *** Goal "1" *** *)
+a(REPEAT strip_tac);
+a(cases_tac¨≥A' ç VÆ THEN asm_rewrite_tac[]);
+a(DROP_NTH_ASM_T 2 bc_thm_tac THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(cases_tac¨ﬁV = {}Æ);
+(* *** Goal "2.1" *** *)
+a(∂_tac ¨‘ SpaceÆ THEN ALL_FC_T asm_rewrite_tac[space_open_thm]);
+(* *** Goal "2.2" *** *)
+a(lemma_tac ¨•{y|∂ x∑ x ç V ± y = b x} ç ‘Æ THEN1 bc_thm_tac finite_•_open_thm);
+(* *** Goal "2.2.1" *** *)
+a(asm_rewrite_tac[] THEN ALL_FC_T rewrite_tac[finite_image_thm]);
+a(REPEAT strip_tac THEN PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac);
+(* *** Goal "2.2.1.1" *** *)
+a(all_var_elim_asm_tac1 THEN all_asm_fc_tac[]);
+(* *** Goal "2.2.1.2" *** *)
+a(rewrite_tac[]);
+a(cases_tac¨V = {}Æ THEN1 PC_T1 "sets_ext1" asm_prove_tac[]);
+a(POP_ASM_T (PC_T1 "sets_ext1" strip_asm_tac));
+a(∂_tac¨b xÆ THEN ∂_tac¨xÆ THEN asm_rewrite_tac[]);
+(* *** Goal "2.2.2.2" *** *)
+a(∂_tac¨•{y|∂ x∑ x ç V ± y = b x}Æ THEN asm_rewrite_tac[]);
+a(REPEAT strip_tac);
+(* *** Goal "2.2.2.1" *** *)
+a(all_var_elim_asm_tac1 THEN all_asm_fc_tac[]);
+(* *** Goal "2.2.2.2" *** *)
+a(PC_T "sets_ext1" strip_tac THEN rewrite_tac[°_def, •_def, ﬁ_def]);
+a(REPEAT strip_tac);
+a(∂_tac¨b sÆ THEN REPEAT strip_tac);
+(* *** Goal "2.2.2.2.1" *** *)
+a(∂_tac¨ sÆ THEN REPEAT strip_tac);
+(* *** Goal "2.2.2.2.2" *** *)
+a(PC_T1 "sets_ext1" asm_prove_tac[]);
+val €compact_closed_lemma› = pop_thm();
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µ‘ C∑ 
+	Topology ‘
+±	Hausdorff ‘
+±	C ç ‘ Compact
+¥	C ç ‘ ClosedÆ);
+a(REPEAT strip_tac);
+a(ALL_FC_T1 fc_§_canon  rewrite_tac[closed_open_neighbourhood_thm]);
+a(once_rewrite_tac[prove_rule[]¨µp1 p2∑ p1 ± p2 § p1 ± (p1 ¥ p2)Æ]);
+a(REPEAT strip_tac THEN1
+	(POP_ASM_T ante_tac THEN prove_tac[compact_def]));
+a(lemma_tac¨C Ä ﬁ {A | A ç ‘ ± ∂B∑B ç ‘ ± x ç B ± A ° B = {}}Æ);
+(* *** Goal "1" *** *)
+a(DROP_NTH_ASM_T 5 (strip_asm_tac o rewrite_rule[hausdorff_def]));
+a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac);
+a(lemma_tac¨x' ç ‘ SpaceÆ THEN1 PC_T1 "sets_ext1" asm_prove_tac[]);
+a(lemma_tac¨≥x' = xÆ THEN1 (contr_tac THEN all_var_elim_asm_tac1));
+a(all_asm_fc_tac[]);
+a(∂_tac¨AÆ THEN REPEAT strip_tac);
+a(PC_T1 "sets_ext1" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(DROP_NTH_ASM_T 5 (strip_asm_tac o rewrite_rule[compact_def]));
+a(lemma_tac¨{A | A ç ‘ ± ∂B∑B ç ‘ ± x ç B ± A ° B = {}} Ä ‘Æ
+	THEN1 PC_T1 "sets_ext1" prove_tac[]);
+a(all_asm_fc_tac[]);
+a(lemma_tac¨W Ä ‘Æ THEN1 PC_T1 "sets_ext1" asm_prove_tac[]);
+a(lemma_tac¨µ A∑ A ç W ¥ (∂ B∑ B ç ‘ ± x ç B ± A ° B = {})Æ);
+(* *** Goal "2.1" *** *)
+a(REPEAT strip_tac);
+a(PC_T1 "sets_ext1" all_asm_fc_tac[]);
+a(∂_tac¨BÆ THEN PC_T1 "sets_ext1" asm_rewrite_tac[]);
+(* *** Goal "2.2" *** *)
+a(all_fc_tac[compact_closed_lemma]);
+a(∂_tac¨BÆ THEN  asm_rewrite_tac[]);
+a(all_fc_tac[pc_rule1 "sets_ext1" prove_rule[] ¨µX∑ C Ä X ± B ° X = {} ¥ B ° C = {}Æ]);
+val €compact_closed_thm› = save_pop_thm "compact_closed_thm";
+=TEX
+]%%%%
+%%%%
+=SML
+set_goal([], ¨µ” : 'a SET SET; ‘ : 'b SET SET;  AB : ('a ∏ 'b) SET∑ 
+	Topology ”
+±	Topology ‘
+±	AB ç (” ∏âT ‘)
+¥	(µx∑x ç ” Space ¥ {y | (x, y) ç AB} ç ‘)
+±	(µy∑y ç ‘ Space ¥ {x | (x, y) ç AB} ç ”)
+Æ);
+a(rewrite_tac[product_topology_def] THEN REPEAT µ_tac THEN ¥_tac);
+a(FC_T1 fc_§_canon once_rewrite_tac [open_open_neighbourhood_thm]);
+a(REPEAT strip_tac THEN all_asm_fc_tac[]);
+(* *** Goal "1" *** *)
+a(∂_tac¨BÆ THEN MERGE_PCS_T1["'bin_rel", "sets_ext1"] asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(∂_tac¨AÆ THEN MERGE_PCS_T1["'bin_rel", "sets_ext1"] asm_prove_tac[]);
+val €product_slice_thm› = save_pop_thm "product_slice_thm";
+=TEX
+]%%%%
+%%%%
+=SML
+set_goal([], ¨µ” : 'a SET SET; ‘ : 'a SET SET∑ 
+	Topology ”
+±	Topology ‘
+¥	 (” ∏âT ‘) Space = (” Space ∏ ‘ Space)Æ);
+a(rewrite_tac[product_topology_def, space_def]);
+a(MERGE_PCS_T1["'bin_rel", "sets_ext1"] prove_tac[]);
+(* *** Goal "1" *** *)
+a(all_asm_fc_tac[] THEN contr_tac THEN all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(all_asm_fc_tac[] THEN contr_tac THEN all_asm_fc_tac[]);
+(* *** Goal "3" *** *)
+a(∂_tac¨s ∏ s'Æ THEN MERGE_PCS_T1["'bin_rel", "sets_ext1"] REPEAT strip_tac);
+a(∂_tac¨sÆ THEN ∂_tac¨s'Æ THEN MERGE_PCS_T1["'bin_rel", "sets_ext1"] REPEAT strip_tac);
+val €product_space_thm› = save_pop_thm "product_space_thm";
+=TEX
+]%%%%
+%%%%
+=SML
+(*
+set_goal([], ¨µ” : 'a SET SET; ‘ : 'a SET SET∑ 
+	Topology ”
+±	Topology ‘
+±	” Space ç ” Connected
+±	‘ Space ç ‘ Connected
+¥	(” Space ∏ ‘ Space) ç (” ∏âT ‘) ConnectedÆ);
+a(rewrite_tac[connected_def]);
+a(REPEAT µ_tac THEN ¥_tac THEN ALL_FC_T rewrite_tac[product_space_thm]);
+a(REPEAT strip_tac);
+a(cases_tac¨” Space = {}Æ THEN1 
+	(DROP_NTH_ASM_T 4 ante_tac THEN TOP_ASM_T rewrite_thm_tac
+		THEN MERGE_PCS_T1 ["'bin_rel", "sets_ext1"] prove_tac[]));
+a(cases_tac¨‘ Space = {}Æ THEN1 
+	(DROP_NTH_ASM_T 5 ante_tac THEN TOP_ASM_T rewrite_thm_tac
+		THEN MERGE_PCS_T1 ["'bin_rel", "sets_ext1"] prove_tac[]));
+a(LIST_DROP_NTH_ASM_T [1, 2]
+	(MERGE_PCS_T1 ["'bin_rel", "sets_ext1"] (MAP_EVERY strip_asm_tac)));
+a(all_fc_tac[product_slice_thm]);
+a(lemma_tac ¨
+	{x'|(x', x) ç B} ¿ {x'|(x', x) ç C} =  {x'|(x', x) ç B ¿ C}
+±	{y|(x', y) ç C} ¿ {y|(x', y) ç B} =  {y|(x', y) ç B ¿ C}Æ
+	THEN1 MERGE_PCS_T1 ["'bin_rel", "sets_ext1"] prove_tac[]);
+a(LEMMA_T ¨
+	{x'|(x', x) ç B} ° {x'|(x', x) ç C} =  {x'|(x', x) ç B ° C}
+±	{y|(x', y) ç C} ° {y|(x', y) ç B} =  {y|(x', y) ç B ° C}Æ
+	(fn th => ante_tac th THEN asm_rewrite_tac[
+		pc_rule1 "sets_ext1" prove_rule[]¨{x|F} = {}Æ ] THEN REPEAT strip_tac)
+	THEN1 MERGE_PCS_T1 ["'bin_rel", "sets_ext1"] prove_tac[]);
+a(lemma_tac ¨{x'|(x', x) ç B} ¿ {x'|(x', x) ç C} = ” Space±
+	{y|(x', y) ç C} ¿ {y|(x', y) ç B} = ‘ SpaceÆ
+	THEN1 (asm_rewrite_tac[] THEN 
+		MERGE_PCS_T1 ["'bin_rel", "sets_ext1"] prove_tac[]));
+a(DROP_NTH_ASM_T 19 (ante_tac o list_µ_elim[
+	¨{x'|(x', x) ç B}Æ, ¨{x'|(x', x) ç C}Æ]));
+a(DROP_NTH_ASM_T 18 (ante_tac o list_µ_elim[
+	¨ {y|(x', y) ç C} Æ, ¨  {y|(x', y) ç B} Æ]));
+a(LIST_GET_NTH_ASM_T [1, 2, 3, 4, 7, 8, 9, 10] rewrite_tac);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(LEMMA_T ¨(x', x) ç {x'|(x', x) ç B} ° {x'|(x', x) ç C}Æ (fn th =>  ante_tac th THEN asm_rewrite_tac[]));
+
+a(MERGE_PCS_T1 ["'bin_rel", "sets_ext1"] REPEAT strip_tac
+	THEN_TRY SOLVED_T (all_asm_fc_tac[]));
+n
+
+a(LIST_DROP_NTH_ASM_T [2, 3, 8, 9, 10, 11] discard_tac);
+a(MERGE_PCS_T1 ["'bin_rel", "sets_ext1"] REPEAT strip_tac
+	THEN_TRY SOLVED_T (all_asm_fc_tac[]));
+a(all_asm_fc_tac[]);
+
+
+val €product_connected_thm› = save_pop_thm "compact_closed_thm";
+*)
+=TEX
+\subsection{Epilogue}
+=TEX
+=SML
+output_theory{out_file="topology.th.doc", theory="-"};
+=TEX
+\twocolumn[\section{INDEX}\label{INDEX}]
+{\small\printindex}
+\end{document}
+
+
