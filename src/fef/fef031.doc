@@ -20,8 +20,8 @@
 \TPPauthor{R.B.~Jones & WIN01}  %% Mandatory field
 %\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
 \TPPauthorisation{R.B.~Jones & HAT Manager}
-\TPPabstract{This document contains the formal proof of 
-ConditionE_lemma, part of the Phase II proofs for the
+\TPPabstract{This document contains the formal proofs relating to 
+DS/FMU/FEF/026; it forms part of the Phase II proofs for the
 DRA front end filter project RSRE 1C/6130.}
 %\TPPabstractB{}
 %\TPPabstractC{}
@@ -72,608 +72,421 @@ None.
 \pagebreak
 \section{GENERAL}
 \subsection{Scope}
-This document provides a formal proof of {\it ConditionE\_Lemma} as specified in ``An Execution Model for SWORD'' \cite{DS/FMU/FEF/026}.
+This document provides a formal proof relating
+to the specifications in ``An Execution Model for SWORD'' \cite{DS/FMU/FEF/026}.
 It constitutes part of deliverable D13 of work package 3, as given
 in section 3 of the Proposal for Phase 2, \cite{DS/FMU/FEF/018}.
 
 
+(The current version is a rough draft of proofs of some of the propositions
+produced as pilot work during the third stage of phase 2.)
 
 \subsection{Introduction}
 \section{PRELIMINARIES}
-The following \Product{} instructions set up the new theory $fef031$.
+The following \Product{} instructions set up a new theory $fef031$
+to hold the theorems to be proved and set up a proof context in which
+to carry out the proofs. Some theorems are required from the theory
+$fef010$ defined in \cite{DS/FMU/FEF/010} and so this is made a parent of
+the theory $fef031$.
 
 =SML 
 open_theory "fef026";
 new_theory€"fef031"›;
-push_merge_pcs["hol","wrk049","'pair1"] ;
-=TEX
-
-In the proof script that follows, some output from the proof tool has been included for clarity
-where top level goals are split into subgoals.  The proof script proper is in Standard ML, 
-and is marked by a vertical bar on the left starting with the characters ``SML''. Output
-from the proof tool is distinguished by a vertical bar on the left headed by ``HOL output''.
-The subgoals consist of a {\it conclusion} to be proven and a number of {\it assumptions}
-which are available for use in the proof. The assumptions are listed first,  followed
-by the conclusion. 
-\subsection{Retrieving the Constants}
-The definitions of constants used in the specifications are retrieved 
-from their defining theories.
-=SML
-val €ConditionE_Lemma_def› = get_spec ¨ConditionE_LemmaÆ;
-val €Correct_Compile_def› = get_spec ¨Correct_CompileÆ;
-val €STP_secure_E_def› = get_spec ¨STP_secure_EÆ;
-val €ConditionE_def› = get_spec ¨ConditionEÆ;
-val €subsys_secureE_def› = get_spec ¨subsys_secureEÆ;
-=TEX
-\section{PROOF OF $Lemma3$}
-
-=SML
-push_goal([],¨ConditionE_LemmaÆ);
-a(rewrite_tac[ConditionE_Lemma_def, Correct_Compile_def, STP_secure_E_def, ConditionE_def, subsys_secureE_def]);
-a(strip_tac THEN strip_tac);
-=TEX
-=GFT HOL output
-Tactic produced 2 subgoals:
-
-(* *** Goal "1" *** *)
-
-(*  7 *)  ¨µ câ1 câ2 sâ1 sâ2
-           ∑ hide (câ1, sâ1) = hide (câ1, sâ2) ± câ1 dominates câ2
-               ¥ hide (câ2, sâ1) = hide (câ2, sâ2)Æ
-(*  6 *)  ¨µ câ1 câ2 s e
-           ∑ ≥ hide (câ2, s) = hide (câ2, Fst (updateState (câ1, e, s)))
-               ¥ câ2 dominates câ1Æ
-(*  5 *)  ¨µ câ1 câ2 sâ1 sâ2 e
-           ∑ hide (câ1, sâ1) = hide (câ1, sâ2) ± câ1 dominates câ2
-               ¥ hide (câ1, Fst (updateState (câ2, e, sâ1)))
-                 = hide (câ1, Fst (updateState (câ2, e, sâ2)))Æ
-(*  4 *)  ¨µ c sâ1 sâ2 e
-           ∑ hide (c, sâ1) = hide (c, sâ2)
-               ¥ Snd (updateState (c, e, sâ1)) = Snd (updateState (c, e, sâ2))Æ
-(*  3 *)  ¨µ c s e∑ Fst (Snd (updateState (c, e, s))) = cÆ
-(*  2 *)  ¨hide (c, sâ1) = hide (c, sâ2)Æ
-(*  1 *)  ¨[iâ1] ˘ {(q, c')|c dominates c'}
-             = [iâ2] ˘ {(q, c')|c dominates c'}Æ
-
-(* ?Ù *)  ¨µ sâ1 sâ2 iâ1 iâ2 c
-           ∑ hide (c, sâ1) = hide (c, sâ2)
-                 ± [iâ1] ˘ {(q, c')|c dominates c'} = [iâ2] ˘ {(q, c')|c dominates c'}
-               ¥ hide(c, Fst(mkTf hide processQuery updateState(iâ1, sâ1)))
-                   = hide(c,Fst(mkTf hide processQuery updateState(iâ2, sâ2)))
-                 ± [Snd (mkTf hide processQuery updateState (iâ1, sâ1))]
-                     ˘ {(c', d)|c dominates c'}
-                   = [Snd (mkTf hide processQuery updateState (iâ2, sâ2))]
-                     ˘ {(c', d)|c dominates c'}Æ
+new_parent"fef010";
+set_pc"hol";
 =TEX
 =SML
-a(REPEAT µ_tac THEN  strip_tac);
-a(POP_ASM_T ante_tac THEN rewrite_tac[˘_thm6]);
-a ¥_tac;
-=TEX
-=GFT HOL output
-Tactic produced 2 subgoals:
-
-(* *** Goal "1.1" *** *)
-
-(*  7 *)  ¨µ câ1 câ2 sâ1 sâ2
-           ∑ hide (câ1, sâ1) = hide (câ1, sâ2) ± câ1 dominates câ2
-               ¥ hide (câ2, sâ1) = hide (câ2, sâ2)Æ
-(*  6 *)  ¨µ câ1 câ2 s e
-           ∑ ≥ hide (câ2, s) = hide (câ2, Fst (updateState (câ1, e, s)))
-               ¥ câ2 dominates câ1Æ
-(*  5 *)  ¨µ câ1 câ2 sâ1 sâ2 e
-           ∑ hide (câ1, sâ1) = hide (câ1, sâ2) ± câ1 dominates câ2
-               ¥ hide (câ1, Fst (updateState (câ2, e, sâ1)))
-                 = hide (câ1, Fst (updateState (câ2, e, sâ2)))Æ
-(*  4 *)  ¨µ c sâ1 sâ2 e
-           ∑ hide (c, sâ1) = hide (c, sâ2)
-               ¥ Snd (updateState (c, e, sâ1)) = Snd (updateState (c, e, sâ2))Æ
-(*  3 *)  ¨µ c s e∑ Fst (Snd (updateState (c, e, s))) = cÆ
-(*  2 *)  ¨hide (c, sâ1) = hide (c, sâ2)Æ
-(*  1 *)  ¨iâ1 = iâ2Æ
-
-(* ?Ù *)  ¨hide (c, Fst (mkTf hide processQuery updateState (iâ1, sâ1)))
-               = hide
-                 (c, Fst (mkTf hide processQuery updateState (iâ2, sâ2)))
-             ± (Snd (mkTf hide processQuery updateState (iâ1, sâ1))
-                 = Snd (mkTf hide processQuery updateState (iâ2, sâ2))
-               ≤ ≥ c dominates Fst
-                       (Snd (mkTf hide processQuery updateState (iâ1, sâ1)))
-                 ± ≥ c dominates Fst (Snd(mkTf hide processQuery updateState(iâ2, sâ2))))Æ
-=TEX
-=SML
-a(POP_ASM_T rewrite_thm_tac);
-a(LEMMA_T¨iâ2 = (Fst iâ2,Snd iâ2)Æ pure_once_rewrite_thm_tac 
-	THEN_LIST[rewrite_tac[],asm_rewrite_tac[mkTf_def]]);
-a(cases_tac¨c dominates Snd iâ2Æ THEN_TRY asm_rewrite_tac[]);
-(* *** Goal "1.1.1" *** *)
-a(lemma_tac¨hide (Snd iâ2, sâ1) = hide (Snd iâ2, sâ2)Æ
-	THEN_LIST[list_asm_ante_tac (map get_asm[1,2,7])THEN prove_tac[],
-	TOP_ASM_T rewrite_thm_tac]);
-a(list_asm_ante_tac (map get_asm[1,2,3,5,6])THEN prove_tac[]);
-(* *** Goal "1.1.2" *** *)
-a(list_spec_nth_asm_tac 6[¨Snd iâ2Æ,¨cÆ,¨sâ1Æ,
-	¨processQuery (Fst iâ2, Snd iâ2, hide (Snd iâ2, sâ1))Æ]);
-a(POP_ASM_T (rewrite_thm_tac o eq_sym_rule));
-a(list_spec_nth_asm_tac 6[¨Snd iâ2:ClassÆ,¨cÆ,¨sâ2Æ,
-	¨processQuery (Fst iâ2, Snd iâ2, hide (Snd iâ2, sâ2))Æ]);
-a(POP_ASM_T (rewrite_thm_tac o eq_sym_rule));
-a(DROP_NTH_ASM_T 2 rewrite_thm_tac);
-=TEX
-=GFT HOL output
-(* *** Goal "1.2" *** *)
-
-(*  8 *)  ¨µ câ1 câ2 sâ1 sâ2
-           ∑ hide (câ1, sâ1) = hide (câ1, sâ2) ± câ1 dominates câ2
-               ¥ hide (câ2, sâ1) = hide (câ2, sâ2)Æ
-(*  7 *)  ¨µ câ1 câ2 s e
-           ∑ ≥ hide (câ2, s) = hide (câ2, Fst (updateState (câ1, e, s)))
-               ¥ câ2 dominates câ1Æ
-(*  6 *)  ¨µ câ1 câ2 sâ1 sâ2 e
-           ∑ hide (câ1, sâ1) = hide (câ1, sâ2) ± câ1 dominates câ2
-               ¥ hide (câ1, Fst (updateState (câ2, e, sâ1)))
-                 = hide (câ1, Fst (updateState (câ2, e, sâ2)))Æ
-(*  5 *)  ¨µ c sâ1 sâ2 e
-           ∑ hide (c, sâ1) = hide (c, sâ2)
-               ¥ Snd (updateState (c, e, sâ1)) = Snd (updateState (c, e, sâ2))Æ
-(*  4 *)  ¨µ c s e∑ Fst (Snd (updateState (c, e, s))) = cÆ
-(*  3 *)  ¨hide (c, sâ1) = hide (c, sâ2)Æ
-(*  2 *)  ¨≥ c dominates Snd iâ1Æ
-(*  1 *)  ¨≥ c dominates Snd iâ2Æ
-
-(* ?Ù *)  ¨hide (c, Fst (mkTf hide processQuery updateState (iâ1, sâ1)))
-               = hide
-                 (c, Fst (mkTf hide processQuery updateState (iâ2, sâ2)))
-             ± (Snd (mkTf hide processQuery updateState (iâ1, sâ1))
-                 = Snd (mkTf hide processQuery updateState (iâ2, sâ2))
-               ≤ ≥ c dominates Fst
-                       (Snd (mkTf hide processQuery updateState (iâ1, sâ1)))
-                 ± ≥ c dominates Fst(Snd(mkTf hide processQuery updateState(iâ2, sâ2))))Æ
-=TEX
-
-=SML
-a(LEMMA_T¨iâ1 = (Fst iâ1,Snd iâ1)Æ pure_once_rewrite_thm_tac 
-	THEN_LIST[rewrite_tac[],id_tac]);
-a(LEMMA_T¨iâ2 = (Fst iâ2,Snd iâ2)Æ pure_once_rewrite_thm_tac 
-	THEN_LIST[rewrite_tac[],asm_rewrite_tac[mkTf_def]]);
-a(list_spec_nth_asm_tac 7[¨Snd iâ1Æ,¨cÆ,¨sâ1Æ,
-	¨processQuery (Fst iâ1, Snd iâ1, hide (Snd iâ1, sâ1))Æ]);
-a(POP_ASM_T (rewrite_thm_tac o eq_sym_rule));
-a(list_spec_nth_asm_tac 7[¨Snd iâ2Æ,¨cÆ,¨sâ2Æ,
-	¨processQuery (Fst iâ2, Snd iâ2, hide (Snd iâ2, sâ2))Æ]);
-a(POP_ASM_T (rewrite_thm_tac o eq_sym_rule));
-a(DROP_NTH_ASM_T 3 rewrite_thm_tac);
-=TEX
-=GFT HOL output
-(* *** Goal "2" *** *)
-
-(*  5 *)  ¨µ câ1 câ2 sâ1 sâ2
-           ∑ hide (câ1, sâ1) = hide (câ1, sâ2) ± câ1 dominates câ2
-               ¥ hide (câ2, sâ1) = hide (câ2, sâ2)Æ
-(*  4 *)  ¨µ câ1 câ2 s e
-           ∑ ≥ hide (câ2, s) = hide (câ2, Fst (updateState (câ1, e, s)))
-               ¥ câ2 dominates câ1Æ
-(*  3 *)  ¨µ câ1 câ2 sâ1 sâ2 e
-           ∑ hide (câ1, sâ1) = hide (câ1, sâ2) ± câ1 dominates câ2
-               ¥ hide (câ1, Fst (updateState (câ2, e, sâ1)))
-                 = hide (câ1, Fst (updateState (câ2, e, sâ2)))Æ
-(*  2 *)  ¨µ c sâ1 sâ2 e
-           ∑ hide (c, sâ1) = hide (c, sâ2)
-               ¥ Snd (updateState (c, e, sâ1)) = Snd (updateState (c, e, sâ2))Æ
-(*  1 *)  ¨µ c s e∑ Fst (Snd (updateState (c, e, s))) = cÆ
-
-(* ?Ù *)  ¨µ s i c ∑ ≥ c dominates Snd i
-               ¥ hide (c, s) = hide(c, Fst (mkTf hide processQuery updateState (i, s)))
-                 ± ≥ c dominates Fst(Snd (mkTf hide processQuery updateState (i, s)))Æ
-=TEX
-=SML
-a(REPEAT µ_tac THEN  strip_tac);
-a(LEMMA_T¨i = (Fst i,Snd i)Æ pure_once_rewrite_thm_tac 
-	THEN_LIST[rewrite_tac[],asm_rewrite_tac[mkTf_def]]);
-a(list_asm_ante_tac (map get_asm[1,5])THEN prove_tac[]);
-val lemma3_thm = save_pop_thm"Lemma3";
-=TEX
-\section{PROOF OF $Lemma4$}
-\subsection{Auxiliary Results}
-
-We first prove the consistency of $iterate$ by providing
- a witness  $iterate\_witness$, for use in the consistency proof. This definition
-is a primitive recursive definition whose consistency is automatically
-proven by the system.
-
-πHOLCONST
-‹	€iterate_witness› : ((('QUERY ∏ Class) ∏ 'STATE) ≠ ('STATE ∏ (Class ∏ 'DATA)))
-‹				≠ 'STATE ≠ ('QUERY ∏ Class)LIST 
-‹				≠ ('STATE ∏ ((Class ∏ 'DATA)LIST))
-˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
-‹	µs:'STATE;i:'QUERY ∏ Class;si:('QUERY ∏ Class) LIST;
-‹	f:(('QUERY ∏ Class) ∏ 'STATE) ≠ ('STATE ∏ (Class ∏ 'DATA))
-‹	∑	iterate_witness f s [] = (s,[])
-‹	±
-‹		iterate_witness f s (Cons i si)
-‹			= 
-‹			(Fst(f(i,Fst(iterate_witness f s si))),
-‹			(Snd(iterate_witness f s si) Î 
-‹				[Snd(f(i,Fst(iterate_witness f s si)))] ))
-∞
-
-=SML
-push_consistency_goal¨iterateÆ;
-a(conv_tac(MAP_C let_conv));
-a(∂_tac¨Ãx (y,z) ∑ iterate_witness x z (Rev y)Æ);
-a(rewrite_tac[Î_Cons_thm,rev_def,rev_sym_thm,get_spec¨iterate_witnessÆ]);
-val iterate_consistent = save_consistency_thm¨iterateÆ (pop_thm());
-=TEX
-
-=GFT HOL output
-iterate_consistent = Ù Consistent
-    (Ã iterate'
-      ∑ µ s i si f
-        ∑ iterate' f ([], s) = (s, [])
-            ± (let sso = iterate' f (si, s)
-            in iterate' f (si Î [i], s)
-              = (Fst (f (i, Fst sso)), Snd sso Î [Snd (f (i, Fst sso))]))) : THM
-=TEX 
-Now the definition of $iterate$ is retrieved with its consistency proof obligation discharged.
-=SML
-val iterate_def = conv_rule(MAP_C let_conv)(get_spec¨iterateÆ);
-=TEX
-=GFT HOL output
-iterate_def = Ù µ s i si f
-  ∑ iterate f ([], s) = (s, [])
-      ± iterate f (si Î [i], s)
-        = (Fst (f (i, Fst (iterate f (si, s)))),
-          Snd (iterate f (si, s)) Î [Snd (f (i, Fst (iterate f (si, s))))])
-=TEX
-
-\subsection{Lemma4}
-=SML
-push_goal([],¨Lemma4Æ); 
-a(rewrite_tac[Lemma4,secureStf_def,secureItf_def]);
-a strip_tac;
-(** need to reorder variables **)
-a(REPEAT µ_tac);
-a(MAP_EVERY intro_µ_tac[(¨sâ2Æ,¨sâ2Æ),(¨sâ1Æ,¨sâ1Æ),(¨cÆ,¨cÆ),(¨siâ2Æ,¨siâ2Æ)]);
-a(REV_LIST_INDUCTION_T¨siâ1Æasm_tac);
-=TEX
-=GFT HOL output
-Tactic produced 2 subgoals:
-
-(* *** Goal "1" *** *)
-
-(*  2 *)  ¨µ sâ1 sâ2 iâ1 iâ2 c
-           ∑ hide (c, sâ1) = hide (c, sâ2) ± ([iâ1], [iâ2]) ç same_ins c
-               ¥ hide (c, Fst (SSQLtf (iâ1, sâ1)))
-                   = hide (c, Fst (SSQLtf (iâ2, sâ2)))
-                 ± ([Snd (SSQLtf (iâ1, sâ1))], [Snd (SSQLtf (iâ2, sâ2))]) ç same_outs cÆ
-(*  1 *)  ¨µ s i c
-           ∑ ≥ c dominates Snd i
-               ¥ hide (c, s) = hide (c, Fst (SSQLtf (i, s)))
-                 ± ≥ c dominates Fst (Snd (SSQLtf (i, s)))Æ
-
-(* ?Ù *)  ¨µ siâ2 c sâ1 sâ2
-           ∑ hide (c, sâ1) = hide (c, sâ2) ± ([], siâ2) ç same_ins c
-               ¥ hide (c, Fst (iterate SSQLtf ([], sâ1)))
-                   = hide (c, Fst (iterate SSQLtf (siâ2, sâ2)))
-                 ± (Snd (iterate SSQLtf ([], sâ1)),
-                     Snd (iterate SSQLtf (siâ2, sâ2))) ç same_outs cÆ
-=TEX
-=SML
-a µ_tac;
-a(REV_LIST_INDUCTION_T¨siâ2Æasm_tac);
-(* *** Goal "1.1"  *** *)
-(* *** siâ1, siâ2 both empty *** *)
-a(rewrite_tac[iterate_def,same_ins_def,same_outs_def]);
-(* *** Goal "1.2" *** *)
-(* *** siâ1 empty, siâ2 non empty *** *)
-a(REPEAT µ_tac);
-a(POP_ASM_T ante_tac);
-a(rewrite_tac[iterate_def,same_ins_def,same_outs_def]);
-a(cases_tac¨c dominates Snd lastÆTHEN asm_rewrite_tac[]);
-a(lemma_tac¨(hide (c, Fst (iterate SSQLtf (siâ2, sâ2)))
-             = hide (c, Fst (SSQLtf (last, Fst (iterate SSQLtf (siâ2, sâ2))))))
-	± ≥(c dominates Fst
-                         (Snd (SSQLtf (last, Fst (iterate SSQLtf (siâ2, sâ2))))))Æ
-	THEN_LIST[asm_prove_tac[],asm_rewrite_tac[]]);
-a ¥_tac;
-a(¥_tac THEN asm_rewrite_tac[]);
-a(DROP_NTH_ASM_T 3 (ante_tac o list_µ_elim[¨cÆ,¨sâ1Æ,¨sâ2Æ]) THEN asm_rewrite_tac[]);
-=TEX
-=GFT HOL output
-(* *** Goal "2" *** *)
-
-(*  3 *)  ¨µ sâ1 sâ2 iâ1 iâ2 c
-           ∑ hide (c, sâ1) = hide (c, sâ2) ± ([iâ1], [iâ2]) ç same_ins c
-               ¥ hide (c, Fst (SSQLtf (iâ1, sâ1)))
-                   = hide (c, Fst (SSQLtf (iâ2, sâ2)))
-                 ± ([Snd (SSQLtf (iâ1, sâ1))], [Snd (SSQLtf (iâ2, sâ2))])
-                   ç same_outs cÆ
-(*  2 *)  ¨µ s i c
-           ∑ ≥ c dominates Snd i
-               ¥ hide (c, s) = hide (c, Fst (SSQLtf (i, s)))
-                 ± ≥ c dominates Fst (Snd (SSQLtf (i, s)))Æ
-(*  1 *)  ¨µ siâ2 c sâ1 sâ2
-           ∑ hide (c, sâ1) = hide (c, sâ2) ± (siâ1, siâ2) ç same_ins c
-               ¥ hide (c, Fst (iterate SSQLtf (siâ1, sâ1)))
-                   = hide (c, Fst (iterate SSQLtf (siâ2, sâ2)))
-                 ± (Snd (iterate SSQLtf (siâ1, sâ1)),
-                     Snd (iterate SSQLtf (siâ2, sâ2))) ç same_outs cÆ
-
-(* ?Ù *)  ¨µ last siâ2 c sâ1 sâ2
-           ∑ hide (c, sâ1) = hide (c, sâ2) ± (siâ1 Î [last], siâ2) ç same_ins c
-               ¥ hide (c, Fst (iterate SSQLtf (siâ1 Î [last], sâ1)))
-                   = hide (c, Fst (iterate SSQLtf (siâ2, sâ2)))
-                 ± (Snd (iterate SSQLtf (siâ1 Î [last], sâ1)),
-                     Snd (iterate SSQLtf (siâ2, sâ2))) ç same_outs cÆ
-=TEX
-
-=SML
-(** need to reorder variables **)
-a(REPEAT µ_tac);
-a(MAP_EVERY intro_µ_tac[(¨sâ2Æ,¨sâ2Æ),(¨sâ1Æ,¨sâ1Æ),(¨cÆ,¨cÆ),(¨lastÆ,¨lastÆ)]);
-a(POP_ASM_T ante_tac);
-a(REV_LIST_INDUCTION_T¨siâ2Æasm_tac);
-(* *** Goal "2.1" *** *)
-(* *** siâ1 non empty, siâ2 empty *** *)
-a(rewrite_tac[iterate_def,same_ins_def,same_outs_def]);
-a(¥_tac THEN REPEAT µ_tac);
-a(cases_tac¨c dominates Snd lastÆTHEN asm_rewrite_tac[]);
-a(lemma_tac¨(hide (c, Fst (iterate SSQLtf (siâ1, sâ1)))
-             = hide (c, Fst (SSQLtf (last, Fst (iterate SSQLtf (siâ1, sâ1))))))
-	± ≥(c dominates Fst
-                         (Snd (SSQLtf (last, Fst (iterate SSQLtf (siâ1, sâ1))))))Æ
-	THEN_LIST[list_asm_ante_tac (map get_asm[1,3])THEN prove_tac[],
-		asm_rewrite_tac[]]);
-a ¥_tac;
-a(DROP_NTH_ASM_T 6 (ante_tac o list_µ_elim[¨[]:(Query ∏ Class)LISTÆ,¨cÆ,¨sâ1Æ,¨sâ2Æ]) 
-	THEN asm_rewrite_tac[iterate_def]);
-=TEX
-=SML
-(* *** Goal "2.2" *** *)
-(* *** siâ1, siâ2 both non empty *** *)
-a (µ_tac THEN POP_ASM_T ante_tac);
-a(rewrite_tac[iterate_def,same_ins_def,same_outs_def]);
-a(¥_T asm_tac THEN ¥_tac);
-a(REPEAT µ_tac);
-a(cases_tac¨c dominates Snd lastÆTHEN cases_tac¨c dominates Snd last'Æ
-	THEN asm_rewrite_tac[] THEN ¥_tac);
-=TEX
-=GFT HOL output
-Tactic produced 4 subgoals:
-
-(* *** Goal "2.2.1" *** *)
-
-(*  9 *)  ¨µ sâ1 sâ2 iâ1 iâ2 c
-           ∑ hide (c, sâ1) = hide (c, sâ2) ± ([iâ1], [iâ2]) ç same_ins c
-               ¥ hide (c, Fst (SSQLtf (iâ1, sâ1))) = hide (c, Fst (SSQLtf (iâ2, sâ2)))
-                 ± ([Snd (SSQLtf (iâ1, sâ1))], [Snd (SSQLtf (iâ2, sâ2))]) ç same_outs cÆ
-(*  8 *)  ¨µ s i c ∑ ≥ c dominates Snd i
-               ¥ hide (c, s) = hide (c, Fst (SSQLtf (i, s)))
-                 ± ≥ c dominates Fst (Snd (SSQLtf (i, s)))Æ
-(*  7 *)  ¨(µ siâ2 c sâ1 sâ2 ∑ hide (c, sâ1) = hide (c, sâ2)
-                   ± siâ1 ˘ {(q, c')|c dominates c'}
-                     = siâ2 ˘ {(q, c')|c dominates c'}
-                 ¥ hide (c, Fst (iterate SSQLtf (siâ1, sâ1)))
-                     = hide (c, Fst (iterate SSQLtf (siâ2, sâ2)))
-                   ± Snd (iterate SSQLtf (siâ1, sâ1)) ˘ {(c', d)|c dominates c'}
-                     = Snd (iterate SSQLtf (siâ2, sâ2)) ˘ {(c', d)|c dominates c'})
-             ¥ (µ last c sâ1 sâ2 ∑ hide (c, sâ1) = hide (c, sâ2)
-                   ± (if c dominates Snd last
-                       then (siâ1 ˘ {(q, c')|c dominates c'}) Î [last]
-                       else siâ1 ˘ {(q, c')|c dominates c'})
-                     = siâ2 ˘ {(q, c')|c dominates c'}
-                 ¥ hide(c,Fst(SSQLtf(last,Fst (iterate SSQLtf (siâ1, sâ1)))))
-                     = hide (c, Fst (iterate SSQLtf (siâ2, sâ2)))
-                   ± (if c dominates Fst(Snd(SSQLtf(last,
-                                         Fst (iterate SSQLtf (siâ1, sâ1)))))
-                       then
-                         (Snd (iterate SSQLtf (siâ1, sâ1)) ˘ {(c', d)|c dominates c'})
-                           Î [Snd(SSQLtf(last,Fst (iterate SSQLtf (siâ1, sâ1))))]
-                       else
-                         Snd (iterate SSQLtf (siâ1, sâ1)) ˘ {(c', d)|c dominates c'})
-                     = Snd (iterate SSQLtf (siâ2, sâ2)) ˘ {(c', d)|c dominates c'})Æ
-(*  6 *)  ¨µ siâ2 c sâ1 sâ2 ∑ hide (c, sâ1) = hide (c, sâ2)
-                 ± siâ1 ˘ {(q, c')|c dominates c'} = siâ2 ˘ {(q, c')|c dominates c'}
-               ¥ hide (c, Fst (iterate SSQLtf (siâ1, sâ1)))
-                   = hide (c, Fst (iterate SSQLtf (siâ2, sâ2)))
-                 ± Snd (iterate SSQLtf (siâ1, sâ1)) ˘ {(c', d)|c dominates c'}
-                   = Snd (iterate SSQLtf (siâ2, sâ2)) ˘ {(c', d)|c dominates c'}Æ
-(*  5 *)  ¨c dominates Snd lastÆ
-(*  4 *)  ¨c dominates Snd last'Æ
-(*  3 *)  ¨hide (c, sâ1) = hide (c, sâ2)Æ
-(*  2 *)  ¨siâ1 ˘ {(q, c')|c dominates c'} = siâ2 ˘ {(q, c')|c dominates c'}Æ
-(*  1 *)  ¨last' = lastÆ
-=TEX
-=GFT HOL output
-
-(* ?Ù *)  ¨hide(c,Fst(SSQLtf(last', Fst (iterate SSQLtf (siâ1, sâ1)))))
-            = hide(c,Fst(SSQLtf(last, Fst (iterate SSQLtf (siâ2, sâ2)))))
-             ± (if c dominates Fst(Snd(SSQLtf(last',Fst(iterate SSQLtf (siâ1, sâ1)))))
-                 then
-                   (Snd (iterate SSQLtf (siâ1, sâ1)) ˘ {(c', d)|c dominates c'})
-                     Î [Snd(SSQLtf
-                             (last', Fst (iterate SSQLtf (siâ1, sâ1))))]
-                 else
-                   Snd (iterate SSQLtf (siâ1, sâ1)) ˘ {(c', d)|c dominates c'})
-               = (if c dominates Fst(Snd(SSQLtf(last, Fst (iterate SSQLtf (siâ2, sâ2)))))
-                 then
-                   (Snd (iterate SSQLtf (siâ2, sâ2)) ˘ {(c', d)|c dominates c'})
-                     Î [Snd(SSQLtf(last, Fst (iterate SSQLtf (siâ2, sâ2))))]
-                 else
-                   Snd (iterate SSQLtf (siâ2, sâ2)) ˘ {(c', d)|c dominates c'})Æ
-=TEX
-=SML
-a(POP_ASM_T rewrite_thm_tac);
-a(DROP_NTH_ASM_T 5(ante_tac o list_µ_elim[¨siâ2Æ,¨cÆ,¨sâ1Æ,¨sâ2Æ]));
-a(asm_rewrite_tac[] THEN ¥_tac);
-a(DROP_NTH_ASM_T 9(asm_tac o rewrite_rule[same_ins_def,same_outs_def]));
-a(list_spec_nth_asm_tac 1 [¨Fst (iterate SSQLtf (siâ1, sâ1))Æ,
-	¨Fst (iterate SSQLtf (siâ2, sâ2))Æ,¨lastÆ,¨lastÆ,¨cÆ]);
-a(POP_ASM_T (ante_tac o rewrite_rule[˘_thm6]));
-a(REPEAT strip_tac THEN asm_rewrite_tac[]);
-=TEX
-=GFT HOL output
-
-(* *** Goal "2.2.2" *** *)
-
-(*  8 *)  ¨µ sâ1 sâ2 iâ1 iâ2 c
-           ∑ hide (c, sâ1) = hide (c, sâ2) ± ([iâ1], [iâ2]) ç same_ins c
-               ¥ hide (c, Fst (SSQLtf (iâ1, sâ1))) = hide (c, Fst (SSQLtf (iâ2, sâ2)))
-                 ± ([Snd (SSQLtf (iâ1, sâ1))], [Snd (SSQLtf (iâ2, sâ2))]) ç same_outs cÆ
-.
-.
-.
-(*  4 *)  ¨c dominates Snd lastÆ
-(*  3 *)  ¨≥ c dominates Snd last'Æ
-(*  2 *)  ¨hide (c, sâ1) = hide (c, sâ2)Æ
-(*  1 *)  ¨siâ1 ˘ {(q, c')|c dominates c'}
-             = (siâ2 ˘ {(q, c')|c dominates c'}) Î [last]Æ
-
-
-(* ?Ù *)  ¨hide(c,Fst(SSQLtf(last', Fst (iterate SSQLtf (siâ1, sâ1)))))
-            = hide(c,Fst(SSQLtf(last, Fst (iterate SSQLtf (siâ2, sâ2)))))
-             ± (if c dominates Fst(Snd(SSQLtf(last',Fst(iterate SSQLtf (siâ1, sâ1)))))
-                 then
-                   (Snd (iterate SSQLtf (siâ1, sâ1)) ˘ {(c', d)|c dominates c'})
-                     Î [Snd(SSQLtf
-                             (last', Fst (iterate SSQLtf (siâ1, sâ1))))]
-                 else
-                   Snd (iterate SSQLtf (siâ1, sâ1)) ˘ {(c', d)|c dominates c'})
-               = (if c dominates Fst(Snd(SSQLtf(last, Fst (iterate SSQLtf (siâ2, sâ2)))))
-                 then
-                   (Snd (iterate SSQLtf (siâ2, sâ2)) ˘ {(c', d)|c dominates c'})
-                     Î [Snd(SSQLtf(last, Fst (iterate SSQLtf (siâ2, sâ2))))]
-                 else
-                   Snd (iterate SSQLtf (siâ2, sâ2)) ˘ {(c', d)|c dominates c'})Æ
-=TEX
-
-=SML
-a(lemma_tac¨(hide (c, Fst (iterate SSQLtf (siâ1, sâ1))) 
-	= hide (c, Fst (SSQLtf (last', Fst (iterate SSQLtf (siâ1, sâ1))))))	
-	± ≥(c dominates Fst
-                         (Snd (SSQLtf (last', Fst (iterate SSQLtf (siâ1, sâ1))))))Æ 
-	THEN_LIST[list_asm_ante_tac (map get_asm[3,7])THEN prove_tac[],
-		asm_rewrite_tac[]]);
-a(DROP_NTH_ASM_T 7 (ante_tac o list_µ_elim[¨siâ2 Î [last]Æ,¨cÆ,¨sâ1Æ,¨sâ2Æ]));
-a(asm_rewrite_tac[iterate_def]);
-=TEX
-=GFT HOL output
-(* *** Goal "2.2.3" *** *)
-
-(*  8 *)  ¨µ sâ1 sâ2 iâ1 iâ2 c
-           ∑ hide (c, sâ1) = hide (c, sâ2) ± ([iâ1], [iâ2]) ç same_ins c
-               ¥ hide (c, Fst (SSQLtf (iâ1, sâ1))) = hide (c, Fst (SSQLtf (iâ2, sâ2)))
-                 ± ([Snd (SSQLtf (iâ1, sâ1))], [Snd (SSQLtf (iâ2, sâ2))]) ç same_outs cÆ
-.
-.
-.
-(*  4 *)  ¨≥ c dominates Snd lastÆ
-(*  3 *)  ¨c dominates Snd last'Æ
-(*  2 *)  ¨hide (c, sâ1) = hide (c, sâ2)Æ
-(*  1 *)  ¨(siâ1 ˘ {(q, c')|c dominates c'}) Î [last'] = siâ2 ˘ {(q, c')|c dominates c'}Æ
-
-
-(* ?Ù *)  ¨hide(c,Fst(SSQLtf(last', Fst (iterate SSQLtf (siâ1, sâ1)))))
-            = hide(c,Fst(SSQLtf(last, Fst (iterate SSQLtf (siâ2, sâ2)))))
-             ± (if c dominates Fst(Snd(SSQLtf(last',Fst(iterate SSQLtf (siâ1, sâ1)))))
-                 then
-                   (Snd (iterate SSQLtf (siâ1, sâ1)) ˘ {(c', d)|c dominates c'})
-                     Î [Snd(SSQLtf
-                             (last', Fst (iterate SSQLtf (siâ1, sâ1))))]
-                 else
-                   Snd (iterate SSQLtf (siâ1, sâ1)) ˘ {(c', d)|c dominates c'})
-               = (if c dominates Fst(Snd(SSQLtf(last, Fst (iterate SSQLtf (siâ2, sâ2)))))
-                 then
-                   (Snd (iterate SSQLtf (siâ2, sâ2)) ˘ {(c', d)|c dominates c'})
-                     Î [Snd(SSQLtf(last, Fst (iterate SSQLtf (siâ2, sâ2))))]
-                 else
-                   Snd (iterate SSQLtf (siâ2, sâ2)) ˘ {(c', d)|c dominates c'})Æ
-=TEX
-
-
-=SML
-a(lemma_tac¨(hide (c, Fst (iterate SSQLtf (siâ2, sâ2))) 
-	= hide (c, Fst (SSQLtf (last, Fst (iterate SSQLtf (siâ2, sâ2))))))	
-	± ≥(c dominates Fst
-                         (Snd (SSQLtf (last, Fst (iterate SSQLtf (siâ2, sâ2))))))Æ 
-	THEN_LIST[list_asm_ante_tac (map get_asm[4,7])THEN prove_tac[],
-		asm_rewrite_tac[]]);
-a(DROP_NTH_ASM_T 8 ante_tac THEN DROP_NTH_ASM_T 7 rewrite_thm_tac);
-a(¥_T (ante_tac o list_µ_elim[¨last'Æ,¨cÆ,¨sâ1Æ,¨sâ2Æ]));
-a(asm_rewrite_tac[]);
-=TEX
-=GFT HOL output
-(* *** Goal "2.2.4" *** *)
-
-(*  8 *)  ¨µ sâ1 sâ2 iâ1 iâ2 c
-           ∑ hide (c, sâ1) = hide (c, sâ2) ± ([iâ1], [iâ2]) ç same_ins c
-               ¥ hide (c, Fst (SSQLtf (iâ1, sâ1))) = hide (c, Fst (SSQLtf (iâ2, sâ2)))
-                 ± ([Snd (SSQLtf (iâ1, sâ1))], [Snd (SSQLtf (iâ2, sâ2))]) ç same_outs cÆ
-.
-.
-.
-(*  4 *)  ¨≥ c dominates Snd lastÆ
-(*  3 *)  ¨≥ c dominates Snd last'Æ
-(*  2 *)  ¨hide (c, sâ1) = hide (c, sâ2)Æ
-(*  1 *)  ¨siâ1 ˘ {(q, c')|c dominates c'} = siâ2 ˘ {(q, c')|c dominates c'}Æ
-
-
-(* ?Ù *)  ¨hide(c,Fst(SSQLtf(last', Fst (iterate SSQLtf (siâ1, sâ1)))))
-            = hide(c,Fst(SSQLtf(last, Fst (iterate SSQLtf (siâ2, sâ2)))))
-             ± (if c dominates Fst(Snd(SSQLtf(last',Fst(iterate SSQLtf (siâ1, sâ1)))))
-                 then (Snd (iterate SSQLtf (siâ1, sâ1)) ˘ {(c', d)|c dominates c'})
-                     Î [Snd(SSQLtf(last', Fst (iterate SSQLtf (siâ1, sâ1))))]
-                 else  Snd (iterate SSQLtf (siâ1, sâ1)) ˘ {(c', d)|c dominates c'})
-               = (if c dominates Fst(Snd(SSQLtf(last, Fst (iterate SSQLtf (siâ2, sâ2)))))
-                 then (Snd (iterate SSQLtf (siâ2, sâ2)) ˘ {(c', d)|c dominates c'})
-                     Î [Snd(SSQLtf(last, Fst (iterate SSQLtf (siâ2, sâ2))))]
-                 else Snd (iterate SSQLtf (siâ2, sâ2)) ˘ {(c', d)|c dominates c'})Æ
-=TEX
-
-=SML
-a(lemma_tac ¨(hide (c, Fst (iterate SSQLtf (siâ1, sâ1))) 
-	= hide (c, Fst (SSQLtf (last', Fst (iterate SSQLtf (siâ1, sâ1))))))	
-	± ≥(c dominates Fst
-                         (Snd (SSQLtf (last', Fst (iterate SSQLtf (siâ1, sâ1))))))
-	± (hide (c, Fst (iterate SSQLtf (siâ2, sâ2))) 
-	= hide (c, Fst (SSQLtf (last, Fst (iterate SSQLtf (siâ2, sâ2))))))	
-	± ≥(c dominates Fst
-                         (Snd (SSQLtf (last, Fst (iterate SSQLtf (siâ2, sâ2))))))Æ
-	THEN_LIST[list_asm_ante_tac (map get_asm[3,4,7])THEN prove_tac[],
-		asm_rewrite_tac[]]);
-a(DROP_NTH_ASM_T 2 (rewrite_thm_tac o eq_sym_rule));
-a(DROP_NTH_ASM_T 3 (rewrite_thm_tac o eq_sym_rule));
-a(list_asm_ante_tac (map get_asm[3,4,7])THEN prove_tac[]);
-val lemma4_thm = save_pop_thm"Lemma4";
-=TEX
-
-\section{PROOF OF $Lemma5$}
-
-=SML
-push_goal([],¨Lemma5Æ);
-a(rewrite_tac[Lemma5,secureItf_def,behaviours_def,SSQLam_def,
-	secure_def,eq_sym_rule SSQLtf_def]);
+set_goal([], ¨µf g list∑ Map f (Map g list) = Map (f o g) listÆ);
 a(REPEAT strip_tac);
-a(list_spec_nth_asm_tac 2 [¨isstateÆ,¨isstateÆ,¨si1Æ,¨si2Æ,¨clearÆ]);
-val lemma5_thm = save_pop_thm"Lemma5";
+a(list_induction_tac ¨listÆ THEN asm_rewrite_tac[get_spec¨MapÆ]);
+val map_o_lemma = save_pop_thm"map_o_lemma";
 =TEX
-\section{REMAINING PROOF}
-Taking the main theorem to be proven, from the proof strategy document,\cite{DS/FMU/FEF/007},
-we can simplify the result using the proofs of $Lemma3$, $Lemma4$ and $Lemma5$.
 =SML
-val €main_thm1› = save_thm("main_thm1",
-	rewrite_rule[lemma3_thm,lemma4_thm,lemma5_thm]main_thm);
+set_goal([], ¨µc∑c lub c = c ± lubl[c] = cÆ);
+a(strip_tac THEN rewrite_tac(map get_spec[¨MapÆ, ¨lublÆ, ¨FoldÆ, ¨HeadÆ]));
+a(lemma_tac¨c dominates c ± c lub c dominates cÆ THEN1 prove_tac[get_spec¨$lubÆ]);
+a(all_fc_tac[get_spec¨$lubÆ]);
+a(all_fc_tac[get_spec¨$lubÆ]);
+val €lub_lemma› = save_pop_thm"lub_lemma";
 =TEX
-=GFT HOL output
-main_thm1 = Ù  Lemma1 ¥ behaviours SSQLam ç secure
+=SML
+push_goal([], ¨µc1 c2 c3∑
+	c1 dominates c2 lub c3 § c1 dominates c2 ± c1 dominates c3Æ);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(lemma_tac¨c2 lub c3 dominates c2Æ THEN1 rewrite_tac[get_spec¨$lubÆ]
+	THEN all_fc_tac[get_spec¨$lubÆ]);
+(* *** Goal "2" *** *)
+a(lemma_tac¨c2 lub c3 dominates c3Æ THEN1 rewrite_tac[get_spec¨$lubÆ]
+	THEN all_fc_tac[get_spec¨$lubÆ]);
+(* *** Goal "3" *** *)
+a(all_fc_tac[get_spec¨$lubÆ]);
+val €dominates_lub_lemma› = save_pop_thm"dominates_lub_lemma";
 =TEX
-
-where $Lemma1$, from the proof strategy document \cite{DS/FMU/FEF/007}, is:
-
-=GFT
-	?Ù 	hide ç secureHide ± (hide,updateState) ç secureUpdate 
+=SML
+set_goal([], ¨µx1 x2 y1 y2∑MkDerTable x1 x2 = MkDerTable y1 y2 § x1 = y1 ± x2 = y2Æ);
+a(REPEAT_UNTIL is_§ strip_tac THEN §_tac THEN_TRY asm_rewrite_tac[]);
+a(LEMMA_T¨y1 = DT_spec (MkDerTable x1 x2) ± y2 = DT_rows (MkDerTable x1 x2)Æ
+	rewrite_thm_tac
+	THEN1 (asm_rewrite_tac[]THEN rewrite_tac[get_spec¨MkDerTableÆ]));
+a(rewrite_tac[get_spec¨MkDerTableÆ]);
+val €MkDerTable_lemma› = save_pop_thm"MkDerTable_lemma";
 =TEX
-
+=SML
+set_goal([], ¨µx1 x2 x3 y1 y2 y3∑MkDerTableRow x1 x2 x3 = MkDerTableRow y1 y2 y3 § x1 = y1 ± x2 = y2 ± x3 = y3Æ);
+a(REPEAT_UNTIL is_§ strip_tac THEN §_tac THEN_TRY asm_rewrite_tac[]);
+a(LEMMA_T¨y1 = DTR_where (MkDerTableRow x1 x2 x3)
+	± y2 = DTR_row (MkDerTableRow x1 x2 x3)
+	 ± y3 = DTR_cols (MkDerTableRow x1 x2 x3)Æ
+	rewrite_thm_tac
+	THEN1 (asm_rewrite_tac[]THEN rewrite_tac[get_spec¨MkDerTableRowÆ]));
+a(rewrite_tac[get_spec¨MkDerTableRowÆ]);
+val €MkDerTableRow_lemma› = save_pop_thm"MkDerTableRow_lemma";
+=TEX
+=SML
+set_goal([], ¨µc t∑ DT_spec (HideDerTable c t) = DT_spec tÆ);
+a(rewrite_tac (map get_spec[¨HideDerTableÆ, ¨DT_specÆ, ¨LetÆ]));
+val €DT_spec_HideDerTable_lemma› = save_pop_thm"DT_spec_HideDerTable_lemma";
+=TEX
+=SML
+set_goal([], ¨µc ts1 ts2∑
+	Map (HideDerTable c) ts1 = Map (HideDerTable c) ts2
+¥	(Map DT_spec ts1) = (Map DT_spec ts2)Æ);
+a(REPEAT strip_tac);
+a(LEMMA_T¨
+	Map DT_spec(Map (HideDerTable c) ts1) =
+	Map DT_spec(Map (HideDerTable c) ts2)Æ
+	ante_tac THEN1 asm_rewrite_tac[]);
+a(lemma_tac¨DT_spec o HideDerTable c = DT_specÆ
+	THEN1 PC_T1 "hol2" rewrite_tac[DT_spec_HideDerTable_lemma]);
+a(asm_rewrite_tac[map_o_lemma]);
+val €map_HideDerTable_map_DT_spec_lemma› =
+	save_pop_thm"map_HideDerTable_map_DT_spec_lemma";
+=TEX
+=SML
+push_goal([], ¨µc r rs∑
+	HideDerTableData c [] = []
+±	HideDerTableData c (Cons r rs) = 
+		if	c dominates (DTR_row r lub DTR_where r)
+		then	Cons (HideDerTableRow c r) (HideDerTableData c rs)
+		else	HideDerTableData c rs
+Æ);
+a(rewrite_tac(map get_spec[¨HideDerTableDataÆ, ¨$˘Æ, ¨MapÆ, ¨LetÆ]));
+a(REPEAT strip_tac);
+a(cases_tac¨c dominates (DTR_row r lub DTR_where r)Æ THEN asm_rewrite_tac[]);
+a(rewrite_tac(map get_spec[¨MapÆ]));
+val €HideDerTableData_lemma› = save_pop_thm"HideDerTableData_lemma";
+=TEX
+=SML
+push_goal([], ¨µc r1 r2 rs∑
+	JoinRows r1 [] = []
+±	JoinRows r1 (Cons r2 rs) = 
+	Cons
+	(MkDerTableRow
+		(DTR_where r1 lub DTR_where r2)
+		(DTR_row r1 lub DTR_row r2)
+		(DTR_cols r1 Î DTR_cols r2))
+	(JoinRows r1 rs)
+Æ);
+a(rewrite_tac(map get_spec[¨JoinRowsÆ, ¨MapÆ, ¨LetÆ]));
+val €JoinRows_lemma› = save_pop_thm"JoinRows_lemma";
+=TEX
+=SML
+push_goal([], ¨µc blks∑
+	HideDerTableData c (Flat blks) = Flat (Map (HideDerTableData c) blks)
+Æ);
+a(REPEAT strip_tac);
+a(list_induction_tac¨blksÆ THEN asm_rewrite_tac(map get_spec[¨FlatÆ, ¨MapÆ]));
+(* *** Goal "1" *** *)
+a(rewrite_tac(map get_spec[¨HideDerTableDataÆ, ¨MapÆ, ¨LetÆ, ¨$˘Æ]));
+(* *** Goal "2" *** *)
+a(REPEAT strip_tac);
+a(list_induction_tac¨xÆ);
+(* *** Goal "1" *** *)
+a(lemma_tac¨HideDerTableData c [] = []Æ
+	THEN1 rewrite_tac(map get_spec[¨HideDerTableDataÆ, ¨MapÆ, ¨LetÆ, ¨$˘Æ]));
+a(asm_rewrite_tac(map get_spec[¨$AppendÆ, ¨MapÆ, ¨FlatÆ]));
+(* *** Goal "2.2" *** *)
+a(rewrite_tac(map get_spec[¨$AppendÆ, ¨MapÆ, ¨FlatÆ]));
+a(all_asm_ante_tac
+	THEN rewrite_tac(map get_spec[¨HideDerTableDataÆ, ¨MapÆ, ¨LetÆ])
+	THEN REPEAT strip_tac);
+a(rewrite_tac[get_spec¨$˘Æ]);
+a(cases_tac ¨c dominates DTR_row x' lub DTR_where x'Æ THEN
+	TOP_ASM_T rewrite_thm_tac
+	THEN asm_rewrite_tac(map get_spec[¨MapÆ, ¨$AppendÆ]));
+val €HideDerTable_flat_lemma› =
+	save_pop_thm"HideDerTable_flat_lemma";
+=TEX
+=SML
+val €conj1› = ¨RiskInputs c (Ãdtl∑ (Join dtl, [])) = {}Æ;
+val €conj2› = ¨µc ts1 ts2∑
+	Map (HideDerTable c) ts1 = Map (HideDerTable c) ts2
+¥	HideDerTableData c (JoinData (Map DT_rows ts1)) =
+	HideDerTableData c (JoinData (Map DT_rows ts2))Æ;
+val €conj3› = ¨µc ts1 ts2∑
+	Map (HideDerTable c) ts1 = Map (HideDerTable c) ts2
+¥	Map (HideDerTableData c) (Map DT_rows ts1)
+	= Map (HideDerTableData c) (Map DT_rows ts2)Æ;
+val €conj4› = ¨µc ds1 ds2∑
+	Map (HideDerTableData c) ds1 = Map (HideDerTableData c) ds2
+¥	HideDerTableData c (JoinData ds1) =
+	HideDerTableData c (JoinData ds2)Æ;
+val €conj5› = ¨µc rs1 rs2∑
+	Flat(Map (Ãr∑ HideDerTableData c (JoinRows r rs2)) rs1) =
+	Flat(Map (Ãr∑ JoinRows r (HideDerTableData c rs2)) (HideDerTableData c rs1))Æ;
+val €conj6› = ¨µc r rs∑
+		HideDerTableData c (JoinRows r rs)
+	=	if	c dominates DTR_row r lub DTR_where r
+		then	JoinRows (HideDerTableRow c r) (HideDerTableData c rs)
+		else []Æ;
+=TEX
+=SML
+set_goal([conj2], conj1);
+a(rewrite_tac[get_spec¨RiskInputsÆ]);
+a(PC_T "sets_ext" contr_tac);
+a(all_asm_ante_tac THEN rewrite_tac[]);
+a(REPEAT strip_tac);
+a(rewrite_tac(map get_spec[¨JoinÆ, ¨HideDerTableÆ, ¨MkDerTableÆ]));
+a(ALL_ASM_FC_T rewrite_tac [map_HideDerTable_map_DT_spec_lemma]);
+val €RiskInputs_Join_lemma1› = save_pop_thm"RiskInputs_Join_lemma1";
+=TEX
+=SML
+set_goal([conj3, conj4], conj2);
+a(REPEAT strip_tac THEN all_asm_fc_tac[]);
+a(all_asm_fc_tac[]);
+val €RiskInputs_Join_lemma2› = save_pop_thm"RiskInputs_Join_lemma2";
+=TEX
+=SML
+set_goal([], conj3);
+a(REPEAT_N 2 strip_tac);
+a(list_induction_tac¨ts1Æ);
+(* *** Goal "1" *** *)
+a(strip_tac);
+a(strip_asm_tac(µ_elim¨ts2Æ list_cases_thm)
+	THEN asm_rewrite_tac[map_def]);
+(* *** Goal "2" *** *)
+a(REPEAT_N 2 strip_tac);
+a(strip_asm_tac(µ_elim¨ts2Æ list_cases_thm)
+	THEN asm_rewrite_tac[map_def]);
+a(REPEAT strip_tac THEN all_asm_fc_tac[]);
+a(asm_ante_tac ¨HideDerTable c x = HideDerTable c x'Æ
+	THEN rewrite_tac[MkDerTable_lemma, get_spec¨HideDerTableÆ]);
+a(REPEAT strip_tac);
+val €RiskInputs_Join_lemma3› = save_pop_thm"RiskInputs_Join_lemma3";
+=TEX
+=SML
+set_goal([conj5], conj4);
+a(strip_tac THEN strip_tac);
+a(list_induction_tac ¨ds1Æ);
+(* *** Goal "1" *** *)
+a(rewrite_tac[get_spec¨MapÆ, map_null_thm]);
+a(REPEAT strip_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(rewrite_tac[get_spec¨MapÆ] THEN REPEAT µ_tac);
+a(strip_asm_tac(µ_elim¨ds2Ælist_cases_thm) THEN 
+	asm_rewrite_tac[get_spec¨MapÆ, map_null_thm]);
+a(REPEAT strip_tac);
+a(strip_asm_tac (µ_elim¨ds1Ælist_cases_thm));
+(* *** Goal "2.1" *** *)
+a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[get_spec¨MapÆ, map_null_thm]);
+a(REPEAT strip_tac THEN var_elim_asm_tac¨list2 = []Æ);
+a(asm_rewrite_tac(map get_spec [¨JoinDataÆ, ¨LetÆ]));
+(* *** Goal "2.2" *** *)
+a(lemma_tac¨≥ds1 = [] ± ≥list2 = []Æ THEN1 asm_rewrite_tac[]);
+(* *** Goal "2.2.1" *** *)
+a(swap_nth_asm_concl_tac 2 THEN asm_rewrite_tac[get_spec¨MapÆ, map_null_thm]);
+(* *** Goal "2.2.2" *** *)
+a(LIST_DROP_NTH_ASM_T [3, 6] (Combinators.K id_tac));
+a(asm_rewrite_tac(let_def::HideDerTable_flat_lemma::map get_spec [¨JoinDataÆ]));
+a(asm_rewrite_tac[map_o_lemma,
+	pc_rule1"hol2"prove_rule[]¨µf g z∑(f o (Ãx∑g x z)) = (Ãx∑f(g x z))Æ]);
+a(ALL_ASM_FC_T rewrite_tac[]);
+val €RiskInputs_Join_lemma4› = save_pop_thm"RiskInputs_Join_lemma4";
+=TEX
+=SML
+set_goal([conj6], conj5);
+a(REPEAT strip_tac);
+a(list_induction_tac ¨rs1Æ);
+(* *** Goal "1" *** *)
+a(rewrite_tac(map get_spec[¨HideDerTableDataÆ, ¨FlatÆ, ¨MapÆ, ¨LetÆ, ¨$˘Æ]));
+(* *** Goal "2" *** *)
+a(rewrite_tac(HideDerTableData_lemma :: map get_spec[¨FlatÆ, ¨MapÆ]));
+a(strip_tac);
+a(cases_tac¨c dominates (DTR_row x lub DTR_where x)Æ
+	THEN asm_rewrite_tac(map get_spec[¨$ÎÆ, ¨MapÆ, ¨FlatÆ]));
+val €RiskInputs_Join_lemma5› = save_pop_thm"RiskInputs_Join_lemma5";
+=TEX
+=SML
+set_goal([], conj6);
+a(REPEAT strip_tac);
+a(list_induction_tac¨rsÆ);
+(* *** Goal "1" *** *)
+a(rewrite_tac[HideDerTableData_lemma, JoinRows_lemma]);
+a(CASES_T ¨c dominates (DTR_row r lub DTR_where r)Æ rewrite_thm_tac);
+(* *** Goal "2" *** *)
+a(strip_tac);
+a(cases_tac ¨c dominates (DTR_row r lub DTR_where r)Æ THEN asm_rewrite_tac[]);
+(* *** Goal "2.1" *** *)
+a(swap_nth_asm_concl_tac 2 THEN asm_rewrite_tac[] THEN swap_nth_asm_concl_tac 1);
+a(DROP_NTH_ASM_T 2 ante_tac);
+a(rewrite_tac[HideDerTableData_lemma, JoinRows_lemma,
+	dominates_lub_lemma, get_spec¨MkDerTableRowÆ]);
+a(REPEAT strip_tac THEN asm_rewrite_tac[]);
+a(cases_tac ¨c dominates DTR_row x ± c dominates DTR_where xÆ
+	THEN asm_rewrite_tac[]);
+a(rewrite_tac[JoinRows_lemma]);
+a(asm_rewrite_tac(MkDerTableRow_lemma:: map_Î_thm1::
+	map get_spec[¨HideDerTableRowÆ, ¨MkDerTableRowÆ, ¨LetÆ]));
+(* *** Goal "2.2" *** *)
+a(POP_ASM_T ante_tac);
+a(asm_rewrite_tac[HideDerTableData_lemma, JoinRows_lemma,
+	dominates_lub_lemma, get_spec¨MkDerTableRowÆ]);
+a(REPEAT strip_tac THEN asm_rewrite_tac[]);
+val €RiskInputs_Join_lemma6› = save_pop_thm"RiskInputs_Join_lemma6";
+=TEX
+=SML
+push_goal([], ¨µx∑≥IsL x § IsR xÆ);
+a(rewrite_tac[sum_clauses]);
+a(contr_tac);
+(* *** Goal "1" *** *)
+a(all_asm_fc_tac[sum_clauses]);
+(* *** Goal "2" *** *)
+a(LEMMA_T ¨InR (OutR x) = InL (OutL x)Æ (strip_asm_tac o rewrite_rule[])
+	THEN pure_asm_rewrite_tac[] THEN REPEAT strip_tac);
+val ≥_is_l_lemma = save_pop_thm "≥_is_l_lemma";
+=TEX
+=SML
+set_goal([], conj1);
+a(MAP_EVERY (ante_tac o all_¥_intro) [
+	RiskInputs_Join_lemma1,
+	RiskInputs_Join_lemma2,
+	RiskInputs_Join_lemma3,
+	RiskInputs_Join_lemma4,
+	RiskInputs_Join_lemma5,
+	RiskInputs_Join_lemma6]
+	THEN taut_tac);
+val €RiskInputs_Join_thm› = save_pop_thm"RiskInputs_Join_thm";
+=TEX
+=SML
+push_consistency_goal¨isErrorÆ;
+a(∂_tac¨(InL, InR, OutL, OutR, IsL, IsR)Æ);
+a(rewrite_tac[get_spec¨IsLÆ]);
+a(REPEAT strip_tac THEN_TRY asm_rewrite_tac[]);
+(* *** Goal "1" *** *)
+a(∂_tac¨OutL veÆ THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(∂_tac¨OutR veÆ THEN asm_rewrite_tac[]);
+val €isError_consistency_thm› = save_consistency_thm ¨isErrorÆ (pop_thm());
+=TEX
+=SML
+val €conj100› = ¨ConditionE_LemmaÆ;
+val €conj101› = ¨µ compile upd∑
+	STP ç STP_secure_E compile
+	¥ (EMâ1 compile upd, STP, outputFilter) ç subsys_secureE reprStateÆ;
+val €conj102› = ¨µc : Class; s1 s2 : State∑
+	hide (c, s1) = hide (c, s2)
+	¥	Map (HideDerTable c) (Viewât(reprState s1))
+	=	Map (HideDerTable c) (Viewât(reprState s2))Æ;
+val €conj103› = ¨µc : Class; t1 t2 : DerTable; fps : FILTER_PARS∑
+		HideDerTable c t1 = HideDerTable c t2
+	¥		outputFilter(c, (GiveData t1, []), fps)
+		=	outputFilter(c, (GiveData t2, []), fps)Æ;
+val €conj104› = ¨µt : DerTable ∑ GiveData t = [] § DT_rows t = []Æ;
+=TEX
+=SML
+set_goal([conj101], conj100);
+a(rewrite_tac(map get_spec[¨ConditionE_LemmaÆ, ¨Correct_CompileÆ])
+	THEN REPEAT strip_tac);
+a(all_asm_fc_tac[]);
+a(DROP_ASM_T ¨EMâ1 compile upd = TSQLtfÆ (asm_rewrite_thm_tac o eq_sym_rule));
+val €ConditionE_Lemma1› = save_pop_thm"ConditionE_Lemma1";
+=TEX
+=SML
+push_goal([], ¨
+µupd; qdes∑ 
+	Actât upd qdes
+ =	let (query, (dt, errs), st) = qdes
+	in
+	if	≥errs = []
+	then	(st, ([], errs))
+	else if	is_select query
+	then	(st, (GiveData dt, errs))
+	else	(upd (query, (dt, errs), st), ([], []))
+Æ
+);
+a(REPEAT strip_tac);
+a(lemma_tac¨∂q d e s∑qdes = (q, (d, e), s)Æ 
+	THEN_LIST[id_tac, asm_rewrite_tac[get_spec¨ActâtÆ, let_def]]);
+a(MAP_EVERY ∂_tac [¨Fst qdesÆ, ¨Fst(Fst(Snd qdes))Æ,
+	¨Snd(Fst(Snd qdes))Æ, ¨Snd(Snd qdes)Æ]
+	THEN rewrite_tac[]);
+val €Actât_lemma› = save_pop_thm"Actât_lemma";
+=TEX
+=SML
+set_goal([conj102, conj103, conj104], conj101);
+a(rewrite_tac(map get_spec[¨subsys_secureEÆ, ¨LetÆ,
+	¨STP_secure_EÆ, ¨ConditionEÆ]));
+a(REPEAT strip_tac);
+a(DROP_NTH_ASM_T 5 (strip_asm_tac o
+	once_rewrite_rule[prove_rule[]¨µp q∑p ≤ q § p ≤ (≥p ± q)Æ] o
+	list_µ_elim[¨qÆ, ¨cÆ]));
+(* *** Goal "1" *** *)
+a(asm_rewrite_tac(map get_spec[¨ok_to_proceedÆ]));
+(* *** Goal "2" *** *)
+a(asm_rewrite_tac(map get_spec[¨ok_to_proceedÆ, ¨LetÆ]));
+a(all_asm_ante_tac);
+a(lemma_tac¨∂dq ocq fps∑destVal (STP (q, c)) = (dq, ocq, fps)Æ
+	THEN1
+	(MAP_EVERY ∂_tac [¨Fst (destVal (STP (q, c)))Æ,
+		¨Fst(Snd (destVal (STP (q, c))))Æ,
+		¨Snd(Snd (destVal (STP (q, c))))Æ]
+	THEN rewrite_tac[]));
+a(asm_rewrite_tac[] THEN REPEAT_N 9 strip_tac);
+a(lemma_tac¨Viewât (reprState sâ1) ç RiskInputs c (compile dq)Æ);
+(* *** Goal "2.1" *** *)
+a(rewrite_tac[get_spec¨RiskInputsÆ] THEN REPEAT strip_tac);
+a(∂_tac¨Viewât (reprState sâ2)Æ);
+a(ALL_ASM_FC_T rewrite_tac []);
+a(contr_tac);
+a(LIST_DROP_NTH_ASM_T [6, 7] (MAP_EVERY ante_tac)
+	THEN asm_rewrite_tac(Actât_lemma::map get_spec[¨EMâ1Æ, ¨EMÆ, ¨LetÆ]));
+a(cases_tac ¨≥ Snd (compile dq (Viewât (reprState sâ1))) = []Æ
+	THEN cases_tac ¨is_select dqÆ
+	THEN asm_rewrite_tac[]);
+(* *** Goal "2.1.1" *** *)
+a(contr_tac);
+a(DROP_NTH_ASM_T 11 ante_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2.1.2" *** *)
+a(contr_tac);
+a(DROP_NTH_ASM_T 11 ante_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2.1.3" *** *)
+a(contr_tac);
+a(DROP_NTH_ASM_T 11 ante_tac THEN asm_rewrite_tac[]);
+a(ALL_ASM_FC_T rewrite_tac []);
+(* *** Goal "2.1.4" *** *)
+a(contr_tac);
+a(DROP_NTH_ASM_T 11 ante_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2.2" *** *)
+a(LIST_GET_NTH_ASM_T [2] (FC_T (MAP_EVERY ante_tac)));
+a(strip_tac THEN asm_rewrite_tac[]);
+a(rewrite_tac[taut_rule¨µa b c∑ (a ¥ ≥b) ¥ c § (≥a ¥ c) ± (a ± ≥b ¥ c)Æ]);
+a(REPEAT strip_tac);
+(* *** Goal "2.2.1" *** *)
+a(asm_rewrite_tac(Actât_lemma::map get_spec[¨EMâ1Æ, ¨EMÆ, ¨LetÆ]));
+(* *** Goal "2.2.2" *** *)
+a(POP_ASM_T ante_tac);
+a(asm_rewrite_tac(Actât_lemma::map get_spec[¨EMâ1Æ, ¨EMÆ, ¨LetÆ]));
+val €ConditionE_Lemma2› = save_pop_thm"ConditionE_Lemma2";
+=TEX
+=SML
+set_goal([], conj104);
+a(rewrite_tac(map get_spec [¨GiveDataÆ, ¨LetÆ]));
+a(REPEAT strip_tac THEN_TRY asm_rewrite_tac[get_spec¨MapÆ]);
+a(all_asm_ante_tac THEN strip_asm_tac(µ_elim ¨DT_rows tÆ list_cases_thm)
+	THEN asm_rewrite_tac[get_spec¨MapÆ]);
+val €ConditionE_Lemma3› = save_pop_thm"ConditionE_Lemma3";
+=TEX
 \section{CLOSING DOWN}
 The following \Product{} instruction restores the previous proof context.
 =SML
