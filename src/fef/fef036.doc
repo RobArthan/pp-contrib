@@ -91,7 +91,9 @@ In ``Table Computations for SWORD'', \cite{DS/FMU/FEF/032}, semantic functions f
 the value and table  computations are defined together with  corresponding
  critical properties $OK\_VC‰d$,  $OK\_VC‰c$, $OK\_TC‰d$ and $OK\_TC‰c$. Documents
 \cite{DS/FMU/FEF/033} and \cite{DS/FMU/FEF/035} provide formal proofs that all
-these semantics functions satisfy their identified critical properties. We now
+these semantics functions satisfy their identified critical properties
+(which constitute inductive steps in a proof by induction over the
+syntax of SSQL). We now
 bring together these proofs to prove the conjecture
 $TableComputationsSecure$ of  the proof strategy, \cite{DS/FMU/FEF/034}. This is
 achieved via an induction principle for the set of semantic functions, in a similar
@@ -101,14 +103,15 @@ During the production  of the specifications of the semantic functions
 and during the process of proving that they satisfy their identified critical 
 properties,
 errors in the underlying query transformation specifications of \cite{trans}
-came to light. These errors are significant in that they render the SWORD
-system insecure. We give a brief account of measures taken to
+came to light. These errors are significant in that they if they are mirrored
+in the implementation then, the implementation wil not be secure.
+We give a brief account of measures taken to
 correct the specifications.
 
-Finally we provide the best partial proof for Phase II. The
-proof of  $TableComputationsSecure$ and the partial proof 
-in \cite{DS/FMU/FEF/031} of the execution model conjecture, $EM\_SecureE$, 
-(defined in \cite{DS/FMU/FEF/034}) are used to improve on $Theorem4$ of 
+Finally, we provide our sharpest partial result on the overall
+system security. The theorems proved
+in \cite{DS/FMU/FEF/031,DS/FMU/FEF/033,DS/FMU/FEF/035}
+are used to improve on $Theorem4$ of 
 the proof strategy, \cite{DS/FMU/FEF/034}.
  
 \section{PRELIMINARIES}
@@ -122,23 +125,25 @@ open_theory "fef035";
 new_theoryÛ"fef036"Ý;
 set_pc"hol";
 =TEX
+\pagebreak
 \section{TABLE COMPUTATIONS SECURITY PROOF}
 =TEX
 \subsection{Induction Principle}
-In \cite{DS/FMU/FEF/032}, we gave an account of reducing the critical
+\cite{DS/FMU/FEF/032} gives an account of reducing the critical
 requirements on the SSQL Transformation Processor by placing
 a bound on the allowed TSQL queries it produces. This involved a 
 reformulation of the classification computations which underlie
 the query transformations defined in \cite{trans} in terms
-of a relational algebra model of TSQL execution. The semantic functions 
+of a relational algebra model of SSQL execution. The semantic functions 
 defined in \cite{DS/FMU/FEF/032}
 bring out the security checks which correspond to each of the constructors
 of the SSQL language. The  overall security checks
 required by the SSQL semantics are then reduced to properties of the individual
 constructors by an induction principle for the set of semantic functions.
 
-We first express the induction principle as a HOL theorem.
+We first state and prove the induction principle as a HOL theorem.
 
+{\ftlinepenalty=9999
 =SML
 set_goal([], ¬µcc:Class·
 	µtcs : TABLE_COMP SET; vcs : VALUE_COMP SET·
@@ -173,22 +178,18 @@ set_goal([], ¬µcc:Class·
 	±	(µte· te  tcs ´ SingleValue cc te  vcs)
 
 	±	(JoinedRowExistence cc  vcs)
-=TEX
-=SML
 	±	(µi· TableContents i  tcs)
 
 	±	(µesl tel e1 ml nl e2· Elems(Map Fst esl) € vcs
 			± Elems tel € tcs ± e1  vcs ± e2  vcs
 				´ AllTuples cc esl tel e1 ml nl e2  tcs)
-(*	±	(µesl tel e1 ml nl e2· Elems(Map Fst esl) € vcs)
-			± Elems tel € tcs ± e1  vcs ± e2  vcs
-				´ DistinctTuples cc esl tel e1 ml nl e2  tcs)
-	±	(µesl tel e1 ml nl e2· Elems(Map Fst esl) € vcs)
-			± Elems tel € tcs) ± e1  vcs ± e2  vcs
-				´ Evaluate cc esl tel e1 ml nl e2  tcs)	*)
-	´	TableComputations cc € tcs
+
+´		TableComputations cc € tcs
 	±	ValueComputations cc € vcs
 ®);
+=TEX
+}%
+=SML
 a(REPEAT µ_tac THEN strip_tac
 	THEN rewrite_tac[rewrite_rule[get_spec¬¥‰2®] (get_spec¬TableComputations®)]
 	THEN PC_T1"sets_ext1" REPEAT strip_tac);
@@ -205,33 +206,110 @@ val Ûtable_computation_induction_thmÝ =
 =TEX
 \subsection{Proof of $TableComputationsSecure$}
 
-We need to put together all the lemmas proved in \cite{DS/FMU/FEF/033} 
-and \cite{DS/FMU/FEF/035} which comprise the inductive steps of
-the  induction principle of the previous section.
-The critical properties $OK\_VC‰d$ and $OK\_VC‰c$ are proven separately
- in \cite{DS/FMU/FEF/033} for each value form. Similarly, the critical 
-properties $OK\_TC‰d$ and $OK\_TC‰c$ are proven separately
- in \cite{DS/FMU/FEF/035} for each table form. We first ``massage''
-the separate lemmas from \cite{DS/FMU/FEF/033} and \cite{DS/FMU/FEF/035}
-to give a list of lemmas of a suitable form for the induction principle.
-For example, consider the two separate monadic form 
-results from \cite{DS/FMU/FEF/033} :
+We now wish to prove the conjecture $TableComputationsSecure$ from
+\cite{DS/FMU/FEF/034}, which asserts the following:
+
 =GFT
-ô µc f vc· vc  OK_VC‰d c ´ MonOp f vc  OK_VC‰d c
-ô µc f vc· vc  OK_VC‰c c ´ MonOp f vc  OK_VC‰c c
+?ô	µ cc· TableComputations cc € OkTableComputation cc
 =TEX
-In order to match the form of the induction principle, we require the result
+
+Now the following theorem , $OK\_TC‰d\_lemma$,
+has been proved in \cite{DS/FMU/FEF/033}:
+
 =GFT
-ô µc f vc· vc  OK_VC‰d c ¡ OK_VC‰c c ´ MonOp f vc  OK_VC‰d c ¡ OK_VC‰c c
+ô	µ c· OK_TC‰d c € OkTableComputation c
 =TEX
-Rather than prove each result of this form separately, we use 
-forward inference on all the appropriate lemmas of \cite{DS/FMU/FEF/033}
-and \cite{DS/FMU/FEF/035}together to obtain a  theorem suitable
-for use by the induction principle.
+
+To prove $TableComputationsSecure$, it is therefore sufficient to
+prove:
+
+=GFT
+?ô	µ cc·	TableComputations cc € OK_TC‰d cc
+=TEX
+
+We prove the above by an induction ``over the syntax'' of table computations.
+Now the set of table computations is defined in \cite{DS/FMU/FEF/032}
+simultaneously with the set of value computations. Moreover, it turns out
+that in the inductive steps for the $AllTuple$ form of table computation we
+need a rather stronger inductive hypothesis than the above. The sets
+$OK\_VC‰d$ and $OK\_VC‰c$ defined in \cite{DS/FMU/FEF/032} embody
+the hypotheses required on the value computations and the
+set $OK\_TC‰c$ gives the necessary strengthening of the hypotheses
+on the table computations. Thus we shall prove the following
+stronger result:
+
+=GFT
+?ô	µ cc·	TableComputations cc € OK_TC‰d cc ¡ OK_TC‰c cc
+	±	ValueComputations cc € OK_VC‰d cc ¡ OK_VC‰c cc
+=TEX
+
+Now in the proofs of the inductive steps in \cite{DS/FMU/FEF/033,DS/FMU/FEF/035},
+the $OK\_{\rm x}C‰d$ and $OK\_{\rm x}C‰c$ properties are handled separately
+and, by and large, only those parts of the hypotheses which are required
+are stated and used. This may be seen in the following extract from
+the listing of theory $fef033$:
+
+=GFT
+BinOp_OK‰d_lemma
+		ô µ c f vc1 vc2
+		  · vc1  OK_VC‰d c ± vc2  OK_VC‰d c
+		      ´ BinOp f vc1 vc2  OK_VC‰d c
+...
+BinOp_OK‰c_lemma
+		ô µ c f vc1 vc2
+		  · vc1  OK_VC‰c c ± vc2  OK_VC‰c c
+		      ´ BinOp f vc1 vc2  OK_VC‰c c
+...
+Case_OK‰d_lemma	ô µ c cel ee
+		  · Elems (Map Fst cel) € OK_VC‰d c
+		        ± Elems (Map Snd cel) € OK_VC‰d c
+		        ± ee  OK_VC‰d c
+		      ´ Case c cel ee  OK_VC‰d c
+...
+Case_OK‰c_lemma	ô µ c cel ee
+		  · Elems (Map Fst cel) € OK_VC‰d c
+		        ± Elems (Map Fst cel) € OK_VC‰c c
+		        ± Elems (Map Snd cel) € OK_VC‰c c
+		        ± ee  OK_VC‰c c
+		      ´ Case c cel ee  OK_VC‰c c
+=TEX
+
+So, for example, $Case\_OK‰c\_lemma$,
+the part of the inductive step for the $Case$ (conditional) value
+form concerned with $OK\_VC‰c$, requires the constituents
+giving the boolean conditions (first components)
+to lie in both $OK\_VC‰d$ and $OK\_VC‰c$,
+whereas the constituents giving the result values (second components)
+need only lie in $OK\_VC‰c$. Thus, the results proved
+in \cite{DS/FMU/FEF/033,DS/FMU/FEF/035} yield slightly more detailed
+information than is actually required for the inductive proof.
 
 
-We set an ML variable $ok\_vc\_tc\_conjs$ to the list of terms
-of the correct form for the hypothesis of the induction principle.
+To apply the induction principle of the previous section, we need
+to use the various lemmas of \cite{DS/FMU/FEF/033,DS/FMU/FEF/035}
+to derive the precise form needed for the theorems giving the inductive steps.
+For example, we need the following for the $Case$ form:
+
+
+=GFT
+		ô µ c cel ee
+		  · Elems (Map Fst cel) € OK_VC‰d c ¡ OK_VC‰c c
+		        ± Elems (Map Snd cel) € OK_VC‰d c ¡ OK_VC‰c c
+		        ± ee  OK_VC‰d c ¡ OK_VC‰c c
+		      ´ Case c cel ee  OK_VC‰d c ¡ OK_VC‰c c
+=TEX
+
+Since there are 23 inductive steps to be dealt with,
+it is convenient to use the programmable access to the theory
+database that {\Product} provides
+to assemble the proofs of the inductive steps in the desired form.
+In the rest of this section, we do this.
+
+
+First of all, we set an ML variable $ok\_vc\_tc\_conjs$ to hold terms
+expressing the desired inductive steps (at the loss of some clarity this
+could be done more automatically by substitution into the constituents of
+the theorem expressing the induction principle):
 =SML
 val Ûok_vc_tc_conjsÝ = map (curry mk_µ ¬c:Class®)
 [
@@ -282,16 +360,16 @@ val Ûok_vc_tc_conjsÝ = map (curry mk_µ ¬c:Class®)
          	 ´ AllTuples c esl tel e1 ml nl e2  OK_TC‰d c ¡ OK_TC‰c c®
 ];
 =TEX
-The following theorems will be used to eliminate $¡$.
+We will use the following theorems as rewrite rules to eliminate $¡$.
 =SML
 val ths = map (pc_rule1"sets_ext1"prove_rule[]) [
 	¬µx a b·x  a ¡ b ¤ x  a ± x  b®,
 	¬µc a b·c € a ¡ b ¤ c € a ± c € b®];
 =TEX
-We retrieve all the lemmas from \cite{DS/FMU/FEF/033} 
+We now retrieve all the lemmas from \cite{DS/FMU/FEF/033} 
 and \cite{DS/FMU/FEF/035} where the right hand side of the conclusion
 is of the form $\ OK\_VC‰d$, $\ OK\_VC‰c$, $\ OK\_TC‰d$, or $\ OK\_TC‰d$.
-We set an ML variable $ok\_vc\_tc\_thms$ to this list of lemmas.
+We set an ML variable $ok\_vc\_tc\_thms$ to hold this list of lemmas.
 
 =SML
 val Ûok_vc_tc_thmsÝ = 
@@ -308,10 +386,10 @@ val Ûok_vc_tc_thmsÝ =
 			andalso not(x =$ ¬OK_TC‰d®) andalso not(x =$ ¬OK_TC‰c®)
 		end	handle Fail _ => true));
 =TEX
-We now use the list of proven results, $ok\_vc\_tc\_thms$, together with
- the tactic $ok\_vc\_tc\_tac$ and rule $ok\_vc\_tc\_rule$, to prove a
-list of theorems $ok\_vc\_tc\_lemmas$ which are in a form suitable to
-be incorporated into the induction principle.
+Given one of the subgoals arising when $¡$ is eliminated from one of the
+inductive steps, the following tactic, $ok\_vc\_tc\_tac$,
+finds the appropriate theorem in
+$ok\_vc\_tc\_thms$ to solve the subgoal and uses it to do just that:
 
 =SML
 val Ûok_vc_tc_tacÝ : TACTIC = (fn gl as (_, cnc) =>
@@ -323,39 +401,54 @@ val Ûok_vc_tc_tacÝ : TACTIC = (fn gl as (_, cnc) =>
 	end	gl
 );
 =TEX
+The following rule (i.e. theorem-computing function) is intended
+to be given a term expressing one of the inductive steps as its
+arguemnt, it eliminates $¡$ from the term and then uses $ok\_vc\_tc\_tac$
+to prove it.
+
 =SML
-fun Ûok_vc_tc_ruleÝ t = (
+fun Ûok_vc_tc_ruleÝ (t : TERM) : THM = (
 	tac_proof(([], t), once_rewrite_tac ths THEN REPEAT strip_tac THEN ok_vc_tc_tac)
 );
 =TEX
-The list of theorems produced by mapping $ok\_vc\_tc\_rule$ 
-over  $ok\_vc\_tc\_conjs$ has been conjoined to give a single
-theorem (using $list\_±\_intro$) so that the results of all these 
-computations 
-may be seen in the theory listing
+The list of theorems giving the inductive steps are
+now proved by mapping $ok\_vc\_tc\_rule$ 
+over $ok\_vc\_tc\_conjs$. The results are then conjoined to give a single
+theorem (using $list\_±\_intro$) for later use.
+The theorem is saved in the theory as $ok\_vc\_tc\_lemmas $
+and may be seen in the theory listing at the end of this document.
 =SML
 val Ûok_vc_tc_lemmasÝ = save_thm("ok_vc_tc_lemmas", 
 	list_±_intro(map ok_vc_tc_rule ok_vc_tc_conjs));
 =TEX
-Now the proof of $TableComputationsSecure$.
+Now we can carry out the inductive proof of $TableComputationsSecure$.
 =SML
-set_goal([], ¬TableComputationsSecure®);
-a(lemma_tac¬µc·	TableComputations c € OK_TC‰d c®);
-(* *** Goal "1" *** *)
+set_goal([], ¬µ cc·
+		TableComputations cc € OK_TC‰d cc ¡ OK_TC‰c cc
+	±	ValueComputations cc € OK_VC‰d cc ¡ OK_VC‰c cc
+®);
 a µ_tac;
-a(ante_tac(list_µ_elim[¬c:Class®, ¬OK_TC‰d c ¡ OK_TC‰c c®, ¬OK_VC‰d c ¡ OK_VC‰c c®]
+a(ante_tac(list_µ_elim[
+			¬cc:Class®,
+			¬OK_TC‰d cc ¡ OK_TC‰c cc®,
+			¬OK_VC‰d cc ¡ OK_VC‰c cc®]
 		table_computation_induction_thm)
 	THEN asm_rewrite_tac [ok_vc_tc_lemmas]);
-a(PC_T1 "sets_ext1" prove_tac[]);
-(* *** Goal "2" *** *)
+val fef036_main_lemma = save_pop_thm"fef036_main_lemma";
+=TEX
+The proof of $TableComputationsSecure$ is now easily completed:
+=SML
+set_goal([], ¬TableComputationsSecure®);
+a(rewrite_tac[get_spec¬TableComputationsSecure®]);
 a(strip_asm_tac OK_TC‰d_lemma);
-a(PC_T1 "sets_ext1" asm_prove_tac[get_spec¬TableComputationsSecure®]);
+a(strip_asm_tac fef036_main_lemma);
+a(PC_T1 "sets_ext1" asm_prove_tac[]);
 val ÛTableComputationsSecure_thmÝ = save_pop_thm"TableComputationsSecure_thm";
 =TEX
 \section{PHASE II PROOF SUMMARY}
 
-In the proof strategy, \cite{DS/FMU/FEF/034}, we identified the three main
-areas which would be amenable to formal reasoning :
+In the proof strategy, \cite{DS/FMU/FEF/034}, three main
+areas were identified as amenable to formal reasoning :
 \begin{enumerate}
 \item
 Architectural Model
@@ -365,8 +458,8 @@ $TSQL$ ExecutionModel
 Table Computations
 \end{enumerate}
 
-In the time available, most of the proof effort has been concerned
-with  area (3). The conjecture $TableComputationsSecure$ has been proven. In
+Most of the proof effort has been concerned
+with  area (3). The conjecture $TableComputationsSecure$ has been proved. In
 addition work in area (2) has resulted in a partial proof of the security
 of the TSQL Execution Model. The result of this is the replacement
 of the conjecture $EM\_SecureE$,defined in \cite{DS/FMU/FEF/034}, by 
@@ -379,11 +472,13 @@ are also the same at that classification.
 The second is an information flow property
 on the output filter.
 
-\subsection{Errors Discovered During Proof Work}
+\subsection{Problems Discovered During Proof Work}
 One of the most important outcomes of the formal proof work carried 
-out in phase II was the discovery of errors in the specifications
+out in phase II was the discovery of problems in the specifications
 of \cite{DS/FMU/FEF/032} which model the query transformations
-of \cite{trans}.  Initially, we identified the requirement of the 
+of \cite{trans}.
+
+Initially, we identified the requirement of the 
 critical property $OK\_TC‰d$ on table computations and the associated 
 $OK\_VC‰d$ on value computations. Essentially $OK\_TC‰d$ and $OK\_VC‰d$
 capture the required information flow
@@ -447,7 +542,9 @@ Theorem5 =
     Correct_Compile_OkSTP
   ô FE_SWORD_SYSTEM_secure 
 =TEX
-
+=IGN
+output_theory{out_file="fef036th.doc", theory="fef036"};
+=TEX
 \newpage
 \HOLindexOff
 \input{fef036th.tex}
