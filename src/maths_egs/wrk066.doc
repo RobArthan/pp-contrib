@@ -501,7 +501,12 @@ val Ûlength_plus_coeffs_thmÝ = save_pop_thm "length_plus_coeffs_thm";
 The following is the special case of polynomial division in which the divisor
 is linear. In this special case, we do not need the notion of the degree of
 a polynomial to state the result (which is very fortunate, since we plan to
-use this in deriving the theory of polynomial degrees).
+use this in deriving the theory of polynomial degrees). In informal notation
+the result is that if $f$ is any polynomial (the one whose coefficient
+list is given by $l1$ in the formal statement), then there is another polynomial
+$g$ (the one whose coefficients are given by $l2$ in the formal statement)
+with a shorter list of coefficients and such that $f(x) = (x-a)g(x) + r$
+for some real number $r$.
 
 The proof below follows a slightly different pattern from the text book
 proof, which works by induction on the degree of the dividend (to divide
@@ -917,6 +922,53 @@ a(rewrite_tac[cts_lim_seq_thm] THEN REPEAT strip_tac
 	THEN ALL_FC_T rewrite_tac[poly_lim_seq_thm]);
 val Ûpoly_cts_thmÝ = save_pop_thm "poly_cts_thm";
 =TEX
+=SML
+set_goal([], ¬µf g t· f CtsAt g t ± g CtsAt t ´ (Ìx·f(g x)) CtsAt t®);
+a(rewrite_tac[cts_lim_seq_thm] THEN REPEAT strip_tac);
+a(all_asm_fc_tac[] THEN all_asm_fc_tac[]);
+a(POP_ASM_T ante_tac THEN rewrite_tac[È_axiom]);
+val Ûcomp_cts_thmÝ = save_pop_thm "comp_cts_thm";
+=TEX
+=SML
+set_goal([], ¬µt·~ CtsAt t®);
+a(LEMMA_T ¬~ = (Ìx·(Ìx·~(î¯ 1)) x * (Ìx·x) x)® pure_once_rewrite_thm_tac
+	THEN1 (rewrite_tac[] THEN PC_T1 "¯_lin_arith" prove_tac[]));
+a(strip_tac THEN bc_thm_tac times_cts_thm);
+a(rewrite_tac[const_cts_thm, id_cts_thm]);
+val Ûminus_cts_thmÝ = save_pop_thm "minus_cts_thm";
+=TEX
+=SML
+set_goal([], ¬µf t·f CtsAt t ´ (Ìx·~(f x)) CtsAt t®);
+a(REPEAT strip_tac);
+a(bc_thm_tac comp_cts_thm THEN REPEAT strip_tac);
+a(rewrite_tac[minus_cts_thm]);
+val Ûminus_comp_cts_thmÝ = save_pop_thm "minus_comp_cts_thm";
+=TEX
+=SML
+fun Ûun_Â_convÝ (v : TERM) : CONV = (fn tm =>
+	let	val lhs = mk_app(mk_Ì(v, tm), v);
+	in	eq_sym_rule (Â_conv lhs)
+	end
+);
+val ÛÌ_un_Â_rands_convÝ : CONV = (fn tm =>
+	let	val (v, _) = dest_Ì tm;
+	in	SIMPLE_Ì_C (RANDS_C (un_Â_conv v)) tm
+	end
+);
+val Ûsimple_cts_tacÝ : TACTIC = (fn gl as (_, tm) => 
+	let	val x = snd(dest_app tm);
+		val const_thm = all_µ_intro(¤_t_intro(all_µ_elim const_cts_thm));
+		val id_thm = all_µ_intro(¤_t_intro(all_µ_elim id_cts_thm));
+	in
+	conv_tac (simple_eq_match_conv const_thm) ORELSE
+	conv_tac (simple_eq_match_conv id_thm) ORELSE
+	(conv_tac (LEFT_C Ì_un_Â_rands_conv) THEN 
+		(bc_thm_tac plus_cts_thm ORELSE bc_thm_tac times_cts_thm
+		ORELSE bc_thm_tac minus_comp_cts_thm)) ORELSE
+	conv_tac (LEFT_C È_conv)
+	end	gl
+);
+=TEX
 \subsection{Derivatives}
 Following Harrison, we make much use of Carath\'{e}odory's characterisation
 of the derivative in terms of the continuity of a certain function:
@@ -952,6 +1004,102 @@ a(rename_tac[(¬x®, "x'")] THEN
 a(rewrite_tac[¯_times_assoc_thm] THEN ALL_FC_T rewrite_tac[¯_times_recip_thm]);
 a(all_var_elim_asm_tac1 THEN DROP_NTH_ASM_T 4 bc_thm_tac THEN REPEAT strip_tac);
 val Ûcaratheodory_deriv_thmÝ = save_pop_thm "caratheodory_deriv_thm";
+=TEX
+=SML
+set_goal([], ¬µf c x· (f HasDeriv c) x ´ f CtsAt x®);
+a(rewrite_tac[caratheodory_deriv_thm] THEN REPEAT strip_tac);
+a(LEMMA_T ¬f = Ìz·g z *(z + ~x) + f x® once_rewrite_thm_tac);
+(* *** Goal "1" *** *)
+a(rewrite_tac[] THEN REPEAT strip_tac);
+a(spec_nth_asm_tac 3 ¬x'® THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(REPEAT (simple_cts_tac THEN REPEAT strip_tac));
+val Ûhas_deriv_cts_thmÝ = save_pop_thm "has_deriv_cts_thm";
+=TEX
+=SML
+set_goal([], ¬µf1 c1 x f2 c2·
+	(f1 HasDeriv c1) x ± (f2 HasDeriv c2) x
+´	((Ìy·f1 y + f2 y) HasDeriv (c1 + c2)) x®);
+a(rewrite_tac[caratheodory_deriv_thm] THEN REPEAT strip_tac);
+a(rename_tac[(¬g®, "g1"), (¬g'®, "g2")] THEN
+	¶_tac¬Ìz:¯· g1 z + g2 z:¯® THEN asm_rewrite_tac[]);
+a(ALL_FC_T rewrite_tac[plus_cts_thm]);
+a(once_rewrite_tac[pc_rule1"¯_lin_arith" prove_rule[]
+	¬µa b c d:¯· (a + b) + c + d = (a + c) + b + d®]);
+a(asm_rewrite_tac[] THEN PC_T1 "¯_lin_arith" prove_tac[]);
+val Ûplus_deriv_thmÝ = save_pop_thm "plus_deriv_thm";
+=TEX
+=SML
+set_goal([], ¬µf1 c1 x f2 c2·
+	(f1 HasDeriv c1) x ± (f2 HasDeriv c2) x
+´	((Ìy·f1 y * f2 y) HasDeriv (c1*f2 x + f1 x*c2)) x®);
+a(REPEAT strip_tac THEN lemma_tac¬f2 CtsAt x® 
+	THEN1 all_fc_tac[has_deriv_cts_thm]);
+a(all_asm_ante_tac THEN
+	rewrite_tac[caratheodory_deriv_thm] THEN REPEAT strip_tac);
+a(rename_tac[(¬g®, "g1"), (¬g'®, "g2")] THEN
+	¶_tac¬Ìz:¯· g1 z*f2 z +  f1 x*g2 z:¯® THEN asm_rewrite_tac[]
+	THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(asm_rewrite_tac[pc_rule1"¯_lin_arith"prove_rule[]
+	¬µa b c d:¯·a*b + ~(c*d) = (a + ~c)*b + c*(b + ~d)®]);
+a(PC_T1 "¯_lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(REPEAT (simple_cts_tac THEN REPEAT strip_tac));
+val Ûtimes_deriv_thmÝ = save_pop_thm "times_deriv_thm";
+=TEX
+=SML
+set_goal([], ¬µf1 c1 f2 c2 x·
+	(f1 HasDeriv c1) (f2 x) ± (f2 HasDeriv c2) x
+´	((Ìy·f1(f2 y)) HasDeriv (c1*c2)) x®);
+a(REPEAT strip_tac THEN lemma_tac¬f2 CtsAt x® 
+	THEN1 all_fc_tac[has_deriv_cts_thm]);
+a(all_asm_ante_tac THEN
+	rewrite_tac[caratheodory_deriv_thm] THEN REPEAT strip_tac);
+a(rename_tac[(¬g®, "g1"), (¬g'®, "g2")] THEN
+	¶_tac¬Ìz:¯· g1(f2 z)*g2 z:¯® THEN asm_rewrite_tac[]
+	THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(PC_T1 "¯_lin_arith" prove_tac[]);
+(* *** Goal "2" *** *)
+a(REPEAT (simple_cts_tac THEN REPEAT strip_tac));
+a(bc_thm_tac comp_cts_thm THEN REPEAT strip_tac);
+val Ûcomp_deriv_thmÝ = save_pop_thm "comp_deriv_thm";
+=TEX
+=SML
+set_goal([], ¬µc t· ((Ìx·c) HasDeriv î¯ 0) t®);
+a(rewrite_tac[caratheodory_deriv_thm] THEN REPEAT strip_tac);
+a(¶_tac¬Ìz·î¯ 0® THEN rewrite_tac[]);
+a(simple_cts_tac);
+val Ûconst_deriv_thmÝ = save_pop_thm "const_deriv_thm";
+=TEX
+=SML
+set_goal([], ¬µc t· ((Ìx·x) HasDeriv î¯ 1) t®);
+a(rewrite_tac[caratheodory_deriv_thm] THEN REPEAT strip_tac);
+a(¶_tac¬Ìz·î¯ 1® THEN rewrite_tac[]);
+a(simple_cts_tac);
+val Ûid_deriv_thmÝ = save_pop_thm "id_deriv_thm";
+=TEX
+=SML
+set_goal([], ¬µn t· ((Ìx·x^(n+1)) HasDeriv (î¯ n + î¯ 1)*t^n) t®);
+a(REPEAT strip_tac THEN induction_tac¬n:î®);
+(* *** Goal "1" *** *)
+a(pure_rewrite_tac[¯_î_exp_def] THEN rewrite_tac[id_deriv_thm]);
+(* *** Goal "2" *** *)
+a(pure_once_rewrite_tac[¯_î_exp_def]);
+a(pure_rewrite_tac[prove_rule[]¬
+	(Ì x:¯· x * x ^ (n + 1)) = Ì x· (Ìx·x) x * (Ìx·x ^ (n + 1))x®]);
+a(LEMMA_T¬
+	(î¯ (n + 1) + î¯ 1) * t * t ^ n =
+	î¯ 1*(Ìx·x^(n + 1))t + (Ìx·x) t*(î¯ n + î¯ 1)*t^n®
+	pure_rewrite_thm_tac);
+(* *** Goal "2.1" *** *)
+a(rewrite_tac[î¯_plus_homomorphism_thm, ¯_î_exp_def]);
+a(conv_tac(RANDS_C ¯_anf_conv) THEN REPEAT strip_tac);
+(* *** Goal "2.2" *** *)
+a(bc_thm_tac times_deriv_thm);
+a(asm_rewrite_tac[id_deriv_thm]);
+val Ûpower_deriv_thmÝ = save_pop_thm "power_deriv_thm";
 =TEX
 \subsection{Epilogue}
 =TEX
