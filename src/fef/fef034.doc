@@ -1,0 +1,292 @@
+
+=TEX
+% TQtemplate.tex
+\documentstyle[hol1,11pt,TQ]{article}
+\def\Hide#1{}
+\def\Bool{``$\it{:}bool\,$''}
+\makeindex
+\TPPproject{DRA FRONT END FILTER PROJECT}  %% Mandatory field
+%\TPPvolume{}
+%\TPPpart{}
+\TPPtitle{Phase II Proof Strategy}  %% Mandatory field
+\TPPref{DS/FMU/FEF/034}  %% Mandatory field
+\def\SCCSversion{$Revision$
+}
+\TPPissue{\SCCSversion}  %% Mandatory field
+\TPPdate{\FormatDate{$Date$
+}}  %% Mandatory field (with sensible default)
+\TPPstatus{Approved}			%% Mandatory field
+\TPPtype{Specification}
+\TPPkeywords{}
+\TPPauthor{R.~D.~Arthan & WIN01}  %% Mandatory field
+%\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
+\TPPauthorisation{R.B.~Jones & HAT Manager}
+\TPPabstract{This document discusses proof opportunities and proof
+strategies for phase II of the
+DRA front end filter project RSRE 1C/6130.}
+%\TPPabstractB{}
+%\TPPabstractC{}
+%\TPPabstractD{}
+%\TPPabstractE{}
+%\TPPabstractF{}
+\TPPdistribution{\parbox[t]{4.0in}{%
+	HAT FEF File \\
+	Simon Wiseman
+}}
+%\TPPclass{CLASSIFICATION}
+\newfont{\icllogo}{icllogo50}
+\def\TPPheadlhs{$\vcenter{\halign{##\cr\icllogo ICL\cr}}$}
+%\def\TPPheadlhs{}
+%\def\TPPheadcentre{}
+%def\TPPheadrhs{}
+%\def\TPPfootlhs{}
+%\def\TPPfootcentre{}
+%\def\TPPfootrhs{}
+
+\begin{document}
+\TPPsetsizes
+\makeTPPfrontpage
+
+\vfill
+\begin{centering}
+
+%\bf Copyright \copyright\ : International Computers Ltd \number\year
+
+\end{centering}
+
+\newpage
+\section {DOCUMENT CONTROL}
+\subsection{Contents List}
+\tableofcontents
+\subsection{Document Cross References}
+\bibliographystyle{fmu}
+\bibliography{fmu,fef}
+
+\subsection{Changes History}
+\begin{description}
+\item[Issue \SCCSversion(\FormatDate{$Date$
+})] First draft for review by DRA.
+\end{description}
+
+\subsection{Changes Forecast}
+None.
+\pagebreak
+\section{GENERAL}
+\subsection{Scope}
+This document identifies various opportunites for proofs in phase II
+of the Front End Filter project and comments upon their significance. 
+It also contains discussion of and formal definitions relating to the
+problem of finding the proofs.
+
+\subsection{Introduction}
+The specifications for phase II of the Front End Filter project are
+somewhat more complicated in structure than those of phase I.
+This is partly because of the greater complexity of the informal specifications
+and indeed of the system they model. It is also because the separation
+of security concerns from other concerns is less straightforward for the
+Front End implementation than it is for the SSQL semantics.
+ 
+The three main documents in the phase II specifications in which
+the issues which are felt to be practically amenable to formal
+reasoning are separated out in stages in the three
+documents \cite{DS/FMU/FEF/022,DS/FMU/FEF/026,DS/FMU/FEF/032}.
+These are concerned with an {\em Architectural Model}, a
+{\em TSQL Execution Model} and the {\em Table Computations},
+respectively.
+
+The specifications in these documents draw on supporting material
+from the phase I specifications and from the documents
+\cite{DS/FMU/FEF/021,DS/FMU/FEF/024,DS/FMU/FEF/025,DS/FMU/FEF/028,DS/FMU/FEF/029}
+as necessary. Each of \cite{DS/FMU/FEF/022,DS/FMU/FEF/026,DS/FMU/FEF/032}
+identifies critical properties for the stage it is concerned with, and
+each of these provides an opportunity for formal proof work.
+
+It is the intention of the present document to give a brief overview
+of the three stages of the discussion and to discuss in more detail
+the strategy for carrying out partial proofs of selected critical
+properties. As a result of preliminary correspondence and discussion with DRA,
+it is intended to concentrate effort on the security properties which relate
+most directly with the specifications of the table computations
+produced by the Front End Transformations, and
+so the present document goes into greater detail about this material (from
+\cite{DS/FMU/FEF/032}) than it does about the other two stages.
+
+
+\section{PRELIMINARIES}
+The following \Product{} instructions set up the new theory $fef034$,
+which is used to hold definitions relating to the properties to be proved.
+
+=SML 
+open_theory "fef032";
+new_theory€"fef034"›;
+set_pc"hol";
+=TEX
+\section{SYSTEM CONSTRUCTION}
+The present document provides a convenient point to pull together
+the constructions of the other phase II specification to give the
+formal definition of the behavioural model of the SWORD system
+whose security properties we wish to investigate by formal proof:
+
+πHOLCONST
+‹	FE_SWORD_SYSTEM : (Query, ANSWER) BEHAVIOURS
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	FE_SWORD_SYSTEM = FE_SWORD reprState TSQLtf STP outputFilter
+∞
+
+Thus the model is obtained by applying the architectural
+construction function $FE\_SWORD$ of \cite{DS/FMU/FEF/022} to the
+components of \cite{DS/FMU/FEF/022,DS/FMU/FEF/025,DS/FMU/FEF/021,DS/FMU/FEF/024}.
+
+The overall security conjecture we are interested in is the assertion
+that this behavioural model satisfies the security policy defined
+in \cite{DS/FMU/FEF/003}. This may be captured in the following definition:
+
+πHOLCONST
+‹	FE_SWORD_SYSTEM_secure : BOOL
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	FE_SWORD_SYSTEM_secure § FE_SWORD_SYSTEM ç secure
+∞
+
+\section{ARCHITECTURAL MODEL}\label{ARCHITECTURALMODEL}
+
+A formal model of the architecture of the Front End Implementation
+of SWORD is given in \cite{DS/FMU/FEF/022}. This architectural model
+defines how certain subsystems with specified interfaces are combined
+to produce a behavioural model of the SWORD system to which the formal
+security policy of \cite{DS/FMU/FEF/003} applies directly.
+\cite{DS/FMU/FEF/022} also defines critical properties on the subsystem
+and states a conjecture that the policy is satisfied if these hold.
+
+The subsystems identified in \cite{DS/FMU/FEF/022} are as follows:
+
+\begin{itemize}
+\item
+The target DBMS, thought of as a processor of TSQL queries.
+\item
+An Output Filter, informally specified in \cite{filter},
+whose main role is to purge data from the output of
+the target DBMS which the client is not cleared to see.
+\item
+The SSQL Transformation Processor, informally specified in cite{trans},
+whose main role is to map SSQL queries into
+sequences of one or two TSQL queries to
+be executed on the target DBMS.
+\end{itemize}
+
+The main functional aspect described in \cite{DS/FMU/FEF/022} is the
+overall interconnection of these three subsystems. In particular, it
+defines the way the optional check queries produced by the
+SSQL Transformation Processor are used to prevent execution of queries
+which would otherwise cause illegal information flows which the Output
+Filter is not able to suppress.
+
+\cite{DS/FMU/FEF/022} identifies five critical properties. Four of
+these, $subsys\_secureA \ldots subsys\_secureD$ constrain only
+the SSQL transformation processor and the target DBMS. The fifth
+$subsys\_secureE$ constrains all three subsystems. What is, in effect,
+the conjunction of the five properties is given the name
+$subsys\_secure$; it is conjectured that, if the three subsystems
+have this combined property, then the SWORD system constructed from them
+by the architectural model will satisfy the the security policy.
+
+The architectural security conjecture taken from the
+informal discussion at the end of \cite{DS/FMU/FEF/022} may be recorded
+for future reference in a metalanguage variable\footnote{%
+Because this conjecture is polymorphic, i.e. containx type variables,
+ProofPower does not allow us to define a boolean constants
+to capture it in the theory database (essentially because the truth
+value might depend on the instantiation of the type variables in the
+conjecture, which would render the definition inconsistent). Consequently,
+we use terms held in metalanguage variables to record such conjectures rather
+than follow the style of \cite{DS/FMU/FEF/007}.
+}%
+:
+
+=SML
+val €SWORD_architecture_secure_conj› = ¨
+	µrepr dbms stp filter∑
+			(dbms, stp, filter) ç subsys_secure repr
+		¥	FE_SWORD repr dbms stp filter ç secure
+Æ;
+=TEX
+
+It is expected that the proof of this lemma would be quite similar to
+that of the unwinding result proved during phase I for the SSQL
+semantics (see \cite{DS/FMU/FEF/007}). Indeed, it is likely that the
+commonality between the two could be exploited to adapt parts of the
+phase I proofs for re-use here.  These common parts would be those
+concerned with showing that appropriate critical properties on the
+transition function of the system entail the security of the
+behavioural model constructed from it. The more novel part of the proof
+would mainly be concerned with the function $mkTf\sb{f}$ of
+\cite{DS/FMU/FEF/022} which constructs the transition functions on the
+system and is largely concerned with looking after the optional check
+query and the check it makes.
+
+The particular instance of this conjecture with which we are concerned
+is captured by the following definition.
+
+πHOLCONST
+‹	Phase2_Lemma1 : BOOL
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	Phase2_Lemma1 §
+‹		(TSQLtf, STP, outputFilter) ç subsys_secure reprState
+‹		¥
+‹		FE_SWORD_SYSTEM ç secure
+‹		
+∞
+
+On the basis of the definition of $subsys\_secure$ the hypothesis
+here might be expected to reduce to 5 subsidiary lemmas as
+follows:
+
+πHOLCONST
+‹	Phase2_Lemma1A : BOOL;
+‹	Phase2_Lemma1B : BOOL;
+‹	Phase2_Lemma1C : BOOL;
+‹	Phase2_Lemma1D : BOOL;
+‹	Phase2_Lemma1E : BOOL
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	(Phase2_Lemma1A § (TSQLtf, STP) ç subsys_secureA reprState) ±
+‹	(Phase2_Lemma1B § (TSQLtf, STP) ç subsys_secureB reprState) ±
+‹	(Phase2_Lemma1C § (TSQLtf, STP) ç subsys_secureC reprState) ±
+‹	(Phase2_Lemma1D § (TSQLtf, STP) ç subsys_secureD reprState) ±
+‹	(Phase2_Lemma1E § (TSQLtf, STP, outputFilter) ç subsys_secureE reprState)
+∞
+
+Of these 5 only part E is concerned with the $SELECT$ query. It is this
+part which the rest of the proof work will concentrate on.
+
+\section{EXECUTION MODEL}\label{EXECUTIONMODEL}
+The formal definition of the Output Filter, the SSQL Transformation Processor
+and the TSQL semantics for SWORD is given in the documents
+\cite{DS/FMU/FEF/028,DS/FMU/FEF/029,DS/FMU/FEF/024,DS/FMU/FEF/021}.
+This material is related to the architectural model by the execution
+model defined in \cite{DS/FMU/FEF/026}. This execution model serves both
+to bring the pieces together and to relate the specification of the
+transformations to a conceptually simpler semantic description of how
+SSQL queries are intended to be executed on the target database. 
+
+
+
+\section{TABLE COMPUTATIONS}\label{TABLECOMPUTATIONS}
+
+\section{CLOSING DOWN}
+=IGN
+output_theory{theory = "fef034",out_file = "fef034th.doc"};
+=TEX
+The following \Product{} instruction restores the previous proof context.
+=SML
+pop_pc();
+=TEX
+
+\newpage
+\HOLindexOff
+\input{fef034th.tex}
+\HOLindexOn
+\newpage
+\twocolumn[\section{INDEX} \label{INDEX}]
+\small
+\printindex
+
+\end{document}
