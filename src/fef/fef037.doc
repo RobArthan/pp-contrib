@@ -47,7 +47,8 @@ DRA front end filter project RSRE 1C/6130.}
 \subsection{Changes History}
 \begin{description}
 \item[\SCCSversion ({\FormatDate{$Date$
-}})] Tidied up a bit.
+}})] Ported to version 0.3 ProofPower. Initialisation file not
+required now.
 \end{description}
 
 \subsection{Changes Forecast}
@@ -215,7 +216,7 @@ $(SMLFILES:.sml=) : $$@.tex
 
 $(FEFDB) : $(ALLSMLS) makefef.sh
 	rm -f $(FEFDB)
-	hol_make_database -f -p hol#fin_set fef#cache_thms
+	pp_make_database -f -p pp_hol#fin_set fef#cache_thms
 	- chmod u+w $(FEFDB)
 	makefef.sh -d $(FEFDB) -s "Built by makefile"  \
 		$(ALLSMLS)
@@ -224,7 +225,7 @@ $(FEFDB) : $(ALLSMLS) makefef.sh
 
 $(PH2FEFDB) : $(PHASE2SMLS) makefef.sh
 	rm -f $(PH2FEFDB)
-	hol_make_database -f -p hol#fin_set ph2fef#cache_thms
+	pp_make_database -f -p pp_hol#fin_set ph2fef#cache_thms
 	- chmod u+w $(PH2FEFDB)
 	makefef.sh -d $(PH2FEFDB) -s "Built by makefile"  \
 		$(PHASE2SMLS)
@@ -380,8 +381,8 @@ EOF
 # Material put in during the load of each file
 	echo "$command; save_and_quit();"
 
-# The following is where the above is piped to
-	) | hol -d $database -i fef_initialisation.sml 2>&1
+# The following is where the above is piped to ProofPower
+	) | hol -d $database 2>&1
 
 	cat .makefef.log_file >> .makefef.compile_summary
 
@@ -398,7 +399,7 @@ done
 
 	echo "rev(!fefversions); save_and_quit();"
 	##End
-) | hol -d $database -i fef_initialisation.sml 2>&1
+) | hol -d $database 2>&1
 
 if test $collect = "y"
 then
@@ -424,11 +425,6 @@ rm -f .makefef.compile_summary .makefef.log_file
 =SH
 chmod +x makefef.sh
 =TEX
-Initialisation script to reload local proof contexts:
-=DUMP fef_initialisation.sml
-use_string("reload_local_proof_contexts ();") handle _ => ();
-=TEX
-
 \twocolumn[\section{INDEX} \label{INDEX}]
 \small
 \printindex
