@@ -63,7 +63,7 @@ DRA front end filter project RSRE 1C/6130.}
 \subsection{Changes History}
 \begin{description}
 \item[Issue \SCCSversion ({\FormatDate{$Date$
-}})]  New parent $fef022$.
+}})]  Added external interface function.
 \end{description}
 
 \subsection{Changes Forecast}
@@ -254,7 +254,7 @@ Check whether the user is cleared to see the
 
 ¹HOLCONST
 Ü	Ûfilter_colsİ: Class ­ (Item ¸ Class)LIST  
-Ü					­ ((Item + STRING) ¸ Class) LIST
+Ü					­ Data LIST
 ÷üüüüüüüüüüüüüü
 Ü	µ clear ic ics ·
 Ü	filter_cols clear [] = []
@@ -262,8 +262,10 @@ Check whether the user is cleared to see the
 Ü		let (i,c) = ic
 Ü		in 
 Ü		if clear dominates c 
-Ü		then Cons (giveVal i,c)(filter_cols clear ics)
-Ü		else Cons (giveError "notCleared",c)(filter_cols clear ics)
+Ü		then Cons (MkData c i)(filter_cols clear ics)
+Ü		else	Cons
+Ü			(MkData c(ValuedItemItem(MkValuedItem sterling dummyVal)))
+Ü			(filter_cols clear ics)
 °
 
 Finally, filter the whole table of selected data. A 
@@ -272,7 +274,7 @@ boolean $true$ is returned.
 
 ¹HOLCONST
 Ü	Ûfilter_selectİ: (Class ¸ Class ¸ (Item ¸ Class)LIST)LIST ¸ Class
-Ü			  ­ ((Item + STRING) ¸ Class) LIST LIST ¸ BOOL
+Ü			  ­ Data LIST LIST ¸ BOOL
 ÷üüüüüüüüüüüüüü
 Ü	µ table clear ·
 Ü	filter_select (table,clear) = 
@@ -280,8 +282,29 @@ boolean $true$ is returned.
 Ü		in 
 Ü		(Map (filter_cols clear) ftable,check)
 °
-\newpage
+\subsection{Interface}
 
+We compose the functions of the previous section to give the function
+$filter$ required in \cite{DS/FMU/FEF/026}. To do this it is
+convenient to make a type abbreviation for the additional parameter
+which controls the behaviour of the filter.
+
+=SML
+declare_type_abbrev("FILTER_PARS", [],	”BOOL ¸ ((Class + ONE) ¸ BOOL LIST)®);
+=TEX
+¹HOLCONST
+Ü	Ûfilterİ: Class ¸ ANSWER ¸ FILTER_PARS ­ ANSWER
+÷üüüüüüüüüüüüüü
+Ü	µ cl dl errs cw cr cc
+Ü	·	filter (cl, (dl, errs), cw, cr, cc)
+Ü	=	if	³ errs = []
+Ü		then	([], errs)
+Ü		else	let	(ans, mnbc) = filter_select
+Ü					(fill_table (cw, cr, cc, cl, dl), cl)
+Ü			in	(ans, if mnbc then [mayNotBeComplete] else [])
+°
+
+\newpage
 \section{CLOSING DOWN}
 The following \Product{} instruction restores the previous proof context.
 =SML
