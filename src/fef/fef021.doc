@@ -62,9 +62,8 @@ DRA front end filter project RSRE 1C/6130.}
 
 \subsection{Changes History}
 \begin{description}
-\item[Issue 1.2] Column existence class should be set to bottom. Worths set to sterling.
 \item[Issue \SCCSversion ({\FormatDate{$Date$
-}}) ] TSQL abstract machine section removed.
+}}) ] New parent $fef021$. $lattice\_bottom$ moved to DS/FMU/FEF/003.
 \end{description}
 
 \subsection{Changes Forecast}
@@ -102,17 +101,42 @@ of the conventional DBMS.
 The following \Product{} instructions set up the new theory $fef021$  and set the context 
 for the proof tools.
 =SML 
-open_theory "fef015";
+open_theory "fef024";
 new_theoryÛ"fef021"İ;
 push_pc "hol";
 =TEX
+\subsection{Consistency Proof for $repState$ and $absState$}
+We have included here the consistency proofs for 
+$repState$ and $absState$ which were defined in Phase~1 in 
+\cite{DS/FMU/FEF/010}.
+=SML
+push_consistency_goal¬repState®;
+a(strip_asm_tac (simple_´_match_mp_rule type_lemmas_thm state_type_def));
+a(¶_tac¬(rep,abs)® THEN asm_rewrite_tac[]);
+a ±_tac;
+=TEX
+=SML
+(* *** Goal "1" *** *)
+a(REPEAT strip_tac THEN_TRY asm_rewrite_tac[]);
+a(POP_ASM_T (ante_tac o app_fun_rule¬abs®) THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(REPEAT µ_tac THEN ´_tac);
+a(REPEAT strip_tac THEN_TRY asm_rewrite_tac[]);
+a(POP_ASM_T (ante_tac o app_fun_rule¬rep®) THEN asm_rewrite_tac[]);
+save_consistency_thm¬repState®(pop_thm());
+val ÛrepState_absState_defİ = get_spec¬repState®;
+=TEX
+We simplify one of the properties of the representation and abstraction functions.
+=SML
+val isState_lemma1 = all_µ_intro(nth 1 (strip_±_rule(all_µ_elim repState_absState_def)));
+=TEX
+
+=GFT HOL output
+isState_lemma1 = ô isState r ´ repState (absState r) = r
+=TEX
+
+=TEX
 \subsection{Auxiliary Functions}
-First, the lowest possible classification.
-¹HOLCONST
-Ü	Ûlattice_bottomİ : Class
-÷üüüüüüüüüüüüüüüüüüüüüüü
-Ü	µ c : Class · c dominates lattice_bottom  	
-°
 A function that takes an $Item$ and sets its worth to $sterling$.
 
 ¹HOLCONST
@@ -319,15 +343,15 @@ declare_type_abbrev(Û"tf‰t"İ,[],” Query ¸ State‰t ­ State‰t ¸ (Data LIST LIST ¸ 
 
 \subsection{Building a Transition Function}
 
-We define a function, $mkTf‰t$, which builds a transition function from two components:  a component of type $Process‰t$ and a component of type $Ustate‰t$. The resulting transition function
+We define a function, $MkTf‰t$, which builds a transition function from two components:  a component of type $Process‰t$ and a component of type $Ustate‰t$. The resulting transition function
 updates the original state of the database by using the
 result of processing a query on the  state of the database. 
 
 ¹HOLCONST
-Ü	ÛmkTf‰tİ : Process‰t ­ Ustate‰t ­ tf‰t
+Ü	ÛMkTf‰tİ : Process‰t ­ Ustate‰t ­ tf‰t
 ÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
 Ü	µp:Process‰t; u:Ustate‰t; q : Query; s : State‰t
-Ü	·	(mkTf‰t p u) (q,s) = u(p(q,s),s)
+Ü	·	(MkTf‰t p u) (q,s) = u(p(q,s),s)
 ° 
 
 \subsection{The TSQL Transition Function}
@@ -339,7 +363,7 @@ $updateState‰t$.
 ¹HOLCONST
 Ü	ÛTSQLtfİ : tf‰t
 ÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
-Ü	TSQLtf = mkTf‰t processQuery‰t updateState‰t
+Ü	TSQLtf = MkTf‰t processQuery‰t updateState‰t
 ° 
 
 
