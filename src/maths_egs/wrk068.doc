@@ -78,7 +78,7 @@ doctex wrk068 wrk068.th; texdvi -b wrk068; texdvi wrk068; texdvi wrk068
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2004/05/17 11:12:31 $%
+\date{\FormatDate{$Date: 2004/05/22 13:11:53 $%
 }}
 
 \begin{document}
@@ -97,7 +97,7 @@ We exhibit a few examples of groups and show that the various abstract notions l
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK068; issue $Revision: 1.21 $%
+Reference: LEMMA1/HOL/WRK068; issue $Revision: 1.22 $%
 
 
 \end{centering}
@@ -111,7 +111,12 @@ Reference: LEMMA1/HOL/WRK068; issue $Revision: 1.21 $%
 %\newpage
 %\subsection{Document cross references}
 
+\subsection*{Recent Changes}
+As of 25th September 2004, we use a labelled product type rather than a type abbreviation for the signature of a group.
+
 \subsection*{To Do}
+This version now uses labelled product types rather than type abbreviations for the signature of a group.
+
 \begin{itemize}
 
 \item
@@ -456,9 +461,13 @@ set_merge_pcs["basic_hol1", "'sets_alg"];
 %%%%
 \subsection{The Signature of a Group}
 We will represent a group  as a quadruple comprising a carrier set, a two-argument multiplication function, a unit element and a one-argument inverse function.
-This signature is captured in the following type abbreviation, parametrised by the type variable $'a$ giving the type of the elements of the group.
-=SML
-declare_type_abbrev("GROUP", ["'a"], ”'a SET ¸ ('a ­ 'a ­ 'a) ¸ 'a ¸ ('a ­ 'a)®);
+This signature is captured in the following labelled product type definition, parametrised by the type variable $'a$ giving the type of the elements of the group.
+¹HOLLABPROD ÛGROUPİüüüüüüüüüüüüüüüüü
+Ü	ÛCar‰Gİ			: 'a SET;
+Ü	ÛTimes‰Gİ		: 'a ­ 'a ­ 'a;
+Ü	ÛUnit‰Gİ			: 'a;
+Ü	ÛInverse‰Gİ		: 'a ­ 'a
+°üüüüüüüüüüüüüüüüüüüüüüüüüüüüü
 =TEX
 If $G$ is a structure with the above signature (i.e., a member of an instance of the above type), we write
 =INLINEFT
@@ -482,20 +491,22 @@ This is achieved by the following fixity declarations and definition of access f
 =SML
 declare_infix(310, ".");
 declare_postfix(330, "›~");
+
 ¹HOLCONST
 Ü ÛCarİ :  'a GROUP ­ 'a SET;
 Ü Û$.İ :  'a ­ 'a ­ 'a GROUP ­ 'a;
 Ü Û$›~İ :  'a ­ 'a GROUP ­ 'a;
 Ü ÛUnitİ :  'a GROUP ­ 'a
 ÷üüüüüü
-Ü µ (set, times, one, inverse)·
-Ü	Car (set, times, one, inverse) = set
-Ü ±	(µx y· (x . y) (set, times, one, inverse) = times x y)
-Ü ±	Unit (set, times, one, inverse) = one
-Ü ±	(µx· (x ›~) (set, times, one, inverse) = inverse x)
+Ü µ set times one inverse·
+Ü	Car (MkGROUP set times one inverse) = set
+Ü ±	(µx y· (x . y) (MkGROUP set times one inverse) = times x y)
+Ü ±	Unit (MkGROUP set times one inverse) = one
+Ü ±	(µx· (x ›~) (MkGROUP set times one inverse) = inverse x)
 °
+[{\bf Aside}: For the future: one may want the above with {\em Car} and {\em Unit} as aliases, but with the defining property as above proved as a theorem to give the general purpose rewrite rule to use in reasoning about these aliases and the defined constants for multiplication and inverse.]
 
-
+=TEX
 We prove one theorem about these which is just a convenience for proving that two structures for this signature are equal.
 
 \ThmsI{
@@ -638,7 +649,7 @@ The unit subgroup of a group is the subgroup whose carrier set comprises only th
 Ü ÛUnitSubgroupİ : 'a GROUP  ­ 'a GROUP
 ÷üüüüüü
 Ü µ G·
-Ü	UnitSubgroup G = ({Unit G}, (Ìx y·(x.y)G), Unit G, (Ìx·(x ›~)G))
+Ü	UnitSubgroup G = MkGROUP {Unit G} (Ìx y·(x.y)G) (Unit G) (Ìx·(x ›~)G)
 °
 
 Iif $G$ is a group then $G$ itself and its unit subgroup are both subgroups of $G$.
@@ -683,7 +694,7 @@ In the narrative and in the names of theorems we refer to this as the restrictio
 ¹HOLCONST
 Ü ÛRestrictionİ : 'a SET ­ 'a GROUP  ­ 'a GROUP
 ÷üüüüüü
-Ü µ A G· Restriction A G = (A ¡ Car G, (Ìx y· (x.y)G), Unit G, (Ìx·(x ›~)G))
+Ü µ A G· Restriction A G = MkGROUP (A ¡ Car G) (Ìx y· (x.y)G) (Unit G) (Ìx·(x ›~)G)
 °
 =SML
 declare_alias("¡", ¬Restriction®);
@@ -715,7 +726,7 @@ The kernel of a homomorphism from $G$ to $H$  has as its carrier set the pre-ima
 ÷üüüüüü
 Ü µ f G H·
 Ü	Ker f (G, H)
-Ü =	({x | x  Car G ± f x = Unit H}, (Ìx y· (x . y)G), Unit G, (Ìx·(x ›~) G))
+Ü =	MkGROUP {x | x  Car G ± f x = Unit H} (Ìx y· (x . y)G) (Unit G) (Ìx·(x ›~) G)
 °
 
 Kernels of homomorphisms are normal subgroups as stated in the following theorem.
@@ -782,7 +793,7 @@ If $H$ and $K$ are groups with elements of the same type, we will write $H.K$ fo
 ¹HOLCONST
 Ü ÛGroupTimesGroupİ :'a GROUP ­ 'a GROUP ­ 'a GROUP
 ÷üüüüüü
-Ü µH K· GroupTimesGroup H K = ((Car H.Car K)H, (Ìx y·(x.y)H), Unit H, (Ìx·(x ›~)H))
+Ü µH K· GroupTimesGroup H K = MkGROUP ((Car H.Car K)H) (Ìx y·(x.y)H) (Unit H) (Ìx·(x ›~)H)
 °
 
 =SML
@@ -829,12 +840,11 @@ This monoid contains all quotient groups of $G$ as submonoids (or, more precisel
 ¹HOLCONST
 Ü ÛQuotientGroupİ :'a GROUP ­ 'a GROUP­ 'a SET GROUP
 ÷üüüüüü
-Ü µ G H· QuotientGroup G H = (
-Ü		{A | ¶x·x  Car G ± A = (x.Car H)G},
-Ü		(ÌA B·(A.B)G),
-Ü		(Unit G.Car H)G,
+Ü µ G H· QuotientGroup G H = MkGROUP
+Ü		{A | ¶x·x  Car G ± A = (x.Car H)G}
+Ü		(ÌA B·(A.B)G)
+Ü		((Unit G.Car H)G)
 Ü		(ÌA· (A ›~)G)
-Ü	)
 °
 
 We write $G/H$ for the quotient of $G$ by $H$ by dint of the following alias declaration (overloading the alias for the quotient set operator).
@@ -868,7 +878,7 @@ The following image group construction is needed in the statement of the first i
 Ü ÛImgİ : ('a ­ 'b) ­ 'a SET ­ 'b GROUP  ­ 'b GROUP
 ÷üüüüüü
 Ü µ f X G·
-Ü	Img f X G = ({y | ¶x·x  X ± y = f x}, (Ìx y· (x.y)G), Unit G, (Ìx· (x ›~)G))
+Ü	Img f X G = MkGROUP{y | ¶x·x  X ± y = f x} (Ìx y· (x.y)G) (Unit G) (Ìx· (x ›~)G)
 °
 
 The next theorem states that the image of a group homomorphism is a subgroup of the range of the homomorphism:
@@ -964,12 +974,11 @@ Before giving the definition, we need to define the notion of an inverse functio
 ¹HOLCONST
 Ü ÛSymGroupİ : 'a SET ­ ('a ­ 'a) GROUP
 ÷üüüüüü
-Ü µ X·	SymGroup X =(
-Ü		{f | OneOne f ± Onto f ± µy· ³y  X ´ f y = y},
-Ü		(Ìf g·Ìx·f(g x)),
-Ü		(Ìx· x),
+Ü µ X·	SymGroup X = MkGROUP
+Ü		{f | OneOne f ± Onto f ± µy· ³y  X ´ f y = y}
+Ü		(Ìf g·Ìx·f(g x))
+Ü		(Ìx· x)
 Ü		Inverse
-Ü	)
 °
 
 The symmetric group on any set is indeed a group.
@@ -1019,8 +1028,8 @@ We define the group of integers under addition and the group of unit integers un
 Ü Ûú_plusİ :  ú GROUP;
 Ü Ûú_unitsİ :  ú GROUP
 ÷üüüüüü
-Ü	ú_plus = (Universe, $+, îú 0, ~)
-Ü ±	ú_units = ({~(îú 1); îú 1}, $*, îú 1, (Ìx·x))
+Ü	ú_plus = MkGROUP Universe $+ (îú 0) ~
+Ü ±	ú_units = MkGROUP {~(îú 1); îú 1} $* (îú 1) (Ìx·x)
 °
 
 We prove that both of these are indeed groups.
@@ -1056,8 +1065,8 @@ We now define the group of reals under addition and the group of positive reals 
 Ü Û¯_plusİ :  ¯ GROUP;
 Ü Û¯_posİ :  ¯ GROUP
 ÷üüüüüü
-Ü	¯_plus = (Universe, $+, î¯ 0, ~)
-Ü ±	¯_pos = ({x | î¯ 0 < x}, $*, î¯ 1, $›-›1)
+Ü	¯_plus = MkGROUP Universe $+ (î¯ 0) ~
+Ü ±	¯_pos = MkGROUP {x | î¯ 0 < x} $* (î¯ 1) $›-›1
 °
 
 As with the groups of integers, we show that these are groups and instantiate various definitions to them.
@@ -1396,7 +1405,18 @@ open_theory"groups";
 set_merge_pcs["basic_hol1", "'sets_alg"];
 =TEX
 =SML
-val Ûgroup_ops_defİ = get_spec¬Unit®;
+=TEX
+=SML
+val Ûmk_group_defİ = get_spec¬MkGROUP®;
+push_consistency_goal¬Car®;
+a(¶_tac¬ (
+	Car‰G,
+	(Ìx y G· Times‰G G x y),
+	(Ìx G· Inverse‰G G x),
+	Unit‰G) ®
+	THEN rewrite_tac[mk_group_def]);
+val _ = save_consistency_thm ¬Car® (pop_thm());
+val Ûgroup_ops_defİ = save_thm("group_ops_def", get_spec¬Car®);
 val Ûgroup_defİ = get_spec¬Group®;
 val Ûhomomorphism_defİ = get_spec¬Homomorphism®;
 val Ûsubgroup_defİ = get_spec¬Subgroup®;
@@ -1445,15 +1465,16 @@ set_goal([], ¬
 	±	(µx:'a·(x ›~) G = (x ›~)H)
 ®);
 a(REPEAT strip_tac THEN_TRY asm_rewrite_tac[] THEN all_asm_ante_tac);
-a(PC_T1 "predicates"
-	lemma_tac¬¶gc gm g1 gi hc hm h1 hi· G  = (gc, gm, g1, gi)  ± H = (hc, hm, h1, hi)® THEN1
+a(lemma_tac¬¶gc gm g1 gi hc hm h1 hi· G  = MkGROUP gc gm g1 gi  ± H = MkGROUP hc hm h1 hi® THEN1
 	( MAP_EVERY ¶_tac[
-		¬Fst G®, ¬Fst(Snd G)®, ¬Fst(Snd(Snd G))®, ¬Snd(Snd(Snd G))®,
-		¬Fst H®, ¬Fst(Snd H)®, ¬Fst(Snd(Snd H))®, ¬Snd(Snd(Snd H))®]
-		THEN rewrite_tac[]));
+		¬Car‰G G®, ¬Times‰G G®, ¬Unit‰G G®, ¬Inverse‰G G®,
+		¬Car‰G H®, ¬Times‰G H®, ¬Unit‰G H®, ¬Inverse‰G H®]
+	THEN rewrite_tac[mk_group_def]));
 a(DROP_ASMS_T rewrite_tac);
-a(rewrite_tac[group_ops_def]);
+a(rewrite_tac[group_ops_def, mk_group_def]);
 a(REPEAT strip_tac THEN asm_rewrite_tac[]);
+a(LEMMA_T ¬gm = hm ± gi = hi® rewrite_thm_tac);
+a(asm_rewrite_tac[]);
 val Ûgroup_eq_group_thmİ = save_pop_thm "group_eq_group_thm";
 =TEX
 %%%%
@@ -1655,7 +1676,8 @@ Our customised rewriting tool will take terms constructed using the group operat
 
 First of all we extract the lemmas we need from the various portmanteau theorems:
 =SML
-val all_thms =  (fc_canon( list_±_intro [
+val all_thms =
+	(fc_canon( list_±_intro [
 	group_clauses1,
 	group_clauses2,
 	inverse_inverse_thm,
@@ -1663,6 +1685,11 @@ val all_thms =  (fc_canon( list_±_intro [
 	times_inverse_thm,
 	group_clauses4
 ]));
+(*
+val all_thms = all_thms1 @
+	mapfilter (pure_rewrite_rule[group_ops_def])
+	all_thms1;\
+*)
 val eq_thms = map (all_undisch_rule o all_µ_elim o rewrite_rule[]) all_thms drop (not o is_eq o concl);
 val _thms = map ¤_t_intro (map (all_undisch_rule o all_µ_elim o rewrite_rule[])
 	all_thms drop (is_eq o concl));
@@ -1729,8 +1756,7 @@ set_goal([], ¬
 	G  Group ± H  Group ± f  Homomorphism(G, H)
 ´	f(Unit G) = Unit H
 ®);
-a(rewrite_tac[homomorphism_def,
-	group_ops_def] THEN
+a(rewrite_tac[homomorphism_def] THEN
 	REPEAT strip_tac);
 a(lemma_tac ¬Unit G  Car G® THEN1 all_fc_tac[group_clauses4]);
 a(LEMMA_T ¬f( (Unit G.Unit G)G) = f(Unit G)® ante_tac THEN1
@@ -1748,8 +1774,7 @@ set_goal([], ¬
 ´	f((x ›~)G) = ((f x) ›~) H
 ®);
 a(REPEAT strip_tac THEN all_fc_tac[homomorphism_unit_thm] THEN all_asm_ante_tac THEN
-	rewrite_tac[homomorphism_def,
-		group_ops_def] THEN
+	rewrite_tac[homomorphism_def] THEN
 		REPEAT strip_tac);
 a(lemma_tac¬(x ›~) G  Car G® THEN1 (group__tac THEN REPEAT strip_tac));
 a(lemma_tac¬f x  Car H® THEN1 all_asm_fc_tac[]);
@@ -1768,7 +1793,7 @@ set_goal([], ¬
 ±	(µx y·x  Car G ± y  Car G ´  f ((x . y) G) = (f x . f y) H)
 ®);
 a(REPEAT µ_tac THEN ´_tac THEN TOP_ASM_T ante_tac THEN
-	rewrite_tac[homomorphism_def, group_ops_def] THEN
+	rewrite_tac[homomorphism_def] THEN
 		REPEAT strip_tac THEN_TRY
 		ALL_ASM_FC_T rewrite_tac[homomorphism_unit_thm, homomorphism_inverse_thm]);
 val Ûhomomorphism_clausesİ = save_pop_thm "homomorphism_clauses";
@@ -1805,12 +1830,15 @@ set_goal([], ¬
 ´	G  Subgroup G
 ±	UnitSubgroup G  Subgroup G
 ®);
-a(rewrite_tac[subgroup_def1, unit_subgroup_def, group_ops_def] THEN REPEAT strip_tac);
+a(rewrite_tac[subgroup_def1, unit_subgroup_def,
+group_ops_def,
+	mk_group_def] THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(all_var_elim_asm_tac1 THEN group__tac THEN REPEAT strip_tac);
 (* *** Goal "2" *** *)
-a(rewrite_tac[group_def, group_ops_def]);
-a(REPEAT strip_tac THEN_TRY all_var_elim_asm_tac1 THEN_TRY
+a(rewrite_tac[group_def, group_ops_def, mk_group_def]);
+a(REPEAT strip_tac THEN_TRY all_var_elim_asm_tac1
+	THEN_TRY
 	group_nf_tac THEN REPEAT strip_tac);
 val Ûtrivial_subgroups_thmİ = save_pop_thm "trivial_subgroups_thm";
 =TEX
@@ -1914,7 +1942,7 @@ set_goal([], ¬
 	±	(µx·x  A ± x  Car G ´ (x ›~)G  A)
 	±	Unit G  A)
 ®);
-a(rewrite_tac[restriction_def, group_def, group_ops_def, subgroup_def1] THEN REPEAT strip_tac
+a(rewrite_tac[restriction_def, group_def, group_ops_def, mk_group_def, subgroup_def1] THEN REPEAT strip_tac
 	THEN all_asm_fc_tac[]);
 val Ûrestriction_subgroup_thmİ = save_pop_thm "restriction_subgroup_thm";
 =TEX
@@ -1994,7 +2022,9 @@ set_goal([], ¬
 a(rewrite_tac[group_product_def, restriction_def] THEN REPEAT µ_tac THEN ´_tac);
 a(LIST_GET_NTH_ASM_T[1, 2] (MAP_EVERY (strip_asm_tac o rewrite_rule[subgroup_def1])));
 a(ALL_FC_T asm_rewrite_tac[subgroup_clauses]);
-a(asm_rewrite_tac[group_set_ops_def, group_ops_def]);
+a(asm_rewrite_tac[group_eq_group_thm,
+	group_set_ops_def, group_ops_def,
+	mk_group_def]);
 a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(¶_tac¬a® THEN ¶_tac¬b® THEN asm_rewrite_tac[]);
@@ -2014,7 +2044,7 @@ a(REPEAT strip_tac THEN POP_ASM_T (strip_asm_tac o rewrite_rule[normal_subgroup_
 a(ALL_FC_T rewrite_tac[group_product_restriction_thm]);
 a(ALL_FC_T1 fc_¤_canon rewrite_tac[restriction_subgroup_thm]);
 a(LIST_GET_NTH_ASM_T[2, 3] (MAP_EVERY (strip_asm_tac o rewrite_rule[subgroup_def1])));
-a(rewrite_tac[group_set_ops_def, group_ops_def] THEN REPEAT strip_tac);
+a(rewrite_tac[group_set_ops_def] THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(all_var_elim_asm_tac1);
 a(¶_tac¬(a.a')H® THEN ¶_tac¬(((a' ›~) G . (b . a') G) G.b')K®);
@@ -2405,7 +2435,7 @@ set_goal([], ¬
 ®);
 a(rewrite_tac[isomorphism_def] THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
-a(rewrite_tac[ker_def, unit_subgroup_def]);
+a(rewrite_tac[ker_def, unit_subgroup_def, group_eq_group_thm, group_ops_def]);
 a(PC_T "sets_ext" strip_tac THEN REPEAT strip_tac);
 (* *** Goal "1.1" *** *)
 a(swap_nth_asm_concl_tac 1);
@@ -2430,7 +2460,7 @@ a(all_asm_fc_tac[]);
 a(all_asm_fc_tac[]);
 a(all_var_elim_asm_tac1 THEN ¶_tac¬x'® THEN REPEAT strip_tac);
 (* *** Goal "3" *** *)
-a(GET_NTH_ASM_T 5 (strip_asm_tac o rewrite_rule[ker_def, unit_subgroup_def]));
+a(GET_NTH_ASM_T 5 (strip_asm_tac o rewrite_rule[ker_def, unit_subgroup_def, group_eq_group_thm, group_ops_def]));
 a(GET_NTH_ASM_T 7 (strip_asm_tac o rewrite_rule[homomorphism_def]));
 a(lemma_tac¬(y ›~)G  Car G® THEN1 (group__tac THEN REPEAT strip_tac));
 a(all_asm_fc_tac[]);
@@ -2540,7 +2570,8 @@ set_goal([], ¬
 ®);
 a(REPEAT strip_tac THEN rewrite_tac[ker_def, group_product_def,
 	group_set_ops_def, group_ops_def, restriction_def,
-	quotient_group_def] THEN REPEAT strip_tac);
+	quotient_group_def,
+	group_eq_group_thm] THEN REPEAT strip_tac);
 a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(LEMMA_T ¬x  {z|¶ b· b  Car K ± z = (x . b) G}® ante_tac);
@@ -2938,24 +2969,38 @@ a(REPEAT strip_tac THEN_TRY asm_rewrite_tac[] THEN
 val Ûú_units_group_thmİ = save_pop_thm "ú_units_group_thm";
 =TEX
 =SML
-val Ûú_plus_ops_thmİ = save_thm("ú_plus_ops_thm", 
-	rewrite_rule[conv_rule (ONCE_MAP_C eq_sym_conv) ú_plus_def](
-		rewrite_rule[ú_plus_def](µ_elim¬ú_plus® group_ops_def)));
+set_goal([], ¬
+	Car ú_plus = Universe
+±	(µi j:ú· (i . j) ú_plus = i + j)
+±	Unit ú_plus = îú 0
+±	(µi:ú· (i ›~) ú_plus = ~i)
+®);
+a(rewrite_tac[ú_plus_def, group_ops_def]);
+val Ûú_plus_ops_thmİ = save_pop_thm "ú_plus_ops_thm";
 =TEX
 =SML
-val Ûú_units_ops_thmİ = save_thm("ú_units_ops_thm", 
-	rewrite_rule[conv_rule (ONCE_MAP_C eq_sym_conv) ú_units_def](
-		rewrite_rule[ú_units_def](µ_elim¬ú_units® group_ops_def)));
+set_goal([], ¬
+	Car ú_units = {~(îú 1); îú 1}
+±	(µi j:ú· (i . j) ú_units = i * j)
+±	Unit ú_units = îú 1
+±	(µi:ú· (i ›~) ú_units = i)
+®);
+a(rewrite_tac[ú_units_def, group_ops_def]);
+val Ûú_units_ops_thmİ = save_pop_thm "ú_units_ops_thm";
 =TEX
 =SML
 val Ûú_plus_ú_units_homomorphism_defİ =
 	save_thm("ú_plus_ú_units_homomorphism_def",
 		rewrite_rule[ú_units_ops_thm, ú_plus_ops_thm]
 			 (list_µ_elim[¬ú_plus®, ¬ú_units®] homomorphism_def));
+=TEX
+=SML
 val Ûú_plus_ú_units_homomorphism_unit_thmİ = save_thm("ú_plus_ú_units_homomorphism_unit_thm",
 		rewrite_rule[ú_units_ops_thm, ú_plus_ops_thm,
 			ú_plus_group_thm, ú_units_group_thm]
 			 (list_µ_elim[¬ú_plus®, ¬ú_units®] homomorphism_unit_thm));
+=TEX
+=SML
 val Ûú_plus_ú_units_homomorphism_inverse_thmİ = save_thm("ú_plus_ú_units_homomorphism_inverse_thm",
 		rewrite_rule[ú_units_ops_thm, ú_plus_ops_thm,
 			ú_plus_group_thm, ú_units_group_thm]
@@ -2980,32 +3025,50 @@ a(bc_thm_tac ¯_times_recip_thm THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
 val Û¯_pos_group_thmİ = save_pop_thm "¯_pos_group_thm";
 =TEX
 =SML
-val Û¯_plus_ops_thmİ = save_thm("¯_plus_ops_thm", 
-	rewrite_rule[conv_rule (ONCE_MAP_C eq_sym_conv) ¯_plus_def](
-		rewrite_rule[¯_plus_def](µ_elim¬¯_plus® group_ops_def)));
+set_goal([], ¬
+	Car ¯_plus = Universe
+±	(µx y:¯· (x . y) ¯_plus = x + y)
+±	Unit ¯_plus = î¯ 0
+±	(µx:¯· (x ›~) ¯_plus = ~x)
+®);
+a(rewrite_tac[¯_plus_def, group_ops_def]);
+val Û¯_plus_ops_thmİ = save_pop_thm "¯_plus_ops_thm";
 =TEX
 =SML
-val Û¯_pos_ops_thmİ = save_thm("¯_pos_ops_thm", 
-	rewrite_rule[conv_rule (ONCE_MAP_C eq_sym_conv) ¯_pos_def](
-		rewrite_rule[¯_pos_def](µ_elim¬¯_pos® group_ops_def)));
+set_goal([], ¬
+	Car ¯_pos = {x | î¯ 0 < x}
+±	(µx y:¯· (x . y) ¯_pos = x * y)
+±	Unit ¯_pos = î¯ 1
+±	(µx:¯· (x ›~) ¯_pos = x ›-›1)
+®);
+a(rewrite_tac[¯_pos_def, group_ops_def]);
+val Û¯_pos_ops_thmİ = save_pop_thm "¯_pos_ops_thm";
 =TEX
 =SML
 val Û¯_plus_¯_pos_homomorphism_defİ =
 	save_thm("¯_plus_¯_pos_homomorphism_def",
 		rewrite_rule[¯_pos_ops_thm, ¯_plus_ops_thm]
 			 (list_µ_elim[¬¯_plus®, ¬¯_pos®] homomorphism_def));
+=TEX
+=SML
 val Û¯_plus_¯_pos_homomorphism_unit_thmİ = save_thm("¯_plus_¯_pos_homomorphism_unit_thm",
 		rewrite_rule[¯_pos_ops_thm, ¯_plus_ops_thm,
 			¯_plus_group_thm, ¯_pos_group_thm]
 			 (list_µ_elim[¬¯_plus®, ¬¯_pos®] homomorphism_unit_thm));
+=TEX
+=SML
 val Û¯_plus_¯_pos_homomorphism_inverse_thmİ = save_thm("¯_plus_¯_pos_homomorphism_inverse_thm",
 		rewrite_rule[¯_pos_ops_thm, ¯_plus_ops_thm,
 			¯_plus_group_thm, ¯_pos_group_thm]
 			 (list_µ_elim[¬¯_plus®, ¬¯_pos®] homomorphism_inverse_thm));
+=TEX
+=SML
 val Û¯_plus_¯_pos_isomorphism_defİ = save_thm("¯_plus_¯_pos_isomorphism_def",
 		rewrite_rule[¯_pos_ops_thm, ¯_plus_ops_thm,
 			¯_plus_group_thm, ¯_pos_group_thm]
 			 (list_µ_elim[¬¯_plus®, ¬¯_pos®] isomorphism_def));
+=TEX
+=SML
 set_goal([], ¬
 	Exp  Isomorphism(¯_plus, ¯_pos)
 ®);
