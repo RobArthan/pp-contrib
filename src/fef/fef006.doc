@@ -1,0 +1,303 @@
+=TEX
+% TQtemplate.tex
+\documentstyle[hol1,11pt,TQ]{article}
+\ftlinepenalty=9999
+\def\Hide#1{}
+\def\Bool{``$\it{:}bool\,$''}
+\makeindex
+\TPPproject{DRA FRONT END FILTER PROJECT}  %% Mandatory field
+%\TPPvolume{}
+%\TPPpart{}
+\TPPtitle{Security Conjectures for the SSQL Abstract Machine}  %% Mandatory field
+\TPPref{DS/FMU/FEF/006}  %% Mandatory field
+\def\SCCSversion{$Revision$
+}
+\TPPissue{\SCCSversion}  %% Mandatory field
+\TPPdate{\FormatDate{$Date$
+}}  %% Mandatory field (with sensible default)
+\TPPstatus{Draft}			%% Mandatory field
+\TPPtype{Specification}
+\TPPkeywords{}
+\TPPauthor{G.~M.~Prout & WIN01}  %% Mandatory field
+%\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
+\TPPauthorisation{R.B.~Jones & HAT Manager}
+\TPPabstract{The formal specification of the SSQL abstract machine and  the conjectures
+to be proven in order to prove its security. This contributes to  the
+DRA front end filter project RSRE 1C/6130.}
+%\TPPabstractB{}
+%\TPPabstractC{}
+%\TPPabstractD{}
+%\TPPabstractE{}
+%\TPPabstractF{}
+\TPPdistribution{\parbox[t]{4.0in}{%
+	HAT FEF File \\
+	Simon Wiseman
+}}
+%\TPPclass{CLASSIFICATION}
+\newfont{\icllogo}{icllogo50}
+\def\TPPheadlhs{$\vcenter{\halign{##\cr\icllogo ICL\cr}}$}
+%\def\TPPheadlhs{}
+%\def\TPPheadcentre{}
+%def\TPPheadrhs{}
+%\def\TPPfootlhs{}
+%\def\TPPfootcentre{}
+%\def\TPPfootrhs{}
+
+\begin{document}
+\TPPsetsizes
+\makeTPPfrontpage
+
+\vfill
+\begin{centering}
+
+%\bf Copyright \copyright\ : International Computers Ltd \number\year
+
+\end{centering}
+
+\newpage
+\section {DOCUMENT CONTROL}
+\subsection{Contents List}
+\tableofcontents
+\subsection{Document Cross References}
+\bibliographystyle{fmu}
+\bibliography{fmu,fef}
+
+\subsection{Changes History}
+\begin{description}
+\item[1.1] First draft version.
+\end{description}
+
+\subsection{Changes Forecast}
+Changes  may be necessary  as a result of issues raised
+during  the transcription of the specification.
+\pagebreak
+\section{GENERAL}
+\subsection{Scope}
+This document gives a formal specification of  the SSQL abstract machine
+and a formal specification of the security conjectures required to
+be proven in order to prove the security of the SSQL semantics. It constitutes deliverable D4 of work package 1a, as given
+in section 7 of the Secure Database Technical Proposal, \cite{DS/FMU/017}.
+
+\subsection{Introduction}
+
+In the Secure Database Technical Proposal, \cite{DS/FMU/017}, we stated that we propose 
+to formalise the semantics of SSQL in such a way as to separate out
+security considerations from other aspects of the semantics.
+In this document , in section \ref{CONSTR} we describe how to construct an abstract machine from a transition
+function and an initial state. The transition
+function is built from three components. The first is of type $HIDE$, which operates on the 
+state of the 
+database  and returns a `sanitised' version of the state. The second component is
+of type $PROCESS$, which computes the result of a query on the `sanitised' state. The third
+component, of type $USTATE$, checks the security  of the result of
+the query processing and only applies the update to the
+database if it is secure. In section \ref{CRITCOMP} we formalise the critical requirements
+on the components of type $HIDE$ and $USTATE$. In section \ref{ARCH} we formalise
+the unwinding conjecture which states that if we build an abstract machine
+in the prescribed way from an initial state and a transition function built from components of type $HIDE$ and $USTATE$ that satisfy the critical requirements
+on components,  and from  any  component of type $PROCESS$,  then the resulting abstract machine is $secure$, as defined in \cite{DS/FMU/FEF/003}. 
+
+In section \ref{SSQL} we formalise the SSQL abstract machine as one built from an initial state
+$isstate$ and a transition function built from the components $hide$ and $updateState$, specified
+in \cite{DS/FMU/FEF/004} and the component $processQuery$, specified
+in \cite{DS/FMU/FEF/005}. We formalise the conjecture on $hide$ and $updateState$ that they satisfy 
+the critical requirements
+on components, as specified in section \ref{CRITCOMP}. Finally, in section \ref{AMCORRECT},
+we formalise the overall security conjecture that the SSQL abstract machine is secure.
+
+\section{PRELIMINARIES}
+The following ICL HOL instructions set up the new theory $fef006$.
+
+=SML 
+open_theory "fef005";
+new_theoryÛ"fef006"İ;
+set_cache_theories ["hol"];
+push_merge_pcs ["sets_ext","prove_¶"];
+=TEX
+
+\section{CONSTRUCTION OF AN ABSTRACT MACHINE} \label{CONSTR}
+\subsection{Types of Components}
+An abstract machine is to be built from a transition function and an initial state.
+The transition function is to be built from three components of type $HIDE$, $PROCESS$ and $USTATE$.
+
+
+=SML
+declare_type_abbrev(Û"HIDE"İ,[],” Class ¸ State ­ State®);
+=TEX
+
+=SML
+declare_type_abbrev(Û"PROCESS"İ,[],” Query ¸ Class ¸ State ­ Effect®);
+=TEX
+
+=SML
+declare_type_abbrev(Û"USTATE"İ,[],” Class ¸ Effect ¸ State ­ 
+				State ¸ (Class ¸ (Data LIST LIST ¸ Errors))®);
+=TEX
+
+
+\subsection{Construction}
+
+We define a transition function, $mkTf$, in terms of three components: a component
+of type $HIDE$, a component of type $PROCESS$ and a component of type $USTATE$.
+
+First, an abbreviation definition for the type of state transition functions.
+
+=SML
+declare_type_abbrev(Û"STF"İ,[],” (Query ¸ Class) ¸ State ­ 
+				State ¸ (Class ¸ (Data LIST LIST ¸ Errors))®);
+=TEX
+
+¹HOLCONST
+Ü	ÛmkTfİ : HIDE ­ PROCESS ­ USTATE ­ STF
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü
+Ü	µh:HIDE; p:PROCESS; u:USTATE; q : Query; c : Class; s : State
+Ü	·
+Ü	(mkTf h p u) ((q,c),s) =  
+Ü		u(c,p(q,c,h(c,s)),s)
+° 
+
+We construct an abstract machine from a pair consisting of a 
+transition function and some initial state, of type $State$.
+
+=SML
+declare_type_abbrev(Û"AM"İ,[],” STF ¸ State®);
+=TEX
+
+\subsection{Critical Requirements on Components}\label{CRITCOMP}
+
+We formalise the critical requirements on the critical components of the abstract machine. In fact, the critical requirement on the component of type $HIDE$ is that two states 
+are the `same' when viewed from a clearance $clear$ if we get the same result when we 
+view each one with respect to that clearance. By `two states being the same when 
+viewed from a clearance $clear$ ',we mean exactly that the resulting 
+states when each is hidden at $clear$ are the same. This requirement is expressed as 
+part of a requirement on the relationship between the component of type $HIDE$
+and that of type $USTATE$. 
+
+The critical requirement on the relationship between the component of type $HIDE$
+and that of type $USTATE$
+is that if we have
+two clearances $clear‰1$ and $clear‰2$ and we update
+ the database at $clear‰1$ and a change is visible when hiding w.r.t $clear‰2$, then
+$clear‰2$ must dominate $clear‰1$. This requirement concerns the security of the 
+state of the database. We also need to address the issue of security of 
+the outputs to the user of the database. If we perform an update on the same state
+at $clear‰1$ and $clear‰2$ and the outputs differ, then
+$clear‰2$ must dominate $clear‰1$.
+
+
+¹HOLCONST
+Ü	ÛsecureUpdateİ : HIDE ª USTATE
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ h : HIDE ;u : USTATE ·
+Ü		(h,u)  secureUpdate
+Ü		¤
+Ü		µclear‰1 clear‰2 : Class; s : State; e:Effect
+Ü		·	
+Ü		let 	(s',out‰1) = (u(clear‰1,e,s)) 
+Ü		and	out‰2 = Snd(u(clear‰2,e,s))
+Ü		in
+Ü			³(h(clear‰2,s) = h(clear‰2,s')) ² ³(out‰1 = out‰2)
+Ü			´ clear‰2 dominates clear‰1	
+° 
+
+\subsection{Architecture Correctness} \label{ARCH}
+
+This states that if we build an abstract machine from  a transition function, 
+built from two components of type $HIDE$ and $USTATE$ that satisfy  $secureUpdate$ and any component of type $PROCESS$, and an initial state, 
+ then the  `behaviour' of the 
+resulting abstract machine is $secure$, as defined in \cite{DS/FMU/FEF/003}. First, we define `behaviour'. 
+
+\subsubsection{Behavioural Abstraction}
+We define a function $behaviours$, generic in QUERY, DATA and STATE, which takes a transition function and a state and 
+yields a behavioural model of type $BEHAVIOURS$ (a function from sequences of inputs to sequences of outputs). This behavioural model is independent of the representation of internal states.
+
+We first need to define $iterate$ on states in the usual way. 
+
+¹HOLCONST
+Ü	Ûiterateİ : ((('QUERY ¸ Class) ¸ 'STATE) ­ ('STATE ¸ (Class ¸ 'DATA))) ­
+Ü			((('QUERY ¸ Class)LIST ¸ 'STATE) 
+Ü				­ ('STATE ¸ ((Class ¸ 'DATA)LIST)))
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µs:'STATE;i:'QUERY ¸ Class;si:('QUERY ¸ Class) LIST;
+Ü	sso:'STATE ¸ (Class ¸ 'DATA)LIST;
+Ü	f:(('QUERY ¸ Class) ¸ 'STATE) ­ ('STATE ¸ (Class ¸ 'DATA))
+Ü	·	(iterate f) ([],s) = (s,[])
+Ü	±
+Ü		let	sso = (iterate f)(si,s)
+Ü		in
+Ü			(iterate f)(si ë [i],s)
+Ü			= 
+Ü			(Fst(f(i,Fst sso)),Snd sso ë [Snd(f(i,Fst sso))])
+°
+
+
+We define $behaviours$ as an iterated transition function from the initial state:
+
+¹HOLCONST
+Ü	Ûbehavioursİ : (((('QUERY ¸ Class) ¸ 'STATE) 
+Ü				­ ('STATE ¸ (Class ¸ 'DATA))) ¸ 'STATE) 
+Ü				­ ('QUERY,'DATA)BEHAVIOURS
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ tf : ('QUERY ¸ Class) ¸ 'STATE ­ 'STATE ¸ (Class ¸ 'DATA);istate:'STATE;
+Ü		si:('QUERY ¸ Class)LIST
+Ü	·	behaviours(tf,istate) si= Snd((iterate tf)(si,istate))
+°
+
+\subsection{Architecture Correctness Conjecture}
+
+We now formally state the architecture  correctness conjecture.
+
+=GFT
+	?ô 	µh : HIDE; p : PROCESS; u : USTATE; is : State
+		·	(h,u)  secureUpdate ´ behaviours (mkTf h p u,is)  secure
+=TEX
+
+\section{SSQL ABSTRACT MACHINE} \label{SSQL}
+
+We define the SSQL abstract machine , $SSQLam$, as an abstract machine constructed from the
+transition function built from the three components
+$hide$ and $updateState$, specified in  \cite{DS/FMU/FEF/004}, and  $processQuery$, specified in  \cite{DS/FMU/FEF/005}, and an initial state $isstate$. At this stage, we define the initial state without any state invariants.
+
+
+¹HOLCONST
+Ü	Ûisstateİ : State
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü	T
+° 
+
+¹HOLCONST
+Ü	ÛSSQLamİ : AM
+÷üüüüüüüüüüüüüüüüüüüüüüüüüüüüüü
+Ü	SSQLam = (mkTf hide processQuery updateState,isstate)
+° 
+
+
+\subsection{Component Correctness Conjecture} \label{COMP}
+
+We formalise the security conjecture that $hide$ and $updateState$ are secure.
+
+=GFT
+	?ô 	(hide,updateState)  secureUpdate
+=TEX
+
+
+\subsection{SSQL Abstract Machine Correctness Conjecture} \label{AMCORRECT}
+
+Finally, we formalise the correctness conjecture that the behaviour of the SSQL abstract machine, as specified in section \ref{SSQL}, is secure, as defined in \cite{DS/FMU/FEF/003}.
+
+=GFT
+	?ô 	behaviours SSQLam  secure
+=TEX
+
+The proof of this conjecture follows directly from the definition of $SSQLam$, the proof of the unwinding result of 
+section \ref{ARCH} and the proof of the component correctness conjecture of section \ref{COMP}.
+
+
+\newpage
+\twocolumn[\section{INDEX} \label{INDEX}]
+\small
+\printindex
+
+\end{document}
+
