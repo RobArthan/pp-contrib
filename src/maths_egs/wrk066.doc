@@ -5513,6 +5513,34 @@ a(asm_rewrite_tac[to_def, series_def, poly_eval_def, poly_eval_append_thm,
 	length_to_thm, Ø_Ó_exp_0_1_thm]);
 val €series_power_series_thm› = save_pop_thm "series_power_series_thm";
 =TEX
+It is useful to know the value taken by the partial sums of a power series
+when the argument is 0:
+%%%%
+%%%%
+=SML
+set_goal([], ¨
+	PowerSeries s 0 (ÓØ 0) = ÓØ 0
+±	µs m∑ PowerSeries s (m+1) (ÓØ 0) = s 0Æ);
+a(rewrite_tac[power_series_series_thm] THEN REPEAT strip_tac
+	THEN1 rewrite_tac[series_def, to_def]);
+a(induction_tac¨mÆ);
+(* *** Goal "1" *** *)
+a(rewrite_tac[to_def, series_def]);
+(* *** Goal "2" *** *)
+a(asm_rewrite_tac[to_def, series_def, Ø_Ó_exp_0_1_thm]);
+val €power_series_0_arg_thm› = save_pop_thm "power_series_0_arg_thm";
+=TEX
+With the previous theorem we can readily prove our first result on convergence
+of power series --- a trivial but useful one:
+%%%%
+%%%%
+=SML
+set_goal([], ¨µs∑ (Ã m∑ PowerSeries s m (ÓØ 0)) -> s 0Æ);
+a(REPEAT strip_tac);
+a(once_rewrite_tac[µ_elim¨1Æ lim_seq_shift_thm]);
+a(rewrite_tac[power_series_0_arg_thm, const_lim_seq_thm]);
+val €power_series_limit_0_thm› = save_pop_thm "series_power_limit_0_thm";
+=TEX
 %%%%
 %%%%
 =SML
@@ -5601,7 +5629,7 @@ a(rewrite_tac[Ø_abs_Ø_Ó_exp_thm, Ø_Ó_exp_0_1_thm]);
 val €lim_seq_Ø_Ó_exp_eq_0_thm› = save_pop_thm "lim_seq_Ø_Ó_exp_eq_0_thm";
 
 =TEX
-The following gives the identity that for summing a geometric series.
+The following gives the identity for summing a geometric series.
 %%%%
 %%%%
 =SML
@@ -6417,8 +6445,24 @@ a(REPEAT strip_tac THEN bc_thm_tac Ø_less_º_trans_thm
 	THEN REPEAT strip_tac);
 val €factorial_0_less_thm› = save_pop_thm "factorial_0_less_thm";
 =TEX
-The main theorem has the following useful consequence for power series that
-are convergent for all positive values of their argument:
+The following algebraic lemma is the one that will show that the exponential function
+is its own derivative:
+%%%%
+%%%%
+=SML
+set_goal([], ¨µm∑ ÓØ (m + 1) * (m + 1) ! õ-õ1 = m! õ-õ1Æ);
+a(REPEAT strip_tac THEN rewrite_tac[factorial_def]);
+a(strip_asm_tac (µ_elim¨mÆ factorial_0_less_thm));
+a(lemma_tac¨≥ ÓØ (m+1) = ÓØ 0Æ THEN1 rewrite_tac[ÓØ_one_one_thm]);
+a(ALL_FC_T (MAP_EVERY (strip_asm_tac o conv_rule(ONCE_MAP_C eq_sym_conv)))
+	[pc_rule1"Ø_lin_arith" prove_rule[]¨µa b:Ø∑a < b ¥ ≥a = bÆ]);
+a(ALL_FC_T rewrite_tac[Ø_recip_clauses]);
+a(rewrite_tac[Ø_times_assoc_thm1]);
+a(ALL_FC_T rewrite_tac[Ø_recip_clauses]);
+val €exp_deriv_lemma› = save_pop_thm "exp_deriv_lemma";
+=TEX
+We can now show using tjhe ratio test and some calculations that the usual series
+for the exponential converges for all positive arguments:
 %%%%
 %%%%
 =SML
@@ -6499,6 +6543,96 @@ a(pure_once_rewrite_tac[prove_rule[]¨ÓØ 0 = ÓØ 0 * xÆ]);
 a(bc_thm_tac times_lim_seq_thm THEN rewrite_tac[const_lim_seq_thm]);
 a(rewrite_tac[rewrite_rule[](µ_elim¨ÓØ 0Æ lim_seq_recip_Ó_thm)]);
 val €exp_series_convergence_thm› = save_pop_thm "exp_series_convergence_thm";
+=TEX
+The main theorem justifying the consistency of the definition by the differential equations
+of the exponential function:
+%%%%
+%%%%
+=SML
+set_goal([], ¨
+	µs b∑
+	ÓØ 0 <  b
+¥	∂f∑
+	(PowerSeries (Ãm∑ m ! õ-õ1) ---> f) (OpenInterval (~b) b)
+±	(µy∑ y ç OpenInterval (~b) b ¥ (f HasDeriv f y) y)
+±	f (ÓØ 0) = ÓØ 1
+Æ);
+a(REPEAT strip_tac);
+a(ante_tac exp_series_convergence_thm);
+a(pure_once_rewrite_tac[ prove_rule[]¨µm∑
+	m ! õ-õ1 = (Ãm∑ m ! õ-õ1) m
+Æ]);
+a(REPEAT strip_tac);
+a(all_fc_tac[power_series_main_thm1]);
+a(DROP_NTH_ASM_T 2 ante_tac THEN rewrite_tac[exp_deriv_lemma]);
+a(REPEAT strip_tac THEN ∂_tac¨fÆ THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_fc_tac[unif_lim_seq_unique_thm]);
+a(POP_ASM_T discard_tac THEN asm_rewrite_tac[]);
+a(DROP_NTH_ASM_T 4  bc_thm_tac THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(lemma_tac¨ÓØ 0 ç OpenInterval (~b) bÆ THEN1
+	(rewrite_tac[open_interval_def] THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(all_fc_tac[unif_lim_seq_pointwise_lim_seq_thm]);
+a(ante_tac (µ_elim ¨Ã m∑ m ! õ-õ1Æ power_series_limit_0_thm));
+a(rewrite_tac[factorial_def] THEN REPEAT strip_tac);
+a(all_fc_tac[lim_seq_unique_thm]);
+val €exp_series_main_thm› = save_pop_thm "exp_series_main_thm";
+=TEX
+The following just extracts what we need for the consistency goal:
+%%%%
+%%%%
+=SML
+set_goal([], ¨
+	∂f∑
+	(µy∑ (f HasDeriv f y) y)
+±	f (ÓØ 0) = ÓØ 1
+Æ);
+a(lemma_tac¨µz∑∂b∑ÓØ 0 < b ± z ç OpenInterval (~b) bÆ THEN1
+	(strip_tac THEN ∂_tac¨Abs z + ÓØ 1Æ THEN cases_tac¨ÓØ 0 º zÆ THEN
+		asm_rewrite_tac[Ø_abs_def, open_interval_def] THEN
+			PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(lemma_tac¨∂f∑µy∑ (Ãm∑ PowerSeries (Ã m∑ m ! õ-õ1)  m y) -> f yÆ);
+(* *** Goal "1" *** *)
+a(prove_∂_tac THEN REPEAT strip_tac);
+a(spec_nth_asm_tac 1 ¨y'Æ  THEN all_fc_tac[exp_series_main_thm]);
+a(∂_tac¨f y'Æ );
+a(all_fc_tac[ unif_lim_seq_pointwise_lim_seq_thm]);
+(* *** Goal "2" *** *)
+a(∂_tac¨fÆ THEN REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(spec_nth_asm_tac 2 ¨yÆ  THEN all_fc_tac[exp_series_main_thm]);
+a(LIST_DROP_NTH_ASM_T [2] all_fc_tac);
+a(lemma_tac ¨µz∑ z ç OpenInterval (~b) b ¥ f' z = f zÆ);
+(* *** Goal "2.1.1" *** *)
+a(REPEAT strip_tac THEN bc_thm_tac unif_lim_seq_pointwise_unique_thm);
+a(∂_tac ¨OpenInterval (~b) bÆ THEN ∂_tac¨PowerSeries (Ã m∑ m ! õ-õ1) Æ
+	THEN asm_rewrite_tac[]);
+(* *** Goal "2.1.2" *** *)
+a(bc_thm_tac deriv_local_thm);
+a(∂_tac¨f'Æ THEN ∂_tac¨bÆ THEN ∂_tac¨~bÆ THEN rewrite_tac[
+	prove_rule[open_interval_def] ¨µA B Y∑A < Y ± Y <  B § Y ç OpenInterval A  BÆ]);
+a(GET_NTH_ASM_T 5 (rewrite_thm_tac o rewrite_rule[open_interval_def]));
+a(REPEAT strip_tac THEN1 ALL_ASM_FC_T rewrite_tac[]);
+a(POP_ASM_T (fn  th => ALL_FC_T asm_rewrite_tac[conv_rule(ONCE_MAP_C eq_sym_conv) th]));
+(* *** Goal "2.2" *** *)
+a(POP_ASM_T (strip_asm_tac o µ_elim¨ÓØ 0Æ));
+a(ante_tac (µ_elim¨Ã m∑ m ! õ-õ1Æ power_series_limit_0_thm));
+a(rewrite_tac[factorial_def] THEN REPEAT strip_tac);
+a(all_fc_tac[lim_seq_unique_thm]);
+val €exp_consistency_lemma› = save_pop_thm "exp_consistency_lemma";
+=TEX
+
+Et, voil\'a!
+%%%%
+%%%%
+=TEX
+=SML
+push_consistency_goal¨ExpÆ;
+a(strip_asm_tac exp_consistency_lemma);
+a(∂_tac ¨fÆ THEN asm_rewrite_tac[]);
+val _ = save_consistency_thm ¨ExpÆ (pop_thm());
+val €exp_def› = get_spec¨ExpÆ;
 =TEX
 %%%%
 %%%%
