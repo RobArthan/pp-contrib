@@ -15,7 +15,7 @@ doctex dyadic dyadic.th; texdvi dyadic
 \def\R{\mathbb{R}}
 \def\Z{\mathbb{Z}}
 \def\Q{\mathbb{Q}}
-\title{$Basic Analysis$}
+\title{Basic Analysis}
 \author{Rob Arthan}
 \makeindex
 \begin{document}
@@ -114,8 +114,25 @@ declare_infix(200, "-->");
 ÷üüüüüü
 Üµs x· s --> x ¤ µe·î¯ 0 < e ´ ¶n·µm·n ¼ m ´ Abs(s m - x) < e
 °
+We will write $(u {-}{-}{-}{>} h) x$ to indicate that the sequence of functions $u_n$, indexed by
+natural numbers, tends to uniformly to the limit function $h$ in some
+neighbourhood $x$ as $n$ tends to infinity.
+This is a notion, which one might call {\em local uniform convergence},
+that doesn't tend to appear as such in the calculus text books (which would
+normally talk about uniform convergence of a sequence of functions on some set).
+It seems however to give a convenient sufficient condition for the limit of a
+sequence of continuous functions to be continuous at a point.
+=SML
+declare_infix(200, "--->");
+
+¹HOLCONST
+Ü $Û--->Ý : (î ­ ¯ ­ ¯) ­ (¯ ­ ¯) ­ ¯ ­ BOOL
+÷üüüüüü
+Üµu h x· (u ---> h) x ¤
+Ü	¶b·î¯ 0 < b ± µe·î¯ 0 < e ´ ¶n·µm y· n ¼ m ± Abs(y - x) < b ´ Abs(u m y - h y) < e
+°
 \subsection{Continuity}
-Now we give the usual $\epsilon-\delta$ definition for continuity of
+Now we give the usual $\epsilon$-$\delta$ definition for continuity of
 a function, $f$ at a point $x$. Both kinds of $\epsilon$ are tied
 up in the {\ProductHOL} library for something else (viz. Hilbert's choice
 operator and set-membership). We therefore just use $e$ and $d$.
@@ -175,6 +192,7 @@ val Ûplus_coeffs_defÝ = get_spec¬PlusCoeffs®;
 val Ûtimes_coeffs_defÝ = get_spec¬TimesCoeffs®;
 val Ûto_defÝ = get_spec¬$To®;
 val Ûlim_seq_defÝ = get_spec¬$-->®;
+val Ûunif_lim_seq_defÝ = get_spec¬$--->®;
 val Ûcts_at_defÝ = get_spec¬$CtsAt®;
 val Ûhas_deriv_defÝ = get_spec¬$HasDeriv®;
 =TEX
@@ -639,6 +657,11 @@ Only 0 has absolute value 0:
 set_goal([], ¬µx· Abs x = î¯ 0 ¤ x = î¯ 0®);
 a(strip_tac THEN rewrite_tac[get_spec¬Abs‰R®]);
 a(cases_tac¬î¯ 0 ¼ x® THEN asm_rewrite_tac[] THEN PC_T1 "¯_lin_arith" prove_tac[]);
+val Û¯_abs_eq_0_thmÝ = save_pop_thm "¯_abs_eq_0_thm";
+=TEX
+=SML
+set_goal([], ¬Abs (î¯ 0) = î¯ 0®);
+a(rewrite_tac[get_spec¬Abs‰R®]);
 val Û¯_abs_0_thmÝ = save_pop_thm "¯_abs_0_thm";
 =TEX
 A monotonicity property for absolute values and multiplication:
@@ -991,7 +1014,7 @@ a(ALL_FC_T rewrite_tac[¯_times_recip_thm]);
 (* *** Goal "1.2" *** *)
 a(all_asm_fc_tac[]);
 a(¶_tac¬d® THEN REPEAT strip_tac);
-a(lemma_tac¬Abs(î¯ 0) = î¯ 0® THEN1 rewrite_tac[¯_abs_0_thm]);
+a(lemma_tac¬Abs(î¯ 0) = î¯ 0® THEN1 rewrite_tac[¯_abs_eq_0_thm]);
 a(cases_tac¬y = x® THEN1 asm_rewrite_tac[]);
 a(ALL_ASM_FC_T asm_rewrite_tac[]);
 (* *** Goal "2" *** *)
@@ -1100,6 +1123,143 @@ a(conv_tac(RANDS_C ¯_anf_conv) THEN REPEAT strip_tac);
 a(bc_thm_tac times_deriv_thm);
 a(asm_rewrite_tac[id_deriv_thm]);
 val Ûpower_deriv_thmÝ = save_pop_thm "power_deriv_thm";
+=TEX
+\subsubsection{Theorems about Uniform Limits}
+We now prove some basic facts about limits of locally uniformly convergent
+sequences of functions.
+
+Firstly, constant sequences have limits:
+=SML
+set_goal([], ¬µh x·((Ìm· h) ---> h) x®);
+a(REPEAT strip_tac THEN rewrite_tac[unif_lim_seq_def]);
+a(¶_tac¬î¯ 1® THEN REPEAT strip_tac THEN asm_rewrite_tac[]);
+val Ûconst_unif_lim_seq_thmÝ = save_pop_thm "const_unif_lim_seq_thm";
+=TEX
+Secondly, if two locally uniformly convergent
+sequences of functions each have a limit, then so does their
+sum and its limit is the sum of the limits.
+Thee proof is a cut-and-paste generalisation of the analogous proof
+for the limit of sequences of numbers.
+=SML
+set_goal([], ¬µu1 h1 x u2 h2·
+	(u1 ---> h1) x ± (u2 ---> h2) x ´ ((Ìm y·u1 m y + u2 m y) ---> (Ìy·h1 y + h2 y)) x®);
+a(rewrite_tac[unif_lim_seq_def] THEN REPEAT strip_tac);
+a(lemma_tac¬¶b1·î¯ 0 < b1 ± b1 < b ± b1 < b'® THEN1 (
+	¶_tac¬if b < b' then b / î¯ 2 else b' / î¯ 2® THEN
+	cases_tac¬b < b'® THEN asm_rewrite_tac[] THEN
+	PC_T1 "¯_lin_arith" asm_prove_tac[]));
+a(¶_tac¬b1® THEN REPEAT strip_tac);
+a(lemma_tac ¬î¯ 0 < e / î¯ 2 ® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(spec_nth_asm_tac 8 ¬e / î¯ 2® THEN spec_nth_asm_tac 7  ¬e / î¯ 2®);
+a(¶_tac¬n + n'® THEN REPEAT strip_tac);
+a(lemma_tac¬n ¼ m ± n' ¼ m® THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(lemma_tac¬Abs (y + ~ x) < b ± Abs (y + ~ x) < b'® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(LIST_GET_NTH_ASM_T [7, 8] all_fc_tac);
+a(LEMMA_T ¬(u1 m y + u2 m y) + ~(h1 y) + ~(h2 y) = (u1 m y + ~(h1 y)) + (u2 m y + ~(h2 y))®
+	rewrite_thm_tac THEN1 PC_T1 "¯_lin_arith" prove_tac[]);
+a(bc_thm_tac ¯_¼_less_trans_thm);
+a(¶_tac¬Abs (u1 m y + ~ (h1 y)) + Abs (u2 m y + ~(h2 y))® THEN rewrite_tac[¯_abs_plus_thm]);
+a(PC_T1 "¯_lin_arith" asm_prove_tac[]);
+val Ûplus_unif_lim_seq_thmÝ = save_pop_thm "plus_unif_lim_seq_thm";
+=TEX
+One might now want to give the analogous result on the product of two sequences
+of functions with limits. However, this is false in general. For the purposes
+we have in mind, it is sufficient to consider the product of a sequence of
+functions and a given function which is bounded in some neighbourhood of
+the point of interest:
+
+=SML
+set_goal([], ¬µu h x f·
+	(u ---> h) x
+±	(¶d c·î¯ 0 < d ± î¯ 0 < c ± µy·Abs(y - x) < d ´ Abs(f y) < c)
+´	((Ìm y·u m y*f y) ---> (Ìy·h y*f y)) x®);
+a(rewrite_tac[unif_lim_seq_def] THEN REPEAT strip_tac);
+a(lemma_tac¬¶b1·î¯ 0 < b1 ± b1 < b ± b1 < d® THEN1 (
+	¶_tac¬if b < d then b / î¯ 2 else d / î¯ 2® THEN
+	cases_tac¬b < d® THEN asm_rewrite_tac[] THEN
+	PC_T1 "¯_lin_arith" asm_prove_tac[]));
+a(¶_tac ¬b1® THEN REPEAT strip_tac);
+a(lemma_tac¬î¯ 0 < e * c ›-›1® THEN1 
+	(bc_thm_tac ¯_0_less_0_less_times_thm THEN
+	REPEAT strip_tac THEN bc_thm_tac ¯_0_less_recip_thm THEN REPEAT strip_tac));
+a(spec_nth_asm_tac 9 ¬e * c ›-›1®);
+a(¶_tac¬n® THEN REPEAT strip_tac);
+a(rewrite_tac[pc_rule1"¯_lin_arith" prove_rule[]¬µA B·A*f y + ~(B * f y) = (A + ~B)*f y®,
+	¯_abs_times_thm]);
+a(lemma_tac¬Abs (y + ~ x) < b ± Abs (y + ~ x) < d® THEN1 
+	(LIST_GET_NTH_ASM_T [1, 6, 7] (MAP_EVERY ante_tac) THEN
+	PC_T1 "¯_lin_arith" prove_tac[]));
+a(LIST_GET_NTH_ASM_T [5, 11] all_fc_tac);
+a(lemma_tac¬³ c = î¯ 0® THEN1 (contr_tac THEN all_var_elim_asm_tac1));
+a(LEMMA_T¬e = (e * c ›-›1) * c® once_rewrite_thm_tac THEN1
+	(rewrite_tac[pc_rule1"¯_lin_arith" prove_rule[]¬µA B C:¯·(A*B)*C = A*C*B®] THEN
+	ALL_FC_T rewrite_tac[¯_times_recip_thm]));
+a(bc_thm_tac ¯_abs_less_times_thm THEN REPEAT strip_tac);
+val Ûtimes_unif_lim_seq_thmÝ = save_pop_thm "times_unif_lim_seq_thm";
+=TEX
+Now the main result of this section: if a sequence
+of functions, all continuous at some point $x$, is locally uniformly convergent
+at $x$, then the limit function is continuous at $x$.
+We prove a little lemma first:
+=SML
+set_goal([], ¬µa b c d:¯·Abs(a - d) ¼ Abs(a - b) + Abs(b - c) + Abs(c - d)®);
+a(REPEAT strip_tac);
+a(lemma_tac¬Abs(b - d) ¼ Abs(b - c) + Abs(c - d)® THEN1
+	(pure_rewrite_tac[pc_rule1"¯_lin_arith" prove_rule[]
+		¬b - d = (b - c) + (c - d)®, ¯_abs_plus_thm]));
+a(lemma_tac¬Abs(a - d) ¼ Abs(a - b) + Abs(b - d)® THEN1
+	(pure_rewrite_tac[pc_rule1"¯_lin_arith" prove_rule[]
+		¬a - d = (a - b) + (b - d)®, ¯_abs_plus_thm]));
+a(PC_T1 "¯_lin_arith" asm_prove_tac[]);
+val Û¯_abs_abcd_thmÝ = pop_thm ();
+=TEX
+Now we prove the main result on the continuity of limits of sequences
+functions. We use
+the $\epsilon$-$\delta$ definition of continuity directly --- to use
+the alternative characterisation in terms of sequences involves too
+many subscripts for comfort!
+=SML
+set_goal([], ¬µu h x·
+	(u ---> h) x ± (µm·u m CtsAt x) ´ h CtsAt x®);
+a(rewrite_tac[cts_at_def, unif_lim_seq_def, lim_seq_def] THEN REPEAT strip_tac);
+a(lemma_tac¬î¯ 0 < (1/3)*e® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(spec_nth_asm_tac 4 ¬(1/3)*e®);
+a(SPEC_NTH_ASM_T 1 ¬n® ante_tac THEN rewrite_tac[] THEN REPEAT strip_tac);
+a(list_spec_nth_asm_tac 5 [¬n®, ¬(1/3)*e®]);
+a(lemma_tac¬¶b1·î¯ 0 < b1 ± b1 < b ± b1 < d® THEN1 (
+	¶_tac¬if b < d then b / î¯ 2 else d / î¯ 2® THEN
+	cases_tac¬b < d® THEN asm_rewrite_tac[] THEN
+	PC_T1 "¯_lin_arith" asm_prove_tac[]));
+a(¶_tac¬b1® THEN REPEAT strip_tac);
+a(bc_thm_tac ¯_¼_less_trans_thm THEN ¶_tac ¬
+	Abs(h y - u n y) + Abs(u n y - u n x) + Abs(u n x - h x)®
+	THEN rewrite_tac[rewrite_rule[]¯_abs_abcd_thm] THEN REPEAT strip_tac);
+a(lemma_tac ¬Abs(h y + ~(u n y)) < (1/3)*e
+	± Abs(u n y + ~(u n x)) < (1/3)*e
+	± Abs(u n x + ~(h x)) < (1/3)*e®
+	THEN_LIST [id_tac, PC_T1 "¯_lin_arith" asm_prove_tac[]]);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(pure_rewrite_tac[pc_rule1"¯_lin_arith" prove_rule[]¬µz·h y + ~z = ~(z + ~(h y))®,
+	¯_abs_minus_thm]);
+a(GET_NTH_ASM_T 7 bc_thm_tac THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(GET_NTH_ASM_T 5 bc_thm_tac THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
+(* *** Goal "3" *** *)
+a(GET_NTH_ASM_T 7 bc_thm_tac THEN rewrite_tac[¯_abs_0_thm] THEN
+	PC_T1 "¯_lin_arith" asm_prove_tac[]);
+val Ûunif_lim_seq_cts_thmÝ = save_pop_thm "unif_lim_seq_cts_thm";
+=TEX
+=SML
+(*
+set_goal([], ¬µu h x s·
+	(u ---> h) x ± (µm·(u m HasDeriv s m) x) ´
+	(¶d· s --> d ± (h HasDeriv d) x)®);
+a(rewrite_tac[caratheodory_deriv_thm] THEN REPEAT strip_tac);
+a(POP_ASM_T (strip_asm_tac o conv_rule simple_µ_¶_conv));
+
+val Ûunif_lim_seq_deriv_thmÝ = save_pop_thm "unif_lim_seq_deriv_thm";
+*)
 =TEX
 \subsection{Epilogue}
 =TEX
