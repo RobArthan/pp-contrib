@@ -63,7 +63,7 @@ DRA front end filter project RSRE 1C/6130.}
 \subsection{Changes History}
 \begin{description}
 \item[Issue \SCCSversion ({\FormatDate{$Date$
-}}) ] First version.
+}}) ] Column existence class should be set to bottom. Worths set to sterling.
 \end{description}
 
 \subsection{Changes Forecast}
@@ -76,16 +76,18 @@ This document gives a formal specification of the TSQL semantics. It constitutes
 in the Proposal for Phase~2, \cite{DS/FMU/FEF/018}.
 
 \subsection{Introduction}
-We propose defining the semantics of SSQL as a subset of TSQL
+We propose defining the semantics of TSQL as a subset of SSQL
  with all classes in the state, except those that are 
 actually stored as data, set at the lowest 
-possible classification, $lattice\_bottom$. This means that
+possible classification, $lattice\_bottom$, 
+and all worths $sterling$. This means that
  the $hide$ function of \cite{DS/FMU/FEF/005} will have no
 effect on a TSQL state. A TSQL abstract 
 machine will be comprised of  two components $processQuery‰t$ and $updateState‰t$. We will define the function $processQuery‰t$, which captures the functionality of the semantics of TSQL, to be the same as $processQuery$, specified in \cite{DS/FMU/FEF/014}, except that it will be defined on TSQL 
 states and will only return $Effect$s that have all 
-classifications at $lattice\_bottom$. The function 
-$updateState‰t$  operates on the output from the function $processQuery‰t$ and  essentially determines
+classifications at $lattice\_bottom$ and all worths $sterling$. The function 
+$updateState‰t$  operates on the output from the function $processQuery‰t$ and  
+essentially determines
 whether or not the query should succeed.
 
 
@@ -97,23 +99,34 @@ open_theory "fef015";
 new_theoryÛ"fef021"İ;
 push_pc "hol";
 =TEX
-\subsection{The Classification $lattice\_bottom$}
+\subsection{Auxiliary Functions}
 First, the lowest possible classification.
 ¹HOLCONST
 Ü	Ûlattice_bottomİ : Class
 ÷üüüüüüüüüüüüüüüüüüüüüüü
 Ü	µ c : Class · c dominates lattice_bottom  	
 °
+A function that takes an $Item$ and sets its worth to $sterling$.
 
-A function that takes a piece of data and sets its class to bottom.
+¹HOLCONST
+Ü	Ûitem_sterlingİ :  Item ­ Item 
+÷üüüüüüüüüüüüüüüüüüüüüüü
+Ü	µ i · item_sterling i = if isNullItem i then i
+Ü				else 
+Ü				let v = destValuedItem i
+Ü				in ValuedItemItem(MkValuedItem sterling (VI_val v))
+°
+
+A function that takes a piece of data and sets its class to bottom and its worth to sterling.
 
 ¹HOLCONST
 Ü	Ûclass_bottomİ :  Data ­ Data 
 ÷üüüüüüüüüüüüüüüüüüüüüüü
-Ü	µ d · class_bottom d =  MkData lattice_bottom (Dat_item d)
+Ü	µ d · class_bottom d =	let i = Dat_item d
+Ü					in MkData lattice_bottom (item_sterling i)
 °
 
-Now a function that takes a   relation between column number and data and sets all classifications to $lattice\_bottom$.
+Now a function that takes a   relation between column number and data and sets all classifications to $lattice\_bottom$ and worths to $sterling$.
 
 ¹HOLCONST
 Ü	Ûset_bottom‰dİ : (Num ª Data) ­ (Num ª Data) 
@@ -121,7 +134,7 @@ Now a function that takes a   relation between column number and data and sets a
 Ü	µ nd · set_bottom‰d nd = {(n,d)|n  Dom nd ± d = class_bottom (nd @ n)}		
 °
 
-A similar function that takes a   relation between column number and update and sets all classifications to $lattice\_bottom$.
+A similar function that takes a   relation between column number and update and sets all classifications to $lattice\_bottom$ and worths to $sterling$.
 ¹HOLCONST
 Ü	Ûset_bottom‰uİ : (Num ª Update) ­ (Num ª Update) 
 ÷üüüüüüüüüüüüüüüüüüüüüüü
@@ -129,7 +142,7 @@ A similar function that takes a   relation between column number and update and 
 Ü	{(n,u)|n  Dom nu ± u = 
 Ü		let u' = nu @ n 
 Ü		in
-Ü		if isItem u' then u'
+Ü		if isItem u' then ItemUpdate (item_sterling(destItem u'))
 Ü		else if isClass u' then ClassUpdate lattice_bottom
 Ü		else DataUpdate(class_bottom (destData u'))}
 °
@@ -138,16 +151,17 @@ A similar function that takes a   relation between column number and update and 
 
 We define the TSQL state $State‰t$ as a subset of the SSQL state, $State$ specified in \cite{DS/FMU/FEF/004}, where all 
 classifications in the state are set at $lattice\_bottom$ 
-except for those classifications that are stored as data.
+except for those classifications that are stored as data. All worths
+ in the state are set at $sterling$.
 
 The constant $State‰tS$  is the set of everything of type  $State$ where the required 
-classifications are at $lattice\_bottom$.
+classifications are at $lattice\_bottom$ and worths at $sterling$.
 
 
 ¹HOLCONST
 Ü	ÛState‰tSİ 		: State ğ
 ÷üüüüüüüüüüüüüü
-ÜState‰tS = {st |µdir · 
+Ü	State‰tS = {st |µdir · 
 Ü			dir  Ran (repState st)	
 Ü			´ Dir_exist dir = lattice_bottom
 Ü			± Dir_class dir = lattice_bottom
@@ -159,12 +173,18 @@ classifications are at $lattice\_bottom$.
 Ü					col  TS_colspecs tab
 Ü					´ CS_min col = lattice_bottom
 Ü					± CS_max col = lattice_bottom
+Ü				± µ cc ·
+Ü					cc  Ran(TS_cons tab)
+Ü					´ CC_exist cc = lattice_bottom
 Ü				± µ row · 
-Ü				row  Elems (TS_rows tab)
+Ü					row  Elems (TS_rows tab)
 Ü					´ R_exist row = lattice_bottom
 Ü					± µ data · 
 						data  Ran(R_data row)
-Ü						´ Dat_class data = lattice_bottom}
+Ü						´ Dat_class data = lattice_bottom
+Ü						± isValuedItem (Dat_item data)
+Ü						´ VI_worth(destValuedItem(Dat_item data)) 
+Ü						= sterling}
 °
 
 We define the property required on the representation state.
