@@ -10,12 +10,12 @@
 %\TPPpart{}
 \TPPtitle{Phase II Proof Strategy}  %% Mandatory field
 \TPPref{DS/FMU/FEF/034}  %% Mandatory field
-\def\SCCSversion{$Revision$
+\def\SCCSversion{$Revision$%
 }
 \TPPissue{\SCCSversion}  %% Mandatory field
-\TPPdate{\FormatDate{$Date$
+\TPPdate{\FormatDate{$Date$%
 }}  %% Mandatory field (with sensible default)
-\TPPstatus{Approved}			%% Mandatory field
+\TPPstatus{Draft}			%% Mandatory field
 \TPPtype{Specification}
 \TPPkeywords{}
 \TPPauthor{R.~D.~Arthan & WIN01}  %% Mandatory field
@@ -64,8 +64,8 @@ DRA front end filter project RSRE 1C/6130.}
 
 \subsection{Changes History}
 \begin{description}
-\item[Issue \SCCSversion(\FormatDate{$Date$
-})] First draft for review.
+\item[Issue \SCCSversion(\FormatDate{$Date$%
+})] First draft for review by DRA.
 \end{description}
 
 \subsection{Changes Forecast}
@@ -109,6 +109,27 @@ it is intended to concentrate effort on the security properties which relate
 most directly with the specifications of the table computations
 produced by the Front End Transformations.
 
+This document itself gives some partial proofs demonstrating how the overall
+security properties of the system may be reduced to properties of its
+subsystems and how the material of \cite{DS/FMU/FEF/026,DS/FMU/FEF/032}
+recasts aspects of the critical properties on one of the subsystems into a more
+explicit and tractable form. These partial proofs are presented as
+\Product\ proofs of theorems whose conclusions are, in this document, always
+the overall security property for the SWORD system. The theorems have
+assumptions which are best thoughts of as lemmas in a putative security
+proof which have not yet been proved. Here, for example, the first partial proof
+shows that the system is secure provided its top-level subsystems possess
+certain security properties and that the architectural construction of the
+system from its subsystems has a certain property.
+Each partial proof step replaces one or more of these assumptions from an earlier
+theorem by zero or more new assumptions, the
+aim being that any new assumptions should be more tractable or more plausible,
+than the assumptions they replace.
+Here, in the final partial proof, the subsystem security
+property relating to the $SELECT$ query has been replaced by three new
+assumptions which express the desired security property in a rather more explicit
+fashion.
+
 \section{PRELIMINARIES}
 The following \Product{} instructions set up the new theory $fef034$,
 which is used to hold definitions relating to the properties to be proved.
@@ -132,7 +153,8 @@ whose security properties we wish to investigate by formal proof:
 
 Thus the model is obtained by applying the architectural
 construction function $FE\_SWORD$ of \cite{DS/FMU/FEF/022} to the
-components of \cite{DS/FMU/FEF/022,DS/FMU/FEF/025,DS/FMU/FEF/021,DS/FMU/FEF/024}.
+the representation function and subsystems defined in
+\cite{DS/FMU/FEF/022,DS/FMU/FEF/025,DS/FMU/FEF/021,DS/FMU/FEF/024}.
 
 The overall security conjecture we are interested in is the assertion
 that this behavioural model satisfies the security policy defined
@@ -170,8 +192,12 @@ sequences of one or two TSQL queries to
 be executed on the target DBMS.
 \end{itemize}
 
+The architectural construction is also parameterised by a representation
+function which is really an artefact of the modelling approach rather than
+a subsystem in its own right.
+
 The main functional aspect described in \cite{DS/FMU/FEF/022} is the
-overall interconnection of these three subsystems. In particular, it
+overall interconnection of the three subsystems. In particular, it
 defines the way the optional check queries produced by the
 SSQL Transformation Processor are used to prevent execution of queries
 which would otherwise cause illegal information flows which the Output
@@ -190,7 +216,7 @@ The architectural security conjecture taken from the
 informal discussion at the end of \cite{DS/FMU/FEF/022} may be recorded
 for future reference in a metalanguage variable\footnote{%
 Because this conjecture is polymorphic, i.e. contains type variables,
-ProofPower does not allow us to define a boolean constants
+\Product\ does not allow us to define a boolean constants
 to capture it in the theory database (essentially because the truth
 value might depend on the instantiation of the type variables in the
 conjecture, which would render the definition inconsistent). Consequently,
@@ -252,7 +278,9 @@ follows:
 ∞
 
 Of these five, it is part E  which constrains the flow
-of information into the output of a transition; parts C and D constrain theinformation flows into the result state of a transition; parts A and B are, in essence,
+of information into the output of a transition; parts C and D constrain the
+information flows into the result state of a transition; parts A and B are,
+in essence,
 structural requirements ensuring that the subsystems fit together sensibly.
 
 We may now give the following partial proof of the overall system
@@ -267,6 +295,8 @@ set_goal(
 	 ¨Subsys_SecureDÆ,
 	 ¨Subsys_SecureEÆ],
 				¨FE_SWORD_SYSTEM_secureÆ);
+=TEX
+=SML
 a(all_asm_ante_tac THEN rewrite_tac (map get_spec
 	[¨Architecture_SecureÆ, ¨Subsys_SecureAÆ, ¨Subsys_SecureBÆ,
 	¨Subsys_SecureCÆ, ¨Subsys_SecureDÆ, ¨Subsys_SecureEÆ,
@@ -336,6 +366,8 @@ set_goal(
 	 ¨EM_SecureEÆ,
 	 ¨Correct_Compile_STP_secure_EÆ],
 				¨FE_SWORD_SYSTEM_secureÆ);
+=TEX
+=SML
 a(all_asm_ante_tac
 	THEN rewrite_tac (map get_spec [¨EM_SecureEÆ, ¨Correct_Compile_STP_secure_EÆ]));
 a(REPEAT strip_tac
@@ -369,7 +401,7 @@ After constructing the set $TableComputations$, \cite{DS/FMU/FEF/032} then
 defines two sets which may be used to relate it to the considerations
 of \cite{DS/FMU/FEF/026}. The first of these, $OkTableComputation$,
 is the set of all possible table computations which are secure
-by dint of the characterisation given in \cite{DS/FMU/FEF/026}.
+by dint of a characterisation like that given in \cite{DS/FMU/FEF/026}.
 The second, $OkSTP$, is, roughly speaking, the set of objects of the
 same type as the SSQL Query Transformation Processor, $STP$, which always produce
 query sequences whose compiled forms perform computations contained in the set
@@ -385,7 +417,7 @@ of \cite{DS/FMU/FEF/026}:
 ˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
 ‹	OkSTP_Secure_E_Lemma §
 ‹	µcompile∑
-‹		(OkSTP compile: (Query, FILTER_PARS)STP_TYPE ) Ä
+‹		((OkSTP compile): (Query, FILTER_PARS)STP_TYPE ) Ä
 ‹		STP_secure_E compile
 ∞
 
@@ -394,7 +426,7 @@ for technical reasons connected with the primitive definitional
 mechanisms of \Product, it is necessary to constrain the assertion to the
 particular type of SSQL Transformation Processors with which we are concerned
 rather than leaving the set as a polymorphic one\footnote{%
-\Product enforces this restriction since, otherwise, the definition might
+\Product\ enforces this restriction since, otherwise, the definition might
 be inconsistent, because the value of the constant defined might depend on how
 the polymorphic defining property was instantiated.)}.
 
@@ -410,18 +442,20 @@ the $OkTableComputation$ property.
 ‹	µcc∑ TableComputations cc Ä OkTableComputation cc
 ∞
 
-The definitions of the terms involved in these two conjectures have
+The definitions in \cite{DS/FMU/FEF/032}
+of the terms involved in these two conjectures have
 been chosen to make the following proof fairly straightforward:
 
 =SML
 set_goal([], ¨TableComputationsSecure ¥ OkSTP_Secure_E_LemmaÆ);
+=TEX
+=SML
 a(PC_T1 "hol2"
 	rewrite_tac(map get_spec[
 		¨TableComputationsSecureÆ, ¨OkTableComputationÆ,
 		¨OkSTP_Secure_E_LemmaÆ, ¨ConditionEÆ,
-		¨OkSTPÆ, ¨STP_secure_EÆ, ¨LetÆ])
-	THEN REPEAT strip_tac THEN all_asm_fc_tac[]);
-(* *** Goal "1" *** *)
+		¨OkSTPÆ, ¨STP_secure_EÆ, ¨LetÆ]));
+a(REPEAT_UNTIL is_± strip_tac THEN all_asm_fc_tac[]);
 a(lemma_tac¨compile (Fst (destVal (x (q, c)))) = Ã tl∑ (Snd (dte tl), [])Æ
 	THEN1 (asm_rewrite_tac[ext_thm]
 		THEN PC_T1"prop_eq_pair" REPEAT strip_tac
@@ -429,14 +463,7 @@ a(lemma_tac¨compile (Fst (destVal (x (q, c)))) = Ã tl∑ (Snd (dte tl), [])Æ
 a(asm_ante_tac ¨ri ç RiskInputs c (compile (Fst (destVal (x (q, c)))))Æ
 	THEN asm_rewrite_tac[]);
 a(strip_tac THEN all_asm_fc_tac[] THEN all_asm_fc_tac[]);
-(* *** Goal "2" *** *)
-a(lemma_tac¨compile (Fst (destVal (x (q, c)))) = Ã tl∑ (Snd (dte tl), [])Æ
-	THEN1 (asm_rewrite_tac[ext_thm]
-		THEN PC_T1"prop_eq_pair" REPEAT strip_tac
-		THEN asm_rewrite_tac[]));
-a(asm_ante_tac ¨ri ç RiskInputs c (compile (Fst (destVal (x (q, c)))))Æ
-	THEN asm_rewrite_tac[]);
-a(strip_tac THEN all_asm_fc_tac[] THEN all_asm_fc_tac[]);
+a(REPEAT strip_tac);
 val €Theorem3› = save_pop_thm "Theorem3";
 =TEX
 
@@ -463,6 +490,8 @@ set_goal(
 	 ¨Correct_Compile_OkSTPÆ,
 	 ¨TableComputationsSecureÆ],
 				¨FE_SWORD_SYSTEM_secureÆ);
+=TEX
+=SML
 a(all_asm_ante_tac THEN rewrite_tac (map get_spec
 	[¨Correct_Compile_OkSTPÆ]));
 a(REPEAT strip_tac
@@ -472,6 +501,12 @@ a(fc_tac[rewrite_rule[get_spec¨Correct_Compile_STP_secure_EÆ](all_¥_intro Theore
 a(all_asm_fc_tac[]);
 val €Theorem4› = save_pop_thm "Theorem4";
 =TEX
+So, in $Theorem4$ the assumption $Subsys\_SecureE$ has been replaced
+by three new assumptions, of which we believe that $Correct\_Compile\_OkSTP$
+is at least a highly plausible (and certainly desired) property of the
+implementation, and that the other two are likely to be amenable to
+further, perhaps partial, proof work.
+
 \section{CLOSING DOWN}
 =IGN
 output_theory{theory = "fef034",out_file = "fef034th.doc"};
