@@ -14,15 +14,20 @@ doctex topology topology.th; texdvi topology
 \def\R{\mathbb{R}}
 \def\Z{\mathbb{Z}}
 \def\Q{\mathbb{Q}}
-\title{Homology of the Plane}
+\title{Mathematical Case Studies \\ --- \\ Some Abstract Topology}
 \author{Rob Arthan}
 \makeindex
 \begin{document}
 \vfill
 \maketitle
 \begin{abstract}
-This {\ProductHOL} script contains definitions and proofs concerning the
-basics of point-set topology.
+This {\ProductHOL} script contains definitions and proofs concerning some
+basics of abstract topology. This includes the definitions of the following:
+construction of new topologies from old as (binary) product spaces or subspaces;
+continuity, Hausdorff spaces; connectedness;  compactness. A range of basic theorems are
+proved, including: continuity of functional composition and of the structural maps
+for products; preservation of compactness and connectedness under continuous maps;
+connectedness resp. compactness of products of connected resp. compact spaces.
 \end{abstract}
 \vfill
 \newpage
@@ -50,6 +55,17 @@ new_parent"fin_set";
 %%%%
 \section{DEFINITIONS}\label{DEFINITIONS}
 =TEX
+We begin with the definition of a topology. We follow the most common tradition
+of defining a topology by specifying its set of open sets. The polymorphic set
+{\it Topology} is the set of all sets of sets that we will consider to be topologies.
+We do not require a topology to form a topology on the universe of the type of its points.
+For example, we wish to consider sets such as the unit interval in the real line to be
+topological spaces in their own right. This actually simplifies the definition: we simply
+require a topology to be a set of sets that is closed under arbitrary unions and
+binary intersections. We do not require the underlying of the topology to 
+be a non-empty set (following Kelley). Nor do we need to make a special case of
+the empty set --- it will be shown to be an open set in any topology (as the union
+of an empty set of open sets).
 %%%%
 %%%%
 =SML
@@ -60,6 +76,8 @@ new_parent"fin_set";
 ‹	{‘ | (µV∑ V Ä ‘ ¥ ﬁ V ç ‘) ± (µA B∑A ç ‘ ± B ç ‘ ¥ A ° B ç ‘)}
 ∞
 =TEX
+We can recover the underlying set of a topology as the union of all its open sets.
+It reads quite nicely to call this the {\em space} of the topology.
 %%%%
 %%%%
 =SML
@@ -69,6 +87,11 @@ new_parent"fin_set";
 ‹ µ‘∑ Space ‘ = ﬁ ‘
 ∞
 =TEX
+A set is {\em closed} with respect to a topology, $\tau$, if is a subset of
+the underlying set of the topology its complement in
+that set is open (i.e., is a member of $\tau$).
+For this and several other concepts, we use postfix notation to suggest informal
+notations like ``$\tau-$closed''.
 %%%%
 %%%%
 =SML
@@ -79,6 +102,24 @@ declare_postfix(300, "Closed");
 ‹ µ‘∑ ‘ Closed = {A | ∂B∑B ç ‘ ± A = Space ‘ \ B}
 ∞
 =TEX
+There are some issues abou the precise formalisation of continuity.
+The interesting part is completely standard: a function is continuous
+iff. the inverse images of open sets are open sets. Clearly, there are
+two topologies here: one for the domain of the function and one for its
+range.
+It is technically convenient to work with functions that are total on the
+universe of the type of the domain. In any case, we want to support
+something like the usual way of thinking in the calculus
+where one doesn't carefully restrict every function to the domain of interest.
+E.g., one says things like ``$1/\mbox{sin}\;x$ is continuous from  $(0, \pi/2)$
+to the positive real numbers.``.
+
+The upshot is the following definiition of a continuous function from
+the topological space $\sigma$ to the topological space $\tau$.
+The function is required to map the underlying set of $\sigma$ to that of $\tau$.
+It may well also map things outside the underlying of $\sigma$ into that
+of $\tau$, and these need to be filtered out when we are testing whether the
+inverse image of an open set is open.
 %%%%
 %%%%
 =SML
@@ -92,6 +133,8 @@ declare_postfix(300, "Continuous");
 ‹	±	(µA∑ A ç ‘ ¥ {x | x ç Space ” ± f x ç A} ç ”)}
 ∞
 =TEX
+The definition of compactness is the standard one, together with the explicit
+requirement that the compact set be a subset of the space of the topology in question.
 %%%%
 %%%%
 =SML
@@ -103,6 +146,8 @@ declare_postfix(300, "Compact");
 ‹	{A | A Ä Space ‘ ± µV∑ V Ä ‘ ± A Ä ﬁ V ¥ ∂W∑ W Ä V ± W ç Finite ± A Ä ﬁ W}
 ∞
 =TEX
+Similarly, the definition of connectedness is the standard one, together with the explicit
+requirement that the connected set be a subset of the underlying set of the topology in question.
 %%%%
 %%%%
 =SML
@@ -115,6 +160,11 @@ declare_postfix(300, "Connected");
 ‹	± µB C∑ B ç ‘ ± C ç ‘ ± A Ä B ¿ C ± A ° B ° C = {} ¥ (A Ä B ≤ A Ä C)}
 ∞
 =TEX
+We borrow the Z symbol for range restriction (decorated with a subscript
+to avoid overloading) for the operator that forms the
+subspace of a topological space defined by some subset of the universe of its points.
+If that subset contains points outside the underlying set of the topological space they
+are ignored.
 %%%%
 %%%%
 =SML
@@ -126,6 +176,7 @@ declare_infix(240, "ÚâT");
 ‹ =	{A | ∂B∑ B ç ‘ ± A = B ° X}
 ∞
 =TEX
+The definition of the product topology is straightforward.
 %%%%
 %%%%
 =SML
@@ -137,6 +188,7 @@ declare_infix(150, "∏âT");
 ‹ =	{C | µ x y∑ (x, y) ç C ¥ ∂A B∑ A ç ” ±  B ç ‘ ± x ç A ± y ç B  ± (A ∏ B) Ä C}
 ∞
 =TEX
+Our final definition is the Hausdorff condition:
 %%%%
 %%%%
 =SML
@@ -510,7 +562,7 @@ set_goal([], ¨µ” : 'a SET SET; ‘ : 'b SET SET∑
 ±	‘ ç Topology
 ¥	Space  (” ∏âT ‘)  = (Space ” ∏ Space ‘)Æ);
 a(rewrite_tac[product_topology_def, space_def]);
-a(MERGE_PCS_T1["'bin_rel", "sets_ext1"] prove_tac[]);
+a(MERGE_PCS_T1["'bin_rel", "sets_ext1"] REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(all_asm_fc_tac[] THEN contr_tac THEN all_asm_fc_tac[]);
 (* *** Goal "2" *** *)
@@ -962,7 +1014,6 @@ val €compact_product_lemma› = save_pop_thm "compact_product_lemma";
 %%%%
 %%%%
 =SML
-(*
 set_goal([], ¨µX : 'a SET; Y : 'b SET; ” ‘ ∑ 
 	X ç ” Compact
 ±	Y ç ‘ Compact
@@ -1036,15 +1087,32 @@ a(lemma_tac¨{A | A ç ” ±∂x∑x ç X ±  x ç A ± µt y∑t ç A ± y ç Y ¥ (t, y) ç ﬁ(W x)
 	THEN1 PC_T1 "sets_ext" prove_tac[]);
 a(GET_NTH_ASM_T 10 (fn th => all_fc_tac[rewrite_rule[compact_def] th]));
 a(LIST_DROP_NTH_ASM_T [4, 5, 7, 8] discard_tac);
-a(lemma_tac¨∂U∑µA∑A ç W' ¥ µ t y∑ t ç A ± y ç Y ¥ (t, y) ç ﬁ (U A)Æ
+a(lemma_tac¨∂U∑µA∑A ç W' ¥ (µ t y∑ t ç A ± y ç Y ¥ (t, y) ç ﬁ (U A)) ± U A Ä V ± U A ç FiniteÆ
 	THEN1 prove_∂_tac);
 (* *** Goal "2.2.2.1" *** *)
 a(REPEAT strip_tac);
 a(cases_tac¨A' ç W'Æ THEN asm_rewrite_tac[]);
-
-
+a(all_fc_tac[pc_rule1"sets_ext1" prove_rule[]¨µx a b∑x ç a ± a Ä b ¥ x ç bÆ]);
+a(∂_tac¨W xÆ THEN  POP_ASM_T ante_tac THEN ALL_ASM_FC_T rewrite_tac[] THEN taut_tac);
+(* *** Goal "2.2.2.2" *** *)
+a(∂_tac¨ﬁ{y|∂ x∑ x ç W' ± y = U x}Æ THEN REPEAT strip_tac);
+(* *** Goal "2.2.2.2.1" *** *)
+a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac THEN all_var_elim_asm_tac1);
+a(LIST_DROP_NTH_ASM_T [3] all_asm_fc_tac);
+a(LIST_DROP_NTH_ASM_T [2, 4] (MAP_EVERY ante_tac) THEN PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "2.2.2.2.2" *** *)
+a(ante_tac (list_µ_elim[¨UÆ, ¨W'Æ] finite_image_thm) THEN asm_rewrite_tac[] THEN strip_tac);
+a(bc_thm_tac ﬁ_finite_thm THEN REPEAT strip_tac);
+a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac THEN all_var_elim_asm_tac1);
+a(all_asm_fc_tac[]);
+(* *** Goal "2.2.2.2.3" *** *)
+a(MERGE_PCS_T1 ["'bin_rel", "sets_ext1"] REPEAT strip_tac);
+a(LIST_DROP_NTH_ASM_T [4] (PC_T1"sets_ext1" all_fc_tac));
+a(LIST_DROP_NTH_ASM_T [5] all_fc_tac);
+a(∂_tac¨s'Æ THEN REPEAT strip_tac);
+a(∂_tac¨U sÆ THEN REPEAT strip_tac);
+a(∂_tac¨sÆ THEN REPEAT strip_tac);
 val €product_compact_thm› = save_pop_thm "product_compact_thm";
-*)
 =TEX
 %%%%
 %%%%
