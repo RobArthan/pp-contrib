@@ -7,7 +7,7 @@
 \TPPproject{DRA FRONT END FILTER PROJECT}  %% Mandatory field
 %\TPPvolume{}
 %\TPPpart{}
-\TPPtitle{Critical Requirements on the SWORD Query Transformations}  %% Mandatory field
+\TPPtitle{An Execution Model for SWORD}  %% Mandatory field
 \TPPref{DS/FMU/FEF/026}  %% Mandatory field
 \def\SCCSversion{$Revision$
 }
@@ -20,8 +20,8 @@
 \TPPauthor{R.~D.~Arthan & WIN01}  %% Mandatory field
 %\TPPauthors{Name 1&location 1\\Name 2&location 2\\Name 3&location 3}
 \TPPauthorisation{R.B.~Jones & HAT Manager}
-\TPPabstract{A formalisation of the critical requirements on the SWORD
-Query Transformations for the DRA front end filter project RSRE 1C/6130.}
+\TPPabstract{A formalisation of an execution model for the Front End
+implementation of SWORD for the DRA front end filter project RSRE 1C/6130.}
 %\TPPabstractB{}
 %\TPPabstractC{}
 %\TPPabstractD{}
@@ -69,8 +69,7 @@ Query Transformations for the DRA front end filter project RSRE 1C/6130.}
 \end{description}
 
 \subsection{Changes Forecast}
-The current issue is preliminary discussion of issues in
-formalising the critical requirements.
+The current issue is a partial draft to promote discussion about the approach.
 \pagebreak
 \section{GENERAL}
 \subsection{Scope}
@@ -99,6 +98,7 @@ $fef022$ in which the architectural model is formalised.
 =SML 
 open_theory "fef022";
 new_theory€"fef026"›;
+new_parent€"fef025"›;
 push_pc "hol";
 =TEX
 
@@ -121,7 +121,8 @@ at the lowest classification. A formal treatment of the TSQL semantics along
 these lines is given in \cite{DS/FMU/FEF/021}.
 
 The representation of a TSQL state as an SSQL state is defined informally
-in \cite{filter} and formally in TBA. In the general case, an SSQL table
+in \cite{filter} and formally in \cite{DS/FMU/FEF/025}.
+In the general case, an SSQL table
 with $k$ columns is represented as a TSQL table with $1 + 3k$ columns:
 the first column in the TSQL table contain the row existence classes,
 successive blocks of 3 columns give the classification, the dinary data
@@ -247,7 +248,7 @@ is no $WHERE$ clause.%
 }:
 
 =GFT TSQL Example
-	SELECT cc, rc, col1âc, col1âs, col1âd, ...
+	SELECT cc, rc, col1âs, col1âd, col1âc, ...
 	FROM tableât
 	WHERE cc DOM rc
 =TEX
@@ -289,7 +290,7 @@ about values in the first two fields of the row. Again there is no check
 query and the transformed query might have the form:
 
 =GFT TSQL Example
-	SELECT col1âc LUB col2âc, rc, col2âc LUB col3âc, col2âs + col3âs
+	SELECT col1âc LUB col2âc, rc, col2âs + col3âs, col2âc LUB col3âc
 	FROM tableât
 	WHERE (col1âs < col1âs OR NOT cc DOM (col1âc LUB col2âc)) AND cc DOM rc
 =TEX
@@ -349,7 +350,7 @@ from a single table but with the existence class in each row of the cartesian
 product taken to be the least upper bound of the existence classes of the
 two rows it is formed from.
 =GFT TSQL Example
-	SELECT cc, rcA LUB rcB, colA1âc, colA1âs, colA1âd, ..., colB1âc, colB1âs, colB1âd, ...
+	SELECT cc, rcA LUB rcB, colA1âs, colA1âd, colA1âc, ..., colB1âs, colB1âd, colB1âc, ...
 	FROM tableAât, tableBât,
 	WHERE cc DOM (rcA LUB rcB)
 =TEX
@@ -372,32 +373,504 @@ row).
 The details of the mapping of the SSQL name space onto the TSQL name space.
 \item
 The handling of nested $SELECT$ queries and the management of the
-scope of names within them.
+scope of the names spaces within them.
 \end{enumerate}
 
-%The first and second of these appear to be fairly straightforward to
-%describe and formalise, given a suitable framework. The problems
-%with names, $SELECT$s are somewhat more complex.
-%To factor out these problems while retaining the core security relevant
-%features, a model of the operation of the TSQL system in which the
-%semantics of the queries are represented by simple relational algebra-style
-%operations on derived tables is suggested. The idea is that one may
-%consider any TSQL query possibly involving nested $SELECT$s as the result
-%of performing a sequence of $SELECT$s whose results are assigned
-%to intermediate tables and in which the only nested $SELECT$s have the
-%form.
+In order to simplify the handling of both nested $SELECT$s and
+of name space management, it is proposed to use a model of the
+TSQL execution mechanism in which the essence of the $SELECT$
+functionality is separated out. To do this, we restrict attention
+to transitions of the underlying DBMS whose effect can be viewed
+as having been obtained by the following steps:
+
+\begin{enumerate}
+\item
+Represent the visible state of the database as a list of derived tables, $dtl$;
+\item
+Perform some computation on $dtl$ resulting in a new derived table, $dt$;
+\item
+Either filter $dt$ to create the output for the client ($SELECT$ query),
+or use $dt$ and other information from the query to update the database
+(other queries).
+\end{enumerate}
+
+Here, step 1 is intended to involve a fixed mapping on database states
+dependent on the SSQL database structure. The main security property
+enforced by step 1 is the removal of tables which the client is not
+cleared to see (cf. \cite{trans}, in which, we take it, such tables are
+not entered into the global symbol table).
+
+In step 3, the filtering for the output from the $SELECT$ queries is
+to be carried out by using the filter specified in \cite{DS/FMU/FEF/024}.
+The other sorts of query are to be processed on the assumption that $dt$ encodes
+information about the modifications to be made to the table named in the query.
+
+Step 2 is where the main security features of the transformations\cite{trans}
+are modelled.
+In particular, by bounding the class of computations permitted in this
+step, we can formalise the intuitions behind the clearances which are
+assigned by the transformations to the fields of derived tables.
 
 
-%Of course, a precise working out of the details of such a translation
-%would require a careful examination of the TSQL scope rules, and the
-%the introduction of correlation names where necessary to avoid scoping
-%problems. However, it is reasonably clear in principle that such a
-%translation is possible. Moreover, it would seem that such an approach
-%will give insight into the information flow constraints which the
-%transformations should impose by giving a simplified framework for
-%understanding the execution of the TSQL queries they generate.
+\section{REPRESENTING SSQL AND TSQL STATES AS DERIVED TABLES}
+
+This section describes how SSQL and TSQL states are viewed as lists
+of derived tables. A fairly explicit algorithm is
+specified for the SSQL states. The view for the TSQL states is then loosely
+specified in terms of the SSQL formulation.
+
+At this stage we have 
+ignored the classifications associated with directories 
+on the grounds that the symbol table operations described in 
+\cite{trans} only  allow manipulation of tables about whose existence the user 
+is cleared to know and which the user is allowed access.
+
+
+
+\subsection{Interpreting a State as a List of Tables}
+
+Obtain a list of pairs of directory name and directory 
+from a state together with the upper bound of the clearances for the directory.
+
+πHOLCONST
+‹	€StateDirs› : State ≠  (Class ∏ Ide LIST ∏ Directory) LIST
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µ s∑	Elems (StateDirs s)
+‹	=	{	(c, (i, d))
+‹		|	(i, d) ç repState s
+‹		±	c = (Dir_exist d lub Dir_class d)}
+∞
+
+Obtain a list of pairs of table name and table 
+from a directory.
+
+πHOLCONST
+‹	€DirTables› : Directory ≠  (Ide  ∏ TableSpec) LIST
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µ d ∑ Elems (DirTables d) = Dir_tables d
+∞
+
+Obtain a list of quadruples of class, directory name, table name and table 
+from a state. This involves propagating the classes and directory
+names obtained for each directory $StateDirs$ into the information
+returned for each table. 
+
+
+πHOLCONST
+‹	€StateTables› : State ≠  (Class ∏ Ide LIST ∏ Ide  ∏ TableSpec)LIST
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µs ∑ StateTables s =
+‹		let (cl,illdl) =  Split(StateDirs s)
+‹		in let (ill,dl) =  Split illdl
+‹		in let (itll) = (Map DirTables dl)
+‹		in let f c i it = (c, i,it)
+‹		in let g (c, i, its) = Map (f c i) its
+‹		in let h cl is itss = Map g (Combine cl (Combine is itss)) 
+‹		in Flat (h cl ill itll) 
+∞
+
+\subsection{Mapping  SSQL Tables to Derived Tables}
+
+First, obtain the static column information  
+for a derived table from a $ColSpec$.
+πHOLCONST
+‹	€ColSpecâd› : (Ide LIST ∏ Ide  ∏ TableSpec) ≠ ColSpec  ≠ DerColSpec
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µ d_name t_name t cs ∑ ColSpecâd (d_name,t_name,t) cs = 
+‹			let cc = (TS_cons t) @ (CS_consGroup cs)
+‹			in let tc_name = Cons t_name[CS_ide cs]
+‹			in  MkDerColSpec
+‹				[[CS_ide cs];tc_name;d_name Î tc_name]
+‹				(CS_min cs)
+‹				(CS_max cs)
+‹				(CC_exist cc)
+∞
+
+Obtain the static table information  
+for a derived table from a $TableSpec$.
+πHOLCONST
+‹	€TableSpecâd› : (Class ∏ Ide LIST ∏ Ide  ∏ TableSpec) ≠ DerTableSpec
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µ c d_name t_name t ∑ TableSpecâd (c, d_name,t_name,t) = 
+‹		 MkDerTableSpec
+‹			[[t_name];d_name Î [t_name]]
+‹			(TS_class t lub c)
+‹			(TS_maxRow t)
+‹			(RelList(Squash{(n,cs)|∂ cs'∑ cs' ç TS_colspecs t 
+‹				± cs = ColSpecâd (d_name,t_name,t) cs' ± n = CS_posn cs'}))
+∞
+
+Obtain the information  
+in a derived table  row from a $TableSpec$, a $Row$ and a 
+classification. The where clause class is set to bottom since no
+where clause has been evaluated for the row.
+
+πHOLCONST
+‹	€TableRowâd› : TableSpec ≠ Row ≠ DerTableRow
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µt r ∑ TableRowâd t r = 
+‹		let f = Ã d ∑ (Dat_class d,Dat_item d)
+‹		in	MkDerTableRow
+‹			lattice_bottom
+‹			(R_exist r)
+‹			(RelList(Squash
+‹			{(n,ic)|n ç Dom(R_data r) ± ic = f((R_data r) @ n)}))
+∞
+
+Now obtain the derived table from a $TableSpec$ and a classification.
+
+πHOLCONST
+‹	€Tableâd› : (Class ∏ Ide LIST ∏ Ide  ∏ TableSpec) ≠ DerTable
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µ c d_name t_name t ∑ Tableâd (c, d_name,t_name,t) = 
+‹		 MkDerTable
+‹			(TableSpecâd (c, d_name,t_name,t))
+‹			(Map (TableRowâd t) (TS_rows t))
+∞
+
+\subsection{Viewing an SSQL State as a List of Derived Tables}
+
+
+Finally the mapping from an SSQL $State$  to a list of derived tables.
+
+πHOLCONST
+‹	€Viewâs› :  State ≠  DerTable LIST
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µ s ∑ Viewâs s = Map Tableâd (StateTables s)
+∞
+
+\subsection{Viewing a TSQL State as a List of Derived Tables}
+The view of a TSQL state is obtained using the view function for SSQL
+and the representation function of \cite{DS/FMU/FEF/025}.
+πHOLCONST
+‹	€Viewât› : Stateât ≠  DerTable LIST
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µ sât ∑ µsâs∑ sât = repr sâs ¥ Viewât sât = Viewâs sâs
+∞
+Note that the consistency of the above implicit definition requires
+that any two SSQL states which are identified by $repr$ must be the
+same when viewed as lists of derived tables.
+\section{EXECUTION MODEL CONSTRUCTION}\label{EXECUTIONMODEL}
+A derived table is flattened into a list of data tuples using
+the following function:
+πHOLCONST
+‹	€GiveData›	:	DerTable ≠ Data LIST LIST
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µdt∑	GiveData dt =
+‹	let	class_item c = ValuedItemItem(MkValuedItem sterling (ClassVal c))
+‹	in let	item_data i = MkData lattice_bottom i
+‹	in let	class_data c = item_data (class_item c)
+‹	in let	cell_cols (c, i) = [class_data c; item_data i]
+‹	in let	row_data r
+‹		=	Flat
+‹			(Cons
+‹			[class_data (DTR_where r); class_data (DTR_row r)]
+‹			(Map cell_cols (DTR_cols r)))
+‹	in	Map row_data(DT_rows dt)
+∞
+The following, which is intended to determine whether or not a query
+is a $SELECT$ query should be in an earlier document, I think:
+πHOLCONST
+‹	€is_select›	:	Query ≠ BOOL
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µq∑ is_select q § ∂ t∑q = select t
+∞
+
+We do not wish to specify the post-processing for the queries which
+modify the database yet, and so we make a function to model database
+modifications a parameter of the execution model. Similarly,
+we defer the specification of the class of derived table computations
+which are permitted.
+πHOLCONST
+‹	€EM›		:	(DerTable ∏ Stateât ≠ Stateât ∏ Errors)
+‹			≠	(DerTable LIST ≠ DerTable ∏ Errors) 
+‹			≠	(Query, Stateât) DBMS_TYPE
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µ upd cmps∑ 
+‹	let	m = EM upd cmps
+‹	in	µq∑ ∂cmp∑ µst∑
+‹		let	(st', (res, errs)) = m (q, st)
+‹		in	let v = Viewât st
+‹		in	cmp ç cmps ±
+‹			let	(dt, e) = cmp v
+‹			in	if	is_select q
+‹				then	(res, errs) = (GiveData dt, e) ± st' = st
+‹				else	(st', e) = upd (dt, st)
+∞
+In order to define the security properties required of the derived
+table computations, it is more convenient to turn the above definition
+inside out. We say that the {\em support} of a query is the set of computations
+on derived tables which could be used to implement it:
+πHOLCONST
+‹	€Support›	:	(DerTable ∏ Stateât ≠ Stateât ∏ Errors)
+‹			≠	(DerTable LIST ≠ DerTable ∏ Errors) 
+‹			≠	Query
+‹			≠	(DerTable LIST ≠ DerTable ∏ Errors) 
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µ upd cmps q∑ 
+‹	Support upd cmps q =
+‹	•	{	fs
+‹		|	fs Ä cmps ± µst∑ EM upd fs (q, st) = EM upd cmps (q, st)}
+∞
+
+\section{CRITICAL PROPERTIES}
+We can now attempt to state critical requirements on the main subsystems
+of the architectural model of \cite{DS/FMU/FEF/022} using the $Support$
+function to bound the allowable combinations of queries. First of all,
+we need to specify an analogue of $hide$ for derived tables in order
+to state the information flow constraints which apply to computations on them.
+πHOLCONST
+‹	€HideDerTableRow› : Class ≠ DerTableRow ≠ DerTableRow
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µcc r∑	HideDerTableRow cc r
+‹	=	let	d = ValuedItemItem(MkValuedItem sterling dummyVal)
+‹		in let	hc (c, i) = if cc dominates c then (c, i) else (c, d)
+‹		in	MkDerTableRow
+‹			(DTR_where r)
+‹			(DTR_row r)
+‹			(Map hc (DTR_cols r))
+∞
+πHOLCONST
+‹	€HideDerTable› : Class ≠ DerTable ≠ DerTable
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µcc t∑	HideDerTable cc t
+‹	=	let	rs = DT_rows t
+‹		in let	ss = DT_spec t
+‹		in let	tc = DTS_class ss
+‹		in let	okr = {r|cc dominates (DTR_row r lub DTR_where r lub tc)}
+‹		in 	MkDerTable ss (Map (HideDerTableRow cc) (rs ˘ okr))
+∞
+Given a function, $f$, on lists of derived tables, let us say that the {\em risk
+inputs} of $f$ at a given class, $c$ are those inputs for which
+$f$ reveals information which should not be visible at class $c$:
+
+πHOLCONST
+‹	€RiskInputs› : Class ≠ (DerTable LIST ≠ DerTable ∏ Errors) ≠ (DerTable LIST )
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µc f∑
+‹	RiskInputs c f
+‹	=	
+‹	{	ts
+‹	|	∂tsâ0 ∑
+‹		Map (HideDerTable c) tsâ0 = Map (HideDerTable c) ts
+‹	±	(	≥HideDerTable c (Fst(f tsâ0)) = HideDerTable c (Fst(f ts))
+‹		≤	≥Snd (f tsâ0) = Snd (f ts))}
+∞
+
+(The above is modelled on condition $E$ in section 4 of
+\cite{DS/FMU/FEF/022}. It may not be quite strong enough, vf. condition
+$D$ there.)
+
+We can now assert the critical requirements on the queries resulting from the
+transformations using the following auxiliary: 
+
+πHOLCONST
+‹	€ConditionE›	:	(DerTable ∏ Stateât ≠ Stateât ∏ Errors)
+‹			≠	(DerTable LIST ≠ DerTable ∏ Errors) 
+‹			≠	Class
+‹			≠	(Query ∏ (Query + ONE) ∏ 'PARS) 
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µupd cmps cc∑
+‹	ConditionE upd cmps cc
+‹	=	
+‹	{	(dq, ocq, pars)
+‹	|	µf ri∑	f ç Support upd cmps dq ± ri ç RiskInputs cc f
+‹		¥	IsL ocq
+‹		±	µg∑	g ç Support upd cmps (OutL ocq)
+‹			¥	≥DT_rows(Fst (g ri)) = [] ≤ ≥Snd (g ri) = []}
+∞
+πHOLCONST
+‹	€STP_secure_E›	:	(DerTable ∏ Stateât ≠ Stateât ∏ Errors)
+‹			≠	(DerTable LIST ≠ DerTable ∏ Errors) 
+‹			≠	(Query, 'PARS) STP_TYPE 
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µupd cmps∑
+‹	STP_secure_E upd cmps
+‹	=	
+‹	{	stp
+‹	|	µ q c∑ stp(q, c) ç ConditionE upd cmps c}
+∞
+(and similarly, presumably for the other 4 conditions from
+\cite{DS/FMU/FEF/022}, although something may need to be said about the
+details of $upd$).
 =TEX
+\section{TABLE COMPUTATIONS}
+The set of computations on tables which appears as a parameter
+in the execution model of section \ref{EXECUTIONMODEL} will be
+constructed by taking the closure under composition
+of a finite set of particular
+operations adequate to represent the primitive constructs of TSQL.
+The closure is formed using the following function:
 
+πHOLCONST
+‹	CompClosure	:	(DerTableSpec LIST ≠ DerTableSpec) SET
+‹			≠	(DerTableSpec LIST ≠ DerTableSpec) SET
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µfs∑	CompClosure fs
+‹	=	•
+‹		{	a
+‹		|	fs Ä a
+‹		±	µh gl il∑
+‹				h ç a ± Elems gl Ä a ± Elems il Ä 1 .. Length gl
+‹			¥	let	irl tl = Map (Ãg∑g tl) gl
+‹				in let	comp tl = h (Map (Nth(irl tl)) il)
+‹				in	comp ç a}
+∞
+That is to say, the closure under composition of a set of functions, $fs$,
+is the smallest set of functions which contains $fs$ and is closed
+under the operation which given a function $h$, a list of functions $gl$,
+and a list of numbers $il$, returns the function which first applies
+each function in $gl$ to produce a list of intermediate results, uses
+$il$ as indices to select some or all of the intermediate results in some
+order and then applies $h$ to the result. For example, if
+=INLINEFT
+gl = [gâ1; gâ2; gâ3]
+=TEX
+\ and
+=INLINEFT
+il = [3; 1; 1; 2]
+=TEX
+, the composite function is
+=INLINEFT
+Ã tl∑ h [gâ3 tl; gâ1 tl; gâ1 tl; gâ2 tl]
+=TEX
+.
+=IGN
+PC_C1 "hol1" rewrite_conv(map get_spec[¨MapÆ, ¨NthÆ, ¨LetÆ])
+¨let	irl tl = Map (Ãg∑g tl) [gâ1; gâ2; gâ3]
+in let	comp tl = h (Map (Nth(irl tl)) [3; 1; 1; 2])
+in	compÆ;
+=TEX
+We can now start to construct the primitive building blocks.
+In each case, we identify the origin in the specification of
+the transformations of the computation of the relevant clearances.
+\subsection{Join}
+The TSQL join operation is just cartesian product. The row class
+and where clause class in each tuple in the product is the least upper
+bound of the corresponding classes in each component tuple which contributes to
+that tuple. The joined table has no name and the table class and maximum
+row class are the least upper bounds of those in the component tables.
+
+
+Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
+πHOLCONST
+‹	JoinSpecs : DerTableSpec LIST ≠ DerTableSpec
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µsl∑
+‹	JoinSpecs sl =
+‹	let	n = []
+‹	and	cl = lubl (Map DTS_class sl)
+‹	and	mr = lubl (Map DTS_maxRow sl)
+‹	and	csl = Flat (Map DTS_colSpecs sl)
+‹	in	MkDerTableSpec n cl mr csl
+∞
+πHOLCONST
+‹	JoinRows : DerTableRow LIST LIST ≠ DerTableRow LIST
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	JoinRows [] = []
+‹±	µtab rest∑
+‹	JoinRows (Cons tab rest) =
+‹	if	rest = []
+‹	then	tab
+‹	else	let	jrest = JoinRows rest
+‹		in let	join2 râ1 râ2 = (
+‹				MkDerTableRow
+‹				(DTR_where râ1 lub DTR_where râ2)
+‹				(DTR_row râ1 lub DTR_row râ2)
+‹				(DTR_cols râ1 Î DTR_cols râ2))
+‹		in let	blks = Map (Ãrâ1∑ Map (join2 râ1) jrest) tab
+‹		in	Flat blks
+∞
+πHOLCONST
+‹	Join : DerTable LIST ≠ DerTable
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µtl∑	Join tl
+‹	=	MkDerTable
+‹		(JoinSpecs (Map DT_spec tl))
+‹		(JoinRows (Map DT_rows tl))
+∞
+\subsection{Projection}
+The projection operation is parameterised by a list
+of functions which compute class-item pairs from a row of a table,
+together with column specifications to use for the computed fields.
+The operation acts on the first table in the argument list. 
+The argument functions are expected to assign appropriate classifications
+to the resulting fields. The computed table is anonymous as are its
+columns (.
+
+Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
+
+=SML
+declare_type_abbrev("PROJ_PAR", [],
+	î((DerTableRow ≠ Class ∏ Item) ∏ DerColSpec) LISTÆ);
+=TEX
+πHOLCONST
+‹	ProjectSpecs	: PROJ_PAR
+‹			 ≠ DerTableSpec LIST
+‹			 ≠ DerTableSpec
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µps s ign∑
+‹	ProjectSpecs ps [] = MkDerTableSpec [] lattice_bottom lattice_bottom []
+‹	±
+‹	ProjectSpecs ps (Cons s ign) =
+‹	MkDerTableSpec [] (DTS_class s) (DTS_maxRow s) (Map Snd ps)
+∞
+πHOLCONST
+‹	ProjectData	: PROJ_PAR
+‹			 ≠ DerTableRow LIST LIST
+‹			 ≠ DerTableRow LIST
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µps tab ign∑
+‹	ProjectData ps [] = []
+‹±	ProjectData ps (Cons tab ign) =
+‹	let	fs = (Map Fst ps)
+‹	in let	h r = MkDerTableRow (DTR_where r) (DTR_row r) (Map (Ãf∑f r) fs)
+‹	in	Map h tab
+∞
+πHOLCONST
+‹	Project : PROJ_PAR ≠ DerTable LIST ≠ DerTable
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µps tl∑	Project ps tl
+‹	=	MkDerTable
+‹		(ProjectSpecs ps (Map DT_spec tl))
+‹		(ProjectData ps (Map DT_rows tl))
+∞
+\subsection{$WHERE$}
+The $WHERE$ operation is parameterised by a
+functions to compute class-itema class and a truth value from a row of a table.
+The operation acts on the first table in the argument list. 
+The argument function is expected to give an appropriate classifications
+for the where clause class. The specification of the computed table is
+the same as the original.
+
+Cf. $tuple\_list\sb{make\_outer}$ in \cite{trans}.
+
+=SML
+declare_type_abbrev("WHERE_PAR", [],
+	îDerTableRow ≠ Class ∏ BOOLÆ);
+=TEX
+πHOLCONST
+‹	WhereData	: WHERE_PAR
+‹			 ≠ DerTableRow LIST LIST
+‹			 ≠ DerTableRow LIST
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µp tab ign∑
+‹	WhereData p [] = []
+‹±	WhereData p (Cons tab ign) =
+‹	let	w r = (DTR_where r lub Fst (p r))
+‹	in let	h r = (Snd (p r), MkDerTableRow (w r) (DTR_row r) (DTR_cols r))
+‹	in	Map Snd (Map h tab ˘ {(t, r) | t})
+∞
+πHOLCONST
+‹	Where : WHERE_PAR ≠ DerTable LIST ≠ DerTable
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹	µp tl∑	Where p tl
+‹	=	MkDerTable
+‹		(Hd (Map DT_spec tl))
+‹		(WhereData p (Map DT_rows tl))
+∞
+
+{\huge ETC. $GROUP\,BY$, $\ldots$}
 \section{CLOSING DOWN}
 The following \Product{} instruction restores the previous proof context.
 =SML
@@ -418,8 +891,48 @@ output_theory{theory = "fef026",out_file = "fef026th.doc"};
 \printindex
 =TEX
 \end{document}
+=IGN
+rewrite_conv[get_spec¨JoinRowsÆ, let_def, map_def, flat_def, get_spec¨$ÎÆ, get_spec¨$MkDerTableRowÆ]
+¨
+JoinRows
+[
+[	MkDerTableRow w1 r1 [(c, A); (c, FALSE)];
+	MkDerTableRow w2 r2 [(c, B); (c, TRUE)] ];
+[	MkDerTableRow w3 r3 [(c, X); (c, a); (c, TRUE)];
+	MkDerTableRow w4 r4 [(c, Y); (c, b); (c, FALSE)] ];
+[	MkDerTableRow w5 r5 [(c, x)];
+	MkDerTableRow w6 r6 [(c, y)];
+	MkDerTableRow w7 r7 [(c, z)] ]
+]
+Æ;
 
 
 
+rewrite_conv[get_spec¨JoinRowsÆ, let_def, map_def, flat_def, get_spec¨$ÎÆ, get_spec¨$MkDerTableRowÆ]
+¨
+JoinRows
+[
+[	MkDerTableRow w1 r1 [(c, A); (c, FALSE)];
+	MkDerTableRow w2 r2 [(c, B); (c, TRUE)] ];
+[	 ];
+[	MkDerTableRow w5 r5 [(c, x)];
+	MkDerTableRow w6 r6 [(c, y)];
+	MkDerTableRow w7 r7 [(c, z)] ]
+]
+Æ;
+rewrite_conv[get_spec¨JoinRowsÆ, let_def, map_def, flat_def, get_spec¨$ÎÆ, get_spec¨$MkDerTableRowÆ]
+¨
+JoinRows
+[
+[	MkDerTableRow w1 r1 [(c, A); (c, FALSE)];
+	MkDerTableRow w2 r2 [(c, B); (c, TRUE)] ];
+[	 [] ];
+[	MkDerTableRow w5 r5 [(c, x)];
+	MkDerTableRow w6 r6 [(c, y)];
+	MkDerTableRow w7 r7 [(c, z)] ]
+]
+Æ;
 
 
+declare_type_abbrev("WHERE_PAR", [],
+	îDerTableRow ≠ Class ∏ BOOLÆ);
