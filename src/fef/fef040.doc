@@ -72,17 +72,33 @@ None.
 \pagebreak
 \section{GENERAL}
 \subsection{Scope}
+
+This document is a draft of constitutes part of deliverable D17 of phase 3 of the FEF project, as described in \cite{DS/FMU/FEF/039}.
+
+\subsection{Introduction}
+
 Phases 1 and 2 of the FEF project dealt exclusively with the formulation of the security policy defined in \cite{DS/FMU/FEF/003}.
 In that formulation SSQL queries are treated as containing information at a single security clearance.
 In phase 3, the intention is to generalise the policy to cater for queries which are structured objects containing components which may be at several different clearances.
 This document gives a formal specification of a behavioural model of  systems
 and a formal specification of a security policy allowing for such multi-level queries.
 
-It constitutes deliverable D17 of work package 7a, as described
-in section 7 of the Proposal for Phase 3, \cite{DS/FMU/FEF/039}.
+In fact, this ``security policy'' is just the policy of \cite{DS/FMU/FEF/003} adapted so that the notion of two inputs or outputs ``being the same at a given class'' is no longer fixed, but is supplied as a parameter.
+This gives a simple framework in which some general reasoning about such policies can be carried out.
+The approach also concentrates attention on the ``sameness'' structure on the inputs and outputs (or input and output sequences).
+It is this structure which defines the meaning of assertions like ``such-and-such a component of the data has such-and-sucu a sensitivity''.
 
-\subsection{Introduction}
+This document also contains the beginnings of a general analysis of information flows when a labelled component is extracted from an output sequence.
+This was first considered as a possible approach to the result-labelling property.
+However, further work on the specific details of SWORD (in \cite{DS/FMU/FEF/042}) suggests that more needs to be known about the actual intentions behind the component-labelling scheme than can be reflected easily in the general context of this document.
+The material might be relevant in investigating the constraints a trusted client of SWORD would have to obey when carrying out the sorts of down-grading mentioned in \cite{securityprops}.
 
+An index of the names used in the formal specification may be found in Section \ref{INDEX}. 
+A listing of the theory $fef040$ created by processing this document using \Product{}
+may be found at the end of this document.
+
+\Note{For the time being, the script of this document contains boths specs and proofs.
+The proofs are at the end of the script and aren't included in the printed document.}
 
 \subsection{Setting Up}
 The following \Product{} instructions set up the new theory $fef040$ and set the context 
@@ -97,21 +113,17 @@ push_pc "hol";
 =TEX
 \Note{{\it Pro tem.} $fef010$ which contains the consistency result for the dominance relation is made a parent to permit its use in proofs in this theory.}
 
-\section{MULTI-LEVEL SECURITY POLICY}
-=TEX
-An index of the names used in the formal specification may be found in Section \ref{INDEX}. 
-A listing of the theory $fef040$ created by processing this document using \Product{}
-may be found at the end of this document.
 
+\section{MULTI-LEVEL SECURITY POLICY}
 
 \subsection{Behavioural Models of Systems}
 
-The definition of information flow security presented here is a property
+The ``generic security policy'' presented here would be instantiated as a property
 on behavioural models of systems.
 The inputs and outputs of systems will be thought of as structured objects whose components may be labelled with security classes.
 For example, an input might be an abstract syntax tree for an SSQL query with the nodes labelled with classes.
 An output might be an SSQL table with classes labelling the cells.
-As in the single level model, a {\em behaviour} of a system is a single sequence of inputs and the resulting sequence of outputs.
+
 
 \subsection{Classes}
 We use the lattice of security classes defined in \cite{DS/FMU/FEF/003} as the type $Class$ together with operations $dominates$, $lub$, etc.
@@ -141,7 +153,7 @@ declare_postfix(300, "%uparrow%");
 ‹µc∑	c %uparrow% = { d | d dominates c }
 ∞
 
-We need the idea of the ``orthogonal complement'' of a set $A$ of classes, which we shall write as
+We may later need the idea of the ``orthogonal complement'' of a set $A$ of classes, which we shall write as
 =INLINEFT
 A Á%bottom%Í
 =TEX
@@ -160,7 +172,7 @@ declare_postfix(300, "Á%bottom%Í");
 ∞
 
 
-\subsection{Purging Data}
+\subsection{Sameness Structures}
 In \cite{DS/FMU/FEF/003}, the security policy is expressed in terms of relations $same\_ins$, and $same\_outs$ parameterised by a security class.
 In \cite{securityprops}, the non-interference property is expressed using a relation $identicalObjs$ also parameterised by a class.
 \cite{securityprops} also uses a visibility predicate $visible$ again parameterised by a class.
@@ -199,10 +211,19 @@ We require that $s$ be antimonotonic with respect to inclusion, i.e., the bigger
 ∞
 (Here $s$ stands for ``same'' reflecting the terminology of \cite{DS/FMU/FEF/003}).
 
-\Note{There are extra conditions one might choose to impose. E.g. that $f\{\}$ is the complete relation and that $f\,Universe$ is the identity relation.}
+\Note{There are extra conditions one might choose to impose.
+E.g. that $s\{\}$ is the complete relation and that $s\,Universe$ is the identity relation.
+All the indexed equivalence one works with in practice satisfy
+=INLINEFT
+s(ﬁU) = •(s(U))
+=TEX
+, for arbitrary families of sets $U$.
+Thus $s(A)$ is determined by the values, $s\{c\}$, of $s$ on singleton sets.
+However, the use of sets of classes seems to be technically convenient and allows one to consider various more or less pathological cases as well as well-behaved ones.}
 
 \Note{Offers for a better name than ``indexed equivalence relation'' would be gratefully received.
-I have tried ``purging relation'' and ``filter'' and didn't like them much.}
+I have tried ``purging relation'' and ``filter'' and didn't like them much.
+Perhaps ``sameness structure'' would do.}
 
 Given a relation parameterised by individual classes we may lift it to an indexed relation.
 In the next section, this allows us to relate the multi-level security policy with the single level one of \cite{DS/FMU/FEF/003}.
@@ -224,34 +245,45 @@ We will say that an indexed equivalence relation is {\em independent} if the fol
 ‹	|	µA x∑ (∂y∑ ≥(x, y) ç s(A)) ¥ ∂z∑ ≥(x, z) ç s(A) ± (x, z) ç s(A Á%bottom%Í)}
 ∞
 
+\Note{Above not used yet. Was intended to help with observations etc.}
+
 \subsection{Security Policy} \label{CRITICAL}
 
 The general multi-level security policy is parameterised by indexed equivalence relations on the inputs and outputs as defined in the previous section.
 It is convenient to have the policy as a property of arbitrary functions rather than just of functions mapping input lists to output lists. 
 
 πHOLCONST
-‹	€ml_secure› :	(Class  ≠ ('I ™ 'I)) ≠
+‹	€x_ml_secure› :	(Class  ≠ ('I ™ 'I)) ≠
 ‹			(Class  ≠ ('O ™ 'O)) ≠
 ‹			('I ≠ 'O) 
 ˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
 ‹	µsâI sâO b
-‹	∑	b ç ml_secure sâI sâO 
+‹	∑	b ç x_ml_secure sâI sâO 
 ‹	§		sâI ç IndexedEquiv
 ‹		±	sâO ç IndexedEquiv
 ‹		±	µc iâ1 iâ2∑
 ‹				(iâ1, iâ2) ç sâI (c %downarrow%)
 ‹			¥	(b iâ1, b iâ2) ç sâO (c %downarrow%)
 ∞
+More commonly in practice we are interested in the special case where the indexed equivalences are derived by lifting a relation parameterised by individual classes.
+Thus we will more often use:
 
-The following conjecture, which is fairly straightforward to prove once a few lemmas about dwon-sets etc. have been established, shows that the above multi-leve security policy does generalise the single level one of \cite{DS/FMU/FEF/003}.
+πHOLCONST
+‹	€ml_secure› :	(Class ≠ ('I ™ 'I)) ≠
+‹			(Class ≠ ('O ™ 'O)) ≠
+‹			('I ≠ 'O) 
+˜¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+‹µrâI râO ∑	ml_secure râI râO = x_ml_secure (LiftRel râI) (LiftRel râO)
+∞
+
+The following conjecture, which is fairly straightforward to prove once a few lemmas about down-sets etc. have been established, shows that the above multi-level security policy does generalise the single level one of \cite{DS/FMU/FEF/003}.
 =SML
 val €conj_040_1› = ¨
-	µbm∑ bm ç secure § bm ç ml_secure (LiftRel same_ins) (LiftRel same_outs)
+	µbm∑ bm ç secure § bm ç ml_secure same_ins same_outs
 Æ;
 =TEX
 \pagebreak
-\section{RESULT LABELLING}
-\subsection{Observations}
+\section{COMPONENT EXTRACTION}
 The general way we are modelling structured multi-level objects requires us to use indirect means to handle the idea of a component of an object labelled with a class.
 We think of the component as being modelled by the function which maps an object to the class-value pair held in the component.
 Because the class component is itself a potential source of information flows it will often be more convenient to think of such a function as a pair of functions, one to returning the class and the other the value.
@@ -280,11 +312,8 @@ Influenced s x f
 =TEX
 \ is the set of classes $c$ for which there is some state $y$, such that $f$ distinguishes $x$ and $y$, but $x$ and $y$ appear to be identical when viewed from any class which does not dominate $c$.
 
-
-\Note{Should one be using uncurried functions here: $Influenced(s, x, f)$?}
-
-We model the process of examining a labelled component of an object in the output of a system by a pair of functions, $(C, V)$: $C$ computing the class; and $V$ computing the value.
-The information-flow properties of such a pair will be considered relative to the class, $cc$ say of the client to whom the result of the observation may be revealed.
+We model the process of examining a labelled component of an object in the output of a system by two functions, $C$ and $V$ say: $C$ computing the class; and $V$ computing the value.
+The information-flow properties of such a pair will be considered relative to the clearance, $c$ say of the client to whom the result of the observation may be revealed.
 We will call such a triple comprising $c$, $C$ and $V$ an {\em observation}:
 =SML
 declare_type_abbrev(€"OBSERVATION"›,["'a", "'b"],
@@ -325,11 +354,11 @@ We will call an observation {\em bounded} if the following holds of it:
 ‹		±	Influenced s x V Ä (C x)%downarrow% }
 ∞
 
-The boundedness is necessary for an observation to be secure in a certain sense, as asserted in the following conjecture:
+That boundedness is necessary for an observation to be secure in a certain sense, as asserted in the following conjecture:
 =SML
 val €conj_040_2› = ¨
 µs∑	s ç IndexedEquiv
-¥	µc C V∑	ObservedValue (c, C, V) ç ml_secure s (LiftRel SameLabVal)
+¥	µc C V∑	ObservedValue (c, C, V) ç x_ml_secure s (LiftRel SameLabVal)
 		¥	(c, C, V) ç BoundedObs s
 Æ;
 =TEX
@@ -400,7 +429,7 @@ E.g. the function $V_I$ which maps $(x_I, x_J, x_K)$ to $x_I$ must be classified
 val €conj_040_3› = ¨
 µs∑		s ç IndexedEquiv ± s ç Independent
 	¥	µc C V∑	(c, C, V) ç BoundedObs s
-		¥	ObservedValue (c, C, V) ç ml_secure s (LiftRel SameLabVal)
+		¥	ObservedValue (c, C, V) ç x_ml_secure s (LiftRel SameLabVal)
 Æ;
 =TEX
 \section{CLOSING DOWN}
@@ -601,7 +630,8 @@ val €lift_rel_same_ins_same_outs_down_set_thm› =
 =SML
 set_pc"hol";
 set_goal([], conj_040_1);
-a(rewrite_tac(map get_spec[¨secureÆ, ¨ml_secureÆ]) THEN REPEAT strip_tac);
+a(rewrite_tac(map get_spec[¨secureÆ, ¨ml_secureÆ, ¨x_ml_secureÆ]) THEN
+	REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(rewrite_tac[same_ins_same_outs_indexed_equiv_thm]);
 (* *** Goal "2" *** *)
@@ -657,7 +687,7 @@ set_pc"hol";
 set_goal([], conj_040_2);
 a(rewrite_tac(lift_rel_same_lab_val_down_set_thm:: map get_spec
 	[¨BoundedObsÆ, ¨ObservedValueÆ, ¨SameLabValÆ,
-	¨ml_secureÆ, ¨InfluencedÆ]) THEN
+	¨x_ml_secureÆ, ¨InfluencedÆ]) THEN
 	PC_T1 "hol2" REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(rename_tac[(¨x'Æ, "d")] THEN rewrite_tac[get_spec¨$%downarrow%Æ]);
@@ -700,7 +730,7 @@ set_pc"hol2";
 set_goal([], conj_040_3);
 a(rewrite_tac(lift_rel_same_lab_val_down_set_thm:: map get_spec
 	[¨BoundedObsÆ, ¨ObservedValueÆ, ¨SameLabValÆ,
-	¨ml_secureÆ, ¨InfluencedÆ]) THEN
+	¨x_ml_secureÆ, ¨InfluencedÆ]) THEN
 	PC_T1 "hol2" REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(rewrite_tac[lift_rel_same_lab_val_equiv_thm]);
