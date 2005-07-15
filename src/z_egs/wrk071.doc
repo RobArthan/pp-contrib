@@ -1,0 +1,222 @@
+=IGN
+=TEX
+\documentclass[12pt]{article}
+\usepackage{ProofPower}
+\usepackage{A4}
+\usepackage{latexsym}
+\def\ZAxDesLabel{}
+\def\ZGenericLabel{}
+\def\ZOtherLabel{}
+\def\ZSchemaLabel{}
+\def\Hide#1{\relax}
+\title{Mutilated Chessboard \\ (DRAFT)}
+\author{R.D. Arthan}
+\makeindex
+\begin{document}
+\maketitle
+\section{Introduction}\label{Intro}
+
+\Hide{
+The following ML sets up a context for giving the {\ProductZ} specifications.
+=SML
+open_theory"z_library";
+set_pc"z_library1";
+force_delete_theory"mutcb" handle Fail _ => ();
+new_theory"mutcb";
+=TEX
+}
+
+¹ZAX
+Ü ÛAbsÝ : ú ­ ú
+÷üüüüüü
+Ü Abs = {i, a:ú | i ¾ 0 ± a = i ² i < 0 ± a = ~i}
+°
+¹Z
+Ü ÛBoardÝ ¦ (0 .. 7) ¸ (0 .. 7)
+°
+¹Z
+Ü ÛMutilatedBoardÝ ¦ Board \ {(0,0), (7,7)}
+°
+
+¹ZAX
+Ü ÛAdjacentÝ : ð((ú ¸ ú) ¸ (ú ¸ ú))
+÷üüüüüü
+Ü µx1, x2:ú ¸ ú·
+Ü	(x1, x2)  Adjacent
+Ü ¤	Abs(x1.1 - x2.1) = 1 ± x1.2 = x2.2
+Ü ²	Abs(x1.2 - x2.2) = 1 ± x1.1 = x2.1
+°
+¹ZAX
+Ü ÛDominoÝ : ð(æ(ú ¸ ú))
+÷üüüüüü
+Ü µx:æ(ú ¸ ú)·
+Ü	x  Domino
+Ü ¤	#x = 2
+Ü ±	(µx1, x2:ú ¸ ú·x1 ½ x2 ± x1  x ± x2  x ´ (x1, x2)  Adjacent)
+°
+¹ZAX
+Ü ÛDominoOnBoardÝ : ð(æ(ú ¸ ú))
+÷üüüüüü
+Ü µx:æ(ú ¸ ú)·
+Ü	x  DominoOnBoard
+Ü ¤	x € Board ± x  Domino
+°
+¹ZAX
+Ü ÛPartialCoveringÝ : ð(æ(æ(ú ¸ ú)))
+÷üüüüüü
+Ü µz:æ(æ(ú ¸ ú))·
+Ü	z  PartialCovering
+Ü ¤	(µx:z· x  DominoOnBoard)
+Ü ±	(µx, y:z·x = y ² x ¡ y = {})
+°
+
+¹ZAX
+Ü ÛColourÝ : ú ¸ ú ­ {0, 1}
+÷üüüüüü
+Ü µx: ú ¸ ú· Colour x = (x.1 + x.2) mod 2
+°
+=TEX
+=SML
+
+val Ûz_abs_defÝ = z_get_specñAbs®;
+val Ûadjacent_defÝ = z_get_specñAdjacent®;
+val Ûboard_defÝ = z_get_specñBoard®;
+val Ûmutilated_board_defÝ = z_get_specñMutilatedBoard®;
+val Ûdomino_defÝ = z_get_specñDomino®;
+val Ûdomino_on_board_defÝ = z_get_specñDominoOnBoard®;
+val Ûpartial_covering_defÝ = z_get_specñPartialCovering®;
+val Ûcolour_defÝ = z_get_specñColour®;
+=TEX
+=SML
+set_goal([], ñ
+µi, j:ú· Abs i = j ¤ (i, j)  Abs
+®);
+a(z_µ_tac THEN strip_tac);
+a(bc_thm_tac
+	(rewrite_rule[](conv_rule (MAP_C z_µ_elim_conv) (z_­_app_eq_¤__rel_thm))));
+a(¶_tacñú® THEN ¶_tacñú® THEN rewrite_tac[z_abs_def]);
+val Ûz_abs_eq_thmÝ = save_pop_thm "z_abs_eq_thm";
+=TEX
+=SML
+set_goal([], ñ
+	Abs 0 = 0
+±	(µm:î· Abs m = m ± Abs (~m) = m)
+®);
+a(rewrite_tac[z_abs_eq_thm]);
+a(rewrite_tac[z_abs_def]);
+a(PC_T1 "z_lin_arith" prove_tac[]);
+val Ûz_abs_clausesÝ = save_pop_thm "z_abs_clauses";
+=TEX
+=SML
+set_goal([], ñ
+µi, j:ú·
+	Abs (i - j) = 0
+¤	i = j
+®);
+a(z_µ_tac THEN strip_tac);
+a(strip_asm_tac(z_µ_elim ñi + ~j® z_ú_cases_thm)
+	THEN ALL_FC_T asm_rewrite_tac[z_abs_clauses]
+	THEN PC_T1 "z_lin_arith" asm_prove_tac[]);
+val Ûz_abs_eq_0_thmÝ = save_pop_thm "z_abs_eq_0_thm";
+=TEX
+=SML
+set_goal([], ñ
+µi, j:ú·
+	Abs (i - j) = 1
+¤	i < j ± j = i + 1 ² j < i ± i = j + 1
+®);
+a(z_µ_tac THEN strip_tac);
+a(strip_asm_tac(z_µ_elim ñi + ~j® z_ú_cases_thm)
+	THEN ALL_FC_T asm_rewrite_tac[z_abs_clauses]
+	THEN PC_T1 "z_lin_arith" asm_prove_tac[]);
+val Ûz_abs_eq_1_thmÝ = save_pop_thm "z_abs_eq_1_thm";
+=TEX
+=SML
+set_goal([], ñ
+µi, j:ƒ·	i mod 2 = j ¤ j  {0, 1} ± (¶d:ƒ· i = 2*d + j)
+®);
+a(z_µ_tac THEN strip_tac);
+a(LEMMA_T ñ³2 = 0® asm_tac THEN1 REPEAT strip_tac);
+a(ALL_FC_T1 fc_¤_canon rewrite_tac
+	[rewrite_rule[](conv_rule (MAP_C z_µ_elim_conv) (z_mod_thm))]);
+a(REPEAT strip_tac THEN_TRY
+	z_¶_tac ñd º ú® THEN PC_T1 "z_lin_arith" asm_prove_tac[]);
+val Ûz_mod_2_thmÝ = save_pop_thm "z_mod_2_thm";
+=TEX
+=SML
+set_goal([], ñ
+µi:ú·	³i mod 2 = (i + 1) mod 2
+®);
+a(REPEAT strip_tac);
+a(lemma_tac¬¶j·ñ(i + 1) mod 2 = j®® THEN1 prove_¶_tac);
+a(asm_rewrite_tac[] THEN POP_ASM_T ante_tac);
+a(rewrite_tac[z_mod_2_thm] THEN REPEAT strip_tac
+	THEN all_var_elim_asm_tac1
+	THEN all_asm_ante_tac THEN rewrite_tac[] THEN contr_tac);
+(* *** Goal "1" duplicates "2" *** *)
+a(lemma_tacñ0 < d - d' < 1 ® THEN
+	PC_T1 "z_lin_arith" asm_prove_tac[]);
+val Ûz_plus_1_mod_2_thmÝ = save_pop_thm "z_plus_1_mod_2_thm";
+val Ûz_plus_1_mod_2_thmÝ =
+	conv_rule (ONCE_MAP_C z_anf_conv) z_plus_1_mod_2_thm;
+=TEX
+=SML
+set_goal([], ñ
+	µu, v:U·(u, v)  Adjacent ´ Colour u ½ Colour v
+®);
+a(rewrite_tac[adjacent_def, colour_def, z_abs_eq_1_thm]
+	THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(POP_ASM_T (asm_tac o eq_sym_rule) 
+	THEN asm_rewrite_tac[]
+	THEN conv_tac (ONCE_MAP_C z_anf_conv)
+	THEN rewrite_tac[z_plus_1_mod_2_thm]);
+(* *** Goal "2" *** *)
+a(asm_rewrite_tac[]
+	THEN conv_tac (ONCE_MAP_C z_anf_conv)
+	THEN conv_tac (RAND_C eq_sym_conv)
+	THEN rewrite_tac[z_plus_1_mod_2_thm]);
+(* *** Goal "3" *** *)
+a(POP_ASM_T (asm_tac o eq_sym_rule) 
+	THEN asm_rewrite_tac[]
+	THEN conv_tac (ONCE_MAP_C z_anf_conv)
+	THEN rewrite_tac[z_plus_1_mod_2_thm]);
+(* *** Goal "4" *** *)
+a(asm_rewrite_tac[]
+	THEN conv_tac (ONCE_MAP_C z_anf_conv)
+	THEN conv_tac (RAND_C eq_sym_conv)
+	THEN rewrite_tac[z_plus_1_mod_2_thm]);
+val Ûadjacent_colout_thmÝ = save_pop_thm "adjacent_colour_thm";
+=TEX
+=SML
+(*
+set_goal([], ñ
+	µx:Domino·¶u, v:x·x = {u, v} ± Colour u = 0 ± Colour v = 1
+®);
+*)
+=TEX
+\newpage
+\appendix
+=TEX
+{\HOLindexOff\small
+\let\Section\section
+\def\section#1{\Section{#1}\label{THEORYLISTING}}
+\include{mutcb.th}}
+
+\twocolumn[\section{INDEX}\label{INDEX}]
+=TEX
+\ftlinepenalty=999
+=SML
+
+=TEX
+\section{Epilogue}
+=SML
+z_output_theory{out_file="mutcb.th.doc", theory="-"};
+=TEX
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PROOF SCRIPTS END HERE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PROOF SCRIPTS END HERE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PROOF SCRIPTS END HERE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PROOF SCRIPTS END HERE
+=TEX
+\end{document}
+=IGN
