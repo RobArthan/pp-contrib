@@ -65,7 +65,7 @@ new_theory"mutcb";
 Ü ÛMutilatedBoardÝ ¦ Board \ {(0,0), (7,7)}
 °
 ¹Z
-Ü ÛBoardTilingÝ ¦ {i, j : ú | i  0 .. 7 ± j  0 .. 3 · {(i, 2*j), (i, 2*j+1)}}
+Ü ÛBoardTilingÝ ¦ ðBoard ¡ {i, j : ú · {(i, 2*j), (i, 2*j+1)}}
 °
 \section{THEOREMS}
 \subsection{Main Proof}
@@ -582,7 +582,7 @@ a(REPEAT strip_tac
 a(all_var_elim_asm_tac1);
 (* Just stripping gives 64 subgoals here *)
 a(POP_ASM_T ante_tac THEN
-	LIST_DROP_NTH_ASM_T [9, 10]
+	LIST_DROP_NTH_ASM_T [5, 6]
 	(fn ths => 
 	PC_T1 "z_library_ext" REPEAT strip_tac
 	THEN_TRY all_var_elim_asm_tac1
@@ -593,17 +593,14 @@ a(POP_ASM_T ante_tac THEN
 	THEN REPEAT strip_tac
 	THEN_TRY PC_T1 "z_lin_arith" asm_prove_tac[]));
 (* *** Goal "3" *** *)
+a(rewrite_tac[
+	pc_rule1 "z_sets_ext" prove_rule[]
+		ñ(µa:ƒ; b:ƒ· Þ(ða ¡ b) € a)
+		± (µa:ƒ; b:ƒ· a = b ¤ a € b ± b € a)®]);
 a(PC_T "z_sets_ext" strip_tac
 	THEN rewrite_tac[board_def]
-	THEN REPEAT_UNTIL is_± strip_tac
-	THEN strip_tac);
-(* *** Goal "3.1" *** *)
-a(strip_tac THEN all_var_elim_asm_tac1
-	THEN all_var_elim_asm_tac1
-	THEN PC_T1 "z_lin_arith" asm_prove_tac[]);
-(* *** Goal "3.2" *** *)
-a(strip_tac THEN
-	LEMMA_T ñx2 mod 2 = x2 mod 2® ante_tac
+	THEN REPEAT strip_tac);
+a(LEMMA_T ñx2 mod 2 = x2 mod 2® ante_tac
 	THEN1 REPEAT strip_tac);
 a(pure_rewrite_tac[z_mod_2_thm]);
 a(REPEAT strip_tac
@@ -611,18 +608,32 @@ a(REPEAT strip_tac
 	THEN asm_rewrite_tac[]
 	THEN REPEAT strip_tac
 	THEN all_var_elim_asm_tac1);
+(* *** Goal "3.1" *** *)
+a(z_¶_tacñ{(x1, 2 * d), (x1, 2 * d + 1)}®
+	THEN rewrite_tac[]);
+a(REPEAT strip_tac);
+(* *** Goal "3.1.1" *** *)
+a(PC_T1 "z_lin_arith" asm_prove_tac[]);
+(* *** Goal "3.1.2" *** *)
+a(LEMMA_Tñ³2*d = 2*3+1® (strip_asm_tac o rewrite_rule[])
+	THEN1 (pure_asm_rewrite_tac[] THEN REPEAT strip_tac));
+a(PC_T1 "z_lin_arith" asm_prove_tac[]);
+(* *** Goal "3.1.3" *** *)
+a(z_¶_tacñ(i¦x1, j¦d)®
+	THEN PC_T1 "z_library_ext" asm_rewrite_tac[]);
+(* *** Goal "3.2" *** *)
+a(z_¶_tacñ{(x1, 2 * d), (x1, 2 * d + 1)}®
+	THEN rewrite_tac[]);
+a(REPEAT strip_tac);
 (* *** Goal "3.2.1" *** *)
-a(z_¶_tacñ{(x1, 2 * d), (x1, 2 * d + 1)}®
-	THEN rewrite_tac[]);
-a(z_¶_tacñ(i¦x1, j¦d)®
-	THEN PC_T1 "z_library_ext" asm_rewrite_tac[]);
-a(REPEAT strip_tac THEN PC_T1 "z_lin_arith" asm_prove_tac[]);
+a(LEMMA_Tñ³2*d + 1 = 2*0® (strip_asm_tac o rewrite_rule[])
+	THEN1 (pure_asm_rewrite_tac[] THEN REPEAT strip_tac));
+a(PC_T1 "z_lin_arith" asm_prove_tac[]);
 (* *** Goal "3.2.2" *** *)
-a(z_¶_tacñ{(x1, 2 * d), (x1, 2 * d + 1)}®
-	THEN rewrite_tac[]);
+a(PC_T1 "z_lin_arith" asm_prove_tac[]);
+(* *** Goal "3.2.3" *** *)
 a(z_¶_tacñ(i¦x1, j¦d)®
 	THEN PC_T1 "z_library_ext" asm_rewrite_tac[]);
-a(REPEAT strip_tac THEN PC_T1 "z_lin_arith" asm_prove_tac[]);
 val Ûboard_tiling_thmÝ = save_pop_thm "board_tiling_thm";
 =TEX
 =SML
