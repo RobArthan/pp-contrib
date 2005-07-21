@@ -4,6 +4,8 @@
 \usepackage{ProofPower}
 \usepackage{A4}
 \usepackage{latexsym}
+\ftaboveboxskip=0.5\abovedisplayskip
+\ftbelowboxskip=0.1\belowdisplayskip
 \def\ZAxDesLabel{}
 \def\ZGenericLabel{}
 \def\ZOtherLabel{}
@@ -15,8 +17,23 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-John McCarthy's Mutilated Chessboard problem in set theory, more specifically Z.
+This note presents a statement and proof of the mutilated chessboard theorem is the Z notation.
+The formulation is along the lines of the one proposed by McCarthy for a `heavy duty set theory'' theorem prover.
+The proof is presented as a series of Z conjectures all of which have been formally verified using the {\Product} system.
 \end{abstract}
+
+\section{INTRODUCTION}
+
+The mutilated chessboard theorem was proposed over 40 years ago by John McCarthy as a ``tough nut to crack'' for automated reasoning.
+The theorem is rather trivial: if a chess board is ``mutilated'' by removing two diagonally opposite corner squares, then the result cannot be tiled with domino-shaped tiles each covering two adjacent squares of the board.
+Why is this so?
+Well because each domino contributes one white square and one black, any such tiling must cover exactly as many black squares as it does white.
+However, the two squares removed from the mutilated board both have the same colour, and so the mutilated board contains two more squares of that colour than it does of the other.
+
+This little theorem has been proved in a number of systems including NQTHM, Mizar, Isabelle (see [Paulson01] and the works it cites).
+This note presents a formulation of the statement and proof of this little theorem in Z.
+The treatment is in the spirit of McCarthy's formulation in the language of set theory [McCarthy95].
+The statement of the theorem in Z, figure~\ref{fig1} is very concise 
 
 \Hide{
 The following ML sets up a context for giving the {\ProductZ} specifications.
@@ -27,18 +44,23 @@ force_delete_theory"mutcb" handle Fail _ => ();
 new_theory"mutcb";
 =TEX
 }
-\section{THE SPECIFICATION}
+\section{STATEMENT OF THE THEOREM}
+\def\AbsDef{%
 πZAX
-‹ €Abs› : ˙ ≠ ˙
+‹	€Abs› : ˙ ≠ ˙
 ˜¸¸¸¸¸¸
-‹ µm:Ó ∑ Abs (~m) = Abs m = m
+‹	µm:Ó ∑ Abs (~m) = Abs m = m
 ∞
-πZAX
-‹ €Colour› : ˙ ∏ ˙ ≠ ˙
-˜¸¸¸¸¸¸
-‹ µx:˙ ∏ ˙ ∑ Colour x = (x.1 + x.2) mod 2
-∞
+}
 
+\def\FigureTwo{%
+\begin{figure}
+\ftaboveboxskip=0.1\abovedisplayskip
+\ftbelowboxskip=0.5\belowdisplayskip
+\begin{tabular}{|c|}\hline
+\begin{minipage}[t]{0.975\hsize}
+\ftaboveboxskip=0.1\abovedisplayskip
+\ftbelowboxskip=0.5\belowdisplayskip
 πZ
 ‹ €Adjacent› ¶ {x1, x2 : ˙ ∏ ˙ | Abs(x1.1 - x2.1) + Abs(x1.2 - x2.2) = 1}
 ∞
@@ -54,13 +76,73 @@ new_theory"mutcb";
 πZ
 ‹ €MutilatedBoard› ¶ Board \ {(0,0), (7,7)}
 ∞
+\end{minipage}
+\\\hline
+\end{tabular}
+\caption{The Specification}
+\label{fig2}
+\end{figure}%
+} % \FigureTGwo
+
+\def\FigureOne{%
+\begin{figure}
+\ftaboveboxskip=0.1\abovedisplayskip
+\ftbelowboxskip=0.5\belowdisplayskip
+\begin{tabular}{|c|}\hline
+\begin{minipage}[t]{0.975\hsize}
 πZ
-‹ €BoardTiling› ¶ Board ° {i, j : ˙ ∑ {(i, 2*j), (i, 2*j+1)}}
+‹ €mutilated_chessboard_thm› ?Ù ≥(∂z: Tiling ∑ ﬁz = MutilatedBoard)
 ∞
-\section{THE THEOREM}
-πZ
-‹ €ran_colour_thm› ?Ù µu:˙ ∏ ˙ ∑ Colour u ç {0, 1}
-∞
+\end{minipage}
+\\\hline
+\end{tabular}
+\caption{Statement of the Theorem}
+\label{fig1}
+\end{figure}
+} %\FigureOne
+
+Our statement of the theorem is the Z conjecture shown in figure~\ref{fig1}.
+It involves the sets, {\em Tiling} and {\em MutilatedBoard} defined along with the sets {\em Adjacent}, {\em Domino} and {\em Board} in the little Z specification shown in figure~\ref{fig2}.
+This specification is based on that of [McCarthy95] with some simplifications.
+Let us examine these definitions in the order of their appearance in figure~\ref{fig2}.
+\FigureOne
+\FigureTwo
+
+
+We represent a square on the chessboard as a pair of integers.
+Two squares are adjacent iff. the distance between them is 1 (where we measure distances using the Manhattan taxi-cab metric).
+The set {\em Adjacent} represents this relation.
+Its definition uses the absolute value function whose definition is as follows.
+\AbsDef
+
+A domino in some position is to be represented by the set comprising the two adjacent squares it occupies.
+The set of all such sets is our set {\em Domino}.
+% We could easily avoid the use of the size function (\#) in this definition (see [Paulson01]).
+% However, the definitions are equivalent as is easily proved and the one given is closer to the natural language statement.
+Unlike McCarthy, we do not constrain our dominoes to lie on the chessboard, this makes our statement a little more general than his.
+(Yes, it is obvious that a tiling that contains dominoes that are not on the board doesn't tile the board, but the whole thing is ``obvious'' so we may as well formalise as generally as we can.)
+
+A tiling is a set of dominoes positioned so that no two dominoes overlap.
+Our set {\em Tiling} is the set of all such tilings.
+Paulson defines this set inductively, an approach that I cannot endorse in this case.
+It is more general, technically easier and much closer to our intuition to avoid induction for this kind of property.
+In natural language we say ``positioned so that no two dominoes overlap'' not ``that could be positioned one at a time with each domino positioned so as not to overlap the dominoes that have been positioned before it''.
+I see no grounds for preferring the more complicated exposition in the formalisation.
+
+As reflected in the definition of the set {\em Board}, the complete board is to be represented by the set of squares with co-ordinates in the range 0 to 7.
+The mutilated board is then obtained by removing the squares labelled $(0, 0)$ and $(7, 7)$.
+
+With our representation of dominoes, the set of squares covered by a tiling $z$ is the union $\bigcup z$.
+Returning to the conjecture shown in figure~\ref{fig1}, we see that it says there is no tiling whose union is equal to the mutilated board, which is precisely what we want the mutilated chessboard theorem to state.
+
+\section{THE PROOF}
+We present the proof as a series of lemmas (expressed as conjectures in Z).
+Some of these lemmas involve additional notation which we define as needed.
+
+First of all we give a more explicit characterisation of adjacency.
+This says that two squares are adjacent iff. their eastings differ by 1 and their northings are equal or vice versa.
+It follows from elementary properties of the absolute value function.
+
 πZ
 ‹ €adjacent_thm› ?Ù
 ‹ 	µx1, x2:˙ ∏ ˙ ∑ 
@@ -68,44 +150,100 @@ new_theory"mutcb";
 ‹ 	§	Abs(x1.1 - x2.1) = 1 ± x1.2 = x2.2
 ‹	≤	Abs(x1.2 - x2.2) = 1 ± x1.1 = x2.1
 ∞
+
+That every domino comprises two squares is wired into our definition of domino.
+That these two square have different colours needs to be proved.
+First we need a definition of the notion of colour.
+
+πZAX
+‹	€Colour› : ˙ ∏ ˙ ≠ ˙
+˜¸¸¸¸¸¸
+‹	µx:˙ ∏ ˙ ∑ Colour x = (x.1 + x.2) mod 2
+∞
+
+Elementary facts about remainders {\it modulo} 2 now imply that the colour of any square is either 0 or 1 and that the colours of any two adjacent squares are different.
+
+πZ
+‹ €ran_colour_thm› ?Ù µu:˙ ∏ ˙ ∑ Colour u ç {0, 1}
+∞
 πZ
 ‹ €adjacent_colour_thm› ?Ù µu, v:˙ ∏ ˙ | (u, v) ç Adjacent ∑ Colour u Ω Colour v
 ∞
+
+From the above and the definition of {\em Domino}, using elementary facts about sets of size 2, we conclude that every domino comprises two squares whose colours are 0 and 1.
+This is the only fact about dominoes that will be used hereafter.
+
 πZ
 ‹ €domino_colour_thm› ?Ù 
 ‹ 	µx:Domino ∑ ∂u, v:x ∑ x = {u, v} ± Colour u = 0 ± Colour v = 1
 ∞
+
+If $z$ is a tiling there is a bijection between the set of squares covered by $z$ and coloured 0 and those coloured 1.
+
 πZ
 ‹ €tiling_colour_thm› ?Ù
 ‹	µz:Tiling ∑ ∂f:{u:ﬁz | Colour u = 0} è {u:ﬁz|Colour u = 1} ∑ true
 ∞
+
+The proof of the above is very simple and direct and does not depend on $z$ being finite.
+The witness for $f$ is given by the following set comprehension and the verification that it is the required bijection is routine.
+
+{\vertbarfalse
+=GFT
+	{d:z; u, v:˙ ∏ ˙ | d = {u, v}; Colour u = 0; Colour v = 1 ∑ (u, v)}
+=TEX
+} % \vertbarfalse
+
+From the above it follows that if the set of squares covered by a tiling is finite, then the colour function divides it into two subsets of equal sizes.
+
+
 πZ
 ‹ €tiling_colour_size_thm› ?Ù
 ‹	µz:Tiling | ﬁz ç (Ê_) ∑ #{u:ﬁz | Colour u = 0} = #{u:ﬁz | Colour u = 1}
 ∞
 
+The proof of the above is immediate from elementary facts about finite cardinalities and the existence of the bijection between the two sets.
+
+We now need to show that the mutilated board is not divided into two equal subsets by the colour function.
+To prove this, we first prove that the entire board is finite and can be tiled:
+
 πZ
 ‹ €board_finite_thm› ?Ù Board ç (Ê_)
+∞
+The following gives an explicit tiling for the entire board:
+
+πZ
+‹ €BoardTiling› ¶ Board ° {i, j : ˙ ∑ {(i, 2*j), (i, 2*j+1)}}
 ∞
 
 πZ
 ‹ €board_tiling_thm› ?Ù BoardTiling ç Tiling ± ﬁBoardTiling = Board
 ∞
+
+From the above, we see that the entire board is divided into equal size subsets by the colour function.
+
 πZ
 ‹ €colours_on_board_thm› ?Ù
 ‹	#{u:Board | Colour u = 0} = #{u:Board | Colour u = 1}
 ∞
+\ldots but the mutilated board is not:
 πZ
 ‹ €colours_on_mutilated_board_thm› ?Ù
 ‹	#{u:MutilatedBoard|Colour u = 0} = #{u:Board | Colour u = 0} - 2
 ‹ ±	#{u:MutilatedBoard|Colour u = 1} = #{u:Board | Colour u = 1}
 ∞
-πZ
-‹ €mutilated_chessboard_thm› ?Ù ≥(∂z: Tiling ∑ MutilatedBoard = ﬁz)
-∞
+
+The mutilated chessboard theorem is now an immediate consequence of {\em tiling\_colour\_thm} and {\em colours\_on\_mutilated\_board\_thm}..
 
 \section{SUPPORTING THEORY}
+In the informal proof in the proceeding section, we have appealed to the elementary properties of the absolute value function, of remainders {\it modulo} 2 and of finite cardinalities.
+In this section we state the lemmas that we need which are additional to those already provided in {\Product}.
+These comprise fairly immediate consequences of results that are already provided.
+
 \subsection{Absolute Values}
+The absolute value function is not in the Z library.
+Its elementary properties are readily derived from its definition.
+We need to know that the following facts:
 
 πZ
 ‹ €z_abs_nat_thm› ?Ù (µi:˙ ∑ Abs i ç Ó)
@@ -119,11 +257,15 @@ new_theory"mutcb";
 ‹	Abs (i - j) = 1
 ‹ §	i < j ± j = i + 1 ≤ j < i ± i = j + 1
 ∞
-\subsection{Remainders {\it modulo} 2}
+The proofs are all immediate after a case analysis on the sign on the operand of the absolute value function allowing its definition to be expanded.
 
+\subsection{Remainders {\it modulo} 2}
+We need the facts about remainders {\it modulo} 2.
+The first is an immediate consequence of a theorem that is already provided characterising remainders modulo $d$ for any non-zero $d$.
 πZ
 ‹ €z_mod_2_thm› ?Ù µi, j:˙ ∑ i mod 2 = j § j ç {0, 1} ± (∂d:É∑ i = 2*d + j)
 ∞
+The remaining 3 facts facts follow easily from the above:
 πZ
 ‹ €z_mod_2_thm1› ?Ù µi:˙ ∑ (2*i) mod 2 = 0 ± (2*i + 1) mod 2 = 1
 ∞
@@ -134,6 +276,8 @@ new_theory"mutcb";
 ‹ €z_plus_1_mod_2_thm› ?Ù µi:˙ ∑ ≥i mod 2 = (i + 1) mod 2
 ∞
 \subsection{Finite Cardinalities}
+All the basics of the theory of finite cardinality are already provided including the fundamental fact that if $a$ and $b$ are finite sets then so are $a \cup b$ and $a \cap b$ and $\#(a \cup b) + \#(a \cap b) = \#a + \#b$.
+From this material we derive the following facts:
 
 πZ
 ‹ €z_size_pair_thm› ?Ù µx, y:É | ≥x = y ∑ {x, y} ç (Ê_) ± #{x, y} = 2
@@ -145,10 +289,13 @@ new_theory"mutcb";
 ‹ €z_size_2_thm› ?Ù µa:(Ê_) ∑ #a = 2 § (∂x, y:É∑≥x = y ± a = {x, y})
 ∞
 πZ
-‹ €z_size_product_thm› ?Ù µa : (Ê_); b:(Ê_) ∑ a ∏ b ç (Ê_) ± #(a ∏ b) = #a * #b
-∞
-πZ
 ‹ €z_finite_subset_thm› ?Ù µa:(Ê_); b: É | b Ä a ∑ b ç (Ê_)
+∞
+
+The following are the only theorems in this note that are proved by induction.
+I claim that they should be treated as background knowledge in the context of the mutilated chessboard theorem, and so that it is not appropriate to use inductive methods in its proof --- the necessary inductions are best kept where they belong in proving general reusable facts about finite cardinalities.
+πZ
+‹ €z_size_product_thm› ?Ù µa : (Ê_); b:(Ê_) ∑ a ∏ b ç (Ê_) ± #(a ∏ b) = #a * #b
 ∞
 πZ
 ‹ €z_finite_size_thm1› ?Ù µa: (Ê_) ∑ (∂f:1 .. #a è a ∑true)
@@ -157,7 +304,7 @@ new_theory"mutcb";
 \end{document}
 \newpage
 \appendix
-=TEX
+=IGN
 {\HOLindexOff\small
 \let\Section\section
 \def\section#1{\Section{#1}\label{THEORYLISTING}}
@@ -165,6 +312,20 @@ new_theory"mutcb";
 
 \twocolumn[\section{INDEX}\label{INDEX}]
 \printindex
+=TEX
+=SML
+val thm_stats : int S_DICT S_DICT ref = ref[];
+fun save_pop_thm_stats name = (
+	let	val thm = pop_thm();
+	in	thm_stats := s_enter name (get_stats()) (!thm_stats);
+		init_stats();
+		save_thm(name, thm)
+	end
+);
+val _ = (
+	init_stats();
+	set_flag("profiling", true)
+);
 =TEX
 =SML
 val €square_u_thm› = pc_rule1 "z_sets_ext" prove_rule[get_specÒ˙Æ]Ò˙ ∏ ˙ = ÉÆ;
@@ -188,7 +349,7 @@ a(REPEAT strip_tac);
 a(strip_asm_tac (z_µ_elimÒiÆ z_˙_cases_thm)
 	THEN all_var_elim_asm_tac1
 	THEN ALL_FC_T asm_rewrite_tac [z_abs_def]);
-val €z_abs_nat_thm› = save_pop_thm "z_abs_nat_thm";
+val €z_abs_nat_thm› = save_pop_thm_stats "z_abs_nat_thm";
 =TEX
 =SML
 set_goal([], get_conjecture "-" "z_abs_eq_0_thm");
@@ -196,7 +357,7 @@ a(z_µ_tac THEN strip_tac);
 a(strip_asm_tac(z_µ_elim Òi + ~jÆ z_˙_cases_thm)
 	THEN ALL_FC_T asm_rewrite_tac[z_abs_def]
 	THEN PC_T1 "z_lin_arith" asm_prove_tac[]);
-val €z_abs_eq_0_thm› = save_pop_thm "z_abs_eq_0_thm";
+val €z_abs_eq_0_thm› = save_pop_thm_stats "z_abs_eq_0_thm";
 =TEX
 =SML
 set_goal([], get_conjecture "-" "z_abs_eq_1_thm");
@@ -204,7 +365,7 @@ a(z_µ_tac THEN strip_tac);
 a(strip_asm_tac(z_µ_elim Òi + ~jÆ z_˙_cases_thm)
 	THEN ALL_FC_T asm_rewrite_tac[z_abs_def]
 	THEN PC_T1 "z_lin_arith" asm_prove_tac[]);
-val €z_abs_eq_1_thm› = save_pop_thm "z_abs_eq_1_thm";
+val €z_abs_eq_1_thm› = save_pop_thm_stats "z_abs_eq_1_thm";
 =TEX
 =SML
 set_goal([], get_conjecture "-" "z_mod_2_thm");
@@ -214,14 +375,14 @@ a(ALL_FC_T1 fc_§_canon rewrite_tac
 	[rewrite_rule[](conv_rule (MAP_C z_µ_elim_conv) (z_mod_thm))]);
 a(REPEAT strip_tac THEN_TRY
 	z_∂_tac Òd ∫ ˙Æ THEN PC_T1 "z_lin_arith" asm_prove_tac[]);
-val €z_mod_2_thm› = save_pop_thm "z_mod_2_thm";
+val €z_mod_2_thm› = save_pop_thm_stats "z_mod_2_thm";
 =TEX
 =SML
 set_goal([], get_conjecture "-" "z_mod_2_thm1");
 a(z_µ_tac THEN strip_tac);
 a(rewrite_tac[z_mod_2_thm]);
 a(z_∂_tacÒiÆ THEN REPEAT strip_tac);
-val €z_mod_2_thm1› = save_pop_thm "z_mod_2_thm1";
+val €z_mod_2_thm1› = save_pop_thm_stats "z_mod_2_thm1";
 =TEX
 =SML
 set_goal([], get_conjecture "-" "z_ran_mod_2_thm");
@@ -229,7 +390,7 @@ a(contr_tac);
 a(fc_tac[
 	inst_term_rule [(Òi mod 2Æ, Òj ∫ ˙Æ)]
 		(all_µ_elim (hd (fc_canon z_mod_2_thm)))]);
-val €z_ran_mod_2_thm› = save_pop_thm "z_ran_mod_2_thm";
+val €z_ran_mod_2_thm› = save_pop_thm_stats "z_ran_mod_2_thm";
 =TEX
 =SML
 set_goal([], get_conjecture "-" "z_plus_1_mod_2_thm");
@@ -242,7 +403,7 @@ a(rewrite_tac[z_mod_2_thm] THEN REPEAT strip_tac
 (* *** Goal "1" duplicates "2" *** *)
 a(lemma_tacÒ0 < d - d' < 1 Æ THEN
 	PC_T1 "z_lin_arith" asm_prove_tac[]);
-val €z_plus_1_mod_2_thm› = save_pop_thm "z_plus_1_mod_2_thm";
+val €z_plus_1_mod_2_thm› = save_pop_thm_stats "z_plus_1_mod_2_thm";
 val €z_plus_1_mod_2_thm1› =
 	conv_rule (ONCE_MAP_C z_anf_conv) z_plus_1_mod_2_thm;
 =TEX
@@ -258,7 +419,7 @@ a(ante_tac (z_µ_elimÒ(x ¶ x, a ¶ {y})Æ z_Ê_¿_singleton_thm1));
 a(asm_rewrite_tac[z_size_singleton_thm]);
 a(LEMMA_T Ò{x, y} = {y} ¿ {x}Æ rewrite_thm_tac
 	THEN PC_T1 "z_sets_ext" prove_tac[]);
-val €z_size_pair_thm› = save_pop_thm "z_size_pair_thm";
+val €z_size_pair_thm› = save_pop_thm_stats "z_size_pair_thm";
 =TEX
 =SML
 set_goal([], get_conjecture "-" "z_size_eq_thm");
@@ -270,7 +431,7 @@ a(strip_asm_tac (z_µ_elimÒ(x ¶ x1, a ¶ a)Æ z_size_¿_singleton_thm));
 a(strip_asm_tac (z_µ_elimÒ(x ¶ x1, a ¶ a)Æ z_Ê_¿_singleton_thm1));
 a(strip_asm_tac (z_µ_elimÒ(a ¶ b, b ¶ a ¿ {x1})Æ z_size_mono_thm));
 a(PC_T1 "z_lin_arith" asm_prove_tac[]);
-val €z_size_eq_thm› = save_pop_thm "z_size_eq_thm";
+val €z_size_eq_thm› = save_pop_thm_stats "z_size_eq_thm";
 =TEX
 =SML
 set_goal([], get_conjecture "-" "z_size_2_thm");
@@ -290,7 +451,7 @@ a(asm_rewrite_tac[] THEN REPEAT strip_tac);
 a(z_∂_tacÒ(x ¶ x2, y ¶ x1)Æ THEN asm_rewrite_tac[]);
 (* *** Goal "2" *** *)
 a(ALL_FC_T asm_rewrite_tac[z_size_pair_thm]);
-val €z_size_2_thm› = save_pop_thm "z_size_2_thm";
+val €z_size_2_thm› = save_pop_thm_stats "z_size_2_thm";
 =TEX
 =SML
 set_goal([], get_conjecture "-" "z_size_product_thm");
@@ -324,7 +485,7 @@ a(asm_rewrite_tac[z_size_empty_thm]);
 a(REPEAT strip_tac THEN asm_rewrite_tac[]);
 a(ALL_FC_T rewrite_tac[z_size_¿_singleton_thm]);
 a(PC_T1 "z_lin_arith" prove_tac[]);
-val €z_size_product_thm› = save_pop_thm "z_size_product_thm";
+val €z_size_product_thm› = save_pop_thm_stats "z_size_product_thm";
 =TEX
 =SML
 set_goal([], get_conjecture "-" "z_finite_subset_thm");
@@ -332,7 +493,7 @@ a(REPEAT strip_tac);
 a(LEMMA_TÒb = a \ {x:a|≥x ç b}Æ once_rewrite_thm_tac
 	THEN1 PC_T1 "z_sets_ext" asm_prove_tac[]);
 a(ALL_FC_T rewrite_tac[z_Ê_diff_thm]);
-val €z_finite_subset_thm› = save_pop_thm "z_finite_subset_thm";
+val €z_finite_subset_thm› = save_pop_thm_stats "z_finite_subset_thm";
 =TEX
 =SML
 set_goal([], get_conjecture "-" "z_finite_size_thm1");
@@ -353,13 +514,13 @@ a(asm_rewrite_tac[
 		Òµx:É; y:É∑{(x, y)} ç {x} è {y}Æ]);
 a(PC_T1 "z_library_ext" REPEAT strip_tac
 	THEN all_var_elim_asm_tac1);
-val €z_finite_size_thm1› = save_pop_thm "z_finite_size_thm1";
+val €z_finite_size_thm1› = save_pop_thm_stats "z_finite_size_thm1";
 =TEX
 =SML
 set_goal([], get_conjecture "-" "ran_colour_thm");
 a(rewrite_tac[colour_def,
 	rewrite_rule[]z_ran_mod_2_thm]);
-val €ran_colour_thm› = save_pop_thm "ran_colour_thm";
+val €ran_colour_thm› = save_pop_thm_stats "ran_colour_thm";
 =TEX
 =SML
 set_goal([], get_conjecture "-" "adjacent_thm");
@@ -371,7 +532,7 @@ a(LEMMA_TÒµi, j:Ó∑
 	(fn th => ALL_FC_T1 fc_§_canon rewrite_tac[th])
 	THEN1 PC_T1 "z_lin_arith" prove_tac[]);
 a(rewrite_tac[rewrite_rule[] z_abs_eq_0_thm] THEN PC_T1 "z_lin_arith" prove_tac[]);
-val €adjacent_thm› = save_pop_thm "adjacent_thm";
+val €adjacent_thm› = save_pop_thm_stats "adjacent_thm";
 =TEX
 =SML
 set_goal([], get_conjecture "-" "adjacent_colour_thm");
@@ -397,7 +558,7 @@ a(asm_rewrite_tac[]
 	THEN conv_tac (ONCE_MAP_C z_anf_conv)
 	THEN conv_tac (RAND_C eq_sym_conv)
 	THEN rewrite_tac[z_plus_1_mod_2_thm1]);
-val €adjacent_colour_thm› = save_pop_thm "adjacent_colour_thm";
+val €adjacent_colour_thm› = save_pop_thm_stats "adjacent_colour_thm";
 =TEX
 =SML
 set_goal([], get_conjecture "-" "domino_colour_thm");
@@ -416,7 +577,7 @@ a(z_∂_tacÒ(u¶y, v¶x')Æ THEN asm_rewrite_tac[]);
 a(PC_T1 "z_sets_ext" REPEAT strip_tac);
 a(strip_asm_tac (z_µ_elimÒyÆ ran_colour_thm));
 a(swap_nth_asm_concl_tac 3 THEN asm_rewrite_tac[]);
-val €domino_colour_thm› = save_pop_thm "domino_colour_thm";
+val €domino_colour_thm› = save_pop_thm_stats "domino_colour_thm";
 =TEX
 =SML
 set_goal([], get_conjecture "-" "board_finite_thm");
@@ -424,7 +585,7 @@ a(rewrite_tac[board_def]);
 a(lemma_tacÒ0 .. 7 ç (Ê_)Æ
 	THEN1 rewrite_tac[z_size_dot_dot_thm1]);
 a(all_fc_tac[z_size_product_thm]);
-val €board_finite_thm› = save_pop_thm "board_finite_thm";
+val €board_finite_thm› = save_pop_thm_stats "board_finite_thm";
 =TEX
 =SML
 set_goal([], get_conjecture "-" "tiling_colour_thm");
@@ -499,7 +660,7 @@ a(rewrite_tac[]);
 a(LEMMA_T Ò≥x = z'Æ rewrite_thm_tac
 	THEN1 (contr_tac THEN all_var_elim_asm_tac));
 a(DROP_NTH_ASM_T 4 ante_tac THEN asm_rewrite_tac[]);
-val €tiling_colour_thm› = save_pop_thm "tiling_colour_thm";
+val €tiling_colour_thm› = save_pop_thm_stats "tiling_colour_thm";
 =TEX
 =SML
 set_goal([], get_conjecture "-" "tiling_colour_size_thm");
@@ -512,7 +673,7 @@ a(LIST_DROP_NTH_ASM_T [2, 4, 5] discard_tac);
 a(all_fc_tac[z_finite_size_thm1, z_size_Ó_thm]);
 a(all_fc_tac[z_o_è_thm]);
 a(all_fc_tac[z_Ê_size_thm] THEN asm_rewrite_tac[]);
-val €tiling_colour_size_thm› = save_pop_thm "tiling_colour_size_thm";
+val €tiling_colour_size_thm› = save_pop_thm_stats "tiling_colour_size_thm";
 =TEX
 =SML
 set_goal([], get_conjecture "-" "board_tiling_thm");
@@ -595,7 +756,7 @@ a(PC_T1 "z_lin_arith" asm_prove_tac[]);
 (* *** Goal "3.2.3" *** *)
 a(z_∂_tacÒ(i¶x1, j¶d)Æ
 	THEN PC_T1 "z_library_ext" asm_rewrite_tac[]);
-val €board_tiling_thm› = save_pop_thm "board_tiling_thm";
+val €board_tiling_thm› = save_pop_thm_stats "board_tiling_thm";
 =TEX
 =SML
 set_goal([], get_conjecture "-" "colours_on_board_thm");
@@ -604,7 +765,7 @@ a(lemma_tacÒﬁ BoardTiling ç (Ê_)Æ THEN1
 	asm_rewrite_tac[board_finite_thm]);
 a(ALL_FC_T (MAP_EVERY ante_tac) [tiling_colour_size_thm]);
 a(asm_rewrite_tac[]);
-val €colours_on_board_thm› = save_pop_thm "colours_on_board_thm";
+val €colours_on_board_thm› = save_pop_thm_stats "colours_on_board_thm";
 =TEX
 =SML
 set_goal([], get_conjecture "-" "colours_on_mutilated_board_thm");
@@ -644,11 +805,11 @@ a(ALL_FC_T asm_rewrite_tac[
 	pc_rule1 "z_sets_ext" prove_rule[]
 	Òµa, b: É∑ b Ä a ¥ a ° b = bÆ]);
 a(PC_T1 "z_lin_arith" prove_tac[]);
-val €colours_on_mutilated_board_thm› = save_pop_thm "colours_on_mutilated_board_thm";
+val €colours_on_mutilated_board_thm› = save_pop_thm_stats "colours_on_mutilated_board_thm";
 =TEX
 =SML
 set_goal([], get_conjecture "-" "mutilated_chessboard_thm");
-a(conv_tac (ONCE_MAP_C eq_sym_conv) THEN contr_tac);
+a(contr_tac);
 a(lemma_tacÒﬁz Ä BoardÆ THEN1
 	(asm_rewrite_tac[mutilated_board_def]
 	THEN PC_T1 "z_sets_ext" prove_tac[]));
@@ -658,7 +819,7 @@ a(ALL_FC_T (MAP_EVERY ante_tac) [tiling_colour_size_thm]);
 a(ante_tac colours_on_mutilated_board_thm
 	THEN asm_rewrite_tac[colours_on_board_thm]);
 a(PC_T1 "z_lin_arith" prove_tac[]);
-val €mutilated_chessboard_thm› = save_pop_thm "mutilated_chessboard_thm";
+val €mutilated_chessboard_thm› = save_pop_thm_stats "mutilated_chessboard_thm";
 =TEX
 =SML
 
@@ -666,6 +827,10 @@ val €mutilated_chessboard_thm› = save_pop_thm "mutilated_chessboard_thm";
 \section{Epilogue}
 =TEX
 =SML
+fun sum_stats s = (switch (fold (op+)) 0 o map snd) s;
+val summary_stats = 
+	map (Combinators.I ** sum_stats) (!thm_stats);
+val total_stats = sum_stats summary_stats;
 fun check_conjecture name = (
 	if	let	val tm = get_conjecture "-" name;
 			val thm = get_thm "-" name;
