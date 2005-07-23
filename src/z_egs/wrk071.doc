@@ -4,6 +4,7 @@
 \usepackage{ProofPower}
 \usepackage{A4}
 \usepackage{latexsym}
+\underscoreoff
 \ftaboveboxskip=0.5\abovedisplayskip
 \ftbelowboxskip=0.1\belowdisplayskip
 \def\ZAxDesLabel{}
@@ -31,7 +32,7 @@ Well, because each domino contributes one white square and one black, any such t
 However, the two squares removed from the mutilated board both have the same colour, and so the mutilated board contains two more squares of one colour than it does of the other.
 
 This little theorem has been proved in a number of systems including NQTHM, Mizar, Isabelle \cite{Bancerek95,Paulson01,Subramanian94}.
-This note presents a formulation of the statement and proof of this little theorem in Z, prepared using the {\Product} system to check the specifications and to find and check the proof.
+This note presents a formulation of the statement and proof of this little theorem in Z prepared and checked using the {\Product} system.
 The treatment is in the spirit of McCarthy's formulation in the language of set theory [McCarthy95], which turns out to admit a very concise rendition in Z. 
 
 \Hide{
@@ -44,15 +45,16 @@ new_theory"mutcb";
 =TEX
 }
 \section{STATEMENT OF THE THEOREM}
-\def\AbsDef{%
+{%\catcode`\^^I=\active
+\obeyspaces
+\gdef\AbsDef{%
 πZAX
-‹	€Abs› : ˙ ≠ ˙
+‹    €Abs› : ˙ ≠ ˙
 ˜¸¸¸¸¸¸
-‹	µm:Ó ∑ Abs (~m) = Abs m = m
+‹    µm:Ó ∑ Abs (~m) = Abs m = m
 ∞
 }
-
-\def\FigureTwo{%
+\gdef\FigureTwo{%
 \begin{figure}
 \ftaboveboxskip=0.1\abovedisplayskip
 \ftbelowboxskip=0.5\belowdisplayskip
@@ -82,8 +84,7 @@ new_theory"mutcb";
 \label{fig2}
 \end{figure}%
 } % \FigureTGwo
-
-\def\FigureOne{%
+\gdef\FigureOne{%
 \begin{figure}
 \ftaboveboxskip=0.1\abovedisplayskip
 \ftbelowboxskip=0.5\belowdisplayskip
@@ -99,7 +100,7 @@ new_theory"mutcb";
 \label{fig1}
 \end{figure}
 } %\FigureOne
-
+} %\opeyspaces
 Our statement of the theorem is the Z conjecture shown in figure~\ref{fig1}.
 It involves the sets, {\em Tiling} and {\em MutilatedBoard} defined along with the sets {\em Adjacent}, {\em Domino} and {\em Board} in the little Z specification shown in figure~\ref{fig2}.
 This specification is based on that of [McCarthy95] with some minor simplifications.
@@ -135,12 +136,17 @@ The mutilated board is then obtained by removing the squares labelled $(0, 0)$ a
 With our representation of dominoes, the set of squares covered by a tiling $z$ is the union $\bigcup z$.
 Returning to the conjecture shown in figure~\ref{fig1}, we see that it says there is no tiling whose union is equal to the mutilated board, which is precisely what we want the mutilated chessboard theorem to state.
 
-\section{THE PROOF}
-We present the proof as a series of lemmas (expressed as conjectures in Z).
-Some of these lemmas involve additional notation which we define as needed.
+\section{THE PROOF}\label{proof}
 
-First of all we give a more explicit characterisation of adjacency.
-This says that two squares are adjacent iff. their eastings differ by 1 and their northings are equal or vice versa.
+We now examine a ``semiformal'' proof of the little theorem given strictly in terms of the Z formulation.
+The semiformal proof comprises rigorous formal statements of a series of lemmas interleaved with informal narrative explanations of these statements and how they relate.
+As discussed in section~\ref{machine} below, a formal mechanized version of this proof has been prepared and can be checked using~\{ref{Product}.
+
+The lemmas are formulated as conjecture paragraphs in Z and
+some of them involve additional notation which we define in Z as needed.
+Some of the informal explanations rely on elementary mathematical properties which are further discussed in section~\ref{supporting} below.
+
+We begin with a more explicit characterisation of adjacency saying that two squares are adjacent iff. their eastings differ by 1 and their northings are equal, or vice versa.
 It follows from elementary properties of the absolute value function.
 
 πZ
@@ -156,9 +162,9 @@ That these two square have different colours needs to be proved.
 First we need a definition of the notion of colour.
 
 πZAX
-‹	€Colour› : ˙ ∏ ˙ ≠ ˙
+‹    €Colour› : ˙ ∏ ˙ ≠ ˙
 ˜¸¸¸¸¸¸
-‹	µx:˙ ∏ ˙ ∑ Colour x = (x.1 + x.2) mod 2
+‹    µx:˙ ∏ ˙ ∑ Colour x = (x.1 + x.2) mod 2
 ∞
 
 Elementary facts about remainders {\it modulo} 2 now imply that the colour of any square is either 0 or 1 and that the colours of any two adjacent squares are different.
@@ -233,10 +239,11 @@ From the above, we see that the entire board is divided into equal size subsets 
 ‹ ±	#{u:MutilatedBoard|Colour u = 1} = #{u:Board | Colour u = 1}
 ∞
 
-The mutilated chessboard theorem is now an immediate consequence of {\em tiling\_colour\_thm} and {\em colours\_on\_mutilated\_board\_thm}..
+The mutilated chessboard theorem is now an immediate consequence of {\em tiling_colour_thm} and {\em 
+colours_on_mutilated_board_thm}.
 
-\section{SUPPORTING THEORY}
-In the informal proof in the proceeding section, we have appealed to the elementary properties of the absolute value function, of remainders {\it modulo} 2 and of finite cardinalities.
+\section{SUPPORTING THEORY}\label{supporting}
+In the narrative in section~\ref{proof} above, we have appealed to the elementary properties of the absolute value function, of remainders {\it modulo} 2 and of finite cardinalities.
 In this section we state the lemmas that we need which are additional to those already provided in {\Product}.
 These comprise fairly immediate consequences of results that are already provided.
 
@@ -300,6 +307,33 @@ I claim that they should be treated as background knowledge in the context of th
 πZ
 ‹ €z_finite_size_thm1› ?Ù µa: (Ê_) ∑ (∂f:1 .. #a è a ∑true)
 ∞
+
+
+\section{THE MECHANIZED PROOFS}\label{machine}
+
+The source text of this document is actually a script from which all the formal material can be extracted and checked using {\Product}.
+The source text also includes a proof script giving the commands to prove all the conjectures mechanically.
+The proof script is not included in the printed form of the document for brevity.
+
+The proof of the mutilated chessboard theorem as given in section~\ref{proof} and the proofs of the supporting theory discussed in section~\ref{supporting} comprise about 270 and 120 lines of proof commands respectively.
+
+The statement and the proof was originally formulated as a direct transcription of the treatment given in~\cite{McCarthy95} and using inductive methods for the proofs as in~\cite{Paulson01}.
+This was done for comparative reasons with the expectation that the inductive approach was likely to be harder than what we present above.
+It took about 10 hours' work spread over three afternoons.
+The result is longer and more complicated than what we have presented above.
+
+The main complication is that you have to prove that tilings whose union is contained in the chessboard are finite to justify proof by induction over such tilings.
+This requires more work in the proof itself and more supporting theory (e.g., to reason about the finiteness of finite powersets).
+
+The proof was then adapted to use the approach outlined above.
+This amounted to proving what we have called {\em tiling_colour_thm} and {\em finite_colour_size_thm1} and using them to replace a long inductive proof of
+{\em tiling_colour_size_thm} with a simple derivation using those results and elementary properties of finite cardinalities.
+This took about 2 hours and reduces the amount of supporting theory required to what is presented above.
+A final hour was then spent simplifying and abbreviating the specification and adopting the proofs to accommodate. 
+
+
+ 
+
 \bibliographystyle{plain}
 \bibliography{bookspapers}
 
@@ -307,6 +341,57 @@ I claim that they should be treated as background knowledge in the context of th
 \end{document}
 \newpage
 \appendix
+\section{STATISTICS}
+
+Tables~\ref{tab1} and~\ref{tab2} show for each conjecture formulated in this document the number of lines of code in its proof and the number of primitive inferences that proof executes.
+
+ 
+\begin{table}
+\begin{center}
+\begin{tabular}{|l|r|r|}\hline
+\bf Conjecture & \bf LOC & \bf Inferences \\\hline
+ran_colour_thm & 2 & 333 \\\hline
+adjacent_thm & 8 & 180590 \\\hline
+adjacent_colour_thm & 22 & 4065 \\\hline
+domino_colour_thm & 15 & 4916 \\\hline
+board_finite_thm & 4 & 442 \\\hline
+tiling_colour_thm & 71 & 64227 \\\hline
+tiling_colour_size_thm & 9 & 2969 \\\hline
+board_tiling_thm & 79 & 105400 \\\hline
+colours_on_board_thm & 5 & 762 \\\hline
+colours_on_mutilated_board_thm & 36 & 22667 \\\hline
+mutilated_chessboard_thm & 10 & 4719 \\\hline
+\bf Total & 261 & 391090 \\\hline
+\end{tabular}
+\end{center}
+\caption{Statistics for the Mutilated Chessboard Theorem}
+\label{tab1}
+\end{table}
+
+\begin{table}
+\begin{center}
+\begin{tabular}{|l|r|r|}\hline
+\bf Conjecture & \bf LOC & \bf Inferences \\\hline
+z_abs_nat_thm & 4 & 1370 \\\hline
+z_abs_eq_0_thm & 4 & 21256 \\\hline
+z_abs_eq_1_thm & 4 & 84748 \\\hline
+z_mod_2_thm & 6 & 38804 \\\hline
+z_mod_2_thm1 & 3 & 309 \\\hline
+z_ran_mod_2_thm & 4 & 715 \\\hline
+z_plus_1_mod_2_thm & 9 & 8680 \\\hline
+z_size_pair_thm & 7 & 1254 \\\hline
+z_size_eq_thm & 8 & 4870 \\\hline
+z_size_2_thm & 16 & 2038 \\\hline
+z_size_product_thm & 30 & 5386 \\\hline
+z_finite_subset_thm & 4 & 1043 \\\hline
+z_finite_size_thm1 & 17 & 4577 \\\hline
+\bf Total & 116 & 175050 \\\hline
+\end{tabular}
+\end{center}
+\caption{Statistics for the Supporting Theory}
+\label{tab2}
+\end{table}
+
 =IGN
 {\HOLindexOff\small
 \let\Section\section
@@ -316,6 +401,8 @@ I claim that they should be treated as background knowledge in the context of th
 \twocolumn[\section{INDEX}\label{INDEX}]
 \printindex
 =TEX
+\section{PROOF SCRIPTS}
+
 =SML
 val thm_stats : int S_DICT S_DICT ref = ref[];
 fun save_pop_thm_stats name = (
