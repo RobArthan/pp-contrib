@@ -18,27 +18,28 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-This note presents a statement and proof of the mutilated chessboard theorem is the Z notation.
+This note presents a statement and proof of the mutilated chessboard theorem in Z.
 The formulation is along the lines of the one proposed by McCarthy for a `heavy duty set theory'' theorem prover.
-The proof is presented as a series of Z conjectures all of which have been formally verified using the {\Product} system.
+The theorem and its proof are presented as a Z specification and a series of Z conjectures all of which have been mechanically verified using the {\Product} system.
+For the entertainment of the theorem-proving community, we conclude by proposing a slightly harder challenge problem.
 \end{abstract}
 
 \section{INTRODUCTION}
 
 The mutilated chessboard theorem was proposed over 40 years ago by John McCarthy as a ``tough nut to crack'' for automated reasoning \cite{McCarthy64}.
-The theorem is rather trivial: if a chess board is ``mutilated'' by removing two diagonally opposite corner squares, then the result cannot be tiled with domino-shaped tiles each covering two adjacent squares of the board.
+The theorem is very simple: if a chess board is ``mutilated'' by removing two diagonally opposite corner squares, then the result cannot be tiled with domino-shaped tiles each covering two adjacent squares of the board.
 Why is this so?
 Well, as each domino covers one white square and one black, any such tiling must cover exactly as many black squares as it does white.
 However, the two diagonally opposite corner squares have the same colour, and so the mutilated board contains two more squares of one colour than it does of the other.
 
 A discussion of why this theorem is a challenge for theorem-proving is outside the scope of this note.
-However, as McCarthy \cite{McCarthy95} notes, the counting argument given above should be ``admitted in any heavy duty set theory''.
-I.e., the argument should admit formalisation in any general purpose theorem-proving system allowing reasoning about sets.
-The theorem has indeed been proved in a number of systems including NQTHM \cite{Subramanian94}, Mizar\cite{Bancerek95,Rudnicki95}, Isabelle \cite{Paulson01}.
+However, as McCarthy \cite{McCarthy95} points out, the counting argument given above should be ``admitted in any heavy duty set theory'', i.e., any general purpose theorem-proving system allowing reasoning about sets should be able to handle the proof.
+The theorem has indeed been proved in a number of systems including NQTHM \cite{Subramanian94}, Mizar \cite{Bancerek95,Rudnicki95}, Isabelle \cite{Paulson01}.
 
-The Z notation \cite{Spivey92,iso13568.2002} provides a convenient notation for set theory.
-This note presents a formalisation of the theorem in Z, prepared and checked using the {\Product} system.
-The treatment is in the spirit of McCarthy's formulation in [McCarthy95], which turns out to admit a very concise rendition in Z.
+The Z language \cite{ISO13568.2002,Spivey92} provides a convenient notation for set theory.
+The {\Product} system supports specification and proof in Z.
+This note presents a formalisation of the mutilated chess board theorem theorem in Z, prepared and checked using {\Product}.
+The treatment is in the spirit of \cite{McCarthy95}, which turns out to admit a very concise rendition in Z.
 
 \Hide{
 The following ML sets up a context for giving the {\ProductZ} specifications.
@@ -117,7 +118,10 @@ Let us discuss each of the 5 sets in the order of their introduction in figure~\
 
 We represent a square on the chessboard as a pair of integers.
 Two squares are adjacent iff. the distance between them is 1 (where, to avoid using real numbers, we can conveniently measure distances using the Manhattan taxi-cab metric).
-The set {\em Adjacent} represents this relation\footnote{%
+The set {\em Adjacent} represents this relation.
+
+\Hide{
+\footnote{%
 A tutorial in the Z notation is outside the scope of this note, but the following points may help the reader:
 \begin{itemize}
 \item
@@ -171,6 +175,7 @@ true
 \footnote{%
 Z would allow us to use predicate-style notation for membership of sets as McCarthy does, but it is convenient and seems natural to use $\in$ for membership of the sets in this example.
 }.
+} %\Hide
 
 
 A domino in some position on the board is represented by the set comprising the two adjacent squares it occupies.
@@ -182,10 +187,10 @@ Unlike McCarthy, we do not constrain our dominoes to lie on the chessboard, this
 
 A tiling is a set of dominoes positioned so that no two dominoes overlap.
 Our set {\em Tiling} is the set of all such tilings.
-Paulson defines this set inductively, an approach that I cannot endorse in this case.
-It is more general, technically easier and much closer to our intuition to avoid induction for this kind of property.
-In natural language we say ``positioned so that no two dominoes overlap'' not ``that could be positioned one at a time with each domino positioned so as not to overlap the dominoes that have been positioned before it''.
-I see no grounds for preferring the more complicated exposition in the formalisation.
+Paulson \cite{Paulson01} defines this set inductively, an approach that I cannot endorse in this case.
+It is more general, technically easier and much closer to intuition to state the property with a quantifier.
+In natural language we say ``positioned so that no two dominoes overlap'' not ``that could be positioned one at a time with each domino positioned in turn so as not to overlap the dominoes that have been positioned before it''.
+I see no grounds for preferring the more complicated locution.
 
 As reflected in the definition of the set {\em Board}, the complete board is to be represented by the set of squares with co-ordinates in the range 0 to 7, which we can write as the cartesian product of the integer interval
 =INLINEFT
@@ -202,16 +207,24 @@ This is precisely what we want the mutilated chessboard theorem to state.
 
 We now given a ``semiformal'' proof of our theorem couched strictly in terms of the Z formalisation.
 The semiformal proof comprises rigorous formal statements of a series of lemmas interleaved with narrative explanations of these statements and how they relate.
-As discussed in section~\ref{machine} below, a formal mechanized version of this proof has been prepared and checked using~\Product%
-\footnote{
-\raggedright
-See {\tt http://www.lemma-one.com/ProofPower/index/} for more information on {\sf ProofPower}.}.
+The lemmas are given as Z conjecture paragraphs.
 
-The lemmas are formulated as conjecture paragraphs in Z.
-Some of them involve additional notation which we define below as needed.
-Some of the informal explanations rely on elementary mathematical facts which are further discussed in section~\ref{supporting} below.
+The informal proof uses the notion of the colour of a square that we have not yet formalised.
+The following integer-valued function on the squares represents this notion.
 
-We begin with a more explicit characterisation of adjacency saying that two squares are adjacent iff. their eastings differ by 1 and their northings are equal, or vice versa.
+πZAX
+‹    €Colour› : ˙ ∏ ˙ ≠ ˙
+˜¸¸¸¸¸¸
+‹    µx:˙ ∏ ˙ ∑ Colour x = (x.1 + x.2) mod 2
+∞
+
+This definition and elementary facts about remainders {\it modulo} 2 imply that the colour of any square is either 0 or 1:
+
+πZ
+‹ €ran_colour_thm› ?Ù µu:˙ ∏ ˙ ∑ Colour u ç {0, 1}
+∞
+
+The following lemma gives a more explicit characterisation of adjacency saying that two squares are adjacent iff. their eastings differ by 1 and their northings are equal, or vice versa.
 It follows from the definition of adjacency and from elementary properties of the absolute value function.
 
 πZ
@@ -224,20 +237,6 @@ It follows from the definition of adjacency and from elementary properties of th
 
 That every domino comprises two squares is wired into our definition of domino.
 That these two square have different colours needs to be proved.
-First we need a definition of the notion of colour.
-
-πZAX
-‹    €Colour› : ˙ ∏ ˙ ≠ ˙
-˜¸¸¸¸¸¸
-‹    µx:˙ ∏ ˙ ∑ Colour x = (x.1 + x.2) mod 2
-∞
-
-This definition and elementary facts about remainders {\it modulo} 2 immediately imply that the colour of any square is either 0 or 1:
-
-πZ
-‹ €ran_colour_thm› ?Ù µu:˙ ∏ ˙ ∑ Colour u ç {0, 1}
-∞
-
 Using the definition of the colour function, case analysis given by {\em adjacent_thm} and elementary facts about remainders {\it modulo} 2,
 we have that the colours of any two adjacent squares are different:
 
@@ -253,15 +252,15 @@ This is the only fact about dominoes that will be used hereafter.
 ‹ 	µx:Domino ∑ ∂u, v:x ∑ x = {u, v} ± Colour u = 0 ± Colour v = 1
 ∞
 
-If $z$ is a tiling then within the squares it covers there is a bijection between those coloured 0 and those coloured 1.
+If $z$ is a tiling then, within the squares it covers, there is a bijection between those coloured 0 and those coloured 1.
 
 πZ
 ‹ €tiling_colour_thm› ?Ù
 ‹	µz:Tiling ∑ ∂f:{u:ﬁz | Colour u = 0} è {u:ﬁz|Colour u = 1} ∑ true
 ∞
 
-The proof of the above is very simple and direct and does not depend on $z$ being finite.
-Using the definition of a tiling togetther with what we have proved about the colour function and elementary facts about bijections, it is routine to verify that we may take the following definition for a witness:
+The proof of the above is very simple and direct and does not require $z$ to be finite:
+ysing the definition of a tiling together with what we have proved about the colour function and elementary facts about bijections, it is routine to verify that we may take the following definition for a witness:
 
 =GFT
 	f = {d:z; u, v:˙ ∏ ˙ | d = {u, v} ± Colour u = 0 ± Colour v = 1 ∑ (u, v)}
@@ -280,7 +279,7 @@ The proof of the above is immediate from elementary facts about finite cardinali
 We now need to show that the mutilated board is not divided into two equal subsets by the colour function.
 To do this, we will first show that the unmutilated board can be so divided, which we can conveniently prove using
 {\em tiling_colour_size_thm}.
-We must first prove that the unmutilated board is finite:
+To apply that lemma, we must show that the unmutilated board is finite:
 
 πZ
 ‹ €board_finite_thm› ?Ù Board ç (Ê_)
@@ -302,26 +301,81 @@ For the witness in the above lemma, one can observe that
 =TEX
 
 
-Hence the unmutilated board is divided into equal size subsets by the colour function:
+Thus we may apply {\em tiling_colour_size_thm} and conclude that the unmutilated board is indeed divided into equal size subsets by the colour function:
 
 πZ
 ‹ €colours_on_board_thm› ?Ù
 ‹	#{u:Board | Colour u = 0} = #{u:Board | Colour u = 1}
 ∞
-\ldots but the mutilated board is not:
+The mutilated board is obtained by removing two squares of colour 0, and so we have: 
+
 πZ
 ‹ €colours_on_mutilated_board_thm› ?Ù
 ‹	#{u:MutilatedBoard|Colour u = 0} = #{u:Board | Colour u = 0} - 2
 ‹ ±	#{u:MutilatedBoard|Colour u = 1} = #{u:Board | Colour u = 1}
 ∞
 
-The mutilated chessboard theorem is now an immediate consequence of {\em tiling_colour_size_thm}, {\em colours_on_board_thm} and {\em 
-colours_on_mutilated_board_thm}.
+The mutilated chessboard theorem now follows, since {\em tiling_colour_size_thm} says that if a tiling of the mutilated board existed then the colour function would divide the mutilated board into two sets of equal size, whereas {\em colours_on_board_thm} and {\em colours_on_mutilated_board_thm} show this is not the case.
 
+\section{THE MECHANIZED PROOFS}\label{machine}
+
+The source text of this document is actually a script from which all the formal material can be extracted and checked using {\Product}\footnote{%
+\raggedright
+See {\tt http://www.lemma-one.com/ProofPower/index/} for more information on {\sf ProofPower}.}.
+The source text also includes a proof script giving the commands to prove all the conjectures mechanically.
+The proof script has not been included in the printed form of the document for brevity (it comprises some 11 pages of ML code).
+
+Case studies like this are useful for pointing up areas in the mathematical library that need more supporting theory.  As Paulson~\cite{Paulson01} points out, finite cardinalities are tricky to reason about. Fortunately, all the groundwork for this had already been done in {\Product} and the present argument only required a few extras. The supporting theory developed is discussed in more detail in appendix~\ref{supporting} below. 
+
+The proof of the mutilated chessboard theorem as given in section~\ref{proof} and the proofs of the supporting theory discussed in appendix~\ref{supporting} comprise about 270 and 120 lines of proof commands respectively. The proof script also includes a few dozen lines of ``boiler-plate'', e.g., code to collect statistics on the numbers of inference steps.
+The proofs themselves are quite routine.
+
+The specification was originally formulated to correspond very closely with the treatment given in~\cite{McCarthy95} and inductive methods were used for the proofs as in~\cite{Paulson01}.
+This was done for comparative reasons with the expectation that the inductive approach was likely to be harder than what we present above.
+Including time taken on supporting theory, this approach took about 10 hours' work spread over three afternoons.
+The result is longer and more complicated than what we have presented above.
+
+The main complications are that you have to prove that the tilings of interest are finite\footnote{
+Even closer to the approach of~\cite{Paulson01} would be to define the set of tilings as an intersection giving the smallest set of domino configurations containing the empty configuration and closed under the operation that adds a non-overlapping domino to a configuration.
+This saves having to prove that the resulting tilings are finite, but at the expense of making the specification more complicated and less intuitive and the results less general.
+It still results in a longer proof than the one presented above.
+}. to justify proof by induction over them and then use induction to prove {\em tiling_colour_size_thm}.
+This requires more work in the proof itself and more supporting theory (e.g., to reason about the finiteness of finite powersets).
+
+The proof was then reworked to use the argument given in section~\ref{proof} above.
+This amounted to proving what we have called {\em tiling_colour_thm} and using it to replace the relatively long inductive proof of
+{\em tiling_colour_size_thm} with a simple derivation based on elementary properties of finite cardinalities.
+This took about 2 hours and reduces the amount of supporting theory required to what is presented above.
+A final hour was then spent simplifying and abbreviating the specification and adopting the proofs to accommodate. 
+
+The de Bruijn factor\footnote{%
+This term, due to Freek Wiedijk, denotes the ratio between the size of a formal mathematical text and the size of its informal original.
+%
+}
+for the mutilated chessboard theorem as presented here is, in my opinion, quite good.
+The same is true for the NQTHM, Mizar and Isabelle treatments.
+To estimate fairly, I feel that one must compare the formal treatment with a reasonably detailed exposition of the discrete mathematics along the lines of section~\ref{proof} above.
+For the treatment in this document, the de Bruijn factor turns out to be roughly 3 measured either in terms of A4 pages (6.5:3) or in terms of lines of ML code versus lines of {\LaTeX} source (270:110).
+
+ 
+\section{CONCLUDING REMARKS}
+
+Further work, of course, remains to be done! Putting aside certain methodologigal issues in the formalisation, a significant shortfall is that both the informal and the formal accounts deal only with dominoes that lock into place over two adjacent squares of the board.
+This does not consider the possibility of a tiling of the board in which dominoes can be placed at arbitrary positions and orientations.
+This more general problem can be reduced to the discrete case, e.g., using the observation that no bounded region in the plane can be tiled in more than one way using like squares\footnote{%
+Here, by ``tiling'', I mean simply a partition into squares whose interiors do not overlap. There is no presumption of any regularity in the tiling.
+}.
+To those whose systems support enough real analysis to consider it, I commend the geometric challenge of this reduction as food for thought.
+
+
+\raggedright
+\bibliographystyle{plain}
+\bibliography{bookspapers}
+
+\appendix
 \section{SUPPORTING THEORY}\label{supporting}
 In the narrative in section~\ref{proof} above, we have appealed to elementary properties of the absolute value function, of remainders {\it modulo} 2 and of finite cardinalities.
-In this section we state the lemmas that we need which are additional to those already provided in {\Product}.
-These comprise easy consequences of results that are already provided.
+In this appendix we state the lemmas that were needed in the mechanised proof in addition to what is already provided in {\Product}.
 
 \subsection{Absolute Values}
 The absolute value function is not in the Z library.
@@ -346,12 +400,11 @@ The elementary properties we need are readily derived from the definition. They 
 The proofs are all immediate by arithmetic after a case analysis on the sign on the operand of the absolute value function allowing the definition to be expanded.
 
 \subsection{Remainders {\it modulo} 2}
-We need the facts about remainders {\it modulo} 2.
-The first is an immediate consequence of a theorem that is already provided characterising remainders modulo $d$ for any non-zero $d$.
+Our first fact about remainders {\it modulo} 2 just specialises an existing theorem characterising remainders modulo $d$ for any non-zero $d$.
+The other results are easy consequences of this.
 πZ
 ‹ €z_mod_2_thm› ?Ù µi, j:˙ ∑ i mod 2 = j § j ç {0, 1} ± (∂d:É∑ i = 2*d + j)
 ∞
-The remaining 3 facts facts follow easily from the above:
 πZ
 ‹ €z_mod_2_thm1› ?Ù µi:˙ ∑ (2*i) mod 2 = 0 ± (2*i + 1) mod 2 = 1
 ∞
@@ -388,60 +441,9 @@ The following are the only theorems in this note that are proved by induction.
 ∞
 
 
-\section{THE MECHANIZED PROOFS}\label{machine}
-
-The source text of this document is actually a script from which all the formal material can be extracted and checked using {\Product}.
-The source text also includes a proof script giving the commands to prove all the conjectures mechanically.
-The proof script has not been included in the printed form of the document for brevity (it comprises some 11 pages of ML code).
-
-The proof of the mutilated chessboard theorem as given in section~\ref{proof} and the proofs of the supporting theory discussed in section~\ref{supporting} comprise about 270 and 120 lines of proof commands respectively. (The proof script also includes a few dozen lines of ``boiler-plate'', e.g., code to collect statistics on the numbers of inference steps.)
-The proofs are quite routine.
-
-The specification was originally formulated to correspond very closely with the treatment given in~\cite{McCarthy95} and inductive methods were used for the proofs as in~\cite{Paulson01}
-This was done for comparative reasons with the expectation that the inductive approach was likely to be harder than what we present above.
-It took about 10 hours' work spread over three afternoons.
-The result is longer and more complicated than what we have presented above.
-
-The main complications are that you have to prove that the tilings of interest are finite\footnote{
-Even closer to the approach of~\cite{Paulson01} would be to define the set of tilings as an intersection giving the smallest set of domino configurations containing the empty configuration and closed under the operation that adds a non-overlapping domino to a configuration.
-This saves having to prove that the resulting tilings are finite, but at the expense of making the specificaitons more complicated and the results less general.
-It still results in a longer proof than the one presented above.
-}. to justify proof by induction over them and then use induction to prove {\em tiling_colour_size_thm}.
-This requires more work in the proof itself and more supporting theory (e.g., to reason about the finiteness of finite powersets).
-
-The proof was then adapted to use the approach outlined above.
-This amounted to proving what we have called {\em tiling_colour_thm} and {\em finite_colour_size_thm1} and using them to replace a long inductive proof of
-{\em tiling_colour_size_thm} with a simple derivation using those results and elementary properties of finite cardinalities.
-This took about 2 hours and reduces the amount of supporting theory required to what is presented above.
-A final hour was then spent simplifying and abbreviating the specification and adopting the proofs to accommodate. 
-
-
- 
-\section{CONCLUDING REMARKS}
-
-The de Bruihn factor\footnote{%
-This term, due to Freek Wiedijk, denotes the ratio between the size of a formal mathematical text and its informal original.
-%
-}
-\ for the mutilated chessboard theorem as presented here is, in my opinion, quite good.
-The same is true for the NQTHM, Mizar and Isabelle treatments.
-To estimate fairly, I feel that one must compare the formal treatment with a reasonably detailed exposition of the discrete mathematics along the lines of section~\ref{proof} above.
-For the treatment in this document, the de Bruijn factor turns out to be about 3 measured either in terms of A4 pages or in terms of lines of ML code versus lines of {\LaTeX} source.
-
-Further work, of course, remains to be done! Putting aside certain methodologigal issues in the formalisation, a significant shortfall is that both the informal and the formal accounts deal only with dominoes that lock into place over two adjacent squares of the board.
-This does not consider the possibility of a tiling of the board in which dominoes can be placed at arbitrary positions and orientations.
-This more general problem can be reduced to the discrete case, e.g., using the observation that no region in the plane can be tiled in more than one way using congruent squares.
-To those whose systems support enough real analysis to consider it, I commend the geometric challenges of this reduction as food for thought.
-
-
-\raggedright
-\bibliographystyle{plain}
-\bibliography{bookspapers}
-
 =TEX
 \end{document}
 \newpage
-\appendix
 \section{STATISTICS}
 
 Tables~\ref{tab1} and~\ref{tab2} show for each conjecture formulated in this document the number of lines of code in its proof and the number of primitive inferences that proof executes.
