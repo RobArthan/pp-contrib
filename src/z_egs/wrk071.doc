@@ -21,7 +21,7 @@
 This note presents a statement and proof of the mutilated chessboard theorem in Z.
 The formulation is along the lines of the one proposed by McCarthy for a `heavy duty set theory'' theorem prover.
 The theorem and its proof are presented as a Z specification and a series of Z conjectures all of which have been mechanically verified using the {\Product} system.
-For the entertainment of the theorem-proving community, we conclude by proposing a slightly harder challenge problem.
+For the entertainment of the theorem-proving community, we conclude by proposing a rather harder challenge problem.
 \end{abstract}
 
 \section{INTRODUCTION}
@@ -36,7 +36,7 @@ A discussion of why this theorem is a challenge for theorem-proving is outside t
 However, as McCarthy \cite{McCarthy95} points out, the counting argument given above should be ``admitted in any heavy duty set theory'', i.e., any general purpose theorem-proving system allowing reasoning about sets should be able to handle the proof.
 The theorem has indeed been proved in a number of systems including NQTHM \cite{Subramanian94}, Mizar \cite{Bancerek95,Rudnicki95}, Isabelle \cite{Paulson01}.
 
-The Z language \cite{ISO13568.2002,Spivey92} provides a convenient notation for set theory.
+The Z language \cite{ISO02,Spivey92} provides a convenient notation for set theory.
 The {\Product} system supports specification and proof in Z.
 This note presents a formalisation of the mutilated chess board theorem theorem in Z, prepared and checked using {\Product}.
 The treatment is in the spirit of \cite{McCarthy95}, which turns out to admit a very concise rendition in Z.
@@ -180,11 +180,11 @@ Unlike McCarthy, we do not constrain our dominoes to lie on the chessboard, this
 (Yes, it is obvious that a tiling that contains dominoes that are not on the board doesn't tile the board, but the whole thing is ``obvious'' so we may as well formalise it as generally as we conveniently can.)
 
 A tiling is a set of dominoes positioned so that no two dominoes overlap.
-Our set {\em Tiling} is the set of all such tilings.
-Paulson \cite{Paulson01} defines this set inductively, an approach that I cannot endorse in this case.
-It is more general, technically easier and much closer to intuition to state the property with a quantifier.
-In natural language we say ``positioned so that no two dominoes overlap'' not ``that could be positioned one at a time with each domino positioned in turn so as not to overlap the dominoes that have been positioned before it''.
-I see no grounds for preferring the more complicated locution.
+Our set {\em Tiling} is the set of all such tilings, specified using the obvious and direct translation of that description into set theory.
+Paulson \cite{Paulson01} argues that it is good to specify this set using induction.
+Certainly an inductive definition will be intuitive to someone whose mode of thinking about such things is to concentrate on the processes whereby they are constructed.
+The resulting definition in Z would describe the set {\em Tiling} as the smallest set of domino configurations containing the empty configuration and closed under the operation that adds a non-overlapping domino to a configuration.
+This is less general (since it does not allow for infinite tilings) and gives a bias towards an inductive proof, even though there is no induction in the informal proof.
 
 As reflected in the definition of the set {\em Board}, the complete board is to be represented by the set of squares with co-ordinates in the range 0 to 7, which we can write as the cartesian product of the integer interval
 =INLINEFT
@@ -319,9 +319,9 @@ See {\tt http://www.lemma-one.com/ProofPower/index/} for more information on {\s
 The source text also includes a proof script giving the commands to prove all the conjectures mechanically.
 The proof script has not been included in the printed form of the document for brevity (it comprises some 11 pages of ML code).
 
-Case studies like this are useful for pointing up areas in the mathematical library that need more supporting theory.  As Paulson~\cite{Paulson01} points out, finite cardinalities are tricky to reason about. Fortunately, all the groundwork for this had already been done in {\Product} and the present argument only required a few extras. The supporting theory developed is discussed in more detail in appendix~\ref{supporting} below. 
+Case studies like this are useful for pointing up areas in the mathematical library that need more supporting theory.  As Paulson~\cite{Paulson01} points out, finite cardinalities are tricky to reason about. Fortunately, all the groundwork for this had already been done in {\Product} and the present argument only required a few extras. The supporting theory that had to be developed comprised a lemma about absolute values, 4 lemmas about remainders {\em modulo 2} and 6 lemmas about finite cardinalities, see appendix~\ref{supporting} for more details.
 
-The proof of the mutilated chessboard theorem as given in section~\ref{proof} and the proofs of the supporting theory discussed in appendix~\ref{supporting} comprise about 270 and 120 lines of proof commands respectively. The proof script also includes a few dozen lines of ``boiler-plate'', e.g., code to collect statistics on the numbers of inference steps.
+The proof of the mutilated chessboard theorem as given in section~\ref{proof} and the proofs of the supporting theory discussed in appendix~\ref{supporting} comprise about 245 and 120 lines of proof commands respectively. The proof script also includes a few dozen lines of ``boiler-plate'', e.g., code to collect statistics on the numbers of inference steps.
 The proofs themselves are quite routine.
 
 The specification was originally formulated to correspond very closely with the treatment given in~\cite{McCarthy95} and inductive methods were used for the proofs as in~\cite{Paulson01}.
@@ -340,7 +340,7 @@ The proof was then reworked to use the argument given in section~\ref{proof} abo
 This amounted to proving what we have called {\em tiling_colour_thm} and using it to replace the relatively long inductive proof of
 {\em tiling_colour_size_thm} with a simple derivation based on elementary properties of finite cardinalities.
 This took about 2 hours and reduces the amount of supporting theory required to what is presented above.
-A final hour was then spent simplifying and abbreviating the specification and adopting the proofs to accommodate. 
+A final hour or so was then spent simplifying and abbreviating the specification and adopting the proofs to accommodate. 
 
 The de Bruijn factor\footnote{%
 This term, due to Freek Wiedijk, denotes the ratio between the size of a formal mathematical text and the size of its informal original.
@@ -355,16 +355,18 @@ For the treatment in this document, the de Bruijn factor turns out to be roughly
 \section{CONCLUDING REMARKS}
 
 Further work, of course, remains to be done! Putting aside certain methodologigal issues in the formalisation, a significant shortfall is that both the informal and the formal accounts deal only with dominoes that lock into place over two adjacent squares of the board.
-This does not consider the possibility of a tiling of the board in which dominoes can be placed at arbitrary positions and orientations.
-This more general problem can be reduced to the discrete case, e.g., using the observation that no bounded region in the plane can be tiled in more than one way using like squares\footnote{%
-Here, by ``tiling'', I mean simply a partition into squares whose interiors do not overlap. There is no presumption of any regularity in the tiling.
+I.e., they tacitly make a discrete abstraction of what is intuitively a continuous problem.
+One must surely consider the possibility of a tiling of the board in which dominoes can be placed at arbitrary positions and orientations.
+
+The more general problem can be reduced to the discrete one, e.g., using the observation that no bounded region in the plane can be tiled in more than one way using like squares\footnote{%
+Here, by ``tiling'', I mean simply a partition into squares whose interiors do not overlap. The tiling is not assumed to have any regularity and two squares may overlap along their boundaries in any way.
 }.
 To those whose systems support enough real analysis to consider it, I commend the geometric challenge of this reduction as food for thought.
 
 
 \raggedright
 \bibliographystyle{plain}
-\bibliography{bookspapers}
+\bibliography{fmu}
 
 \appendix
 \section{SUPPORTING THEORY}\label{supporting}
