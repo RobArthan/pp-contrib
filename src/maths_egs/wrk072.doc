@@ -1,0 +1,224 @@
+pp_make_database -p maths_egs complexes
+pp -n -f complexes -d maths_egs 
+xpp -file complexes.doc -com pp -d complexes &
+doctex complexes complexes1.th complexes2.th ; texdvi complexes
+=TEX
+\documentclass[12pt,a4paper]{article}
+\usepackage{latexsym}
+\usepackage{ProofPower}
+\usepackage{A4}
+\def\Hide#1{\relax}
+\def\N{\mathbb{N}}
+\def\D{\mathbb{D}}
+\def\B{\mathbb{B}}
+\def\C{\mathbb{C}}
+\def\R{\mathbb{R}}
+\def\Z{\mathbb{Z}}
+\def\Q{\mathbb{Q}}
+\title{$\Z[\sqrt2]$}
+\author{Rob Arthan}
+\makeindex
+\begin{document}
+\vfill
+\maketitle
+\begin{abstract}
+
+Complex numbers in {\ProductHOL}
+
+\end{abstract}
+\vfill
+\newpage
+\tableofcontents
+\newpage
+\section{INTRODUCTION}
+
+\section{THE THEORY Ö}
+
+The following commands set up a theory to hold the definitions, theorems, etc.,
+and set up the proof context to be convenient for working with the basic HOL
+theories and the theory of integers:
+=SML
+force_delete_theory"Ö" handle Fail _ => ();
+open_theory"analysis";
+set_merge_pcs["basic_hol1", "'ú", "'¯"];
+new_theory"Ö";
+=TEX
+\subsection{Definitions}\label{Definitions}
+=SML
+declare_type_abbrev("Ö", [], ”¯ ¸ ¯®);
+=TEX
+\subsubsection{Additive Structure}
+
+=SML
+declare_infix(300, "+‰C");
+=TEX
+
+¹HOLCONST
+Ü $Û+‰Cİ : Ö ­ Ö ­ Ö
+÷üüüüüü
+Üµ z w : Ö· z +‰C w = (Fst z + Fst w, Snd z + Snd w)
+°
+
+=SML
+declare_alias("+", ¬$+‰C®);
+=TEX
+
+¹HOLCONST
+Ü Û~‰Cİ : Ö ­ Ö
+÷üüüüüü
+Üµ z : Ö· ~‰C z = (~(Fst z), ~(Snd z))
+°
+=SML
+declare_alias("~", ¬~‰C®);
+=TEX
+\subsubsection{Conjugation}
+=SML
+declare_postfix(320, "›_");
+=TEX
+¹HOLCONST
+Ü Û$›_İ : Ö ­ Ö
+÷üüüüüü
+Üµ z : Ö· z ›_ = (Fst z, ~(Snd z))
+°
+
+=TEX
+\subsubsection{Multiplicative Structure}
+=SML
+declare_infix(310, "*‰C");
+=TEX
+
+¹HOLCONST
+Ü $Û*‰Cİ : Ö ­ Ö ­ Ö
+÷üüüüüü
+Üµ z w : Ö·
+Ü	z *‰C w = (Fst z * Fst w - Snd z * Snd w, Fst z * Snd w + Snd z * Fst w)
+°
+
+=SML
+declare_alias("*", ¬$*‰C®);
+=TEX
+=SML
+declare_postfix(320, "›-›1›C");
+=TEX
+
+¹HOLCONST
+Ü $Û›-›1›Cİ : Ö ­ Ö
+÷üüüüüü
+Üµ z : Ö· z ›-›1›C = z ›_ * (Fst (z * z ›_) ›-›1, î¯ 0)
+°
+
+=SML
+declare_alias("›-›1", ¬$›-›1›C®);
+=TEX
+
+
+\subsubsection{Other Useful Constants}
+=SML
+declare_infix(300, "-‰C");
+=TEX
+
+¹HOLCONST
+Ü $Û-‰Cİ : Ö ­ Ö ­ Ö
+÷üüüüüü
+Üµ z w : Ö· z -‰C w = z + ~w
+°
+
+
+=SML
+declare_alias("-", ¬$-‰C®);
+=TEX
+
+¹HOLCONST
+Ü ÛîÖİ : î ­ Ö
+÷üüüüüü
+Üµm· îÖ m = (î¯ m, î¯ 0)
+°
+(Here
+=INLINEFT
+î¯
+=TEX
+\ is the function that injects the natural numbers into the reals.)
+=TEX
+=TEX
+=TEX
+=SML
+val ÛÖ_plus_defİ = get_spec ¬$+‰C®;
+val ÛÖ_minus_defİ = get_spec ¬~‰C®;
+val ÛÖ_subtract_defİ = get_spec ¬$-‰C®;
+val ÛÖ_times_defİ = get_spec ¬$*‰C®;
+val ÛÖ_recip_defİ = get_spec ¬$›-›1›C®;
+val ÛîÖ_defİ = get_spec ¬îÖ®;
+val ÛÖ_conj_defİ = get_spec ¬$›_®;
+val ÛÖ_defsİ = map get_spec(get_consts "-");
+=SML
+set_goal([], ¬µ x y:Ö· x + y = y + x®);
+a(rewrite_tac Ö_defs THEN PC_T1 "¯_lin_arith" prove_tac[]);
+val ÛÖ_plus_comm_thmİ = save_pop_thm "Ö_plus_comm_thm";
+=TEX
+=SML
+set_goal([], ¬µ x y z:Ö· (x + y) + z = x + y + z®);
+a(rewrite_tac Ö_defs THEN PC_T1 "¯_lin_arith" prove_tac[]);
+val ÛÖ_plus_assoc_thmİ = save_pop_thm "Ö_plus_assoc_thm";
+=SML
+set_goal([], ¬µ x:Ö· x + îÖ 0 = x®);
+a(rewrite_tac Ö_defs THEN PC_T1 "¯_lin_arith" prove_tac[]);
+val ÛÖ_plus_0_thmİ = save_pop_thm "Ö_plus_0_thm";
+=SML
+set_goal([], ¬µ x:Ö· x + ~x = îÖ 0®);
+a(rewrite_tac Ö_defs THEN PC_T1 "¯_lin_arith" prove_tac[]);
+val ÛÖ_plus_minus_thmİ = save_pop_thm "Ö_plus_minus_thm";
+=TEX
+=SML
+set_goal([], ¬µ x y:Ö· x * y = y * x®);
+a(rewrite_tac Ö_defs THEN PC_T1 "¯_lin_arith" prove_tac[]);
+val ÛÖ_times_comm_thmİ = save_pop_thm "Ö_times_comm_thm";
+=TEX
+=SML
+set_goal([], ¬µ x y z:Ö· (x * y) * z = x * y * z®);
+a(rewrite_tac Ö_defs THEN PC_T1 "¯_lin_arith" prove_tac[]);
+val ÛÖ_times_assoc_thmİ = save_pop_thm "Ö_times_assoc_thm";
+=SML
+set_goal([], ¬µ x:Ö· x * îÖ 1 = x®);
+a(rewrite_tac Ö_defs THEN PC_T1 "¯_lin_arith" prove_tac[]);
+val ÛÖ_times_1_thmİ = save_pop_thm "Ö_times_1_thm";
+=TEX
+=SML
+set_goal([], ¬µ x:Ö·
+	x * (x ›_) = (Fst x ^ 2 + Snd x ^ 2, î¯ 0)
+®);
+a(rewrite_tac (¯_î_exp_square_thm::Ö_defs) THEN PC_T1 "¯_lin_arith" prove_tac[]);
+val ÛÖ_times_conj_thmİ = save_pop_thm "Ö_times_conj_thm";
+=SML
+(*
+set_goal([], ¬µ x:Ö· ³x = îÖ 0 ´ x * x ›-›1 = îÖ 1®);
+a(rewrite_tac [Ö_recip_def, Ö_times_conj_thm]);
+a(rewrite_tac[conv_rule (ONCE_MAP_C eq_sym_conv) Ö_times_assoc_thm, Ö_times_conj_thm]);
+a(rewrite_tac Ö_defs);
+
+a(REPEAT strip_tac);
+
+val ÛÖ_times_recip_thmİ = save_pop_thm "Ö_times_recip_thm";
+*)
+=TEX
+\twocolumn[\section{INDEX}\label{INDEX}]
+
+{\printindex}
+\appendix
+\onecolumn
+{\HOLindexOff
+\let\Section\section
+\def\section#1{\Section{#1}}
+\include{complexes1.th}}
+{\HOLindexOff
+\let\Section\section
+\def\section#1{\Section{#1}}
+\include{complexes.th}}
+=TEX
+\Hide{
+=SML
+output_theory{out_file="complexes.th.doc", theory="Ö"};
+=TEX
+} %\Hide
+\end{document}
+
+
