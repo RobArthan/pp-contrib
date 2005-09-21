@@ -98,7 +98,7 @@ doctex wrk066 wrk066.th; texdvi -b wrk066; texdvi wrk066; texdvi wrk066
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2005/06/01 20:35:25 $%
+\date{\FormatDate{$Date: 2005/09/17 11:27:37 $%
 }}
 
 \begin{document}
@@ -118,7 +118,7 @@ logarithm and sine and cosine functions.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK066; issue $Revision: 1.80 $%
+Reference: LEMMA1/HOL/WRK066; issue $Revision: 1.81 $%
 
 
 \end{centering}
@@ -1424,19 +1424,18 @@ sin_cos_minus_thm
 
 \subsubsection{The Number $\pi$}\label{TheNumberPi}
 
-Finally, we define Archimedes' constant, the generator of the group of roots of the sine function:
+Finally, we define Archimedes' constant, the positive generator of the group of roots of the sine function:
 %%%%
 %%%%
 ¹HOLCONST
 Ü 	ÛArchimedesConstantÝ : ¯
 ÷üüüüüü
 Ü	î¯ 0 < ArchimedesConstant
-Ü ±	Sin(ArchimedesConstant) = î¯ 0
-Ü ±	(µx· Sin x = î¯ 0
-Ü 	´	(¶ m· x = î¯ m * ArchimedesConstant)
-Ü	²	(¶m· x = ~(î¯ m *ArchimedesConstant)))
+Ü ±	µx· Sin x = î¯ 0
+Ü 	¤	(¶ m· x = î¯ m * ArchimedesConstant)
+Ü	²	(¶m· x = ~(î¯ m *ArchimedesConstant))
 °
-Archimedes' constant is of course almost always known by another name:
+Archimedes' constant is, of course, almost always known by another name:
 =SML
 declare_alias("Ð", ¬ArchimedesConstant®);
 =TEX
@@ -1479,10 +1478,10 @@ We conclude the axiomatic development of the properties of sine and cosine by pr
 =GFT
 sin_0_Ð_³_eq_0_thm
 sin_0_Ð_0_less_thm
+sin_cos_Ð_thm
 sin_cos_Ð_over_2_thm
 sin_cos_plus_Ð_over_2_thm
 sin_cos_plus_Ð_thm
-sin_cos_Ð_thm
 sin_cos_plus_2_Ð_thm
 =TEX
 }{
@@ -9726,6 +9725,17 @@ set_goal([], ¬
 a(REPEAT strip_tac THEN asm_rewrite_tac[sin_def, sin_cos_plus_thm, sin_cos_minus_thm]);
 val Ûsin_0_group_thmÝ = save_pop_thm "sin_0_group_thm";
 =TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬µx m· Sin x = î¯ 0 ´ Sin (î¯ m * x) = î¯ 0®);
+a(REPEAT µ_tac THEN induction_tac¬m:î® THEN REPEAT strip_tac
+	THEN asm_rewrite_tac[sin_def,
+		sin_cos_plus_thm,
+		î¯_plus_homomorphism_thm,
+		¯_times_plus_distrib_thm]);
+val Ûsin_0_î¯_times_thmÝ = save_pop_thm "sin_0_î¯_times_thm";
+=TEX
 We now show that if the sine and cosine functions are equal at $x$ then $\Sin{2x} = 1$
 and $\Cos{2x} = 0$.
 %%%%
@@ -10095,18 +10105,24 @@ push_consistency_goal¬Ð®;
 a(strip_asm_tac pi_consistency_thm);
 a(¶_tac ¬pi® THEN asm_rewrite_tac[]);
 a(REPEAT_UNTIL is_² strip_tac);
+(* *** Goal "1" *** *)
 a(DROP_NTH_ASM_T 4 discard_tac);
 a(strip_asm_tac(list_µ_elim[¬î¯ 0®, ¬x®] ¯_less_cases_thm));
-(* *** Goal "1" *** *)
+(* *** Goal "1.1" *** *)
 a(all_asm_fc_tac[]);
 a(²_left_tac THEN ¶_tac¬m®  THEN asm_rewrite_tac[]);
-(* *** Goal "2" *** *)
+(* *** Goal "1.2" *** *)
 a(²_left_tac THEN ¶_tac¬0®  THEN asm_rewrite_tac[]);
-(* *** Goal "3" *** *)
+(* *** Goal "1.3" *** *)
 a(lemma_tac¬î¯ 0 < ~x ±  Sin (~x) = î¯ 0® THEN1
 	(asm_rewrite_tac[sin_cos_minus_thm] THEN PC_T1 "¯_lin_arith" asm_prove_tac[]));
 a(all_asm_fc_tac[]);
 a(²_right_tac THEN ¶_tac¬m®  THEN POP_ASM_T (rewrite_thm_tac o eq_sym_rule));
+(* *** Goal "2" *** *)
+a(all_var_elim_asm_tac1 THEN ALL_FC_T rewrite_tac[sin_0_î¯_times_thm]);
+(* *** Goal "3" *** *)
+a(all_var_elim_asm_tac1 THEN rewrite_tac[sin_cos_minus_thm]
+	THEN ALL_FC_T rewrite_tac[sin_0_î¯_times_thm]);
 val _ = save_consistency_thm ¬Ð® (pop_thm());
 val ÛÐ_defÝ = save_thm("Ð_def", get_spec¬Ð®);
 =TEX
@@ -10167,15 +10183,14 @@ val Ûî¯_0_less_³_î¯_times_Ð_thmÝ = save_pop_thm "î¯_0_less_³_î¯_times_Ð_thm";
 set_goal([], ¬µx·
 	î¯ 0 < x ± x < Ð ´ ³Sin x = î¯ 0	
 ®);
-a(contr_tac THEN fc_tac[Ð_def]);
+a(rewrite_tac[Ð_def] THEN contr_tac THEN all_var_elim_asm_tac1);
 (* *** Goal "1" *** *)
-a(strip_asm_tac(µ_elim¬m® î_cases_thm) THEN all_var_elim_asm_tac1);
-(* *** Goal "1.1" *** *)
+a(strip_asm_tac(µ_elim¬m® î_cases_thm) THEN all_var_elim_asm_tac1
+	THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(lemma_tac¬î¯ 0 < Ð® THEN1 rewrite_tac[Ð_def]);
+a(lemma_tac¬Ð ¼ î¯(i + 1) * Ð®
+	THEN1 ALL_FC_T rewrite_tac [î¯_plus_1_times_bound_thm]);
 a(PC_T1 "¯_lin_arith" asm_prove_tac[]);
-(* *** Goal "1.2" *** *)
-a(lemma_tac¬Ð ¼ î¯(i + 1) * Ð® THEN1
-	(bc_thm_tac (±_left_elim î¯_plus_1_times_bound_thm) THEN rewrite_tac[Ð_def]));
-a(all_fc_tac[pc_rule1"¯_lin_arith" prove_rule[]¬µa b:¯· a < b ± b ¼ a ´ F®]);
 (* *** Goal "2" *** *)
 a(all_fc_tac[î¯_0_less_³_î¯_times_Ð_thm] THEN all_asm_fc_tac[]);
 val Ûsin_0_Ð_³_eq_0_thmÝ = save_pop_thm "sin_0_Ð_³_eq_0_thm";
@@ -10184,7 +10199,7 @@ val Ûsin_0_Ð_³_eq_0_thmÝ = save_pop_thm "sin_0_Ð_³_eq_0_thm";
 %%%%
 =SML
 set_goal([], ¬µx·
-	x  OpenInterval (î¯ 0)  Ð ´ î¯ 0 < Sin x
+	x  OpenInterval (î¯ 0) Ð ´ î¯ 0 < Sin x
 ®);
 a(rewrite_tac[open_interval_def] THEN contr_tac THEN all_fc_tac[sin_0_Ð_³_eq_0_thm]);
 a(lemma_tac¬î¯ 1 < x®  THEN1 contr_tac);
@@ -10208,10 +10223,20 @@ val Ûsin_0_Ð_0_less_thmÝ = save_pop_thm "sin_0_Ð_0_less_thm";
 %%%%
 =SML
 set_goal([], ¬
+	Sin Ð = î¯ 0	
+®);
+a(rewrite_tac[Ð_def]
+		THEN ²_left_tac THEN ¶_tac¬1® THEN rewrite_tac[]);
+val Ûsin_Ð_lemmaÝ = pop_thm();
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬
 	Sin ((1/2) * Ð) = î¯ 1 ± Cos ((1/2) * Ð) = î¯ 0
 ®);
 a(ante_tac(
-	rewrite_rule[Ð_def, ¯_times_eq_0_thm]
+	rewrite_rule[sin_Ð_lemma, ¯_times_eq_0_thm]
 		(conv_rule(ONCE_MAP_C ¯_anf_conv THEN_C eq_sym_conv)
 			(±_left_elim
 				(list_µ_elim[¬(1/2) * Ð®, ¬(1/2) * Ð®] sin_cos_plus_thm)))));
