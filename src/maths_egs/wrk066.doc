@@ -98,7 +98,7 @@ doctex wrk066 wrk066.th; texdvi -b wrk066; texdvi wrk066; texdvi wrk066
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2005/09/21 16:11:48 $%
+\date{\FormatDate{$Date: 2005/09/21 16:28:51 $%
 }}
 
 \begin{document}
@@ -118,7 +118,7 @@ logarithm and sine and cosine functions.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK066; issue $Revision: 1.82 $%
+Reference: LEMMA1/HOL/WRK066; issue $Revision: 1.83 $%
 
 
 \end{centering}
@@ -872,6 +872,17 @@ the fact that continuous functions are bounded and attain their maximum values i
 the intermediate value theorem,
 the mean value theorem etc.
 
+The mean value theorem appears here in three guises.
+{\em cauchy\_mean\_value\_thm} is the general statement about two functions $f$ and $g$ continuous in a closed interval $[a, b]$ and differentiable on the open interval $(a, b)$ that Cauchy proved as his mean value theorem.
+This is the result one needs to prove l'H\^{o}pital's rule.
+{\em mean\_value\_thm} is the usual statement about a single
+function $f$ satisfying the same conditions as in {\em cauchy\_mean\_value\_thm}.
+Finally {\em mean\_value\_thm1} is the weaker variant
+where $f$ is required to be differentiable on $[a, b]$ which is often useful in practice (because that is the hypothesis one has to hand).
+In each of these mean value theorems, our statement of the theorem is what is obtained from the traditional statement by cross-multiplying to eliminate division in favout of multiplication.
+This is convenient in practice and brings out a symmetry in {\em cauchy\_mean\_value\_thm} (which is actually slightly more general as a result).
+
+
 By contrast with Harrison's approach, later on, when we need explicit numerical estimates, for example, in demonstrating the existence of $\pi$, we tend to use theorems like the mean value theorem, rather than obtaining numerical estimates from power series.
 {\em deriv\_linear\_estimate\_thm} is an example of this knd of estimation.
 There would be little difficulty, however, in extending the results on the transcendental functions to give estimates for the error term in a polynomial approximation to a value of the power series.
@@ -885,14 +896,15 @@ closed_interval_compact_thm
 finite_chain_thm
 cts_compact_maximum_thm
 cts_maximum_thm
+cts_abs_bounded_thm
 =TEX
 }{%
 =GFT
-cts_abs_bounded_thm
 intermediate_value_thm
 local_min_thm
 local_max_thm
 rolle_thm
+cauchy_mean_value_thm
 mean_value_thm
 =TEX
 }{%
@@ -5281,72 +5293,81 @@ a(bc_thm_tac minus_comp_deriv_thm);
 a(asm_rewrite_tac[]);
 val Ûrolle_thmÝ = save_pop_thm"rolle_thm";
 =TEX
-Now the algebraic part of our proof of the mean value theorem
 %%%%
 %%%%
 =SML
-set_goal([], ¬µA B a b·
-	a <  b
-´	A + ~( (B + ~A)/(b + ~a) )*a = B + ~( (B + ~A)/(b + ~a) )*b®);
-a(REPEAT  strip_tac);
-a(lemma_tac ¬³b + ~a = î¯ 0® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
-a(ALL_FC_T rewrite_tac[¯_over_times_recip_thm]);
-a(LEMMA_T ¬µs t·s = t ¤ s*(b + ~a) = t*(b + ~a)® once_rewrite_thm_tac
-	THEN1 ALL_FC_T1 fc_¤_canon rewrite_tac[¯_times_cancel_thm]);
-a(once_rewrite_tac[pc_rule1"¯_lin_arith" prove_rule[]
-	¬µs t u v w z:¯·(s + ~(u*v)*w)*z = s*z + ~(u*w*v*z)®]);
-a(ALL_FC_T rewrite_tac[¯_recip_clauses] THEN PC_T1"¯_lin_arith" prove_tac[]);
-val Ûmvt_lemmaÝ = pop_thm();
+set_goal([], ¬µf df g dg a b·
+	a < b
+±	(µx·a ¼ x ± x ¼ b ´ f Cts x)
+±	(µx·a < x ± x < b ´ (f Deriv df x) x)
+±	(µx·a ¼ x ± x ¼ b ´ g Cts x)
+±	(µx·a < x ± x < b ´ (g Deriv dg x) x)
+´	(¶x· a < x ± x < b
+	±	(dg x)*(f b - f a) = (df x)*(g b - g a))®);
+a(REPEAT strip_tac);
+a(lemma_tac¬¶H·µx· H x = (g b - g a)*(f x - f a) - (f b - f a)*(g x - g a)®
+	THEN1 prove_¶_tac);
+a(lemma_tac¬¶dH·µx· dH x = (g b - g a)*(df x) - (f b - f a)*(dg x)®
+	THEN1 prove_¶_tac);
+a(lemma_tac¬µx·a ¼ x ± x ¼ b ´ H Cts x®);
+(* *** Goal "1" *** *)
+a(REPEAT strip_tac
+	THEN pure_once_rewrite_tac[prove_rule[]¬H = (Ìx·H x)®]);
+a(DROP_NTH_ASM_T 4 once_rewrite_thm_tac THEN rewrite_tac[]);
+a(REPEAT (simple_cts_tac THEN REPEAT strip_tac)
+	THEN all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(lemma_tac¬µx·a < x ± x < b ´ (H Deriv dH x) x®);
+a(REPEAT strip_tac
+	THEN pure_once_rewrite_tac[prove_rule[]
+		¬H = (Ìx·H x) ± dH = (Ìx·dH x)®]);
+a(LIST_DROP_NTH_ASM_T [4, 5] pure_once_rewrite_tac THEN rewrite_tac[]);
+a(LIST_DROP_NTH_ASM_T [4, 6] all_fc_tac);
+a(RAT_DERIV_T (fn th => all_fc_tac[th]));
+a(POP_ASM_T discard_tac THEN TOP_ASM_T ante_tac
+	THEN conv_tac(ONCE_MAP_C ¯_anf_conv));
+a(STRIP_T rewrite_thm_tac);
+(* *** Goal "2.2" *** *)
+a(lemma_tac¬¶x·a < x ± x < b ± (H Deriv î¯ 0) x®);
+(* *** Goal "2.2.1" *** *)
+a(bc_thm_tac rolle_thm);
+a(LIST_DROP_NTH_ASM_T [2, 9] rewrite_tac);
+a(REPEAT strip_tac THEN1
+	(contr_tac THEN all_asm_fc_tac[] THEN all_asm_fc_tac[]));
+a(asm_rewrite_tac[] THEN PC_T1 "¯_lin_arith" prove_tac[]);
+(* *** Goal "2.2.2" *** *)
+a(¶_tac¬x® THEN REPEAT strip_tac);
+a(LIST_DROP_NTH_ASM_T [4] all_fc_tac);
+a(LEMMA_T ¬dH x = î¯ 0® ante_tac THEN1 all_fc_tac[deriv_unique_thm]);
+a(LIST_DROP_NTH_ASM_T [6] rewrite_tac);
+a(PC_T1 "¯_lin_arith" prove_tac[]);
+val Ûcauchy_mean_value_thmÝ = save_pop_thm"cauchy_mean_value_thm";
 =TEX
 %%%%
 %%%%
 =SML
 set_goal([], ¬µf a b·
-	a <  b
-±	(µx·a ¼  x ± x ¼ b ´ f Cts x)
-±	(µx·a <  x ± x < b ´ ¶c· (f Deriv c) x)
-´	(¶x d·a <  x ± x < b ± (f Deriv d) x ± f(b) - f(a) = (b - a)*d)®);
-a(rewrite_tac[] THEN REPEAT  strip_tac);
-a(lemma_tac¬³b + ~a = î¯ 0® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
-a(LEMMA_T¬¶g·g = Ìz· f z + ~ ( (f b + ~ (f a))/(b + ~a) )*z® (¶_THEN asm_tac)
-	THEN1 prove_¶_tac);
-a(lemma_tac¬
-	(µx·a ¼  x ± x ¼ b ´ g Cts x)
-±	(µx·a <  x ± x < b ´ ¶c· (g Deriv c) x)
-±	g a = g b®
-	THEN REPEAT strip_tac);
-(* *** Goal "1" *** *)
-a(REPEAT strip_tac THEN asm_rewrite_tac[
-	pc_rule1"¯_lin_arith" prove_rule[] ¬µs t:¯· (~s)*t = ~(s*t)®] THEN simple_cts_tac);
-a(ALL_FC_T rewrite_tac[¯_over_times_recip_thm]);
-a(rewrite_tac[È_axiom] THEN ALL_ASM_FC_T rewrite_tac[]);
-a(REPEAT (simple_cts_tac THEN REPEAT strip_tac));
-(* *** Goal "2" *** *)
-a(LEMMA_T¬µ t x· a < x ± x < b ´ (¶ c· ((Ìz·f z + ~t*z ) Deriv c) x)®
-	(fn th => asm_rewrite_tac[] THEN bc_thm_tac th THEN REPEAT strip_tac));
+	a < b
+±	(µx·a ¼ x ± x ¼ b ´ f Cts x)
+±	(µx·a < x ± x < b ´ ¶c· (f Deriv c) x)
+´	(¶x d·a < x ± x < b ± (f Deriv d) x ± f(b) - f(a) = (b - a)*d)®);
 a(REPEAT strip_tac);
-a(spec_nth_asm_tac 7 ¬x'®);
-a(¶_tac¬c + ~t®);
-a(RAT_DERIV_T (bc_thm_tac o conv_rule (ONCE_MAP_C (¯_anf_conv ORELSE_C Â_conv)))
+a(lemma_tac¬¶df·µx·a < x ± x < b ´ (f Deriv df x) x®);
+(* *** Goal "1" *** *)
+a(prove_¶_tac THEN REPEAT strip_tac);
+a(cases_tac¬a < x' ± x' < b® THEN asm_rewrite_tac[]);
+a(all_asm_fc_tac[]);
+a(¶_tac¬c® THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(DROP_NTH_ASM_T 2 discard_tac);
+a(ante_tac (
+	list_µ_elim
+	[¬Ìx:¯·x®, ¬Ìx:¯·î¯ 1®, ¬f®, ¬df®, ¬a®, ¬b®]
+	cauchy_mean_value_thm));
+a(asm_rewrite_tac[id_cts_thm, id_deriv_thm]
 	THEN REPEAT strip_tac);
-(* *** Goal "3" *** *)
-a(ALL_FC_T asm_rewrite_tac[mvt_lemma]);
-(* *** Goal "4" *** *)
-a(all_fc_tac[rolle_thm]);
-a(¶_tac¬x® THEN ¶_tac¬î¯ 0 + (f b + ~(f a))/(b + ~a)® THEN REPEAT strip_tac);
-(* *** Goal "4.1" *** *)
-a(LEMMA_T¬f = Ìz·g z + ((f b + ~ (f a)) / (b + ~ a)) * z®
-	(conv_tac o RATOR_C o LEFT_C o eq_match_conv));
-(* *** Goal "4.1.1" *** *)
-a(ALL_FC_T asm_rewrite_tac[¯_over_times_recip_thm]);
-a(PC_T1 "¯_lin_arith" prove_tac[]);
-(* *** Goal "4.1.2" *** *)
-a(bc_thm_tac plus_deriv_thm THEN REPEAT strip_tac);
-a(rewrite_tac[times_const_deriv_thm]);
-(* *** Goal "4.2" *** *)
-a(ALL_FC_T asm_rewrite_tac[¯_over_times_recip_thm]);
-a(rewrite_tac[µ_elim¬f b + ~(f a)® ¯_times_order_thm]);
-a(ALL_FC_T rewrite_tac[¯_recip_clauses]);
+a(¶_tac¬x® THEN ¶_tac¬df x® THEN ALL_ASM_FC_T asm_rewrite_tac[]);
+a(POP_ASM_T ante_tac THEN PC_T1 "¯_lin_arith" prove_tac[]);
 val Ûmean_value_thmÝ = save_pop_thm"mean_value_thm";
 =TEX
 In practice the subtleties about not requiring differentiability at the end points of
@@ -5414,7 +5435,7 @@ derivative vanishes everywhere:
 %%%%
 %%%%
 =SML
-set_goal([], ¬µfx y·
+set_goal([], ¬µf x y·
 	(µx·(f Deriv î¯ 0) x)
 ´	(f x = f y)®);
 a(REPEAT strip_tac);
@@ -6530,7 +6551,7 @@ val Ûpoly_lim_fun_thmÝ = save_pop_thm "poly_lim_fun_thm";
 %%%%
 %%%%
 =SML
-set_goal([], ¬µu d c t·
+set_goal([], ¬µu d c t x·
 	î¯ 0 < d
 ±	(µy·Abs(y - x) <  d ± ³y = x´ u y ¼  c) ± (u --> t) x
 ´	t ¼ c®);
@@ -7462,7 +7483,7 @@ when the argument is 0:
 %%%%
 =SML
 set_goal([], ¬
-	PowerSeries s 0 (î¯ 0) = î¯ 0
+	(µs· PowerSeries s 0 (î¯ 0) = î¯ 0)
 ±	µs m· PowerSeries s (m+1) (î¯ 0) = s 0®);
 a(rewrite_tac[power_series_series_thm] THEN REPEAT strip_tac
 	THEN1 rewrite_tac[series_def, to_def]);
@@ -7943,7 +7964,7 @@ the ratios are eventually all bounded below 1. We formulate this as follows.
 %%%%
 =SML
 set_goal([], ¬
-	µs b·
+	µs b m·
 	(µm·³s m = î¯ 0)
 ±	î¯ 0 < b ± b < î¯ 1
 ±	(µn·m ¼ n ´ Abs(s (n+1) / s n) < b)
@@ -8187,8 +8208,8 @@ The identity for scaling the argument of a power series by a constant factor:
 %%%%
 %%%%
 =SML
-set_goal([], ¬µc s y·
-	PowerSeries s m (c * y) =PowerSeries (Ì m· s m * c ^ m)  m y
+set_goal([], ¬µc s m y·
+	PowerSeries s m (c * y) = PowerSeries (Ì m· s m * c ^ m)  m y
 ®);
 a(rewrite_tac[power_series_series_thm, ¯_î_exp_times_thm, ¯_times_assoc_thm]);
 val Ûpower_series_scale_arg_thmÝ = save_pop_thm "power_series_scale_arg_thm";
@@ -8197,7 +8218,7 @@ The identity for scaling the coefficients of a power series by a constant factor
 %%%%
 %%%%
 =SML
-set_goal([], ¬µc s y·
+set_goal([], ¬µc s m y·
 	PowerSeries (Ìm·c * s m) m y =c * PowerSeries s  m y
 ®);
 a(rewrite_tac[power_series_series_thm, ¯_î_exp_times_thm, ¯_times_assoc_thm]
@@ -10486,6 +10507,25 @@ val Ûsin_cos_onto_unit_circle_thm1Ý = save_pop_thm "sin_cos_onto_unit_circle_thm
 %%%%
 =SML
 output_theory{out_file="wrk066.th.doc", theory="-"};
+fun check_frees () = (
+	let	val thms = get_thms "-";
+		val bad_thms = thms drop (is_nil o thm_frees o snd);
+		fun aux (ns, _) = (
+			output(ExtendedIO.std_err,
+				translate_for_output (hd ns));
+			output(ExtendedIO.std_err, "\n")
+		);
+	in	case bad_thms of
+			[] => ()
+		|	_ => (
+			output(ExtendedIO.std_err,
+		"**** The following theorems have one or more free variables:\n");
+			app aux bad_thms
+		)
+	end
+);
+check_frees();
+
 =TEX
 \end{document}
 =IGN
