@@ -98,7 +98,7 @@ doctex wrk066 wrk066.th; texdvi -b wrk066; texdvi wrk066; texdvi wrk066
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2005/09/24 13:06:20 $%
+\date{\FormatDate{$Date: 2005/09/28 15:38:29 $%
 }}
 
 \begin{document}
@@ -118,7 +118,7 @@ logarithm and sine and cosine functions.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK066; issue $Revision: 1.85 $%
+Reference: LEMMA1/HOL/WRK066; issue $Revision: 1.86 $%
 
 
 \end{centering}
@@ -1513,14 +1513,53 @@ sin_cos_onto_unit_circle_thm1
 =TEX
 }
 
+\subsubsection{Exponentiation and Napier's Number}
+We define the binary exponentiation operator,
+=INLINEFT
+x ^‰R y
+=TEX
+\ using $\ExpName$ and $\LogName$.
+This is good for arbitrary $y$ and positive $x$
+(and some of the laws work ``by accident'' for arbitrary $x$).
+
+=SML
+declare_infix(320, "^‰R");
+¹HOLCONST
+Ü $Û^‰RÝ : ¯ ­ ¯ ­ ¯
+÷üüüüüü
+Ü µx y· x ^‰R y = Exp(y * Log x)
+°
+Following the pattern for the other standard operations we introduce an overloaded alias for exponentiation.
+=SML
+declare_alias("^", ¬$^‰R®);
+=TEX
+We prove a selection of elementary facts about exponentiation.
+
+\ThmsII{%
+=GFT
+¯_¯_exp_plus_thm
+¯_¯_exp_times_thm
+¯_¯_exp_minus_thm
+¯_î_exp_¯_¯_exp_thm
+¯_¯_exp_¯_î_exp_thm
+=TEX
+}{%
+=GFT
+¯_¯_exp_deriv_thm
+¯_¯_exp_deriv_thm1
+¯_¯_exp_cts_thm
+¯_¯_exp_cts_thm1
+exp_¯_¯_exp_thm
+=TEX
+}
 
 =TEX
 \subsection{L'H\^{o}pital's Rule}\label{LHopital}
 In this section, we will state and prove (several formulations of) L'H\^{o}pital's rule, which 
-states that that under appropriate conditions, if the function $f'(y)/g'(y)$ has a limit
+states that under appropriate conditions, if the ratio of two derivatives $f'(y)/g'(y)$ has a limit
 then so does $f(y)/g(y)$ and the two limits are equal.
 This result is most naturally stated and proved using one-sided limits rather than the two-sided limits we have been using to date.
-The two-sided versions are trivial consequences of the one-sided ones.
+A two-sided reformulation is a trivial consequence of the one-sided one.
 Moreover, one wants to apply the theorems to limits at infinity (e.g., to evaluate the definite integrals that define the Laplace transform).
 In preparation for this, the next few subsections introduce the required new notions.
 
@@ -1664,9 +1703,12 @@ A variant of Rolle's theorem is used to show that, under these conditions, $g(y)
 A couple of lemmas about the continuity and derivatives of the function $f(-x)$ are also handy in deducing the second formulation of the rule from the first.
 
 We then put the rule to work on limits of:
-$x/\Sin{x}$ as $x$ tends to 0;
-of $x/\Exp{x}$, $x^{m+1}/\Exp{x}$ and $\Log{x}/x$ as $x$ tends to $+\infty$; 
-and of $\Log{x}/(x-1)$ as $x$ tends to $1$.
+$x/\Sin{x}$ as $x$ tends to 0 (0);
+$x/\Exp{x}$, $x^{m+1}/\Exp{x}$ and $\Log{x}/x$ as $x$ tends to $+\infty$ (all 0); 
+$\Log{x}/(x-1)$ as $x$ tends to $1$ (1),
+$\Log{x}/(x-1)$ and $(\Log{1+x}/x$ as $x$ tends to $0$ (1),
+and finally, the famous, $(1+x)^{1/x}$ as $x$ tends to 
+$0$ ($e = \Exp{1}$).
 
 \ThmsII{%
 =GFT
@@ -1676,6 +1718,7 @@ cts_comp_minus_thm
 deriv_comp_minus_thm
 l'hopital_lim_fun_thm
 l'hopital_lim_infinity_thm
+lim_fun_id_over_sin_thm
 =TEX
 }{
 =GFT
@@ -1684,6 +1727,8 @@ lim_infinity_id_over_exp_thm
 lim_infinity_power_over_exp_thm
 lim_infinity_log_over_id_thm
 lim_fun_log_over_id_minus_1_thm
+lim_fun_log_1_plus_over_id_thm
+lim_fun_e_thm
 =TEX
 }
 
@@ -1764,6 +1809,7 @@ val Ûopen_¯_defÝ = get_spec¬Open‰R®;
 val Ûclosed_¯_defÝ = get_spec¬Closed‰R®;
 val Ûcompact_¯_defÝ = get_spec¬Compact‰R®;
 val Ûfactorial_defÝ = get_spec¬$!®;
+val Û¯_¯_exp_defÝ = get_spec ¬$^‰R®;
 val Ûlim_infinity_defÝ = get_spec ¬$-+>®;
 val Ûlim_right_defÝ = get_spec ¬$+->®;
 val Ûdiv_infinity_defÝ = get_spec ¬$-+>+®;
@@ -2442,7 +2488,7 @@ Absolute values commute with powers:
 %%%%
 %%%%
 =SML
-set_goal([], ¬µx:¯; m· Abs(x ^ m) = Abs x ^ m®);
+set_goal([], ¬µx:¯; m:î· Abs(x ^ m) = Abs x ^ m®);
 a(REPEAT strip_tac THEN induction_tac¬m:î®
 	THEN asm_rewrite_tac[¯_î_exp_def, ¯_abs_times_thm]);
 val Û¯_abs_¯_î_exp_thmÝ = save_pop_thm "¯_abs_¯_î_exp_thm";
@@ -2614,7 +2660,7 @@ val Û¯_î_exp_square_thmÝ = save_pop_thm "¯_î_exp_square_thm";
 %%%%
 %%%%
 =SML
-set_goal([], ¬µm x · î¯ 0 < x ´ î¯ 0 < x^m®);
+set_goal([], ¬µm:î; x · î¯ 0 < x ´ î¯ 0 < x^m®);
 a(REPEAT strip_tac THEN induction_tac¬m:î® THEN asm_rewrite_tac[¯_î_exp_def]);
 a(all_fc_tac[¯_0_less_0_less_times_thm]);
 val Û¯_î_exp_0_less_thmÝ = save_pop_thm "¯_î_exp_0_less_thm";
@@ -2623,7 +2669,7 @@ val Û¯_î_exp_0_less_thmÝ = save_pop_thm "¯_î_exp_0_less_thm";
 %%%%
 %%%%
 =SML
-set_goal([], ¬µx m· î¯ 1 < x ´ x^m < x^(m+1) ®);
+set_goal([], ¬µx; m:î· î¯ 1 < x ´ x^m < x^(m+1) ®);
 a(REPEAT strip_tac THEN induction_tac¬m:î® THEN1 asm_rewrite_tac[¯_î_exp_def]);
 a(once_rewrite_tac[¯_î_exp_def]);
 a(bc_thm_tac ¯_times_mono_thm THEN REPEAT strip_tac);
@@ -2634,7 +2680,7 @@ val Û¯_î_exp_1_less_mono_thmÝ = save_pop_thm "¯_î_exp_1_less_mono_thm";
 %%%%
 %%%%
 =SML
-set_goal([], ¬µx m n·î¯ 1 < x ± m < n ´ x^m < x^n ®);
+set_goal([], ¬µx; m n:î·î¯ 1 < x ± m < n ´ x^m < x^n ®);
 a(REPEAT µ_tac THEN induction_tac¬n:î® THEN_TRY asm_rewrite_tac[]
 	THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
@@ -2661,7 +2707,7 @@ val Û¯_¼_times_mono_thmÝ = save_pop_thm "¯_¼_times_mono_thm";
 %%%%
 %%%%
 =SML
-set_goal([], ¬µm x · ³x = î¯ 0 ´ ³ x^m = î¯ 0®);
+set_goal([], ¬µm:î; x · ³x = î¯ 0 ´ ³ x^m = î¯ 0®);
 a(REPEAT strip_tac THEN induction_tac¬m:î® THEN asm_rewrite_tac[¯_î_exp_def]);
 a(rewrite_tac[¯_times_eq_0_thm] THEN REPEAT strip_tac);
 val Û¯_î_exp_³_eq_0_thmÝ = save_pop_thm "¯_î_exp_³_eq_0_thm";
@@ -2670,7 +2716,7 @@ val Û¯_î_exp_³_eq_0_thmÝ = save_pop_thm "¯_î_exp_³_eq_0_thm";
 %%%%
 %%%%
 =SML
-set_goal([], ¬µx:¯; m n· x^(m+n) = x^m * x^n®);
+set_goal([], ¬µx:¯; m n:î· x^(m+n) = x^m * x^n®);
 a(REPEAT strip_tac THEN induction_tac¬n:î® THEN
 	asm_rewrite_tac[¯_î_exp_def, plus_assoc_thm1]);
 a(PC_T1 "¯_lin_arith" prove_tac[]);
@@ -2680,7 +2726,7 @@ val Û¯_î_exp_plus_thmÝ = save_pop_thm "¯_î_exp_plus_thm";
 %%%%
 %%%%
 =SML
-set_goal([], ¬µx y:¯; m· (x*y)^m = x^m * y^m®);
+set_goal([], ¬µx y:¯; m:î· (x*y)^m = x^m * y^m®);
 a(REPEAT strip_tac THEN induction_tac¬m:î® THEN rewrite_tac[¯_î_exp_def]);
 a(asm_rewrite_tac[] THEN PC_T1 "¯_lin_arith" prove_tac[]);
 val Û¯_î_exp_times_thmÝ = save_pop_thm "¯_î_exp_times_thm";
@@ -2689,7 +2735,7 @@ val Û¯_î_exp_times_thmÝ = save_pop_thm "¯_î_exp_times_thm";
 %%%%
 %%%%
 =SML
-set_goal([], ¬µm x · ³x = î¯ 0 ´ (x^m)›-›1 = (x ›-›1)^m®);
+set_goal([], ¬µm:î; x · ³x = î¯ 0 ´ (x^m)›-›1 = (x ›-›1)^m®);
 a(REPEAT strip_tac THEN induction_tac¬m:î® THEN asm_rewrite_tac[¯_î_exp_def]);
 a(lemma_tac ¬³ x^m = î¯ 0® THEN1 (bc_thm_tac ¯_î_exp_³_eq_0_thm THEN REPEAT strip_tac));
 a(ALL_FC_T asm_rewrite_tac[¯_recip_clauses]);
@@ -2699,7 +2745,7 @@ val Û¯_î_exp_recip_thmÝ = save_pop_thm "¯_î_exp_recip_thm";
 %%%%
 %%%%
 =SML
-set_goal([], ¬µm x · ³x = î¯ 0 ´  (x ›-›1)^m = (x^m)›-›1®);
+set_goal([], ¬µm:î; x · ³x = î¯ 0 ´  (x ›-›1)^m = (x^m)›-›1®);
 a(REPEAT strip_tac THEN ALL_FC_T rewrite_tac[¯_î_exp_recip_thm]);
 val Û¯_î_exp_recip_thm1Ý = save_pop_thm "¯_î_exp_recip_thm1";
 =TEX
@@ -2707,7 +2753,7 @@ val Û¯_î_exp_recip_thm1Ý = save_pop_thm "¯_î_exp_recip_thm1";
 %%%%
 %%%%
 =SML
-set_goal([], ¬µm x · î¯ 1 ¼ x ´ î¯ 1 ¼ x^m ®);
+set_goal([], ¬µm:î; x · î¯ 1 ¼ x ´ î¯ 1 ¼ x^m ®);
 a(REPEAT strip_tac THEN induction_tac¬m:î® THEN1 asm_rewrite_tac[¯_î_exp_def]);
 a(rewrite_tac[¯_î_exp_def] THEN bc_thm_tac ¯_¼_trans_thm);
 a(¶_tac¬x® THEN REPEAT strip_tac);
@@ -2720,7 +2766,7 @@ val Û¯_î_exp_1_¼_thmÝ = save_pop_thm "¯_î_exp_1_¼_thm";
 %%%%
 %%%%
 =SML
-set_goal([], ¬µx m·î¯ 0 < x ± x < î¯ 1 ´ x^(m+1) < x^m ®);
+set_goal([], ¬µx; m:î·î¯ 0 < x ± x < î¯ 1 ´ x^(m+1) < x^m ®);
 a(REPEAT strip_tac THEN induction_tac¬m:î® THEN1 asm_rewrite_tac[¯_î_exp_def]);
 a(once_rewrite_tac[¯_î_exp_def]);
 a(bc_thm_tac ¯_times_mono_thm THEN REPEAT strip_tac);
@@ -2730,7 +2776,7 @@ val Û¯_î_exp_less_1_mono_thmÝ = save_pop_thm "¯_î_exp_less_1_mono_thm";
 %%%%
 %%%%
 =SML
-set_goal([], ¬µx m·î¯ 0 < x ´ î¯ 0 < x^m ®);
+set_goal([], ¬µx; m:î·î¯ 0 < x ´ î¯ 0 < x^m ®);
 a(REPEAT strip_tac THEN induction_tac¬m:î® THEN asm_rewrite_tac[¯_î_exp_def]);
 a(bc_thm_tac ¯_0_less_0_less_times_thm THEN REPEAT strip_tac);
 val Û¯_î_exp_less_mono_thmÝ = save_pop_thm "¯_î_exp_less_mono_thm";
@@ -2738,7 +2784,7 @@ val Û¯_î_exp_less_mono_thmÝ = save_pop_thm "¯_î_exp_less_mono_thm";
 %%%%
 %%%%
 =SML
-set_goal([], ¬µx m n·î¯ 0 < x ± x < î¯ 1 ± m < n ´ x^n < x^m ®);
+set_goal([], ¬µx; m n:î·î¯ 0 < x ± x < î¯ 1 ± m < n ´ x^n < x^m ®);
 a(REPEAT µ_tac THEN induction_tac¬n:î® THEN_TRY asm_rewrite_tac[]
 	THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
@@ -2946,7 +2992,7 @@ val Û¯_archimedean_division_thmÝ = save_pop_thm "¯_archimedean_division_thm";
 %%%%
 %%%%
 =SML
-set_goal([], ¬µx y·î¯ 1 < x ´ ¶m· y <  x^m®);
+set_goal([], ¬µx y·î¯ 1 < x ´ ¶m:î· y <  x^m®);
 a(REPEAT µ_tac THEN STRIP_T (strip_asm_tac o once_rewrite_rule[¯_less_0_less_thm]));
 a(strip_asm_tac (list_µ_elim[¬x + ~ (î¯ 1)®, ¬y®] ¯_archimedean_times_thm));
 a(strip_asm_tac (list_µ_elim[¬x + ~ (î¯ 1)®, ¬m®] ¯_î_exp_linear_estimate_thm));
@@ -2959,7 +3005,7 @@ val Û¯_î_exp_tends_to_infinity_thmÝ = save_pop_thm "¯_î_exp_tends_to_infinity_th
 %%%%
 %%%%
 =SML
-set_goal([], ¬µx y·î¯ 0 < x ± x < î¯ 1 ± î¯ 0 < y ´ ¶m· x^m < y®);
+set_goal([], ¬µx y·î¯ 0 < x ± x < î¯ 1 ± î¯ 0 < y ´ ¶m:î· x^m < y®);
 a(REPEAT strip_tac);
 a(lemma_tac¬³x = î¯ 0® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
 a(all_fc_tac[¯_³_recip_0_thm]);
@@ -7781,9 +7827,9 @@ val Ûlim_seq_î¯_recip_eq_0_thmÝ = save_pop_thm "lim_seq_î¯_recip_eq_0_thm";
 %%%%
 %%%%
 =SML
-set_goal([], ¬µx· î¯ 0 < x ± x < î¯ 1 ´ (Ìm· x^m) -> î¯ 0®);
+set_goal([], ¬µx· î¯ 0 < x ± x < î¯ 1 ´ (Ìm:î· x^m) -> î¯ 0®);
 a(rewrite_tac[lim_seq_def] THEN REPEAT strip_tac);
-a(lemma_tac¬µm·î¯ 0 ¼ x^m® THEN1
+a(lemma_tac¬µm·î¯ 0 ¼ x^(m:î)® THEN1
 	(rewrite_tac[¯_¼_def] THEN FC_T rewrite_tac[¯_î_exp_0_less_thm]));
 a(asm_rewrite_tac[¯_abs_def]);
 a(all_fc_tac[¯_î_exp_tends_to_0_thm]);
@@ -7796,7 +7842,7 @@ val Ûlim_seq_¯_î_exp_eq_0_lemmaÝ = pop_thm();
 %%%%
 %%%%
 =SML
-set_goal([], ¬µx·~(î¯ 1) < x ± x < î¯ 1 ´ (Ìm· x^m) -> î¯ 0®);
+set_goal([], ¬µx·~(î¯ 1) < x ± x < î¯ 1 ´ (Ìm:î· x^m) -> î¯ 0®);
 a(REPEAT strip_tac);
 a(cases_tac¬x = î¯ 0® THEN1
 	(once_rewrite_tac[µ_elim¬1® lim_seq_shift_thm] THEN
@@ -8088,12 +8134,12 @@ a(rewrite_tac[] THEN POP_ASM_T bc_thm_tac THEN REPEAT strip_tac);
 a(rewrite_tac[¯_î_exp_plus_thm]);
 a(once_rewrite_tac[¯_times_comm_thm]);
 a(rewrite_tac[
-	conv_rule(ONCE_MAP_C Â_conv)(µ_elim¬Ìk·b^k® const_times_series_thm)]);
+	conv_rule(ONCE_MAP_C Â_conv)(µ_elim¬Ìk:î·b^k® const_times_series_thm)]);
 a(conv_tac (LEFT_C Ì_un_Â_rands_conv));
 a(bc_thm_tac times_lim_seq_thm);
 a(rewrite_tac[const_lim_seq_thm]);
 a(lemma_tac¬~(î¯ 1) < b® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
-a(rewrite_tac[µ_elim¬Series (Ì k· b ^ k)®È_axiom]);
+a(rewrite_tac[µ_elim¬Series (Ì k:î· b ^ k)®È_axiom]);
 a(ALL_FC_T rewrite_tac[rewrite_rule[]geometric_series_thm1]);
 val Ûsimple_root_test_thmÝ = save_pop_thm "simple_root_test_thm";
 =TEX
@@ -8106,7 +8152,7 @@ the following generalisation which is what we will typically use in practice.
 set_goal([], ¬
 	µs b d m· 
 	b  < î¯ 1 
-±	(µn·m ¼ n ´ Abs(s n) ¼ d*b^n)
+±	(µn:î·m ¼ n ´ Abs(s n) ¼ d*b^n)
 ´	¶c· Series s -> c
 ®);
 a(REPEAT strip_tac THEN  CASES_T ¬b = î¯ 0 ² d = î¯ 0® asm_tac);
@@ -8131,8 +8177,6 @@ a(lemma_tac¬³b^m = î¯ 0 ® THEN1
 	(bc_thm_tac ¯_î_exp_³_eq_0_thm THEN REPEAT strip_tac));
 a(lemma_tac¬³d * b ^ m = î¯ 0 ± ³d * b *b^m = î¯ 0® THEN1
 	(asm_rewrite_tac[¯_times_eq_0_thm]));
-a(lemma_tac¬³b^m = î¯ 0 ® THEN1
-	(bc_thm_tac ¯_î_exp_³_eq_0_thm THEN REPEAT strip_tac));
 a(lemma_tac¬î¯ 0 ¼ d*b^m® THEN1
 	(bc_thm_tac ¯_¼_trans_thm THEN ¶_tac ¬Abs (s m)®
 		THEN asm_rewrite_tac[¯_0_¼_abs_thm]));
@@ -8158,7 +8202,7 @@ a(LIST_GET_NTH_ASM_T [1, 4, 15, 17, 18] (MAP_EVERY ante_tac)
 	THEN DROP_ASMS_T discard_tac THEN REPEAT strip_tac);
 a(lemma_tac¬î¯ 0 < d ›-›1® THEN1
 	(bc_thm_tac ¯_0_less_0_less_recip_thm THEN REPEAT strip_tac));
-a(lemma_tac¬¶k·b^k < d ›-›1® THEN1
+a(lemma_tac¬¶k:î·b^k < d ›-›1® THEN1
 	(bc_thm_tac ¯_î_exp_tends_to_0_thm THEN REPEAT strip_tac));
 a(once_rewrite_tac [µ_elim¬k® lim_series_shift_¶_thm]);
 a(bc_thm_tac simple_root_test_thm);
@@ -8333,12 +8377,12 @@ is a convergent geometric series:
 set_goal([], ¬
 	µ b ·
 	î¯ 0 < b ± b < î¯ 1
-´	¶c · Series (Ìm· î¯ (m + 1) * b ^ m) -> c
+´	¶c · Series (Ìm:î· î¯ (m + 1) * b ^ m) -> c
 ®);
 a(REPEAT strip_tac THEN bc_thm_tac ratio_test_thm);
 a(¶_tac¬b® THEN asm_rewrite_tac[¯_¼_def]);
 a(lemma_tac¬³ b = î¯ 0® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
-a(lemma_tac¬µm·³ b^m = î¯ 0® THEN1
+a(lemma_tac¬µm:î·³ b^m = î¯ 0® THEN1
 	(strip_tac THEN ALL_FC_T rewrite_tac [¯_î_exp_³_eq_0_thm]));
 a(lemma_tac¬µm· ³ î¯ (m + 1) = î¯ 0® THEN1 rewrite_tac[î¯_one_one_thm]);
 a(once_rewrite_tac[taut_rule ¬µp q·p ± q ¤ p ± (p ´q)®] THEN REPEAT strip_tac);
@@ -8358,9 +8402,9 @@ a(LEMMA_T¬µn· (î¯ (n + 1) * b ^ n) ›-›1  =  î¯ (n + 1)›-›1  *( b ^ n) ›-›1®
 a(rewrite_tac[¯_î_exp_plus_thm, ¯_times_assoc_thm]);
 a(once_rewrite_tac[pc_rule1 "¯_lin_arith" prove_rule[]
 	¬µa b c d e:¯·a * b * c * d * e = c * a * d * b * e®]);
-a(LEMMA_T ¬µm· b^m * (b ^ m) ›-›1 = î¯ 1®  rewrite_thm_tac THEN1
+a(LEMMA_T ¬µm:î· b^m * (b ^ m) ›-›1 = î¯ 1®  rewrite_thm_tac THEN1
 	(REPEAT strip_tac 	THEN
-		(lemma_tac¬³b ^ m = î¯ 0®
+		(lemma_tac¬³b ^ (m:î) = î¯ 0®
 			THEN1 asm_rewrite_tac[]) THEN
 					 all_fc_tac[ ¯_recip_clauses]));
 a(rewrite_tac[¯_abs_times_thm]);
@@ -8484,12 +8528,12 @@ a(rewrite_tac[¯_times_assoc_thm1] THEN ALL_FC_T asm_rewrite_tac[¯_recip_clauses]
 a(all_var_elim_asm_tac1);
 a(swap_nth_asm_concl_tac 5);
 a(lemma_tac ¬Abs B = B® THEN1 asm_rewrite_tac[¯_abs_def, ¯_¼_def]);
-a(lemma_tac ¬µm·Abs(B ^ m) = B ^ m® THEN1
+a(lemma_tac ¬µm:î·Abs(B ^ m) = B ^ m® THEN1
 	(strip_tac THEN induction_tac¬m:î® THEN
 		asm_rewrite_tac[¯_î_exp_def, ¯_abs_times_thm]));
-a(LEMMA_T ¬µm·Abs(s m) * B ^ m = Abs(s m * B ^ m)® rewrite_thm_tac
+a(LEMMA_T ¬µm:î·Abs(s m) * B ^ m = Abs(s m * B ^ m)® rewrite_thm_tac
 	THEN1 asm_rewrite_tac[¯_abs_times_thm]);
-a(pure_once_rewrite_tac[prove_rule[]¬µm· s m * B ^ m = (Ìm· s m * B ^ m) m®]);
+a(pure_once_rewrite_tac[prove_rule[]¬µm:î· s m * B ^ m = (Ìm· s m * B ^ m) m®]);
 a(swap_nth_asm_concl_tac 3 THEN REPEAT strip_tac);
 a(all_fc_tac[power_series_deriv_lemma2]);
 a(¶_tac¬B ›-›1 * D® THEN rewrite_tac[power_series_scale_arg_thm]);
@@ -8776,7 +8820,7 @@ a(lemma_tac¬µm·î¯ 0 < m ! ›-›1 ® THEN1
 		THEN rewrite_tac[factorial_0_less_thm]));
 a(lemma_tac¬µm·Abs(m ! ›-›1) = m ! ›-›1 ® THEN1
 	(asm_rewrite_tac[¯_abs_def, ¯_¼_def]));
-a(lemma_tac¬µm·î¯ 0 < x ^ m ® THEN1
+a(lemma_tac¬µm:î·î¯ 0 < x ^ m ® THEN1
 	(strip_tac THEN bc_thm_tac ¯_î_exp_0_less_thm THEN REPEAT strip_tac));
 a(lemma_tac¬µm·î¯ 0 < Abs(m ! ›-›1) * x ^ m ® THEN1
 	(strip_tac THEN bc_thm_tac ¯_0_less_0_less_times_thm THEN asm_rewrite_tac[]));
@@ -8805,7 +8849,7 @@ a(ALL_FC_T (MAP_EVERY (strip_asm_tac o conv_rule(ONCE_MAP_C eq_sym_conv)))
 a(ALL_FC_T rewrite_tac[¯_recip_clauses]);
 (* *** Goal "2.2.2" *** *)
 a(asm_rewrite_tac[¯_abs_times_thm, ¯_abs_¯_î_exp_thm]);
-a(lemma_tac¬µm·î¯ 0 < (x ^ m) ›-›1®  THEN1
+a(lemma_tac¬µm:î·î¯ 0 < (x ^ m) ›-›1®  THEN1
 	(strip_tac THEN bc_thm_tac ¯_0_less_0_less_recip_thm THEN asm_rewrite_tac[]));
 a(asm_rewrite_tac[¯_abs_def, ¯_¼_def, factorial_0_less_thm]);
 a(rewrite_tac[pc_rule1"¯_lin_arith" prove_rule[]¬µa b c d:¯·(a * b) * c * d = a * c * b * d®]);
@@ -8820,7 +8864,7 @@ a(ALL_FC_T (MAP_EVERY (strip_asm_tac o conv_rule(ONCE_MAP_C eq_sym_conv)))
 a(ALL_FC_T rewrite_tac[¯_recip_clauses]);
 (* *** Goal "2.2.2.2" *** *)
 a(rewrite_tac[¯_times_assoc_thm]);
-a(LEMMA_T¬µm·x ^ m * (x ^ m) ›-›1 = î¯ 1®  rewrite_thm_tac);
+a(LEMMA_T¬µm:î·x ^ m * (x ^ m) ›-›1 = î¯ 1®  rewrite_thm_tac);
 (* *** Goal "2.2.2.2.1" *** *)
 a(REPEAT strip_tac);
 a(spec_nth_asm_tac 3 ¬m®);
@@ -9796,7 +9840,8 @@ set of transcendental functions
 =SML
 val Ûtrans_deriv_thmsÝ = [
 	±_right_elim exp_def,
-	±_right_elim(±_right_elim sin_def)
+	±_right_elim(±_right_elim sin_def),
+	log_deriv_thm
 ] @ rat_deriv_thms;
 val Ûtrans_deriv_ruleÝ = deriv_rule trans_deriv_thms;
 val ÛTRANS_DERIV_TÝ = DERIV_T trans_deriv_thms;  
@@ -10744,9 +10789,112 @@ a(rewrite_tac[] THEN REPEAT strip_tac);
 a(lemma_tac¬î¯ 0 < î¯ (m+1)® THEN1 rewrite_tac[î¯_0_less_thm]);
 a(all_fc_tac[¯_0_less_0_less_recip_thm]);
 val Ûless_recip_î_thmÝ = pop_thm ();
+=TEX
+%%%%
+%%%% EXPONENTIATION
+%%%%
+=SML
+set_goal([], ¬µx y z:¯· x ^ (y + z) = x ^ y * x ^ z®);
+a(REPEAT strip_tac);
+a(rewrite_tac[¯_¯_exp_def, ¯_times_plus_distrib_thm,
+	exp_plus_thm]);
+val Û¯_¯_exp_plus_thmÝ = save_pop_thm "¯_¯_exp_plus_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬µx y z:¯· (x ^ y) ^ z = x ^ (y * z)®);
+a(REPEAT strip_tac);
+a(rewrite_tac[¯_¯_exp_def, log_def]);
+a(conv_tac (ONCE_MAP_C ¯_anf_conv) THEN strip_tac);
+val Û¯_¯_exp_times_thmÝ = save_pop_thm "¯_¯_exp_times_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬µx y:¯· x ^ ~y = (x ^ y) ›-›1®);
+a(REPEAT strip_tac);
+a(rewrite_tac[¯_¯_exp_def,
+	pc_rule1 "¯_lin_arith" prove_rule[]
+		¬µa b:¯·~a * b = ~ (a * b)®,
+	exp_clauses]);
+val Û¯_¯_exp_minus_thmÝ = save_pop_thm "¯_¯_exp_minus_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬µx m· î¯ 0 < x ´ x ^ (î¯ m) = x ^ m®);
+a(REPEAT strip_tac);
+a(induction_tac¬m® THEN1 rewrite_tac[¯_î_exp_def, ¯_¯_exp_def, exp_clauses]);
+a(asm_rewrite_tac[î¯_plus_homomorphism_thm,
+	¯_î_exp_def, ¯_¯_exp_plus_thm]);
+a(LEMMA_T¬x ^ î¯ 1 = x®
+	(fn th => rewrite_thm_tac th 
+		THEN PC_T1 "¯_lin_arith" prove_tac[]));
+a(rewrite_tac[¯_¯_exp_def]);
+a(ALL_FC_T rewrite_tac[exp_log_thm]);
+val Û¯_¯_exp_¯_î_exp_thmÝ = save_pop_thm "¯_¯_exp_¯_î_exp_thm";
+=TEX
+%%%%
+%%%%
+=SML
+val Û¯_î_exp_¯_¯_exp_thmÝ = save_thm("¯_î_exp_¯_¯_exp_thm",
+	conv_rule(ONCE_MAP_C eq_sym_conv) ¯_¯_exp_¯_î_exp_thm);
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬µx y:¯· î¯ 0 < x ´
+	((Ìz·z ^ y) Deriv y * x ^ (y - î¯ 1)) x®);
+a(REPEAT strip_tac THEN rewrite_tac[¯_¯_exp_def]);
+a(TRANS_DERIV_T ante_tac);
+a(rewrite_tac[¯_times_plus_distrib_thm,
+	pc_rule1 "¯_lin_arith" prove_rule[]
+		¬µa b:¯·~a * b = ~ (a * b)®,
+	exp_clauses]);
+a(ALL_FC_T asm_rewrite_tac[exp_log_thm]);
+a(conv_tac (ONCE_MAP_C ¯_anf_conv) THEN taut_tac);
+val Û¯_¯_exp_deriv_thmÝ = save_pop_thm "¯_¯_exp_deriv_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬µx y:¯·
+	((Ìz·x ^ z) Deriv Log x * x ^ y) y®);
+a(REPEAT strip_tac THEN rewrite_tac[¯_¯_exp_def]);
+a(TRANS_DERIV_T ante_tac);
+a(rewrite_tac[]);
+a(conv_tac (ONCE_MAP_C ¯_anf_conv) THEN taut_tac);
+val Û¯_¯_exp_deriv_thm1Ý = save_pop_thm "¯_¯_exp_deriv_thm1";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬µx y:¯· î¯ 0 < x ´ (Ìz·z ^ y) Cts x®);
+a(REPEAT strip_tac THEN bc_thm_tac deriv_cts_thm);
+a(¶_tac¬y * x ^ (y - î¯ 1)® THEN bc_thm_tac ¯_¯_exp_deriv_thm
+	THEN REPEAT strip_tac);
+val Û¯_¯_exp_cts_thmÝ = save_pop_thm "¯_¯_exp_cts_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬µx y:¯· (Ìz·x ^ z) Cts y®);
+a(REPEAT strip_tac THEN bc_thm_tac deriv_cts_thm);
+a(¶_tac¬Log x * x ^ y® THEN rewrite_thm_tac ¯_¯_exp_deriv_thm1
+	THEN REPEAT strip_tac);
+val Û¯_¯_exp_cts_thm1Ý = save_pop_thm "¯_¯_exp_cts_thm1";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬µx:¯· Exp x = Exp (î¯ 1) ^ x®);
+a(rewrite_tac[¯_¯_exp_def, log_def]);
+val Ûexp_¯_¯_exp_thmÝ = save_pop_thm "exp_¯_¯_exp_thm";
 =SML
 =TEX
 %%%%
+%%%% RIGHT-HAND LIMITS
 %%%%
 =SML
 set_goal([], ¬µf c x·
@@ -11903,6 +12051,32 @@ a(rewrite_tac[] THEN REPEAT strip_tac);
 a(swap_nth_asm_concl_tac 1);
 a(REPEAT (simple_cts_tac THEN REPEAT strip_tac));
 val Ûlim_fun_log_over_id_minus_1_thmÝ = save_pop_thm"lim_fun_log_over_id_minus_1_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬((Ìx·Log (î¯ 1 + x) * x ›-›1) --> î¯ 1) (î¯ 0)®);
+a(once_rewrite_tac[¯_plus_comm_thm]);
+a(LEMMA_T
+	¬((Ìx·(Ìy·Log y * (y - î¯ 1) ›-›1)((Ìz·z + î¯ 1) x))
+	--> (î¯ 1))(î¯ 0)®
+	(accept_tac o rewrite_rule[¯_plus_assoc_thm]));
+a(bc_thm_tac comp_lim_fun_thm1);
+a(rewrite_tac[rewrite_rule[]lim_fun_log_over_id_minus_1_thm]);
+a(REPEAT (simple_cts_tac THEN REPEAT strip_tac));
+val Ûlim_fun_log_1_plus_over_id_thmÝ = save_pop_thm"lim_fun_log_1_plus_over_id_thm";
+=TEX
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬((Ìx·(î¯ 1 + x) ^ x ›-›1) --> Exp(î¯ 1))(î¯ 0)®);
+a(rewrite_tac[¯_¯_exp_def]);
+a(conv_tac(RATOR_C(LEFT_C (SIMPLE_Ì_C((RAND_C (un_Â_conv¬x:¯®)))))));
+a(bc_thm_tac comp_lim_fun_thm);
+a(once_rewrite_tac[¯_times_comm_thm]);
+a(rewrite_tac[lim_fun_log_1_plus_over_id_thm, exp_cts_thm]);
+val Ûlim_fun_e_thmÝ = save_pop_thm"lim_fun_e_thm";
 =TEX
 %%%%
 %%%%
