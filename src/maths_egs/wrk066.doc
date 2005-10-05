@@ -98,7 +98,7 @@ doctex wrk066 wrk066.th; texdvi -b wrk066; texdvi wrk066; texdvi wrk066
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2005/09/29 11:47:08 $%
+\date{\FormatDate{$Date: 2005/09/29 14:51:37 $%
 }}
 
 \begin{document}
@@ -118,7 +118,7 @@ logarithm and sine and cosine functions.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK066; issue $Revision: 1.87 $%
+Reference: LEMMA1/HOL/WRK066; issue $Revision: 1.88 $%
 
 
 \end{centering}
@@ -751,6 +751,7 @@ cts_estimate_0_thm
 cts_limit_unique_thm
 cts_open_interval_thm
 darboux_cts_mono_thm
+darboux_cts_mono_thm1
 =TEX
 }
 \subsection{Derivatives}\label{Derivatives}
@@ -4027,6 +4028,7 @@ val €cts_open_interval_thm› = save_pop_thm "cts_open_interval_thm";
 The following theorem says that if a function is Darboux continuous (i.e., if it
 satisfies the conclusion of the intermediate value theorem) and monotonic
 increasing in an interval then it is continuous.
+We state this in two versions, the first deals with a function monotonic on a closed interval:
 %%%%
 %%%%
 =SML
@@ -4070,6 +4072,43 @@ a(asm_rewrite_tac[] THEN REPEAT strip_tac
 	THEN DROP_NTH_ASM_T 19 bc_thm_tac THEN
 		PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 val €darboux_cts_mono_thm› = save_pop_thm "darboux_cts_mono_thm";
+=TEX
+The second version deals with a function monotonic on an open interval:
+%%%%
+%%%%
+=SML
+set_goal([], ¨µf a b x∑
+	(µx y∑ x ç OpenInterval a b ± y ç OpenInterval a b ± x < y ¥ f x < f y)
+±	(µx y z∑ x ç OpenInterval a b ± y ç OpenInterval a b ± z ç OpenInterval (f x) (f y) ¥ ∂t∑ t ç OpenInterval a b ± f t = z)
+±	 x ç OpenInterval a b
+¥	f Cts xÆ);
+a(rewrite_tac[open_interval_def] THEN REPEAT strip_tac);
+a(bc_thm_tac darboux_cts_mono_thm);
+a(lemma_tac¨∂a0 b0∑ a < a0 ± a0 < x ± x < b0 ± b0 < bÆ
+	THEN1 (∂_tac¨1/2*(a+x)Æ THEN ∂_tac¨1/2*(x+b)Æ
+		THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(∂_tac¨b0Æ THEN ∂_tac¨a0Æ
+	THEN rewrite_tac[open_interval_def, closed_interval_def]
+	THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(DROP_NTH_ASM_T 13 bc_thm_tac THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(lemma_tac¨∂t∑ (a < t ± t < b) ± f t = yÆ
+	THEN1 (DROP_NTH_ASM_T 9 bc_thm_tac
+		THEN ∂_tac¨b0Æ THEN ∂_tac¨a0Æ
+		THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(∂_tac¨tÆ THEN all_var_elim_asm_tac1);
+a(lemma_tac¨a < b0 ± a0 < bÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(cases_tac¨a0 = tÆ THEN1 all_var_elim_asm_tac1);
+a(cases_tac¨b0 = tÆ THEN1 all_var_elim_asm_tac1);
+a(cases_tac¨t < a0Æ THEN1
+	(LIST_DROP_NTH_ASM_T [17] all_fc_tac
+		THEN all_fc_tac[Ø_less_antisym_thm]));
+a(cases_tac¨b0 < tÆ THEN1
+	(LIST_DROP_NTH_ASM_T [18] all_fc_tac
+		THEN all_fc_tac[Ø_less_antisym_thm]));
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+val €darboux_cts_mono_thm1› = save_pop_thm "darboux_cts_mono_thm1";
 =TEX
 %%%%
 %%%%
