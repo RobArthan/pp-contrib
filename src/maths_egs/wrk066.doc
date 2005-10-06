@@ -98,7 +98,7 @@ doctex wrk066 wrk066.th; texdvi -b wrk066; texdvi wrk066; texdvi wrk066
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2005/09/29 14:51:37 $%
+\date{\FormatDate{$Date: 2005/10/05 15:02:51 $%
 }}
 
 \begin{document}
@@ -118,7 +118,7 @@ logarithm and sine and cosine functions.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK066; issue $Revision: 1.88 $%
+Reference: LEMMA1/HOL/WRK066; issue $Revision: 1.89 $%
 
 
 \end{centering}
@@ -5526,13 +5526,13 @@ val Ûlocal_max_thmÝ = save_pop_thm"local_max_thm";
 %%%%
 %%%%
 =SML
-set_goal([], ¬µf a b·
+set_goal([], ¬µf df a b·
 	a <  b
 ±	(µx·a ¼  x ± x ¼ b ´ f Cts x)
-±	(µx·a <  x ± x < b ´ ¶c· (f Deriv c) x)
+±	(µx·a <  x ± x < b ´ (f Deriv df x) x)
 ±	f a = f b
 ±	(¶x·a ¼ x ± x ¼ b ± f b < f x)
-´	(¶x·a <  x ± x < b ± (f Deriv (î¯ 0)) x)®);
+´	(¶x·a < x ± x < b ± (f Deriv (î¯ 0)) x)®);
 a(REPEAT  strip_tac);
 a(lemma_tac¬a ¼ b® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
 a(all_fc_tac[cts_maximum_thm]);
@@ -5545,25 +5545,26 @@ a((cases_tac¬a = x'® THEN1 all_var_elim_asm_tac1) THEN PC_T1 "¯_lin_arith" asm_p
 a((cases_tac¬b = x'® THEN1 all_var_elim_asm_tac1) THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
 (* *** Goal 3" *** *)
 a(spec_nth_asm_tac 12 ¬x'®);
-a(lemma_tac ¬c = î¯ 0® THEN_LIST [bc_thm_tac local_max_thm, all_var_elim_asm_tac1]);
+a(lemma_tac ¬df x' = î¯ 0® THEN_LIST [bc_thm_tac local_max_thm,
+	POP_ASM_T (rewrite_thm_tac o eq_sym_rule) THEN strip_tac]);
 a(MAP_EVERY ¶_tac[¬f®, ¬b®, ¬x'®, ¬a®] THEN asm_rewrite_tac[]);
 a(DROP_NTH_ASM_T 5 ante_tac THEN DROP_ASMS_T discard_tac);
 a(rewrite_tac[¯_¼_def] THEN REPEAT strip_tac THEN all_asm_fc_tac[]);
-val Ûrolle_lemmaÝ =pop_thm();
+val Ûrolle_lemmaÝ = pop_thm();
 =TEX
 %%%%
 %%%%
 =SML
-set_goal([], ¬µf a b·
+set_goal([], ¬µf df a b·
 	a <  b
-±	(µx·a ¼  x ± x ¼ b ´ f Cts x)
-±	(µx·a <  x ± x < b ´ ¶c· (f Deriv c) x)
+±	(µx·a ¼ x ± x ¼ b ´ f Cts x)
+±	(µx·a < x ± x < b ´ (f Deriv df x) x)
 ±	f a = f b
-´	(¶x·a <  x ± x < b ± (f Deriv (î¯ 0)) x)®);
+´	(¶x·a < x ± x < b ± (f Deriv (î¯ 0)) x)®);
 a(REPEAT  strip_tac);
-a(cases_tac¬µx·a <  x ± x < b ´ f x = f b®);
+a(cases_tac¬µx·a < x ± x < b ´ f x = f b®);
 (* *** Goal "1" *** *)
-a(lemma_tac¬µx·a ¼  x ± x ¼ b ´ f x = f b® THEN1
+a(lemma_tac¬µx·a ¼ x ± x ¼ b ´ f x = f b® THEN1
 	(rewrite_tac[¯_¼_def] THEN REPEAT strip_tac
 	THEN_TRY all_var_elim_asm_tac1 THEN all_asm_fc_tac[] THEN REPEAT strip_tac));
 a(all_fc_tac[¯_less_dense_thm]);
@@ -5572,17 +5573,20 @@ a(MAP_EVERY ¶_tac[¬Ìz:¯·f b®, ¬b®, ¬a®] THEN asm_rewrite_tac[const_deriv_thm]);
 (* *** Goal "2" *** *)
 a(lemma_tac¬f b < f x ² f x < f b® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
 (* *** Goal "2.1" *** *)
-a(bc_thm_tac rolle_lemma THEN asm_rewrite_tac[]);
+a(bc_thm_tac rolle_lemma);
+a(¶_tac¬df® THEN asm_rewrite_tac[]);
 a(¶_tac¬x® THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
 (* *** Goal "2.2" *** *)
 a(lemma_tac¬¶x·a < x ± x < b ± ((Ìz·~(f z)) Deriv î¯ 0)x®);
-a(bc_thm_tac rolle_lemma THEN asm_rewrite_tac[] THEN REPEAT strip_tac);
+(* *** Goal "2.2.1" *** *)
+a(bc_thm_tac rolle_lemma);
+a(¶_tac¬Ìx·~(df x)® THEN asm_rewrite_tac[] THEN REPEAT strip_tac);
 (* *** Goal "2.2.1.1" *** *)
 a(bc_thm_tac minus_comp_cts_thm THEN all_asm_fc_tac[]);
 (* *** Goal "2.2.1.2" *** *)
 a(LIST_GET_NTH_ASM_T [8] all_fc_tac);
-a(¶_tac¬~c® THEN RAT_DERIV_T (bc_thm_tac o conv_rule(ONCE_MAP_C ¯_anf_conv))
-	THEN REPEAT strip_tac);
+a(RAT_DERIV_T (fn th => all_fc_tac[conv_rule(ONCE_MAP_C ¯_anf_conv) th]));
+a(asm_rewrite_tac[]);
 (* *** Goal "2.2.1.3" *** *)
 a(¶_tac¬x® THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
 (* *** Goal "2.2.2" *** *)
@@ -5631,7 +5635,7 @@ a(STRIP_T rewrite_thm_tac);
 a(lemma_tac¬¶x·a < x ± x < b ± (H Deriv î¯ 0) x®);
 (* *** Goal "2.2.1" *** *)
 a(bc_thm_tac rolle_thm);
-a(LIST_DROP_NTH_ASM_T [2, 9] rewrite_tac);
+a(¶_tac¬dH® THEN LIST_DROP_NTH_ASM_T [2, 9] rewrite_tac);
 a(REPEAT strip_tac THEN1
 	(contr_tac THEN all_asm_fc_tac[] THEN all_asm_fc_tac[]));
 a(asm_rewrite_tac[] THEN PC_T1 "¯_lin_arith" prove_tac[]);
@@ -5646,27 +5650,19 @@ val Ûcauchy_mean_value_thmÝ = save_pop_thm"cauchy_mean_value_thm";
 %%%%
 %%%%
 =SML
-set_goal([], ¬µf a b·
+set_goal([], ¬µf df a b·
 	a < b
 ±	(µx·a ¼ x ± x ¼ b ´ f Cts x)
-±	(µx·a < x ± x < b ´ ¶c· (f Deriv c) x)
-´	(¶x d·a < x ± x < b ± (f Deriv d) x ± f(b) - f(a) = (b - a)*d)®);
+±	(µx·a < x ± x < b ´ (f Deriv df x) x)
+´	(¶x·a < x ± x < b ± f(b) - f(a) = (b - a) * df x)®);
 a(REPEAT strip_tac);
-a(lemma_tac¬¶df·µx·a < x ± x < b ´ (f Deriv df x) x®);
-(* *** Goal "1" *** *)
-a(prove_¶_tac THEN REPEAT strip_tac);
-a(cases_tac¬a < x' ± x' < b® THEN asm_rewrite_tac[]);
-a(all_asm_fc_tac[]);
-a(¶_tac¬c® THEN asm_rewrite_tac[]);
-(* *** Goal "2" *** *)
-a(DROP_NTH_ASM_T 2 discard_tac);
 a(ante_tac (
 	list_µ_elim
 	[¬Ìx:¯·x®, ¬Ìx:¯·î¯ 1®, ¬f®, ¬df®, ¬a®, ¬b®]
 	cauchy_mean_value_thm));
 a(asm_rewrite_tac[id_cts_thm, id_deriv_thm]
 	THEN REPEAT strip_tac);
-a(¶_tac¬x® THEN ¶_tac¬df x® THEN ALL_ASM_FC_T asm_rewrite_tac[]);
+a(¶_tac¬x® THEN ALL_ASM_FC_T asm_rewrite_tac[]);
 a(POP_ASM_T ante_tac THEN PC_T1 "¯_lin_arith" prove_tac[]);
 val Ûmean_value_thmÝ = save_pop_thm"mean_value_thm";
 =TEX
@@ -5675,13 +5671,13 @@ the interval etc. just adds complication in many uses of the mean value theorem.
 %%%%
 %%%%
 =SML
-set_goal([], ¬µf a b·
+set_goal([], ¬µf df a b·
 	a < b
-±	(µx·a ¼ x ± x ¼ b ´ ¶c· (f Deriv c) x)
-´	(¶x d·a < x ± x <  b ± (f Deriv d) x ± f(b) - f(a) = (b - a)*d)®);
+±	(µx·a ¼ x ± x ¼ b ´ (f Deriv df x) x)
+´	(¶x·a < x ± x < b ± f(b) - f(a) = (b - a) * df x)®);
 a(REPEAT strip_tac THEN bc_thm_tac mean_value_thm THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
-a(bc_thm_tac  deriv_cts_thm);
+a(bc_thm_tac deriv_cts_thm);
 a(contr_tac THEN all_asm_fc_tac[] THEN all_asm_fc_tac[]);
 (* *** Goal "2" *** *)
 a(DROP_NTH_ASM_T 3 bc_thm_tac THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
@@ -5700,17 +5696,13 @@ a(lemma_tac ¬µ z· x ¼ z ± z ¼ y ´ f Cts z® THEN1
 	(POP_ASM_T (fn th =>
 		(REPEAT strip_tac THEN bc_thm_tac th THEN
 			PC_T1 "¯_lin_arith" asm_prove_tac[]))));
-a(lemma_tac¬µ z· x < z ± z < y ´ ¶ c· (f Deriv c) z® THEN1
+a(lemma_tac¬µ z· x < z ± z < y ´ (f Deriv (Ìx· î¯ 0) z) z® THEN1
 	(DROP_NTH_ASM_T 6 (fn th =>
-		(REPEAT strip_tac THEN ¶_tac¬î¯ 0® THEN
+		(REPEAT strip_tac THEN rewrite_tac[] THEN
 			bc_thm_tac th THEN PC_T1 "¯_lin_arith" asm_prove_tac[]))));
 a(all_fc_tac[mean_value_thm]);
-a(lemma_tac ¬d = î¯ 0® THEN1
-	(DROP_NTH_ASM_T 11 (fn th =>
-		(bc_thm_tac deriv_unique_thm THEN ¶_tac¬x'® THEN ¶_tac¬f®
-			THEN REPEAT strip_tac THEN bc_thm_tac th
-				THEN PC_T1 "¯_lin_arith" asm_prove_tac[]))));
-a(all_var_elim_asm_tac1 THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(POP_ASM_T ante_tac THEN rewrite_tac[]);
+a(PC_T1 "¯_lin_arith" asm_prove_tac[]);
 val Ûderiv_0_thm1Ý = save_pop_thm"deriv_0_thm1";
 =TEX
 %%%%
@@ -5754,20 +5746,20 @@ val Ûderiv_0_thm2Ý = save_pop_thm"deriv_0_thm2";
 %%%%
 %%%%
 =SML
-set_goal([], ¬µf a b·
+set_goal([], ¬µf df a b·
 	a <  b
 ±	(µx·a ¼  x ± x ¼ b ´ f Cts x)
-±	(µx·a <  x ± x < b ´ ¶c· (f Deriv c) x ± î¯ 0 < c)
+±	(µx·a <  x ± x < b ´ (f Deriv df x) x)
+±	(µx·a <  x ± x < b ´ î¯ 0 < df x)
 ´	(f a < f b)®);
 a(REPEAT strip_tac);
-a(lemma_tac ¬µx·a <  x ± x < b ´ ¶c· (f Deriv c) x®  THEN1
-	(contr_tac THEN all_asm_fc_tac[] THEN all_asm_fc_tac[]));
 a(all_fc_tac [mean_value_thm]);
-a(LIST_DROP_NTH_ASM_T [6] all_fc_tac);
-a(all_fc_tac[deriv_unique_thm] THEN all_var_elim_asm_tac);
 a(LEMMA_T¬î¯ 0 < f b - f a® (fn th => ante_tac th THEN PC_T1 "¯_lin_arith" prove_tac[]));
 a(pure_asm_rewrite_tac[] THEN bc_thm_tac ¯_0_less_0_less_times_thm THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
 a(PC_T1 "¯_lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(LIST_DROP_NTH_ASM_T [4] all_fc_tac);
 val Ûderiv_0_less_thmÝ = save_pop_thm"deriv_0_less_thm";
 =TEX
 %%%%
@@ -5777,25 +5769,22 @@ The following general theorem is used to give bounds on the values of the trigon
 %%%%
 =SML
 set_goal([], ¬
-	µf a b v w·
-	a < b ± f a = v ± f b = w
-±	(µx· a ¼ x ± x ¼ b ´ ¶c· (f Deriv c) x)
-±	(µx c· a < x ± x < b ±  (f Deriv c) x ´ Abs c ¼ î¯ 1)
-´	Abs(w - v) ¼ b - a
+	µf df a b·
+	a < b
+±	(µx· a ¼ x ± x ¼ b ´ (f Deriv df x) x)
+±	(µx· a < x ± x < b ´ Abs (df x) ¼ î¯ 1)
+´	Abs(f b - f a) ¼ b - a
 ®);
 a(REPEAT strip_tac THEN all_fc_tac[mean_value_thm1]);
-a(all_var_elim_asm_tac1 THEN POP_ASM_T ante_tac THEN asm_rewrite_tac[] THEN strip_tac);
-a(LEMMA_T ¬Abs(f b + ~(f a)) = Abs((b + ~a) * d)® ante_tac THEN1
-	 asm_rewrite_tac[] THEN rewrite_tac[¯_abs_times_thm]);
+a(asm_rewrite_tac[¯_abs_times_thm]);
 a(lemma_tac ¬î¯ 0 ¼ b + ~a® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
-a(strip_tac THEN LEMMA_T ¬b + ~a = Abs (b + ~a)® once_rewrite_thm_tac
+a(LEMMA_T ¬Abs (b + ~a) = b + ~a® rewrite_thm_tac
 	THEN1 asm_rewrite_tac[¯_abs_def]);
-a(POP_ASM_T rewrite_thm_tac);
-a(conv_tac (RAND_C (pure_once_rewrite_conv[prove_rule[]¬µx·x = x * î¯ 1®])));
-a(bc_thm_tac ¯_¼_times_mono_thm);
-a(rewrite_tac[¯_0_¼_abs_thm]);
-a(DROP_NTH_ASM_T 6 bc_thm_tac THEN REPEAT strip_tac);
-a(¶_tac¬x® THEN REPEAT strip_tac);
+a(rewrite_tac[pc_rule1 "¯_lin_arith" prove_rule[]
+	¬µx y·  x*y ¼ x ¤ î¯ 0 ¼ x * (î¯ 1 + ~y)®]);
+a(bc_thm_tac ¯_0_¼_0_¼_times_thm THEN REPEAT strip_tac);
+a(LIST_DROP_NTH_ASM_T [5] all_fc_tac);
+a(PC_T1 "¯_lin_arith" asm_prove_tac[]);
 val Ûderiv_linear_estimate_thmÝ = save_pop_thm "deriv_linear_estimate_thm";
 =TEX
 %%%%
@@ -7516,27 +7505,25 @@ a(POP_ASM_T discard_tac);
 a(REPEAT strip_tac THEN all_fc_tac[unif_lim_seq_cauchy_seq_thm]);
 a(POP_ASM_T (strip_asm_tac o pc_rule1 "sets_ext1" rewrite_rule[open_interval_def]));
 a(¶_tac¬n® THEN REPEAT strip_tac);
-a(LEMMA_T¬¶ z d·
-	x < z ± z < t ± ((Ìw·u n' w + ~(u m w)) Deriv d) z
-	± (Ìw·u n' w + ~(u m w)) t + ~ ((Ìw·u n' w + ~(u m w)) x) = (t + ~ x) * d
+a(lemma_tac¬µr· x ¼ r ± r ¼ t ´
+	((Ìw·u n' w + ~(u m w)) Deriv
+		(Ìs·du n' s + ~(du m s)) r) r®
+	THEN1 (REPEAT strip_tac THEN rewrite_tac[]
+	THEN (lemma_tac¬A < r ± r < B®
+		THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[])
+	THEN RAT_DERIV_T ante_tac
+	THEN rewrite_tac[] THEN STRIP_T (ante_tac o list_µ_elim[¬du n' r®, ¬du m r®])
+	THEN conv_tac (ONCE_MAP_C ¯_anf_conv)
+	THEN ALL_ASM_FC_T rewrite_tac[]));
+a(LEMMA_T¬¶ z·
+		x < z ± z < t
+	±	(Ìw·u n' w + ~(u m w)) t + ~ ((Ìw·u n' w + ~(u m w)) x)
+		= (t + ~ x) * ((Ìs·du n' s + ~(du m s)) z)
 ® (strip_asm_tac o rewrite_rule[]) THEN1 bc_thm_tac (rewrite_rule[]mean_value_thm1));
 (* *** Goal "1.1" *** *)
-a(REPEAT strip_tac);
-a(¶_tac ¬du n' x' + ~(du m x')®);
-a(pure_once_rewrite_tac[prove_rule[]¬~(u m w) = (Ìw· ~(u m w)) w®]
-	THEN1 bc_thm_tac plus_deriv_thm);
-a(REPEAT strip_tac THEN_TRY bc_thm_tac minus_comp_deriv_thm THEN 
-	(GET_NTH_ASM_T 13 bc_thm_tac THEN PC_T1 "¯_lin_arith" asm_prove_tac[]));
+a(pure_asm_rewrite_tac[] THEN rewrite_tac[]);
 (* *** Goal "1.2" *** *)
 a(POP_ASM_T (rewrite_thm_tac o rewrite_rule[¯_plus_assoc_thm]));
-a(LEMMA_T ¬d = du n' z + ~ (du m z)® rewrite_thm_tac THEN1 bc_thm_tac deriv_unique_thm);
-(* *** Goal "1.2.1" *** *)
-a(¶_tac¬z® THEN ¶_tac ¬Ì w· u n' w + ~ (u m w)® THEN REPEAT strip_tac);
-a(pure_once_rewrite_tac[prove_rule[]¬~(u m w) = (Ìw· ~(u m w)) w®]
-	THEN1 bc_thm_tac plus_deriv_thm);
-a(REPEAT strip_tac THEN_TRY bc_thm_tac minus_comp_deriv_thm THEN 
-	(GET_NTH_ASM_T 14 bc_thm_tac THEN PC_T1 "¯_lin_arith" asm_prove_tac[]));
-(* *** Goal "1.2.2" *** *)
 a(LEMMA_T¬î¯ 0 ¼ t + ~ x®
 	(fn th => rewrite_tac[¯_abs_times_thm, th, µ_elim¬t + ~x® ¯_abs_def])
 	THEN1  PC_T1 "¯_lin_arith" asm_prove_tac[]);
@@ -9263,9 +9250,8 @@ set_goal([], ¬µx y·  x < y ¤ Exp x < Exp y®);
 a(lemma_tac¬µx y·  x < y ´ Exp x < Exp y®);
 (* *** Goal "1" *** *)
 a(REPEAT strip_tac);
-a(bc_thm_tac deriv_0_less_thm);
-a(asm_rewrite_tac[exp_cts_thm]);
-a(REPEAT strip_tac THEN ¶_tac¬Exp x'® THEN rewrite_tac[exp_def, exp_0_less_thm]);
+a(bc_thm_tac deriv_0_less_thm THEN ¶_tac¬Exp®);
+a(asm_rewrite_tac[exp_cts_thm, exp_def, exp_0_less_thm]);
 (* *** Goal "2" *** *)
 a(REPEAT strip_tac THEN1 all_asm_fc_tac[]);
 a(cases_tac¬x = y® THEN1 all_var_elim_asm_tac1);
@@ -10145,15 +10131,8 @@ set_goal([], ¬
 ®);
 a(rewrite_tac[open_interval_def] THEN contr_tac);
 a(POP_ASM_T  (strip_asm_tac o rewrite_rule[¯_³_less_¼_thm]));
-a(ante_tac (list_µ_elim[¬Cos®, ¬î¯ 0®, ¬x®, ¬î¯ 1®, ¬Cos x®]deriv_linear_estimate_thm));
-a(asm_rewrite_tac[cos_def, abs_sin_abs_cos_¼_1_thm] THEN REPEAT strip_tac);
-(* *** Goal "1" *** *)
-a(¶_tac¬~(Sin x')® THEN rewrite_tac[cos_def]);
-(* *** Goal "2" *** *)
-a(lemma_tac ¬(Cos Deriv ~(Sin x')) x'® THEN1 rewrite_tac[cos_def]);
-a(all_fc_tac[deriv_unique_thm] THEN all_var_elim_asm_tac1);
-a(rewrite_tac[abs_sin_abs_cos_¼_1_thm, ¯_abs_minus_thm]);
-(* *** Goal "3" *** *)
+a(ante_tac (list_µ_elim[¬Cos®, ¬Ìt·~(Sin t)®, ¬î¯ 0®, ¬x®]deriv_linear_estimate_thm));
+a(asm_rewrite_tac[cos_def, ¯_abs_minus_thm, abs_sin_abs_cos_¼_1_thm] THEN REPEAT strip_tac);
 a(lemma_tac¬³î¯ 0 ¼ Cos x + ~(î¯ 1)® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
 a(asm_rewrite_tac[¯_abs_def, ¯_³_¼_less_thm]);
 a(PC_T1 "¯_lin_arith" asm_prove_tac[]);
@@ -10170,11 +10149,10 @@ set_goal([], ¬
 a(LEMMA_T¬µx· x  OpenInterval (î¯ 0) (î¯ 1) ´ î¯ 0 < Sin x® ante_tac);
 (* *** Goal "1" *** *)
 a(rewrite_tac[open_interval_def] THEN REPEAT strip_tac);
-a(ante_tac (list_µ_elim[¬Sin®, ¬î¯ 0®, ¬x®]deriv_0_less_thm));
+a(ante_tac (list_µ_elim[¬Sin®, ¬Cos®, ¬î¯ 0®, ¬x®]deriv_0_less_thm));
 a(asm_rewrite_tac[cos_def, sin_cos_cts_thm] THEN REPEAT strip_tac);
-a(POP_ASM_T (ante_tac o µ_elim¬Cos x'®) THEN rewrite_tac[cos_def]);
 a(lemma_tac¬x' < î¯ 1® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
-a(ALL_FC_T rewrite_tac[rewrite_rule[open_interval_def] cos_positive_estimate_thm]);
+a(all_fc_tac[rewrite_rule[open_interval_def] cos_positive_estimate_thm]);
 (* *** Goal "2" *** *)
 a(rewrite_tac[open_interval_def] THEN REPEAT strip_tac);
 a(lemma_tac¬î¯ 0 < (1/2)*x ± (1/2)*x < î¯ 1® THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
@@ -10186,7 +10164,6 @@ a(LEMMA_T ¬î¯ 0 < Sin((1/2)*x) * Cos((1/2)*x) ± î¯ 0 <  Cos((1/2)*x) * Sin((1/2)
 	(fn th => ante_tac th THEN PC_T1 "¯_lin_arith" prove_tac[]));
 a(REPEAT strip_tac THEN all_fc_tac[¯_0_less_0_less_times_thm]);
 val Ûsin_positive_estimate_thmÝ = save_pop_thm "sin_positive_estimate_thm";
-
 =TEX
 Now, following Mitchell but getting the best estimate we can from the proof we have the following
 theorem that shows that if the cosine function is  greater than $1/\sqrt{2}$ in some interval
@@ -10200,13 +10177,10 @@ set_goal([], ¬µt·
 ´	t ^ 2 ¼ î¯ 2
 ®);
 a(rewrite_tac[¯_î_exp_square_thm] THEN REPEAT strip_tac);
-a(ante_tac (list_µ_elim[¬Sin®, ¬î¯ 0®, ¬t®]mean_value_thm1));
-a(LEMMA_T ¬µx·¶c·(Sin Deriv c) x® asm_rewrite_thm_tac THEN1
-	(strip_tac THEN ¶_tac ¬Cos x®) THEN rewrite_tac[sin_def] THEN REPEAT strip_tac);
-a(lemma_tac¬(Sin Deriv Cos x) x® THEN1 rewrite_tac[sin_def]);
-a(all_fc_tac[deriv_unique_thm] THEN all_var_elim_asm_tac1);
+a(ante_tac (list_µ_elim[¬Sin®, ¬Cos®, ¬î¯ 0®, ¬t®]mean_value_thm1));
+a(asm_rewrite_tac[sin_def] THEN REPEAT strip_tac);
 a(CONTR_T (strip_asm_tac o rewrite_rule[¯_³_¼_less_thm]));
-a(LIST_DROP_NTH_ASM_T [6] all_fc_tac);
+a(LIST_DROP_NTH_ASM_T [5] all_fc_tac);
 a(lemma_tac¬î¯ 1 < Sin t * Sin t® THEN1 asm_rewrite_tac[]);
 (* *** Goal "1" *** *)
 a(pure_rewrite_tac[pc_rule1 "¯_lin_arith" prove_rule[] ¬
@@ -11423,27 +11397,26 @@ val Ûless_div_infinity_thmÝ = save_pop_thm"less_div_infinity_thm";
 =SML
 set_goal([], ¬µf df a c·
 	î¯ 0 < c
-±	(µx·a ¼ x ´ (f Deriv df x) x ± c < df x)
+±	(µx·a ¼ x ´ (f Deriv df x) x)
+±	(µx·a ¼ x ´ c < df x)
 ´	f -+>+
 ®);
 a(REPEAT strip_tac);
 a(lemma_tac¬µx·a < x ´ f a + c * (x + ~a) < f x®);
 (* *** Goal "1" *** *)
 a(contr_tac);
-a(strip_asm_tac(rewrite_rule[](list_µ_elim[¬f®, ¬a®, ¬x®] mean_value_thm1)));
+a(strip_asm_tac(rewrite_rule[](list_µ_elim[¬f®, ¬df®, ¬a®, ¬x®] mean_value_thm1)));
 (* *** Goal "1.1" *** *)
-a(swap_nth_asm_concl_tac 1 THEN strip_tac);
-a(¶_tac¬df x'® THEN LIST_DROP_NTH_ASM_T[5] (ALL_FC_T rewrite_tac));
+a(LIST_DROP_NTH_ASM_T [7] all_fc_tac);
 (* *** Goal "1.2" *** *)
 a(lemma_tac¬a ¼ x'® THEN1 asm_rewrite_tac[¯_¼_def]);
-a(LIST_DROP_NTH_ASM_T[8] all_fc_tac);
-a(all_fc_tac[deriv_unique_thm] THEN all_var_elim_asm_tac1);
 a(LEMMA_T¬f x + ~(f a) ¼ c * (x + ~a)® ante_tac
 	THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
 a(pure_once_rewrite_tac[¯_times_comm_thm]);
 a(asm_rewrite_tac[¯_³_¼_less_thm]);
 a(bc_thm_tac ¯_times_mono_thm);
-a(PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(REPEAT strip_tac THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(LIST_DROP_NTH_ASM_T [7] all_fc_tac);
 (* *** Goal "2" *** *)
 a(ante_tac(pure_once_rewrite_rule[¯_plus_comm_thm]
 	(list_µ_elim[¬Ìx:¯·x®, ¬~a®]const_plus_div_infinity_thm)));
@@ -11634,12 +11607,12 @@ set_goal([], ¬µf df a b·
 ´	(µx·a < x ± x < b ´ ³f x = f a)
 ®);
 a(contr_tac);
-a(ante_tac(list_µ_elim[¬f®, ¬a®, ¬x®]rolle_thm));
+a(ante_tac(list_µ_elim[¬f®, ¬df®, ¬a®, ¬x®]rolle_thm));
 a(asm_rewrite_tac[] THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(DROP_NTH_ASM_T 8 bc_thm_tac THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
 (* *** Goal "2" *** *)
-a(¶_tac¬df x'® THEN DROP_NTH_ASM_T 7 bc_thm_tac THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(DROP_NTH_ASM_T 7 bc_thm_tac THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
 (* *** Goal "3" *** *)
 a(contr_tac);
 a(lemma_tac¬³df x' = î¯ 0®
