@@ -1,0 +1,327 @@
+=IGN
+********************************************************************************
+fincomb.doc: this file is supplementary material for the ProofPower system
+
+Copyright (c) 2004 Lemma 1 Ltd.
+
+This file is supplied under the GNU General Public Licence (GPL) version 2.
+
+See the file LICENSE supplied with ProofPower source for the terms of the GPL
+or visit the OpenSource web site at http://www.opensource.org/
+
+Contact: Rob Arthan < rda@lemma-one.com >
+********************************************************************************
+=TEX
+\documentclass[11pt,a4paper]{article}
+\usepackage{latexsym}
+\usepackage{ProofPower}
+\usepackage{A4}
+
+\def\ThmsII#1#2{%
+{\vertbarfalse
+\begin{minipage}[t]{0.48\hsize}
+#1
+\end{minipage}
+\begin{minipage}[t]{0.48\hsize}
+#2
+\end{minipage}}}
+
+\def\ThmsIII#1#2#3{%
+{\vertbarfalse
+\begin{minipage}[t]{0.32\hsize}
+#1
+\end{minipage}
+\begin{minipage}[t]{0.32\hsize}
+#2
+\end{minipage}
+\begin{minipage}[t]{0.32\hsize}
+#3
+\end{minipage}}}
+\def\Hide#1{\relax}
+\def\N{\mathbb{N}}
+\def\D{\mathbb{D}}
+\def\B{\mathbb{B}}
+\def\C{\mathbb{C}}
+\def\R{\mathbb{R}}
+\def\Z{\mathbb{Z}}
+\def\Q{\mathbb{Q}}
+
+\def\ExpName{\mbox{{\sf exp}}}
+\def\Exp#1{\ExpName(#1)}
+
+\def\LogName{\mbox{{\sf log}}}
+\def\Log#1{\LogName(#1)}
+
+\def\SinName{\mbox{{\sf sin}}}
+\def\Sin#1{\SinName(#1)}
+
+\def\CosName{\mbox{{\sf cos}}}
+\def\Cos#1{\CosName(#1)}
+
+\def\Abs#1{|#1|}
+
+
+\title{Mathematical Case Studies: Finite Combinatorics}
+\author{Rob Arthan\\{\tt rda@lemma-one.com}}
+\makeindex
+\begin{document}
+\vfill
+\maketitle
+\begin{abstract}
+
+Definitions relating to integration of real functions of a real variable.
+
+\end{abstract}
+%\newpage
+%\tableofcontents
+%\newpage
+\section{INTRODUCTION}
+This document contains the beginnings of a theory of finite fincombatorics.
+
+
+\section{THE THEORY {\em fincomb}}\label{theory}
+
+\subsection{Preliminaries}
+The following commands set up a theory to hold the definitions, theorems, etc.
+=SML
+force_delete_theory"fincomb" handle Fail _ => ();
+open_theory"analysis";
+new_theory"fincomb";
+=TEX
+Now set up a convenient proof context:
+=SML
+set_merge_pcs["basic_hol1", "'sets_alg", "'Ø"];
+=TEX
+
+%\twocolumn[\section{INDEX}\label{INDEX}]
+%{\printindex}
+
+\bibliographystyle{plain}
+\bibliography{bookspapers}
+
+\appendix
+{\HOLindexOff
+\let\Section\section
+\let\subsection\Hide
+\def\section#1{\Section{#1}\label{listing}}
+\let\subsection\Hide
+\include{fincomb.th}}
+
+=TEX
+\end{document} %% COMMENT THIS LINE OUT TO TYPESET THE PROOF SCRIPTS
+=TEX
+%%%%
+%%%%
+=SML
+val €singleton_finite_thm› = save_thm("singleton_finite_thm",
+	rewrite_rule[empty_finite_thm]
+		(µ_elim¨{}Æ singleton_¿_finite_thm));
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µa m∑
+	 a ç Finite ± #a = m
+§	∂list∑list ç Distinct ± Elems list = a ± #list = mÆ);
+a(REPEAT_UNTIL is_± strip_tac THEN strip_tac);
+(* *** Goal "1" *** *)
+a(REPEAT strip_tac THEN all_var_elim_asm_tac1
+	THEN all_fc_tac[finite_distinct_elems_thm]);
+a(∂_tac¨listÆ THEN REPEAT strip_tac);
+a(ALL_FC_T rewrite_tac[distinct_size_length_thm]);
+(* *** Goal "2" *** *)
+a(strip_tac THEN all_var_elim_asm_tac1 THEN all_asm_ante_tac);
+a(list_induction_tac¨listÆ THEN
+	asm_rewrite_tac[empty_finite_thm, elems_def, distinct_def,
+		length_def, size_empty_thm]);
+a(µ_tac THEN ¥_tac);
+a(ALL_FC_T asm_rewrite_tac[singleton_¿_finite_thm,
+	size_singleton_¿_thm]);
+val €list_finite_size_thm› = save_pop_thm "list_finite_size_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µm∑ {i | i < m} ç Finite ± #{i | i < m} = mÆ);
+a(µ_tac THEN rewrite_tac[list_finite_size_thm]);
+a(induction_tac¨mÆ);
+(* *** Goal "1" *** *)
+a(∂_tac¨[]Æ THEN rewrite_tac[distinct_def,
+	elems_def, length_def]);
+a(PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "2" *** *)
+a(∂_tac¨Cons m listÆ THEN asm_rewrite_tac[distinct_def,
+	elems_def, length_def]);
+a(DROP_ASMS_T discard_tac
+	THEN PC_T1 "sets_ext1" REPEAT strip_tac
+	THEN PC_T1 "lin_arith" asm_prove_tac[]);
+val €interval_finite_size_thm› = save_pop_thm "interval_finite_size_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µf list∑ #(Map f list) = # listÆ);
+a(REPEAT strip_tac);
+a(list_induction_tac ¨listÆ
+	THEN asm_rewrite_tac[map_def, length_def]);
+val €length_map_thm› = save_pop_thm "length_map_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µf list∑ 
+	Elems (Map f list) = {y | ∂x∑x ç Elems list ± y = f x}Æ);
+a(REPEAT strip_tac);
+a(list_induction_tac ¨listÆ
+	THEN asm_rewrite_tac[map_def, elems_def]
+	THEN REPEAT strip_tac
+	THEN PC_T1 "sets_ext1" prove_tac[]);
+val €elems_map_thm› = save_pop_thm "elems_map_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µf list∑ 
+	(µ x y∑ x ç Elems list ± y ç Elems list ± f x = f y ¥ x = y)
+±	list ç Distinct
+¥	Map f list ç DistinctÆ);
+a(REPEAT µ_tac);
+a(intro_µ_tac(¨fÆ, ¨fÆ) THEN list_induction_tac ¨listÆ
+	THEN asm_rewrite_tac[map_def, distinct_def]
+	THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(rewrite_tac[elems_map_thm] THEN REPEAT strip_tac);
+a(swap_nth_asm_concl_tac 3);
+a(LEMMA_T¨x = x'Æ asm_rewrite_thm_tac);
+a(DROP_NTH_ASM_T 4 bc_thm_tac);
+a(PC_T1 "sets_ext1" asm_rewrite_tac[elems_def]);
+(* *** Goal "2" *** *)
+a(DROP_NTH_ASM_T 4 bc_thm_tac);
+a(REPEAT strip_tac);
+a(DROP_NTH_ASM_T 6 bc_thm_tac);
+a(PC_T1 "sets_ext1" asm_rewrite_tac[elems_def]);
+val €map_distinct_thm› = save_pop_thm "map_distinct_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µlist i∑ 
+	i < #list
+¥	Nth list (i+1) ç Elems listÆ);
+a(µ_tac);
+a(list_induction_tac ¨listÆ
+	THEN asm_rewrite_tac[elems_def, nth_def, length_def]);
+a(REPEAT µ_tac);
+a(cases_tac¨i = 0Æ THEN asm_rewrite_tac[]
+	THEN1 PC_T1 "sets_ext1" rewrite_tac[]);
+a(REPEAT strip_tac);
+a(lemma_tac¨1 º iÆ THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(POP_ASM_T (strip_asm_tac o rewrite_rule[º_def]));
+a(DROP_NTH_ASM_T 4 discard_tac THEN all_var_elim_asm_tac1);
+a(once_rewrite_tac[plus_comm_thm]);
+a(DROP_NTH_ASM_T 3 bc_thm_tac THEN PC_T1 "lin_arith" asm_prove_tac[]);
+val €nth_ç_elems_thm› = save_pop_thm "nth_ç_elems_thm";
+=TEX
+%%%%
+%%%%
+=SML
+(*
+GOT HERE...
+set_goal([], ¨µlist i j∑ 
+	list ç Distinct
+±	i < #list ± j < #list
+±	Nth list i = Nth list j
+¥	i = jÆ);
+a(µ_tac);
+a(list_induction_tac ¨listÆ
+	THEN asm_rewrite_tac[length_def, nth_def, distinct_def]);
+a(REPEAT µ_tac);
+a(cases_tac¨i = 1Æ THEN cases_tac¨j = 1Æ
+	THEN asm_rewrite_tac[]);
+(* *** Goal "1" *** *)
+
+a(rewrite_tac[elems_map_thm] THEN REPEAT strip_tac);
+a(swap_nth_asm_concl_tac 3);
+a(LEMMA_T¨x = x'Æ asm_rewrite_thm_tac);
+a(DROP_NTH_ASM_T 4 bc_thm_tac);
+a(PC_T1 "sets_ext1" asm_rewrite_tac[elems_def]);
+(* *** Goal "2" *** *)
+a(DROP_NTH_ASM_T 4 bc_thm_tac);
+a(REPEAT strip_tac);
+a(DROP_NTH_ASM_T 6 bc_thm_tac);
+a(PC_T1 "sets_ext1" asm_rewrite_tac[elems_def]);
+val €map_distinct_thm› = save_pop_thm "map_distinct_thm";
+*)
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µa b f∑
+	 a ç Finite
+±	(µx y∑x ç a ± y ç a ± f x = f y ¥ x = y)
+±	(µz∑ b = {z | ∂x∑x ç a ± z = f x})
+¥	b ç Finite ± #b = #aÆ);
+a(rewrite_tac[list_finite_size_thm] THEN REPEAT strip_tac);
+a(all_fc_tac[finite_distinct_elems_thm]);
+a(all_fc_tac[distinct_size_length_thm]);
+a(all_var_elim_asm_tac1 THEN ∂_tac ¨Map f listÆ);
+a(asm_rewrite_tac[length_map_thm, elems_map_thm]
+	THEN REPEAT strip_tac);
+a(bc_thm_tac map_distinct_thm);
+a(REPEAT strip_tac);
+a(LIST_DROP_NTH_ASM_T [6] all_fc_tac);
+val €bijection_finite_size_thm› = save_pop_thm "bijection_finite_size_thm";
+=TEX
+%%%%
+%%%%
+=SML
+(*
+set_goal([], ¨µa m∑
+	 a ç Finite ± #a = m
+§	∂f∑	(µi j∑i < m ± j < m ± f i = f j ¥ i = j)
+	± 	a = {x | ∂i∑i < m ± f i = x}Æ);
+a(REPEAT_UNTIL is_± strip_tac THEN strip_tac);
+(* *** Goal "1" *** *)
+a(rewrite_tac[list_finite_size_thm]);
+a(REPEAT strip_tac THEN all_var_elim_asm_tac1);
+a(∂_tac¨Ãi∑Nth list iÆ);
+a(REPEAT strip_tac);
+
+get_spec¨NthÆ;
+
+(* *** Goal "1.1" *** *)
+
+a(∂_tac¨listÆ THEN REPEAT strip_tac);
+a(ALL_FC_T rewrite_tac[distinct_size_length_thm]);
+(* *** Goal "2" *** *)
+a(strip_tac THEN all_var_elim_asm_tac1 THEN all_asm_ante_tac);
+a(list_induction_tac¨listÆ THEN
+	asm_rewrite_tac[empty_finite_thm, elems_def, distinct_def,
+		length_def, size_empty_thm]);
+a(µ_tac THEN ¥_tac);
+a(ALL_FC_T asm_rewrite_tac[singleton_¿_finite_thm,
+	size_singleton_¿_thm]);
+val €list_finite_size_thm› = save_pop_thm "list_finite_size_thm";
+*)
+=TEX
+\Hide{
+=SML
+local 
+	open	ListerSupport;
+	val €sections› = [LSBanner, LSThms];
+	val {print=pt, out=ot, out1=ot1} = gen_theory_lister sections;
+	fun output_banner (thyn : string) = "THEOREMS IN THE THEORY " ^ (case thyn of "-" => get_current_theory_name () | _ => thyn);
+	fun output_theorems (par : {out_file:string, theory:string}) : unit = (
+		(ot output_banner par) handle ex => reraise ex "z_output_theory"
+	);
+in
+	val _ = output_theorems{out_file="fincomb.th.doc", theory="-"};
+end;
+=TEX
+} %\Hide
+\end{document}
+
+=TEX
+%%%%
+%%%%
+=IGN
