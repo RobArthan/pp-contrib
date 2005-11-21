@@ -60,6 +60,11 @@ Contact: Rob Arthan < rda@lemma-one.com >
 
 \def\Abs#1{|#1|}
 
+\def\ElemsName{\mbox{{\em cos}}}
+\def\Elems#1{\ElemsName(#1)}
+
+\def\SizeName{\#}
+\def\Size#1{\#\left(#1\right)}
 
 \title{Mathematical Case Studies: Finite Combinatorics}
 \author{Rob Arthan\\{\tt rda@lemma-one.com}}
@@ -69,31 +74,34 @@ Contact: Rob Arthan < rda@lemma-one.com >
 \maketitle
 \begin{abstract}
 
-Definitions relating to integration of real functions of a real variable.
+This document presents some definitions and theorems from elementary finite combinatorics.
+The definitions include a ``fold'' operator for finite sets and the operation that sums a real-valued function on a finite indexed set.
+The theorems include: more facts about finiteness and the size of finite sets; algebraic properties of indexed sums; induction over finitely-supported functions; the inclusion/exclusion principle.
 
 \end{abstract}
 %\newpage
 %\tableofcontents
 %\newpage
 \section{INTRODUCTION}
-This document contains the beginnings of a theory of finite fincombatorics.
+This document contains the beginnings of a theory of finite combinatorics.
 
 
 \section{THE THEORY {\em fincomb}}\label{theory}
 
 \subsection{Preliminaries}
-The following commands set up a theory to hold the definitions, theorems, etc.
+The following commands set up a theory to hold the definitions, theorems, etc.,  and a proof context that is convenient for the work.
+The theory is a child of the theory ``analysis'' from which we use several definitions, in particular, the characteristic function $\chi_A$ of a set $A$.
+
 =SML
 force_delete_theory"fincomb" handle Fail _ => ();
 open_theory"analysis";
 new_theory"fincomb";
-=TEX
-Now set up a convenient proof context:
-=SML
 set_merge_pcs["basic_hol1", "'sets_alg", "'Ø"];
 =TEX
-The following definition of a ``fold'' operation for finite sets is based on a proposal of Paulson and Nipkow that has been implemented in Isabelle.
-It is parameterised by three things: aan associative and commutive ``product'' (or ``plus'') operation, $p$, with identity element, $e$, and a ``valuation'' function $v$; the operation maps the valuation function over a set combining the resulting values with the product operation.
+\subsection{Folding Binary Operators over Finite Sets}
+
+The following definition of a ``fold'' operation for finite sets is parametrised by three things: aan associative and commutive binary operator, $p$, with identity element, $e$, and a ``valuation'' function $v$; the operation maps the valuation function over a set combining the resulting values with the product operation.
+
 
 πHOLCONST
 ‹ €SetFold› : 'b ≠ ('b ≠ 'b ≠ 'b) ≠ ('a ≠ 'b) ≠ 'a SET ≠ 'b
@@ -106,11 +114,36 @@ It is parameterised by three things: aan associative and commutive ``product'' (
 ‹ ±	µx a∑	a ç Finite ± ≥x ç a
 ‹	¥	SetFold e p v ({x} ¿ a) = p (v x) (SetFold e p v a)
 ∞
-A very useful application of the set fold operation is to define the following indexed sum operation. Given a finite set, $a$, and a function, $f$, assigning a real number to each member of $a$,
+This is based on an idea reported by Nipkow and Paulson and works nicely. An alternative is to combine $p$ and $v$ into a single function, say $f = \lambda x y \bullet p(v x) y$
+but then the algebraic laws that $f$ must satisfy have an unfamiliar form.
+
+The theorems in the theory begin by with some lemmas about finite sets and their sizes.
+These are then used to prove to lemmas needed to prove the consistency of the definition of {\em SetFold}.
+
+\ThmsIII{%
+=GFT
+¿_finite_thm
+list_finite_size_thm
+elems_finite_thm
+=TEX
+}{%
+=GFT
+set_fold_consistent_lemma1
+set_fold_consistent_lemma2
+=TEX
+}{%
+=GFT
+SetFold_consistent
+set_fold_def
+=TEX
+}
+
+\subsection{Sums over Finite Indexed Sets}
+A useful application of the set fold operation is to define the following indexed sum operation. Given a finite index set, $a$, and a function, $f$, assigning a real number to each member of $a$,
 =INLINEFT
 IndSum a f
 =TEX
-\ is the indexed sum $\Sigma_{x\in a}f(x)$.
+\ is the indexed sum $\sum_{x\in a}f(x)$.
 
 
 πHOLCONST
@@ -120,16 +153,224 @@ IndSum a f
 ‹ ±	µx a∑	a ç Finite ± ≥x ç a
 ‹	¥	IndSum ({x} ¿ a) f = f x + IndSum a f
 ∞
-The statement of the inclusion/exclusion principle then becomes:
 
-=GFT
-µU:Ó ≠ 'a SET; m∑
-	(µj∑ j < m ¥ U j ç Finite)
-¥	ÓØ(#(ﬁ{A | ∂j∑j < m ± A = U j})) =
-	IndSum
-	({j | j < m})
-	(ÃJ∑ (~(ÓØ 1)^(#J + 1)) * ÓØ(#(•{A | ∂j∑j ç J ± A = U j})))
+We will write $\sum\,a\,f$ as shorthand for
+=INLINEFT
+IndSum a f
 =TEX
+.
+=SML
+declare_alias("ì", ¨IndSumÆ);
+=TEX
+
+The consistency proof for {\em IndSum} is very simple given the set fold operation.
+
+\ThmsII{%
+=GFT
+IndSum_consistent
+=TEX
+}{%
+=GFT
+ind_sum_def
+=TEX
+}
+
+\subsection{Theorems}
+After the consistency of the definitions, the first block of theorems extends the repertoire of lemmas about finite sets and their sizes.
+The approach to this topic in the {\ProductHOL} library tends to characterise a finite set, $A$, as one that can be written as $\Elems{L}$ for some list $L$ and the size $\Size{A}$ as the length $\Size{L}$ where $L$ is a list of distinct elements with $\Elems{L} = A$.
+
+The first few theorems are aimed at an alternative characterisation of a finite set $A$ as one that is in one-one correspondence with an initial subset of the natural numbers, $\{i | i < m\}$ for some $m$.
+{\em En route} is proved the very useful fact that finiteness and size are preserved under bijections.
+
+\ThmsIII{%
+=GFT
+singleton_finite_thm
+range_finite_size_thm
+length_map_thm
+elems_map_thm
+=TEX
+}{%
+=GFT
+map_distinct_thm
+nth_ç_elems_thm
+elems_nth_thm
+=TEX
+}{%
+=GFT
+distinct_nth_thm
+bijection_finite_size_thm
+range_bijection_finite_size_thm
+=TEX
+}
+
+The next block of theorems deal with the power set operator.
+$\Zpset\,a$
+ is defined in the {\ProductHOL} library by the bi-implication
+$x \in \Zpset a \iff x \subseteq a$.
+The first theorem below just recasts this as an equation.
+There are then two trivial but quite useful lemmas about binary partitions of a power set.
+This is followed by the theorem that, if $a$ is finite, then so is $\Zpset a$ and $\Size{\Zpset a} = 2^{\Size{a}}$
+
+\ThmsII{%
+=GFT
+_thm
+_split_thm
+=TEX
+}{%
+=GFT
+_split_thm1
+finite_size__thm
+=TEX
+}
+
+We now begin to develop the theory of indexed sums.
+The first result is an example: if $A$ is finite,
+then its size $\Size{A}$ may be calculated as the indexed sum $\sum_A\,1$.
+The next few theorems show that the indexed sum operator $\sum_A\,f$ is linear in $f$ (i.e., it respects addition and multiplication by a constant) and give some useful consequences of this.
+
+A principle that is applied almost unconsciously in informal reasoning is that the indexed sum $\sum_A f$ is a local property of $f$, in the sense that, if $f$ and $g$ are functions that agree on $A$, then $\sum_A f = \sum_A g$.
+This block  of theorems concludes with one showing how indexed sums behave when the function is composed with a bijection: if $b$ is a bijection on the set $A$ and $B$ is the image of $A$ under $b$, then $\sum_B f = \sum_A (\lambda x\bullet f(b(x)))$
+
+\ThmsIII{%
+=GFT
+ind_sum_size_thm
+ind_sum_plus_thm
+ind_sum_minus_thm
+=TEX
+}{%
+=GFT
+ind_sum_const_times_thm
+ind_sum_0_thm
+ind_sum_diff_0_thm
+=TEX
+}{%
+=GFT
+ind_sum_local_thm
+ind_sum_0_bc_thm
+bijection_ind_sum_thm
+=TEX
+}
+
+We now have two lemmas for calculating the indexed sum in two cases where there is at most one non-zero value in the sum:
+
+\ThmsII{
+=GFT
+ind_sum_—_singleton_thm
+=TEX
+}{%
+=GFT
+ind_sum_singleton_thm
+=TEX
+}
+
+Next comes an induction principle for functions of finite support, i.e., functions $f$ such that $f(x) \not= 0$ for at most finitely many $x$.
+If $p$ is any property of functions that is true for the characteristic function, $\chi_{\{x\}}$, of any singleton set, $\{x\}$, and that is preserved under addition and multiplication by a constant (for operands of finite support), then $p(f)$ holds for any function $f$ of finite support.
+
+In working with an indexed sum $\sum_A f$, one can always assume that $f$ has finite support (by adjusting it to be 0 outside $A$ if necessary). This induction principle gives a different line of attack on $\sum_A f$, which can be particularly useful if the internal structure of $A$ is complex.
+
+\ThmsII{
+=GFT
+fin_supp_induction_thm
+=TEX
+}{}
+
+We will use the induction principle for functions of finite support to tackle the inclusion/exclusion principle.
+The inclusion/exclusion principle deals with a family $U_i$ of sets where $i$ range over a finite and non-empty index set $I$.
+The inclusion/exclusion principle is the following equation giving the size of the union of the $U_i$.
+\begin{equation}
+\Size{\bigcup_{i \in I} U_i} =
+\sum_%
+	{\begin{array}{c}J \in \Zpset I\\ J \not= \{\}\end{array}}%
+		(-1)^{\Size{J} + 1}%
+	\Size{\bigcap_{j \in J}U_j}
+\end{equation}
+
+This is a special case of a more general statement about indexed sums and the more general statement is actually rather simpler to prove.
+The more general statement is the following, which holds for $U_i$ and $I$ above and any real-valued function $f$:
+\begin{equation}
+\sum_{x \in \bigcup_{i \in I} U_i} f(x)=
+\sum_%
+	{\begin{array}{c}J \in \Zpset I\\ J \not= \{\}\end{array}}%
+		(-1)^{\Size{J} + 1}%
+	\left(\sum_%
+		{z \in \bigcap_{j \in J}U_j}%
+			f(z)%
+	\right)
+\end{equation}
+
+The statement about sizes follows immediately from the statement about indexed sums by applying it to the function $f(x) = 1$.
+The statement about sums is better understood in the following more symmetric form in which $A = \bigcup_{i \in I}U_i$ is the range of the sum on the left-hand side of the above equation:
+\begin{equation}
+\sum_%
+	{J \in \Zpset I}%
+		(-1)^{\Size{J}}%
+	\left(\sum_%
+		{z \in A \cap \bigcap_{j \in J}U_j}%
+			f(z)%
+	\right) %
+	= 0 \label{sym_inc_exc}
+\end{equation}
+
+Here, the intersections with $A$ in the range of the inner sum have no effect except when $J$ is empty.
+The previous statement thus follows from the above simply by subtracting the sum over the non-empty $J$ from both sides of the equation.
+
+It is quite natural to attempt to prove equation (\ref{sym_inc_exc}) by induction on $I$ (or on the size of $I$). This works, but the proof is somewhat complicated. Somewhat simpler is to work by induction on $A$, but it it still quite complex.
+Instead, our proof of the inclusion/exclusion principle implements the above remarks together with the proof of equation (\ref{sym_inc_exc}) sketched below which works by induction on the structure of $f$.
+
+
+
+Changing it to be identically 0 outside A if necessary, we may assume $f$ has finite support, and, as the left-hand side of (\ref{sym_inc_exc}) is easily seen to be linear in $f$, the principle of induction for functions of finite support means it is sufficient to prove (\ref{sym_inc_exc}) when $f = \chi_{\{x\}}$ is the characteristic function of a singleton set $\{x\}$.
+For $f = \chi_{\{x\}}$, the summand $f(z)$ on the left-hand side of (\ref{sym_inc_exc}) is 1 or 0 according as $z = x$ or not.
+Thus the inner sum is 1 if $x \in U_j$ for all $j \in J$ and vanishes otherwise.
+
+So, if $x$ is not in any $U_j$, the left-hand side of (\ref{sym_inc_exc}) vanishes and we are done, and, if $x$ is in some $U_j$, (\ref{sym_inc_exc}) reduces to:
+\begin{equation}
+\sum_%
+	{J \in \Zpset \{j \in I | x \in U_j\}}%
+		(-1)^{\Size{J}}%
+	= 0 \label{ind_sum_p}
+\end{equation}
+
+(Formally, we are appealing here to the special case of the inclusion/exclusion principle when $\Size{I}=2$, which states that $\sum_{B \cup C}f = \sum_B f + \sum_C f - \sum_{B \cap C}f$, with $B = \Zpset \{j \in I | x \in U_j\}$ and $C = \Zpset I \backslash B$.)
+
+But now I claim that 
+$
+\sum_%
+	{J \in \Zpset K}%
+		(-1)^{\Size{J}}%
+	= 0
+$ for any non-empty indexed set $K$, which, taking $K=\{j \in I | x \in U_j\}$ in (\ref{ind_sum_p}) will complete the proof.
+
+To see that $
+\sum_%
+	{J \in \Zpset K}%
+		(-1)^{\Size{J}}%
+	= 0
+$ for any non-empty indexed set $K$, pick $k \in K$, then, as $J$ ranges over $\Zpset(K \backslash \{k\})$, the sets $J$ and $J \cup \{i\}$ range over $\Zpset K$ (with every member of $\Zpset K$ appearing exactly once).
+As $(-1)^{\Size{J}} = -(-1)^{\Size{J \cup \{i\}}}$, the contributions of $J$ and $J \cup \{i\}$ cancel out and the sum is zero. (Formally, we are again using the special case of the principle for $\Size{I} = 2$ together with the result about indexed sums composed with a bijection.)
+
+The above proof is captured in the following series of theorems, which give the main steps in the above argument in bottom-up order:
+
+\ThmsIII{%
+=GFT
+ind_sum_¿_thm
+ind_sum__thm
+=TEX
+}{%
+=GFT
+ind_ﬁ_finite_thm
+ind_sum_inc_exc_sym_thm
+=TEX
+}{%
+=GFT
+ind_sum_inc_exc_thm
+size_inc_exc_thm
+=TEX
+}
+
+
+
+
 
 %\twocolumn[\section{INDEX}\label{INDEX}]
 %{\printindex}
@@ -388,7 +629,7 @@ a(STRIP_T bc_thm_tac);
 a(∂_tac¨#a + 1Æ THEN asm_rewrite_tac[distinct_def, elems_def]);
 a(bc_thm_tac size_singleton_¿_thm THEN REPEAT strip_tac);
 val _ = save_consistency_thm ¨SetFoldÆ (pop_thm());
-val €set_fold_def› = get_spec ¨SetFoldÆ;
+val €set_fold_def› = save_thm("set_fold_def", get_spec ¨SetFoldÆ);
 =TEX
 %%%%
 %%%%
@@ -396,12 +637,12 @@ val €set_fold_def› = get_spec ¨SetFoldÆ;
 (*
 drop_main_goal();
 *)
-push_consistency_goal ¨IndSumÆ;
+push_consistency_goal ¨ìÆ;
 a(∂_tac ¨Ãa f∑SetFold (ÓØ 0) ($ +) f aÆ);
 a(µ_tac THEN rewrite_tac[] THEN bc_thm_tac(set_fold_def));
 a(PC_T1 "Ø_lin_arith" prove_tac[]);
-val _ = save_consistency_thm ¨IndSumÆ (pop_thm());
-val €ind_sum_def› = get_spec ¨IndSumÆ;
+val _ = save_consistency_thm ¨ìÆ (pop_thm());
+val €ind_sum_def› = save_thm("ind_sum_def", get_spec ¨ìÆ);
 =TEX
 %%%%
 %%%%
@@ -695,7 +936,7 @@ val €finite_size__thm› = save_pop_thm "finite_size__thm";
 =SML
 set_goal([], ¨µA∑
 	A ç Finite
-¥	IndSum A (Ãx∑ÓØ 1) = ÓØ (#A)Æ);
+¥	ì A (Ãx∑ÓØ 1) = ÓØ (#A)Æ);
 a(REPEAT strip_tac);
 a(finite_induction_tac¨AÆ
 	THEN1 rewrite_tac[ind_sum_def, size_empty_thm]);
@@ -708,7 +949,7 @@ val €ind_sum_size_thm› = save_pop_thm "ind_sum_size_thm";
 =SML
 set_goal([], ¨µA f g∑
 	A ç Finite
-¥	IndSum A (Ãx∑f x + g x) = IndSum A f + IndSum A gÆ);
+¥	ì A (Ãx∑f x + g x) = ì A f + ì A gÆ);
 a(REPEAT strip_tac);
 a(finite_induction_tac¨AÆ
 	THEN1 rewrite_tac[ind_sum_def]);
@@ -721,7 +962,7 @@ val €ind_sum_plus_thm› = save_pop_thm "ind_sum_plus_thm";
 =SML
 set_goal([], ¨µA f∑
 	A ç Finite
-¥	IndSum A (Ãx∑~(f x)) = ~(IndSum A f)Æ);
+¥	ì A (Ãx∑~(f x)) = ~(ì A f)Æ);
 a(REPEAT strip_tac);
 a(finite_induction_tac¨AÆ
 	THEN1 rewrite_tac[ind_sum_def]);
@@ -733,7 +974,7 @@ val €ind_sum_minus_thm› = save_pop_thm "ind_sum_minus_thm";
 =SML
 set_goal([], ¨µA f c∑
 	A ç Finite
-¥	IndSum A (Ãx∑c*(f x)) = c*(IndSum A f)Æ);
+¥	ì A (Ãx∑c*(f x)) = c*(ì A f)Æ);
 a(REPEAT strip_tac);
 a(finite_induction_tac¨AÆ
 	THEN1 rewrite_tac[ind_sum_def]);
@@ -744,26 +985,9 @@ val €ind_sum_const_times_thm› = save_pop_thm "ind_sum_const_times_thm";
 %%%%
 %%%%
 =SML
-set_goal([], ¨µA x∑
-	A ç Finite
-¥	IndSum A (—{x}) =
-	if x ç A then ÓØ 1 else ÓØ 0Æ);
-a(REPEAT strip_tac);
-a(finite_induction_tac¨AÆ
-	THEN1 rewrite_tac[ind_sum_def]);
-a(ALL_FC_T asm_rewrite_tac[ind_sum_def]);
-a(PC_T1 "sets_ext1" asm_rewrite_tac[—_def]);
-a(cases_tac¨x' = xÆ THEN1 all_var_elim_asm_tac
-	THEN asm_rewrite_tac[]);
-a(POP_ASM_T (rewrite_thm_tac o conv_rule(RAND_C eq_sym_conv)));
-val €ind_sum_—_singleton_thm› = save_pop_thm "ind_sum_—_singleton_thm";
-=TEX
-%%%%
-%%%%
-=SML
 set_goal([], ¨µA f∑
 	A ç Finite
-¥	IndSum A  (Ã x∑ ÓØ 0) = ÓØ 0Æ);
+¥	ì A  (Ã x∑ ÓØ 0) = ÓØ 0Æ);
 a(REPEAT strip_tac);
 a(finite_induction_tac¨AÆ
 	THEN1 rewrite_tac[ind_sum_def]);
@@ -773,23 +997,10 @@ val €ind_sum_0_thm› = save_pop_thm "ind_sum_0_thm";
 %%%%
 %%%%
 =SML
-set_goal([], ¨µx f∑
-	IndSum {x} f = f xÆ);
-a(REPEAT strip_tac);
-a(pure_once_rewrite_tac[prove_rule [] ¨{x} = {x} ¿ {}Æ]);
-a(lemma_tac¨{} ç FiniteÆ THEN1 rewrite_tac[empty_finite_thm]);
-a(LEMMA_T¨≥x ç {}Æ asm_tac THEN1 rewrite_tac[]);
-a(ALL_FC_T pure_rewrite_tac[ind_sum_def]);
-a(rewrite_tac[ind_sum_def]);
-val €ind_sum_singleton_thm› = save_pop_thm "ind_sum_singleton_thm";
-=TEX
-%%%%
-%%%%
-=SML
 set_goal([], ¨µA f g∑
 	A ç Finite
-±	IndSum A (Ãx∑f x - g x) = ÓØ 0
-¥	IndSum A f = IndSum A gÆ);
+±	ì A (Ãx∑f x - g x) = ÓØ 0
+¥	ì A f = ì A gÆ);
 a(rewrite_tac[] THEN REPEAT strip_tac);
 a(LEMMA_T ¨f = Ãx∑(Ãx∑ f x + ~(g x)) x + g xÆ pure_once_rewrite_thm_tac
 	THEN1 rewrite_tac[Ø_plus_assoc_thm]);
@@ -803,7 +1014,7 @@ val €ind_sum_diff_0_thm› = save_pop_thm "ind_sum_diff_0_thm";
 set_goal([], ¨µA f g∑
 	A ç Finite
 ± 	(µx∑x ç A ¥ f x = g x)
-¥	IndSum A f = IndSum A gÆ);
+¥	ì A f = ì A gÆ);
 a(REPEAT strip_tac);
 a(POP_ASM_T ante_tac THEN intro_µ_tac(¨fÆ, ¨fÆ));
 a(finite_induction_tac¨AÆ
@@ -821,9 +1032,9 @@ val €ind_sum_local_thm› = save_pop_thm "ind_sum_local_thm";
 set_goal([], ¨µA f∑
 	A ç Finite
 ±	(µx∑x ç A ¥ f x = ÓØ 0)
-¥	IndSum A f = ÓØ 0Æ);
+¥	ì A f = ÓØ 0Æ);
 a(REPEAT strip_tac);
-a(LEMMA_T¨IndSum A (ÃJ∑ ÓØ 0) = ÓØ 0Æ
+a(LEMMA_T¨ì A (ÃJ∑ ÓØ 0) = ÓØ 0Æ
 	(pure_once_rewrite_thm_tac o eq_sym_rule)
 	THEN1 (bc_thm_tac ind_sum_0_thm
 		THEN REPEAT strip_tac));
@@ -834,27 +1045,27 @@ val €ind_sum_0_bc_thm› = save_pop_thm "ind_sum_0_bc_thm";
 %%%%
 %%%%
 =SML
-set_goal([], ¨µa f g∑
-	 a ç Finite
-±	(µx y∑x ç a ± y ç a ± g x = g y ¥ x = y)
-¥	IndSum {z | ∂x∑x ç a ± z = g x} f = IndSum a (Ãx∑f(g x))Æ);
+set_goal([], ¨µA f b∑
+	 A ç Finite
+±	(µx y∑x ç A ± y ç A ± b x = b y ¥ x = y)
+¥	ì {z | ∂x∑x ç A ± z = b x} f = ì A (Ãx∑f(b x))Æ);
 a(REPEAT strip_tac THEN POP_ASM_T ante_tac);
-a(intro_µ_tac(¨gÆ, ¨gÆ) THEN finite_induction_tac¨aÆ);
+a(intro_µ_tac(¨bÆ, ¨bÆ) THEN finite_induction_tac¨AÆ);
 (* *** Goal "1" *** *)
 a(rewrite_tac[ind_sum_def,
 	pc_rule1"sets_ext1" prove_rule[]¨{x|F} = {}Æ]);
 (* *** Goal "2" *** *)
 a(REPEAT strip_tac);
-a(lemma_tac¨µ x y∑ x ç a ± y ç a ± g x = g y ¥ x = yÆ
+a(lemma_tac¨µ x y∑ x ç A ± y ç A ± b x = b y ¥ x = yÆ
 	THEN1 (REPEAT strip_tac THEN all_asm_fc_tac[]));
-a(lemma_tac¨∂b∑ b = {z|∂ x'∑ x' ç a ± z = g x'}Æ
+a(lemma_tac¨∂B∑ B = {z|∂ x'∑ x' ç A ± z = b x'}Æ
 	THEN1 prove_∂_tac);
 a(all_fc_tac[bijection_finite_size_thm]);
 a(all_var_elim_asm_tac1);
 a(PC_T1 "predicates" lemma_tac¨
-	≥g x ç {z|∂ x'∑ x' ç a ± z = g x'} ±
-	{z|∂ x'∑ x' ç {x} ¿ a ± z = g x'} =
-	{g x} ¿ {z|∂ x'∑ x' ç a ± z = g x'}Æ
+	≥b x ç {z|∂ x'∑ x' ç A ± z = b x'} ±
+	{z|∂ x'∑ x' ç {x} ¿ A ± z = b x'} =
+	{b x} ¿ {z|∂ x'∑ x' ç A ± z = b x'}Æ
 	THEN REPEAT strip_tac);
 (* *** Goal "2.1" *** *)
 a(cases_tac¨x' = xÆ THEN1 asm_rewrite_tac[]);
@@ -879,148 +1090,38 @@ val €bijection_ind_sum_thm› = save_pop_thm "bijection_ind_sum_thm";
 %%%%
 %%%%
 =SML
-set_goal([], ¨µA∑ ﬁ{A} = AÆ);
-a(PC_T "sets_ext1" contr_tac THEN1 all_asm_fc_tac[]);
-a(spec_nth_asm_tac 1 ¨AÆ THEN all_var_elim_asm_tac1);
-val ﬁ_singleton_thm = save_pop_thm "ﬁ_singleton_thm";
-=TEX
-%%%%
-%%%%
-=SML
-set_goal([], ¨µI U A f∑
-	I ç Finite
-±	(µi∑ i ç I ¥ U i ç Finite)
-±	A = ﬁ{B | ∂i∑ i ç I ± B = U i}
-¥	A ç FiniteÆ);
-a(REPEAT strip_tac THEN all_var_elim_asm_tac1);
-a(POP_ASM_T ante_tac);
-a(finite_induction_tac¨IÆ);
-(* *** Goal "1" *** *)
-a(rewrite_tac[pc_rule1"sets_ext1" prove_rule[]¨ﬁ{B|F} = {}Æ]);
-a(REPEAT strip_tac THEN asm_rewrite_tac[empty_finite_thm]);
-(* *** Goal "2" *** *)
-a(REPEAT strip_tac THEN all_asm_fc_tac[]);
-(* *** Goal "3" *** *)
-a(REPEAT strip_tac);
-a(LEMMA_T ¨{B|∂ i∑ i ç {x} ¿ I ± B = U i} =
-	{B|∂ i∑ i ç I ± B = U i} ¿ {U x}Æ rewrite_thm_tac
-	THEN1 PC_T1 "sets_ext1" prove_tac[]);
-a(asm_rewrite_tac[pc_rule1"sets_ext1" prove_rule[]
-	¨µV W∑ﬁ(V ¿ W) = ﬁV ¿ ﬁWÆ,
-	ﬁ_singleton_thm,
-	¿_finite_thm]);
-a(POP_ASM_T bc_thm_tac THEN REPEAT strip_tac);
-val €ind_ﬁ_finite_thm› = save_pop_thm "ind_ﬁ_finite_thm";
-=TEX
-%%%%
-%%%%
-=SML
-set_goal([], ¨µA B f∑
+set_goal([], ¨µA x∑
 	A ç Finite
-±	B ç Finite
-¥	IndSum (A ¿ B) f =
-	IndSum A f + IndSum B f - IndSum (A ° B) f
-Æ);
+¥	ì A (—{x}) =
+	if x ç A then ÓØ 1 else ÓØ 0Æ);
 a(REPEAT strip_tac);
-a(finite_induction_tac ¨AÆ THEN1 rewrite_tac[ind_sum_def]);
-a(lemma_tac¨A ¿ B ç Finite ± A ° B ç FiniteÆ
-	THEN1 (asm_rewrite_tac[¿_finite_thm]
-		THEN ALL_FC_T rewrite_tac[°_finite_thm]));
-a(cases_tac¨{x} Ä BÆ);
-(* *** Goal "1" *** *)
-a(ALL_FC_T rewrite_tac[pc_rule1 "sets_ext1" prove_rule[]
-	¨µa b c∑ a Ä c ¥ 
-		(a ¿ b) ¿ c = b ¿ c
-	±	(a ¿ b) ° c = a ¿ (b ° c)Æ]);
-a(LEMMA_T¨≥x ç A ° BÆ asm_tac THEN1 REPEAT strip_tac);
-a(ALL_FC_T rewrite_tac[ind_sum_def]);
-a(DROP_NTH_ASM_T 6 ante_tac THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-(* *** Goal "2" *** *)
-a(POP_ASM_T (PC_T1 "sets_ext" strip_asm_tac)
-	THEN all_var_elim_asm_tac);
-a(ALL_FC_T rewrite_tac[pc_rule1 "sets_ext1" prove_rule[]
-	¨µa b c∑ ≥x ç c ¥ 
-		(a ¿ b) ¿ c = a ¿ b ¿ c
-	±	({x} ¿ b) ° c = (b ° c)Æ]);
-a(LEMMA_T¨≥x ç A ¿ BÆ asm_tac THEN1 REPEAT strip_tac);
-a(ALL_FC_T rewrite_tac[ind_sum_def]);
-a(DROP_NTH_ASM_T 6 ante_tac THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-val €ind_sum_¿_thm› = save_pop_thm "ind_sum_¿_thm";
+a(finite_induction_tac¨AÆ
+	THEN1 rewrite_tac[ind_sum_def]);
+a(ALL_FC_T asm_rewrite_tac[ind_sum_def]);
+a(PC_T1 "sets_ext1" asm_rewrite_tac[—_def]);
+a(cases_tac¨x' = xÆ THEN1 all_var_elim_asm_tac
+	THEN asm_rewrite_tac[]);
+a(POP_ASM_T (rewrite_thm_tac o conv_rule(RAND_C eq_sym_conv)));
+val €ind_sum_—_singleton_thm› = save_pop_thm "ind_sum_—_singleton_thm";
 =TEX
 %%%%
 %%%%
 =SML
-set_goal([], ¨µI∑
-	I ç Finite ± ≥I = {}
-¥	IndSum (I) (ÃJ∑ ~(ÓØ 1) ^ #J) = ÓØ 0Æ);
-a(PC_T1 "sets_ext1" REPEAT strip_tac);
-a(LEMMA_T¨I ç FiniteÆ ante_tac THEN1
-	all_fc_tac[finite_size__thm]);
-a(strip_asm_tac (list_µ_elim[¨xÆ, ¨IÆ]_split_thm));
-a(DROP_NTH_ASM_T 2 rewrite_thm_tac);
-a(rewrite_tac[¿_finite_thm] THEN strip_tac);
-a(ALL_FC_T asm_rewrite_tac[ind_sum_¿_thm]);
+set_goal([], ¨µx f∑
+	ì {x} f = f xÆ);
+a(REPEAT strip_tac);
+a(pure_once_rewrite_tac[prove_rule [] ¨{x} = {x} ¿ {}Æ]);
+a(lemma_tac¨{} ç FiniteÆ THEN1 rewrite_tac[empty_finite_thm]);
+a(LEMMA_T¨≥x ç {}Æ asm_tac THEN1 rewrite_tac[]);
+a(ALL_FC_T pure_rewrite_tac[ind_sum_def]);
 a(rewrite_tac[ind_sum_def]);
-a(lemma_tac¨∂g∑µJ∑g J = J \ {x}Æ THEN1 prove_∂_tac);
-a(lemma_tac¨ µ X Y∑ X ç {b|b Ä I ± x ç b}
-	± Y ç {b|b Ä I ± x ç b}
-	± g X = g Y ¥ X = YÆ);
-(* *** Goal "1" *** *)
-a(asm_rewrite_tac[] THEN DROP_ASMS_T discard_tac
-	THEN PC_T1 "sets_ext1" REPEAT strip_tac);
-(* *** Goal "1.1" *** *)
-a(cases_tac¨x' = xÆ THEN1 asm_rewrite_tac[]);
-a(spec_nth_asm_tac 3 ¨x'Æ);
-(* *** Goal "1.2" *** *)
-a(cases_tac¨x' = xÆ THEN1 asm_rewrite_tac[]);
-a(spec_nth_asm_tac 3 ¨x'Æ);
-(* *** Goal "2" *** *)
-a(ante_tac(list_µ_elim[	¨{b|b Ä I ± x ç b}Æ,
-		¨Ã J: 'a SET∑ ~ (ÓØ 1) ^ # JÆ,
-		¨gÆ] bijection_ind_sum_thm));
-a(asm_rewrite_tac[¿_finite_thm, singleton_finite_thm]);
-a(LEMMA_T ¨
-	{z|∂ x'∑ (x' Ä I ± x ç x') ± z = x' \ {x}} =
-	{b|b Ä I ± ≥x ç b}Æ rewrite_thm_tac);
-(* *** Goal ".1" *** *)
-a(DROP_ASM_T ¨x ç IÆ ante_tac
-	THEN DROP_ASMS_T discard_tac
-	THEN PC_T1 "sets_ext1" rewrite_tac[]
-	THEN REPEAT strip_tac
-	THEN_TRY SOLVED_T (asm_prove_tac[]));
-a(∂_tac¨{x} ¿ x'Æ THEN PC_T1 "sets_ext1" asm_prove_tac[]);
-a(contr_tac THEN all_var_elim_asm_tac);
-(* *** Goal "2.2" *** *)
-a(STRIP_T rewrite_thm_tac THEN rename_tac[]);
-a(LEMMA_T¨
-	IndSum {b|b Ä I ± x ç b} (Ã x'∑ ~ (ÓØ 1) ^ # (x' \ {x})) =
-	IndSum {b|b Ä I ± x ç b} (ÃK∑~((Ã J∑ ~ (ÓØ 1) ^ # J) K))Æ
-	pure_rewrite_thm_tac);
-(* *** Goal "2.2.1" *** *)
-a(bc_thm_tac ind_sum_local_thm THEN REPEAT strip_tac);
-a(LEMMA_T ¨#x' = #(x' \{x}) + 1Æ
-	(fn th => rewrite_tac[th, Ø_Ó_exp_def]
-		THEN PC_T1 "Ø_lin_arith" prove_tac[]));
-a(LEMMA_T¨x' = {x} ¿ (x' \ {x})Æ
-	(fn th => conv_tac (LEFT_C(once_rewrite_conv[th])))
-	THEN1 (POP_ASM_T ante_tac THEN PC_T1 "sets_ext" prove_tac[]));
-a(LEMMA_T¨≥x ç x' \ {x}Æ asm_tac
-	THEN1 PC_T1 "sets_ext" prove_tac[]);
-a(all_fc_tac[Ä_finite_thm]);
-a(lemma_tac¨x' \ {x} Ä x'Æ 
-	THEN1 PC_T1 "sets_ext" prove_tac[]);
-a(all_fc_tac[Ä_finite_thm]);
-a(all_fc_tac[size_singleton_¿_thm]);
-(* *** Goal "2.2.2" *** *)
-a(ALL_FC_T rewrite_tac[ind_sum_minus_thm]);
-val €ind_sum__thm› = save_pop_thm "ind_sum__thm";
+val €ind_sum_singleton_thm› = save_pop_thm "ind_sum_singleton_thm";
 =TEX
 %%%%
 %%%%
 =SML
 set_goal([], ¨µp∑
-	(µx∑p(Ãx∑ÓØ 0))
-±	(µx∑p(—{x}))
+	(µx∑p(—{x}))
 ±	(µf c∑	{x | ≥f x = ÓØ 0} ç Finite
 	±	p f
 	¥	p (Ãx∑c*(f x)))
@@ -1041,10 +1142,18 @@ a(DROP_NTH_ASM_T 2 ante_tac);
 a(intro_µ_tac(¨fÆ, ¨fÆ) THEN finite_induction_tac ¨AÆ
 	THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
-a(LEMMA_T¨f = Ãx∑ÓØ 0Æ asm_rewrite_thm_tac);
-a(POP_ASM_T ante_tac);
+a(LEMMA_T¨f = Ãx∑ÓØ 0 * (—{a} x)Æ pure_rewrite_thm_tac);
+(* *** Goal "1.1" *** *)
+a(rewrite_tac[] THEN POP_ASM_T ante_tac);
 a(PC_T1 "sets_ext" rewrite_tac[] THEN rewrite_tac[]
 	THEN REPEAT strip_tac);
+(* *** Goal "1.2" *** *)
+a(DROP_NTH_ASM_T 3 bc_thm_tac THEN POP_ASM_T discard_tac
+	THEN asm_rewrite_tac[]);
+a(LEMMA_T ¨{x|≥ — {a} x = ÓØ 0} = {a}Æ
+	(fn th => rewrite_tac[th, singleton_finite_thm]));
+a(PC_T1 "sets_ext1" rewrite_tac[—_def] THEN strip_tac);
+a(cases_tac¨x = aÆ THEN asm_rewrite_tac[]);
 (* *** Goal "2" *** *)
 a(LEMMA_T ¨f = Ãx∑
 	(Ãz∑if z ç A then f z else ÓØ 0) x +
@@ -1096,25 +1205,141 @@ val €fin_supp_induction_thm› = save_pop_thm "fin_supp_induction_thm";
 %%%%
 %%%%
 =SML
-set_goal([], ¨µI U A∑
-	I ç Finite ± ≥I = {}
+set_goal([], ¨µA∑ ﬁ{A} = AÆ);
+a(PC_T "sets_ext1" contr_tac THEN1 all_asm_fc_tac[]);
+a(spec_nth_asm_tac 1 ¨AÆ THEN all_var_elim_asm_tac1);
+val ﬁ_singleton_thm = pop_thm ();
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µA B f∑
+	A ç Finite
+±	B ç Finite
+¥	ì (A ¿ B) f =
+	ì A f + ì B f - ì (A ° B) f
+Æ);
+a(REPEAT strip_tac);
+a(finite_induction_tac ¨AÆ THEN1 rewrite_tac[ind_sum_def]);
+a(lemma_tac¨A ¿ B ç Finite ± A ° B ç FiniteÆ
+	THEN1 (asm_rewrite_tac[¿_finite_thm]
+		THEN ALL_FC_T rewrite_tac[°_finite_thm]));
+a(cases_tac¨{x} Ä BÆ);
+(* *** Goal "1" *** *)
+a(ALL_FC_T rewrite_tac[pc_rule1 "sets_ext1" prove_rule[]
+	¨µa b c∑ a Ä c ¥ 
+		(a ¿ b) ¿ c = b ¿ c
+	±	(a ¿ b) ° c = a ¿ (b ° c)Æ]);
+a(LEMMA_T¨≥x ç A ° BÆ asm_tac THEN1 REPEAT strip_tac);
+a(ALL_FC_T rewrite_tac[ind_sum_def]);
+a(DROP_NTH_ASM_T 6 ante_tac THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(POP_ASM_T (PC_T1 "sets_ext" strip_asm_tac)
+	THEN all_var_elim_asm_tac);
+a(ALL_FC_T rewrite_tac[pc_rule1 "sets_ext1" prove_rule[]
+	¨µa b c∑ ≥x ç c ¥ 
+		(a ¿ b) ¿ c = a ¿ b ¿ c
+	±	({x} ¿ b) ° c = (b ° c)Æ]);
+a(LEMMA_T¨≥x ç A ¿ BÆ asm_tac THEN1 REPEAT strip_tac);
+a(ALL_FC_T rewrite_tac[ind_sum_def]);
+a(DROP_NTH_ASM_T 6 ante_tac THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+val €ind_sum_¿_thm› = save_pop_thm "ind_sum_¿_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µK∑
+	K ç Finite ± ≥K = {}
+¥	ì (K) (ÃJ∑ ~(ÓØ 1) ^ #J) = ÓØ 0Æ);
+a(PC_T1 "sets_ext1" REPEAT strip_tac);
+a(LEMMA_T¨K ç FiniteÆ ante_tac THEN1
+	all_fc_tac[finite_size__thm]);
+a(strip_asm_tac (list_µ_elim[¨xÆ, ¨KÆ]_split_thm));
+a(DROP_NTH_ASM_T 2 rewrite_thm_tac);
+a(rewrite_tac[¿_finite_thm] THEN strip_tac);
+a(ALL_FC_T asm_rewrite_tac[ind_sum_¿_thm]);
+a(rewrite_tac[ind_sum_def]);
+a(lemma_tac¨∂g∑µJ∑g J = J \ {x}Æ THEN1 prove_∂_tac);
+a(lemma_tac¨ µ X Y∑ X ç {b|b Ä K ± x ç b}
+	± Y ç {b|b Ä K ± x ç b}
+	± g X = g Y ¥ X = YÆ);
+(* *** Goal "1" *** *)
+a(asm_rewrite_tac[] THEN DROP_ASMS_T discard_tac
+	THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "1.1" *** *)
+a(cases_tac¨x' = xÆ THEN1 asm_rewrite_tac[]);
+a(spec_nth_asm_tac 3 ¨x'Æ);
+(* *** Goal "1.2" *** *)
+a(cases_tac¨x' = xÆ THEN1 asm_rewrite_tac[]);
+a(spec_nth_asm_tac 3 ¨x'Æ);
+(* *** Goal "2" *** *)
+a(ante_tac(list_µ_elim[	¨{b|b Ä K ± x ç b}Æ,
+		¨Ã J: 'a SET∑ ~ (ÓØ 1) ^ # JÆ,
+		¨gÆ] bijection_ind_sum_thm));
+a(asm_rewrite_tac[¿_finite_thm, singleton_finite_thm]);
+a(LEMMA_T ¨
+	{z|∂ x'∑ (x' Ä K ± x ç x') ± z = x' \ {x}} =
+	{b|b Ä K ± ≥x ç b}Æ rewrite_thm_tac);
+(* *** Goal ".1" *** *)
+a(DROP_ASM_T ¨x ç KÆ ante_tac
+	THEN DROP_ASMS_T discard_tac
+	THEN PC_T1 "sets_ext1" rewrite_tac[]
+	THEN REPEAT strip_tac
+	THEN_TRY SOLVED_T (asm_prove_tac[]));
+a(∂_tac¨{x} ¿ x'Æ THEN PC_T1 "sets_ext1" asm_prove_tac[]);
+a(contr_tac THEN all_var_elim_asm_tac);
+(* *** Goal "2.2" *** *)
+a(STRIP_T rewrite_thm_tac THEN rename_tac[]);
+a(LEMMA_T¨
+	ì {b|b Ä K ± x ç b} (Ã x'∑ ~ (ÓØ 1) ^ # (x' \ {x})) =
+	ì {b|b Ä K ± x ç b} (ÃK∑~((Ã J∑ ~ (ÓØ 1) ^ # J) K))Æ
+	pure_rewrite_thm_tac);
+(* *** Goal "2.2.1" *** *)
+a(bc_thm_tac ind_sum_local_thm THEN REPEAT strip_tac);
+a(LEMMA_T ¨#x' = #(x' \{x}) + 1Æ
+	(fn th => rewrite_tac[th, Ø_Ó_exp_def]
+		THEN PC_T1 "Ø_lin_arith" prove_tac[]));
+a(LEMMA_T¨x' = {x} ¿ (x' \ {x})Æ
+	(fn th => conv_tac (LEFT_C(once_rewrite_conv[th])))
+	THEN1 (POP_ASM_T ante_tac THEN PC_T1 "sets_ext" prove_tac[]));
+a(LEMMA_T¨≥x ç x' \ {x}Æ asm_tac
+	THEN1 PC_T1 "sets_ext" prove_tac[]);
+a(all_fc_tac[Ä_finite_thm]);
+a(lemma_tac¨x' \ {x} Ä x'Æ 
+	THEN1 PC_T1 "sets_ext" prove_tac[]);
+a(all_fc_tac[Ä_finite_thm]);
+a(all_fc_tac[size_singleton_¿_thm]);
+(* *** Goal "2.2.2" *** *)
+a(ALL_FC_T rewrite_tac[ind_sum_minus_thm]);
+val €ind_sum__thm› = save_pop_thm "ind_sum__thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µI U A f∑
+	I ç Finite
 ±	(µi∑ i ç I ¥ U i ç Finite)
 ±	A = ﬁ{B | ∂i∑ i ç I ± B = U i}
-¥	IndSum
-	(I)
-	(ÃJ∑ ~(ÓØ 1) ^ #J * IndSum (A ° •{B | ∂j∑ j ç J ± B = U j}) (Ãx∑ÓØ 0))
-	= ÓØ 0Æ);
+¥	A ç FiniteÆ);
+a(REPEAT strip_tac THEN all_var_elim_asm_tac1);
+a(POP_ASM_T ante_tac);
+a(finite_induction_tac¨IÆ);
+(* *** Goal "1" *** *)
+a(rewrite_tac[pc_rule1"sets_ext1" prove_rule[]¨ﬁ{B|F} = {}Æ]);
+a(REPEAT strip_tac THEN asm_rewrite_tac[empty_finite_thm]);
+(* *** Goal "2" *** *)
+a(REPEAT strip_tac THEN all_asm_fc_tac[]);
+(* *** Goal "3" *** *)
 a(REPEAT strip_tac);
-a(all_fc_tac[ind_ﬁ_finite_thm]);
-a(lemma_tac¨I ç FiniteÆ
-	THEN1 all_fc_tac[ finite_size__thm ]);
-a(bc_thm_tac ind_sum_0_bc_thm);
-a(rewrite_tac[] THEN REPEAT strip_tac);
-a(LEMMA_T¨IndSum (A ° • {B|∂ j∑ j ç x ± B = U j}) (Ã x∑ ÓØ 0) = ÓØ 0Æ
-	rewrite_thm_tac);
-a(bc_thm_tac ind_sum_0_thm);
-a(ALL_FC_T rewrite_tac[°_finite_thm]);
-val €ind_sum_inc_exc_lemma0› = save_pop_thm "ind_sum_inc_exc_lemma0";
+a(LEMMA_T ¨{B|∂ i∑ i ç {x} ¿ I ± B = U i} =
+	{B|∂ i∑ i ç I ± B = U i} ¿ {U x}Æ rewrite_thm_tac
+	THEN1 PC_T1 "sets_ext1" prove_tac[]);
+a(asm_rewrite_tac[pc_rule1"sets_ext1" prove_rule[]
+	¨µV W∑ﬁ(V ¿ W) = ﬁV ¿ ﬁWÆ,
+	ﬁ_singleton_thm,
+	¿_finite_thm]);
+a(POP_ASM_T bc_thm_tac THEN REPEAT strip_tac);
+val €ind_ﬁ_finite_thm› = save_pop_thm "ind_ﬁ_finite_thm";
 =TEX
 %%%%
 %%%%
@@ -1123,9 +1348,9 @@ set_goal([], ¨µI U A x∑
 	I ç Finite ± ≥I = {}
 ±	(µi∑ i ç I ¥ U i ç Finite)
 ±	A = ﬁ{B | ∂i∑ i ç I ± B = U i}
-¥	IndSum
+¥	ì
 	(I)
-	(ÃJ∑ ~(ÓØ 1) ^ #J * IndSum (A ° •{B | ∂j∑ j ç J ± B = U j}) (—{x}))
+	(ÃJ∑ ~(ÓØ 1) ^ #J * ì (A ° •{B | ∂j∑ j ç J ± B = U j}) (—{x}))
 	= ÓØ 0Æ);
 a(REPEAT strip_tac);
 a(all_fc_tac[ind_ﬁ_finite_thm]);
@@ -1135,7 +1360,7 @@ a(cases_tac¨≥x ç AÆ);
 (* *** Goal "1" *** *)
 a(bc_thm_tac ind_sum_0_bc_thm);
 a(rewrite_tac[] THEN REPEAT strip_tac);
-a(LEMMA_T¨IndSum (A ° • {B|∂ j∑ j ç x' ± B = U j}) (— {x}) = ÓØ 0Æ
+a(LEMMA_T¨ì (A ° • {B|∂ j∑ j ç x' ± B = U j}) (— {x}) = ÓØ 0Æ
 	rewrite_thm_tac);
 a(bc_thm_tac ind_sum_0_bc_thm);
 a(ALL_FC_T rewrite_tac[°_finite_thm]);
@@ -1167,7 +1392,7 @@ a(asm_rewrite_tac[] THEN REPEAT strip_tac);
 (* *** Goal "2.1.1" *** *)
 a(LIST_DROP_NTH_ASM_T [3] (PC_T1 "sets_ext" all_fc_tac));
 (* *** Goal "2.1.2" *** *)
-a(LEMMA_T¨IndSum (A ° • {B|∂ j∑ j ç x' ± B = U j}) (— {x}) = ÓØ 0Æ
+a(LEMMA_T¨ì (A ° • {B|∂ j∑ j ç x' ± B = U j}) (— {x}) = ÓØ 0Æ
 	rewrite_thm_tac);
 a(bc_thm_tac ind_sum_0_bc_thm);
 a(ALL_FC_T rewrite_tac[°_finite_thm]);
@@ -1184,7 +1409,7 @@ a(DROP_NTH_ASM_T 14 discard_tac
 	THEN all_fc_tac[ind_sum__thm]);
 a(POP_ASM_T (rewrite_thm_tac o eq_sym_rule));
 a(bc_thm_tac ind_sum_local_thm THEN REPEAT strip_tac);
-a(LEMMA_T¨IndSum (A ° • {B|∂ j∑ j ç x' ± B = U j}) (— {x}) = ÓØ 1Æ
+a(LEMMA_T¨ì (A ° • {B|∂ j∑ j ç x' ± B = U j}) (— {x}) = ÓØ 1Æ
 	rewrite_thm_tac);
 a(lemma_tac¨A ° • {B|∂ j∑ j ç x' ± B = U j} ç FiniteÆ
 	THEN1 ALL_FC_T rewrite_tac[°_finite_thm]);
@@ -1194,7 +1419,7 @@ a(LEMMA_T ¨x ç A ° • {B|∂ j∑ j ç x' ± B = U j}Æ
 a(rename_tac[(¨x'Æ, "J")] THEN REPEAT strip_tac
 	THEN all_var_elim_asm_tac1);
 a(LIST_DROP_NTH_ASM_T [3] (PC_T1 "sets_ext" all_fc_tac));
-val €ind_sum_inc_exc_lemma1› = save_pop_thm "ind_sum_inc_exc_lemma1";
+val €ind_sum_inc_exc_lemma1› = pop_thm();
 =TEX
 %%%%
 %%%%
@@ -1203,20 +1428,20 @@ set_goal([], ¨µI U A f c∑
 	I ç Finite ± ≥I = {}
 ±	(µi∑ i ç I ¥ U i ç Finite)
 ±	A = ﬁ{B | ∂i∑ i ç I ± B = U i}
-±	IndSum
+±	ì
 	(I)
-	(ÃJ∑ ~(ÓØ 1) ^ #J * IndSum (A ° •{B | ∂j∑ j ç J ± B = U j}) f) = ÓØ 0
-¥	IndSum
+	(ÃJ∑ ~(ÓØ 1) ^ #J * ì (A ° •{B | ∂j∑ j ç J ± B = U j}) f) = ÓØ 0
+¥	ì
 	(I)
-	(ÃJ∑ ~(ÓØ 1) ^ #J * IndSum (A ° •{B | ∂j∑ j ç J ± B = U j}) (Ãx∑c*f x)) = ÓØ 0
+	(ÃJ∑ ~(ÓØ 1) ^ #J * ì (A ° •{B | ∂j∑ j ç J ± B = U j}) (Ãx∑c*f x)) = ÓØ 0
 Æ);
 a(REPEAT strip_tac);
 a(all_fc_tac[ind_ﬁ_finite_thm]);
 a(lemma_tac¨I ç FiniteÆ
 	THEN1 all_fc_tac[ finite_size__thm ]);
-a(LEMMA_T ¨IndSum ( I)
-	(Ã J∑ ~ (ÓØ 1) ^ # J * IndSum (A ° • {B|∂ j∑ j ç J ± B = U j}) (Ã x∑ c * f x)) =
-	c * IndSum ( I) (Ã J∑ ~ (ÓØ 1) ^ # J * IndSum (A ° • {B|∂ j∑ j ç J ± B = U j}) f)Æ
+a(LEMMA_T ¨ì ( I)
+	(Ã J∑ ~ (ÓØ 1) ^ # J * ì (A ° • {B|∂ j∑ j ç J ± B = U j}) (Ã x∑ c * f x)) =
+	c * ì ( I) (Ã J∑ ~ (ÓØ 1) ^ # J * ì (A ° • {B|∂ j∑ j ç J ± B = U j}) f)Æ
 	asm_rewrite_thm_tac);
 a(ALL_FC_T rewrite_tac[conv_rule(ONCE_MAP_C eq_sym_conv)
 	ind_sum_const_times_thm]);
@@ -1226,7 +1451,7 @@ a(lemma_tac¨(A ° • {B|∂ j∑ j ç x ± B = U j}) ç FiniteÆ
 	THEN1 ALL_FC_T rewrite_tac[°_finite_thm]);
 a(ALL_FC_T rewrite_tac[ind_sum_const_times_thm]);
 a(PC_T1 "Ø_lin_arith" prove_tac[]);
-val €ind_sum_inc_exc_lemma2› = save_pop_thm "ind_sum_inc_exc_lemma2";
+val €ind_sum_inc_exc_lemma2› = pop_thm ();
 =TEX
 %%%%
 %%%%
@@ -1235,24 +1460,24 @@ set_goal([], ¨µI U A f g∑
 	I ç Finite ± ≥I = {}
 ±	(µi∑ i ç I ¥ U i ç Finite)
 ±	A = ﬁ{B | ∂i∑ i ç I ± B = U i}
-±	IndSum
+±	ì
 	(I)
-	(ÃJ∑ ~(ÓØ 1) ^ #J * IndSum (A ° •{B | ∂j∑ j ç J ± B = U j}) f) = ÓØ 0
-±	IndSum
+	(ÃJ∑ ~(ÓØ 1) ^ #J * ì (A ° •{B | ∂j∑ j ç J ± B = U j}) f) = ÓØ 0
+±	ì
 	(I)
-	(ÃJ∑ ~(ÓØ 1) ^ #J * IndSum (A ° •{B | ∂j∑ j ç J ± B = U j}) g) = ÓØ 0
-¥	IndSum
+	(ÃJ∑ ~(ÓØ 1) ^ #J * ì (A ° •{B | ∂j∑ j ç J ± B = U j}) g) = ÓØ 0
+¥	ì
 	(I)
-	(ÃJ∑ ~(ÓØ 1) ^ #J * IndSum (A ° •{B | ∂j∑ j ç J ± B = U j}) (Ãx∑f x + g x)) = ÓØ 0
+	(ÃJ∑ ~(ÓØ 1) ^ #J * ì (A ° •{B | ∂j∑ j ç J ± B = U j}) (Ãx∑f x + g x)) = ÓØ 0
 Æ);
 a(REPEAT strip_tac);
 a(all_fc_tac[ind_ﬁ_finite_thm]);
 a(lemma_tac¨I ç FiniteÆ
 	THEN1 all_fc_tac[ finite_size__thm ]);
-a(LEMMA_T ¨IndSum ( I)
-	(Ã J∑ ~ (ÓØ 1) ^ # J * IndSum (A ° • {B|∂ j∑ j ç J ± B = U j}) (Ã x∑ f x + g x)) =
-	IndSum ( I) (Ã J∑ ~ (ÓØ 1) ^ # J * IndSum (A ° • {B|∂ j∑ j ç J ± B = U j}) f) + 
-	IndSum ( I) (Ã J∑ ~ (ÓØ 1) ^ # J * IndSum (A ° • {B|∂ j∑ j ç J ± B = U j}) g)Æ
+a(LEMMA_T ¨ì ( I)
+	(Ã J∑ ~ (ÓØ 1) ^ # J * ì (A ° • {B|∂ j∑ j ç J ± B = U j}) (Ã x∑ f x + g x)) =
+	ì ( I) (Ã J∑ ~ (ÓØ 1) ^ # J * ì (A ° • {B|∂ j∑ j ç J ± B = U j}) f) + 
+	ì ( I) (Ã J∑ ~ (ÓØ 1) ^ # J * ì (A ° • {B|∂ j∑ j ç J ± B = U j}) g)Æ
 	asm_rewrite_thm_tac);
 a(ALL_FC_T rewrite_tac[conv_rule(ONCE_MAP_C eq_sym_conv)
 	ind_sum_plus_thm]);
@@ -1262,7 +1487,7 @@ a(lemma_tac¨(A ° • {B|∂ j∑ j ç x ± B = U j}) ç FiniteÆ
 	THEN1 ALL_FC_T rewrite_tac[°_finite_thm]);
 a(ALL_FC_T rewrite_tac[ind_sum_plus_thm]);
 a(PC_T1 "Ø_lin_arith" prove_tac[]);
-val €ind_sum_inc_exc_lemma3› = save_pop_thm "ind_sum_inc_exc_lemma3";
+val €ind_sum_inc_exc_lemma3› = pop_thm ();
 =TEX
 %%%%
 %%%%
@@ -1271,45 +1496,43 @@ set_goal([], ¨µI U A f∑
 	I ç Finite ± ≥I = {}
 ±	(µi∑ i ç I ¥ U i ç Finite)
 ±	A = ﬁ{B | ∂i∑ i ç I ± B = U i}
-¥	IndSum
+¥	ì
 	(I)
-	(ÃJ∑ ~(ÓØ 1) ^ #J * IndSum (A ° •{B | ∂j∑ j ç J ± B = U j}) f) = ÓØ 0
+	(ÃJ∑ ~(ÓØ 1) ^ #J * ì (A ° •{B | ∂j∑ j ç J ± B = U j}) f) = ÓØ 0
 Æ);
 a(REPEAT strip_tac);
-a(ante_tac(µ_elim¨Ãf∑IndSum (I)
-	(ÃJ∑ ~(ÓØ 1) ^ #J * IndSum (A ° •{B | ∂j∑ j ç J ± B = U j}) f) = ÓØ 0Æ
+a(ante_tac(µ_elim¨Ãf∑ì (I)
+	(ÃJ∑ ~(ÓØ 1) ^ #J * ì (A ° •{B | ∂j∑ j ç J ± B = U j}) f) = ÓØ 0Æ
 	fin_supp_induction_thm));
 a(rewrite_tac[] THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
-a(all_fc_tac[ind_sum_inc_exc_lemma0]);
-(* *** Goal "2" *** *)
 a(swap_nth_asm_concl_tac 1);
 a(ALL_FC_T rewrite_tac[ind_sum_inc_exc_lemma1]);
-(* *** Goal "3" *** *)
+(* *** Goal "2" *** *)
 a(swap_nth_asm_concl_tac 1);
 a(ALL_FC_T rewrite_tac[ind_sum_inc_exc_lemma2]);
-(* *** Goal "4" *** *)
+(* *** Goal "3" *** *)
 a(swap_nth_asm_concl_tac 1);
 a(ALL_FC_T rewrite_tac[ind_sum_inc_exc_lemma3]);
-(* *** Goal "5" *** *)
+(* *** Goal "4" *** *)
 a(LEMMA_T ¨
-	IndSum ( I) (Ã J∑ ~ (ÓØ 1) ^ # J * IndSum (A ° • {B|∂ j∑ j ç J ± B = U j})
+	ì ( I) (Ã J∑ ~ (ÓØ 1) ^ # J * ì (A ° • {B|∂ j∑ j ç J ± B = U j})
 	(Ãx∑if x ç A then f x else ÓØ 0)) = ÓØ 0Æ
 	(once_rewrite_thm_tac o eq_sym_rule));
-(* *** Goal "5.1" *** *)
+(* *** Goal "4.1" *** *)
 a(POP_ASM_T bc_thm_tac);
 a(bc_thm_tac Ä_finite_thm THEN ∂_tac¨AÆ);
 a(all_fc_tac[ind_ﬁ_finite_thm]);
 a(PC_T1 "sets_ext1" REPEAT strip_tac);
 a(swap_nth_asm_concl_tac 1 THEN asm_rewrite_tac[]);
-(* *** Goal "5.2" *** *)
+(* *** Goal "4.2" *** *)
 a(lemma_tac¨I ç FiniteÆ
 	THEN1 all_fc_tac[ finite_size__thm ]);
 a(all_fc_tac[ind_ﬁ_finite_thm]);
 a(bc_thm_tac ind_sum_local_thm THEN REPEAT strip_tac
 	THEN rewrite_tac[]);
-a(LEMMA_T¨IndSum (A ° • {B|∂ j∑ j ç x ± B = U j}) f =
-	IndSum (A ° • {B|∂ j∑ j ç x ± B = U j})
+a(LEMMA_T¨ì (A ° • {B|∂ j∑ j ç x ± B = U j}) f =
+	ì (A ° • {B|∂ j∑ j ç x ± B = U j})
 	(Ã x∑ if x ç A then f x else ÓØ 0)Æ
 	rewrite_thm_tac);
 a(bc_thm_tac ind_sum_local_thm);
@@ -1325,10 +1548,10 @@ set_goal([], ¨µI U A f∑
 	I ç Finite ± ≥I = {}
 ±	(µi∑ i ç I ¥ U i ç Finite)
 ±	A = ﬁ{B | ∂i∑ i ç I ± B = U i}
-¥	IndSum A f =
-	IndSum
+¥	ì A f =
+	ì
 	(I \ {{}})
-	(ÃJ∑ ~(ÓØ 1) ^ (#J + 1) * IndSum (•{B | ∂j∑ j ç J ± B = U j}) f)
+	(ÃJ∑ ~(ÓØ 1) ^ (#J + 1) * ì (•{B | ∂j∑ j ç J ± B = U j}) f)
 Æ);
 a(REPEAT strip_tac);
 a(lemma_tac ¨A ç FiniteÆ
@@ -1339,16 +1562,16 @@ a(lemma_tac¨I \ {{}} ç FiniteÆ
 	THEN1 (bc_thm_tac Ä_finite_thm
 		THEN ∂_tac¨IÆ THEN REPEAT strip_tac
 		THEN PC_T1 "sets_ext" prove_tac[]));
-a(LEMMA_T¨(Ã J∑ ~ (ÓØ 1) ^ (# J + 1) * IndSum (• {B|∂ j∑ j ç J ± B = U j}) f) =
-	(Ã J∑ ~(ÓØ 1) * (ÃJ∑ ~ (ÓØ 1) ^ # J * IndSum (• {B|∂ j∑ j ç J ± B = U j}) f) J)Æ
+a(LEMMA_T¨(Ã J∑ ~ (ÓØ 1) ^ (# J + 1) * ì (• {B|∂ j∑ j ç J ± B = U j}) f) =
+	(Ã J∑ ~(ÓØ 1) * (ÃJ∑ ~ (ÓØ 1) ^ # J * ì (• {B|∂ j∑ j ç J ± B = U j}) f) J)Æ
 	pure_rewrite_thm_tac
 	THEN1 (rewrite_tac[Ø_Ó_exp_def]
 		THEN PC_T1 "Ø_lin_arith" prove_tac[]));
 a(ALL_FC_T pure_rewrite_tac[ind_sum_const_times_thm]);
-a(LEMMA_T ¨ IndSum ( I \ {{}})
-	(Ã J∑ ~ (ÓØ 1) ^ # J * IndSum (• {B|∂ j∑ j ç J ± B = U j}) f) =
-	IndSum ( I \ {{}})
-	(Ã J∑ ~ (ÓØ 1) ^ # J * IndSum (A ° • {B|∂ j∑ j ç J ± B = U j}) f)Æ
+a(LEMMA_T ¨ ì ( I \ {{}})
+	(Ã J∑ ~ (ÓØ 1) ^ # J * ì (• {B|∂ j∑ j ç J ± B = U j}) f) =
+	ì ( I \ {{}})
+	(Ã J∑ ~ (ÓØ 1) ^ # J * ì (A ° • {B|∂ j∑ j ç J ± B = U j}) f)Æ
 	rewrite_thm_tac);
 (* *** Goal "1" *** *)
 a(bc_thm_tac ind_sum_local_thm);
@@ -1393,7 +1616,7 @@ set_goal([], ¨µI U A∑
 ±	(µi∑ i ç I ¥ U i ç Finite)
 ±	A = ﬁ{B | ∂i∑ i ç I ± B = U i}
 ¥	ÓØ(# A) =
-	IndSum
+	ì
 	(I \ {{}})
 	(ÃJ∑ ~(ÓØ 1) ^ (#J + 1) * ÓØ(# (•{B | ∂j∑ j ç J ± B = U j})))
 Æ);
