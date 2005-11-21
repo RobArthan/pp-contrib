@@ -66,6 +66,8 @@ Contact: Rob Arthan < rda@lemma-one.com >
 \def\SizeName{\#}
 \def\Size#1{\#\left(#1\right)}
 
+\def\Binomial#1#2{\left(\begin{array}{c}#1\\#2\end{array}\right)}
+
 \title{Mathematical Case Studies: Finite Combinatorics}
 \author{Rob Arthan\\{\tt rda@lemma-one.com}}
 \makeindex
@@ -174,6 +176,18 @@ IndSum_consistent
 ind_sum_def
 =TEX
 }
+\subsection{Binomial Coefficients}
+
+We define the binomial coefficient $\Binomial{n}{n}$ by recursion equations as follows:
+
+πHOLCONST
+‹ €Binomial› : Ó ≠ Ó ≠ Ó 
+˜¸¸¸¸¸¸
+‹	Binomial 0 0 = 1
+‹ ±	(µm∑Binomial 0 (m+1) = 0)
+‹ ±	(µn∑Binomial (n+1) 0 = 1)
+‹ ±	(µn m∑ Binomial (n+1) (m+1) = Binomial n m + Binomial n (m+1))
+∞
 
 \subsection{Theorems}
 After the consistency of the definitions, the first block of theorems extends the repertoire of lemmas about finite sets and their sizes.
@@ -388,6 +402,11 @@ size_inc_exc_thm
 
 =TEX
 \end{document} %% COMMENT THIS LINE OUT TO TYPESET THE PROOF SCRIPTS
+=TEX
+%%%%
+%%%%
+=SML
+val €binomial_def› = get_spec ¨BinomialÆ;
 =TEX
 The following should definitely go in the finite sets theory ASAP. !!! TBD !!!
 %%%%
@@ -1654,6 +1673,64 @@ a(lemma_tac ¨A ° • {B|∂ j∑ j ç x ± B = U j} ç FiniteÆ
 	THEN1 ALL_FC_T rewrite_tac[°_finite_thm]);
 a(ALL_FC_T rewrite_tac[ind_sum_size_thm]);
 val €size_inc_exc_thm› = save_pop_thm "size_inc_exc_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µn∑ Binomial n 0 = 1 ±
+		Binomial 0 (n+1) = 0Æ);
+a(rewrite_tac[binomial_def] THEN REPEAT strip_tac);
+a(induction_tac¨nÆ THEN rewrite_tac[binomial_def]);
+val €binomial_0_clauses› = save_pop_thm "binomial_0_clauses";
+=TEX
+%%%%
+%%%%
+=SML
+(*
+set_goal([], ¨µm A∑
+	A ç Finite
+¥	#{X | X Ä A ± #X = m} = Binomial (#A) m
+Æ);
+a(REPEAT µ_tac);
+a(intro_µ_tac(¨AÆ, ¨AÆ) THEN induction_tac¨mÆ
+	THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(rewrite_tac[binomial_0_clauses]);
+a(LEMMA_T ¨{X|X Ä A ± # X = 0} = {{}}Æ
+	(fn th => rewrite_tac[th, size_empty_thm,
+		size_singleton_thm, binomial_def]));
+a(PC_T "sets_ext" strip_tac THEN REPEAT strip_tac);
+a(swap_nth_asm_concl_tac 2);
+a(all_fc_tac[Ä_finite_thm]);
+a(ALL_FC_T1 fc_§_canon asm_rewrite_tac[size_0_thm]);
+(* *** Goal "1.2" *** *)
+a(all_var_elim_asm_tac1 THEN REPEAT strip_tac);
+(* *** Goal "1.3" *** *)
+a(asm_rewrite_tac[size_empty_thm]);
+(* *** Goal "2" *** *)
+a(cases_tac¨A = {}Æ THEN1 all_var_elim_asm_tac1);
+(* *** Goal "2.1" *** *)
+a(rewrite_tac[binomial_0_clauses, size_empty_thm]);
+a(LEMMA_T ¨{X|X Ä {} ± # X = m + 1} = {}Æ
+	(fn th => rewrite_tac[th, size_empty_thm]));
+a(LEMMA_T¨µX∑X Ä {} § X = {}Æ rewrite_thm_tac
+	THEN1 PC_T1 "sets_ext" prove_tac[]);
+a(PC_T "sets_ext" strip_tac THEN REPEAT strip_tac);
+a(POP_ASM_T ante_tac THEN asm_rewrite_tac[size_empty_thm]);
+(* *** Goal "2.2" *** *)
+a(lemma_tac¨≥#A = 0Æ
+	THEN1 ALL_FC_T1 fc_§_canon asm_rewrite_tac[size_0_thm]);
+a(LEMMA_T¨1 º #AÆ (strip_asm_tac o
+	conv_rule(ONCE_MAP_C eq_sym_conv) o
+	once_rewrite_rule[plus_comm_thm] o
+	rewrite_rule[º_def])
+	THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(asm_rewrite_tac[binomial_def]);
+
+a(lemma_tac¨{X|X Ä A ± # X = m + 1} = 
+	{X|X Ä A ± # X = m} ¿ {X|X Ä A ± # X = m}
+val €size_inc_exc_thm› = save_pop_thm "size_inc_exc_thm";
+*)
 =TEX
 \Hide{
 =SML
