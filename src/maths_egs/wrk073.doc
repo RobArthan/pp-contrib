@@ -78,7 +78,8 @@ Contact: Rob Arthan < rda@lemma-one.com >
 
 This document presents some definitions and theorems from elementary finite combinatorics.
 The definitions include a ``fold'' operator for finite sets and the operation that sums a real-valued function on a finite indexed set.
-The theorems include: more facts about finiteness and the size of finite sets; algebraic properties of indexed sums; induction over finitely-supported functions; the inclusion/exclusion principle.
+The theorems include: more facts about finiteness and the size of finite sets; algebraic properties of indexed sums; induction over finitely-supported functions; the inclusion/exclusion principle;
+the binomial function and its basic properties, including the formula for the number of combinations and the binomial theorem.
 
 \end{abstract}
 %\newpage
@@ -188,7 +189,6 @@ We define the binomial coefficient $\Binomial{n}{n}$ by recursion equations as f
 ‹ ±	(µn∑Binomial (n+1) 0 = 1)
 ‹ ±	(µn m∑ Binomial (n+1) (m+1) = Binomial n m + Binomial n (m+1))
 ∞
-
 \subsection{Theorems}
 After the consistency of the definitions, the first block of theorems extends the repertoire of lemmas about finite sets and their sizes.
 The approach to this topic in the {\ProductHOL} library tends to characterise a finite set, $A$, as one that can be written as $\Elems{L}$ for some list $L$ and the size $\Size{A}$ as the length $\Size{L}$ where $L$ is a list of distinct elements with $\Elems{L} = A$.
@@ -199,12 +199,13 @@ The first few theorems are aimed at an alternative characterisation of a finite 
 \ThmsIII{%
 =GFT
 singleton_finite_thm
+size_Ä_diff_thm
 range_finite_size_thm
 length_map_thm
-elems_map_thm
 =TEX
 }{%
 =GFT
+elems_map_thm
 map_distinct_thm
 nth_ç_elems_thm
 elems_nth_thm
@@ -382,6 +383,25 @@ size_inc_exc_thm
 =TEX
 }
 
+After the inclusion/exclusion principle, we turn to something  a little simpler, proving that if $A$ is a set of size $n$, then $A$ has $\Binomial{n}{m}$ subsets of size $m$.
+In a related vein we also prove the binomial theorem (but apart from the algebraic facts about the binomial function that are used, the proofs are separate).
+
+\ThmsIII{%
+=GFT
+binomial_0_clauses
+binomial_less_0_thm
+=TEX
+}{
+=GFT
+binomial_eq_thm
+combinations_finite_size_thm
+=TEX
+}{
+=GFT
+binomial_thm1
+binomial_thm
+=TEX
+}
 
 
 
@@ -669,6 +689,19 @@ val €ind_sum_def› = save_thm("ind_sum_def", get_spec ¨ìÆ);
 val €singleton_finite_thm› = save_thm("singleton_finite_thm",
 	rewrite_rule[empty_finite_thm]
 		(µ_elim¨{}Æ singleton_¿_finite_thm));
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µa b∑ a ç Finite ± b Ä a ¥ #a = #(a \ b) + #bÆ);
+a(REPEAT strip_tac);
+a(lemma_tac¨a \ b Ä a ± (a \ b) ° b = {} ± a = (a \ b) ¿ bÆ
+	THEN1 PC_T1 "sets_ext1" asm_prove_tac[]);
+a(all_fc_tac[Ä_finite_thm]);
+a(DROP_NTH_ASM_T 3 (fn th => (conv_tac(LEFT_C(once_rewrite_conv[th])))));
+a(ante_tac (list_µ_elim[¨a \ bÆ, ¨bÆ] size_¿_thm));
+a(asm_rewrite_tac[size_empty_thm]);
+val €size_Ä_diff_thm› = save_pop_thm "size_Ä_diff_thm";
 =TEX
 %%%%
 %%%%
@@ -1680,57 +1713,267 @@ val €size_inc_exc_thm› = save_pop_thm "size_inc_exc_thm";
 set_goal([], ¨µn∑ Binomial n 0 = 1 ±
 		Binomial 0 (n+1) = 0Æ);
 a(rewrite_tac[binomial_def] THEN REPEAT strip_tac);
-a(induction_tac¨nÆ THEN rewrite_tac[binomial_def]);
+a(induction_tac¨nÆ THEN asm_rewrite_tac[binomial_def]);
 val €binomial_0_clauses› = save_pop_thm "binomial_0_clauses";
 =TEX
 %%%%
 %%%%
 =SML
-(*
-set_goal([], ¨µm A∑
-	A ç Finite
-¥	#{X | X Ä A ± #X = m} = Binomial (#A) m
-Æ);
-a(REPEAT µ_tac);
-a(intro_µ_tac(¨AÆ, ¨AÆ) THEN induction_tac¨mÆ
+set_goal([], ¨µn m∑ n < m ¥ Binomial n m = 0Æ);
+a(µ_tac THEN induction_tac ¨n:ÓÆ
+	THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(LEMMA_T¨1 º mÆ (strip_asm_tac o 
+	once_rewrite_rule[plus_comm_thm] o
+	rewrite_rule[º_def])
+	THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(all_var_elim_asm_tac1 THEN rewrite_tac[binomial_0_clauses]);
+(* *** Goal "2" *** *)
+a(LEMMA_T¨1 º m'Æ (strip_asm_tac o 
+	once_rewrite_rule[plus_comm_thm] o
+	rewrite_rule[º_def])
+	THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(all_var_elim_asm_tac1 THEN rewrite_tac[binomial_def]);
+a(REPEAT strip_tac THEN DROP_NTH_ASM_T 2 bc_thm_tac
+	THEN PC_T1 "lin_arith" asm_prove_tac[]);
+val €binomial_less_0_thm› = save_pop_thm "binomial_less_0_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µn∑ Binomial n n = 1Æ);
+a(µ_tac THEN induction_tac ¨n:ÓÆ
 	THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(rewrite_tac[binomial_0_clauses]);
-a(LEMMA_T ¨{X|X Ä A ± # X = 0} = {{}}Æ
+(* *** Goal "2" *** *)
+a(asm_rewrite_tac[binomial_def]);
+a(bc_thm_tac binomial_less_0_thm THEN REPEAT strip_tac);
+val €binomial_eq_thm› = save_pop_thm "binomial_eq_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µA m∑
+	A ç Finite
+¥	{X | X Ä A ± #X = m} ç Finite
+Æ);
+a(REPEAT strip_tac THEN bc_thm_tac Ä_finite_thm);
+a(∂_tac¨AÆ THEN1 ALL_FC_T rewrite_tac[finite_size__thm]);
+a(PC_T1 "sets_ext"prove_tac[]);
+val €combinations_finite_lemma› = pop_thm ();
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µA n m∑
+	A ç Finite
+±	#A = n
+¥	{X | X Ä A ± #X = m} ç Finite
+±	#{X | X Ä A ± #X = m} = Binomial n m
+Æ);
+a(REPEAT strip_tac THEN1 ALL_FC_T rewrite_tac[combinations_finite_lemma]);
+a(REPEAT (POP_ASM_T ante_tac));
+a(intro_µ_tac(¨AÆ, ¨AÆ) THEN intro_µ_tac(¨mÆ, ¨mÆ) 
+	THEN induction_tac¨nÆ
+	THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(POP_ASM_T ante_tac
+	THEN ALL_FC_T1 fc_§_canon rewrite_tac[size_0_thm]
+	THEN strip_tac THEN all_var_elim_asm_tac1);
+a(strip_asm_tac(µ_elim¨mÆ Ó_cases_thm) THEN all_var_elim_asm_tac1);
+(* *** Goal "1.1" *** *)
+a(rewrite_tac[binomial_0_clauses]);
+a(LEMMA_T ¨{X|X Ä {} ± # X = 0} = {{}}Æ
 	(fn th => rewrite_tac[th, size_empty_thm,
 		size_singleton_thm, binomial_def]));
 a(PC_T "sets_ext" strip_tac THEN REPEAT strip_tac);
+(* *** Goal "1.1.1" *** *)
 a(swap_nth_asm_concl_tac 2);
 a(all_fc_tac[Ä_finite_thm]);
 a(ALL_FC_T1 fc_§_canon asm_rewrite_tac[size_0_thm]);
-(* *** Goal "1.2" *** *)
+(* *** Goal "1.1.2" *** *)
 a(all_var_elim_asm_tac1 THEN REPEAT strip_tac);
-(* *** Goal "1.3" *** *)
+(* *** Goal "1.1.3" *** *)
 a(asm_rewrite_tac[size_empty_thm]);
-(* *** Goal "2" *** *)
-a(cases_tac¨A = {}Æ THEN1 all_var_elim_asm_tac1);
-(* *** Goal "2.1" *** *)
-a(rewrite_tac[binomial_0_clauses, size_empty_thm]);
-a(LEMMA_T ¨{X|X Ä {} ± # X = m + 1} = {}Æ
+(* *** Goal "1.2" *** *)
+a(rewrite_tac[binomial_0_clauses]);
+a(LEMMA_T ¨{X|X Ä {} ± # X = i + 1} = {}Æ
 	(fn th => rewrite_tac[th, size_empty_thm]));
 a(LEMMA_T¨µX∑X Ä {} § X = {}Æ rewrite_thm_tac
 	THEN1 PC_T1 "sets_ext" prove_tac[]);
 a(PC_T "sets_ext" strip_tac THEN REPEAT strip_tac);
 a(POP_ASM_T ante_tac THEN asm_rewrite_tac[size_empty_thm]);
+(* *** Goal "2" *** *)
+a(strip_asm_tac(µ_elim¨m'Æ Ó_cases_thm) THEN all_var_elim_asm_tac1);
+(* *** Goal "2.1" *** *)
+a(rewrite_tac[binomial_0_clauses]);
+a(LEMMA_T ¨{X|X Ä A ± # X = 0} = {{}}Æ
+	(fn th => rewrite_tac[th, size_empty_thm,
+		size_singleton_thm, binomial_def]));
+a(PC_T "sets_ext" strip_tac THEN REPEAT strip_tac);
+(* *** Goal "2.1.1" *** *)
+a(swap_nth_asm_concl_tac 2);
+a(all_fc_tac[Ä_finite_thm]);
+a(ALL_FC_T1 fc_§_canon asm_rewrite_tac[size_0_thm]);
+(* *** Goal "2.1.2" *** *)
+a(all_var_elim_asm_tac1 THEN REPEAT strip_tac);
+(* *** Goal "2.1.3" *** *)
+a(asm_rewrite_tac[size_empty_thm]);
 (* *** Goal "2.2" *** *)
-a(lemma_tac¨≥#A = 0Æ
-	THEN1 ALL_FC_T1 fc_§_canon asm_rewrite_tac[size_0_thm]);
-a(LEMMA_T¨1 º #AÆ (strip_asm_tac o
-	conv_rule(ONCE_MAP_C eq_sym_conv) o
-	once_rewrite_rule[plus_comm_thm] o
-	rewrite_rule[º_def])
-	THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
-a(asm_rewrite_tac[binomial_def]);
-
-a(lemma_tac¨{X|X Ä A ± # X = m + 1} = 
-	{X|X Ä A ± # X = m} ¿ {X|X Ä A ± # X = m}
-val €size_inc_exc_thm› = save_pop_thm "size_inc_exc_thm";
-*)
+a(rewrite_tac[binomial_def]);
+a(cases_tac¨A = {}Æ
+	THEN1 (all_var_elim_asm_tac1 THEN POP_ASM_T ante_tac
+		THEN rewrite_tac[size_empty_thm]));
+a(POP_ASM_T (PC_T1 "sets_ext1" strip_asm_tac));
+a(lemma_tac¨∂B∑B Ä A ± ≥x ç B ± A = {x} ¿ BÆ
+	THEN1 (∂_tac¨A \ {x}Æ THEN PC_T1 "sets_ext" asm_prove_tac[]));
+a(all_fc_tac[Ä_finite_thm] THEN all_var_elim_asm_tac1);
+a(DROP_NTH_ASM_T 4 ante_tac);
+a(ALL_FC_T rewrite_tac[size_singleton_¿_thm]
+	THEN REPEAT strip_tac);
+a(LIST_DROP_NTH_ASM_T [6] all_fc_tac);
+a(lemma_tac ¨
+	{X|X Ä {x} ¿ B ± # X = i + 1} ç FiniteÆ
+	THEN1 (bc_thm_tac combinations_finite_lemma
+		THEN strip_tac));
+a(lemma_tac ¨
+	{X | X Ä B ± # X = i + 1} Ä
+	{X|X Ä {x} ¿ B ± # X = i + 1}Æ
+	THEN1 PC_T1 "sets_ext" prove_tac[]);
+a(ALL_FC_T asm_rewrite_tac[size_Ä_diff_thm]);
+a(ante_tac(list_µ_elim[¨{X|X Ä B ± # X = i}Æ,
+	¨{X|X Ä {x} ¿ B ± # X = i + 1} \ {X|X Ä B ± # X = i + 1}Æ,
+	¨ÃY∑{x} ¿ YÆ] bijection_finite_size_thm));
+a(ALL_FC_T asm_rewrite_tac[combinations_finite_lemma]);
+a(REPEAT strip_tac);
+(* *** Goal "2.2.1" *** *)
+a(i_contr_tac THEN LIST_DROP_NTH_ASM_T [1, 2, 4, 6, 12]
+	(MAP_EVERY ante_tac) THEN DROP_ASMS_T discard_tac);
+a(PC_T1 "sets_ext1" rewrite_tac[] THEN REPEAT strip_tac);
+(* *** Goal "2.2.1.1" *** *)
+a(spec_nth_asm_tac 2 ¨x''Æ THEN all_var_elim_asm_tac THEN all_asm_fc_tac[]);
+(* *** Goal "2.2.1.2" *** *)
+a(spec_nth_asm_tac 2 ¨x''Æ THEN all_var_elim_asm_tac THEN all_asm_fc_tac[]);
+(* *** Goal "2.2.2" *** *)
+a(i_contr_tac THEN swap_nth_asm_concl_tac 1);
+a(LEMMA_T ¨{X|X Ä {x} ¿ B ± # X = i + 1} \
+	{X|X Ä B ± # X = i + 1} =
+	{X|X Ä {x} ¿ B ± # X = i + 1 ± x ç X}Æ
+	rewrite_thm_tac
+	THEN1 (DROP_NTH_ASM_T 6 ante_tac
+		THEN DROP_ASMS_T discard_tac
+		THEN PC_T1 "sets_ext1" prove_tac[]));
+(* *** Goal "2.2.2.1" *** *)
+a(spec_nth_asm_tac 4 ¨x''Æ THEN all_var_elim_asm_tac);
+(* *** Goal "2.2.2.2" *** *)
+a(LIST_DROP_NTH_ASM_T [5, 6, 8]
+	(MAP_EVERY ante_tac) THEN DROP_ASMS_T discard_tac
+	THEN REPEAT strip_tac);
+a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac);
+(* *** Goal "2.2.2.2.1" *** *)
+a(∂_tac¨x' \ {x}Æ THEN REPEAT strip_tac
+	THEN_TRY SOLVED_T (PC_T1 "sets_ext" asm_prove_tac[]));
+a(all_fc_tac[Ä_finite_thm]);
+a(lemma_tac¨{x} Ä x'Æ THEN1 PC_T1 "sets_ext" asm_prove_tac[]);
+a(DROP_NTH_ASM_T 4 ante_tac THEN ALL_FC_T rewrite_tac[size_Ä_diff_thm]);
+a(rewrite_tac[size_singleton_thm]);
+(* *** Goal "2.2.2.2.2" *** *)
+a(all_var_elim_asm_tac1);
+a(POP_ASM_T ante_tac THEN PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "2.2.2.2.3" *** *)
+a(all_var_elim_asm_tac1);
+a(all_fc_tac[Ä_finite_thm]);
+a(lemma_tac¨≥x ç x''Æ THEN1 PC_T1 "sets_ext1" asm_prove_tac[]);
+a(ALL_FC_T rewrite_tac[size_singleton_¿_thm]);
+(* *** Goal "2.2.2.2.4" *** *)
+a(all_var_elim_asm_tac1 THEN PC_T1 "sets_ext1" prove_tac[]);
+val €combinations_finite_size_thm› = save_pop_thm "combinations_finite_size_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µx n∑
+	(ÓØ 1 + x) ^ n =
+	Series (Ãm∑ÓØ(Binomial n m) * x ^ m) (n+1)
+Æ);
+a(REPEAT strip_tac THEN induction_tac¨n:ÓÆ);
+(* *** Goal "1" *** *)
+a(rewrite_tac[Ø_Ó_exp_def, series_def, binomial_0_clauses]);
+(* *** Goal "2" *** *)
+a(asm_rewrite_tac[Ø_Ó_exp_def] THEN POP_ASM_T discard_tac);
+a(conv_tac (RIGHT_C(once_rewrite_conv[series_induction_thm1])));
+a(rewrite_tac[binomial_def, ÓØ_plus_homomorphism_thm,
+	Ø_times_plus_distrib_thm]);
+a(conv_tac(RIGHT_C(RIGHT_C(RATOR_C(RAND_C(SIMPLE_Ã_C(
+	RANDS_C(un_¬_conv¨m:ÓÆ))))))));
+a(pure_rewrite_tac[plus_series_thm] THEN rewrite_tac[]);
+a(bc_thm_tac (pc_rule1 "Ø_lin_arith" prove_rule[]
+	¨µx y a b∑x = a ± y = ÓØ 1 + b ¥ y + x = ÓØ 1 + a + bÆ)
+	THEN REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(rewrite_tac[Ø_Ó_exp_def,
+	pc_rule1 "Ø_lin_arith" prove_rule[]
+	¨µa b∑a * x * b = x * a * bÆ]);
+a(conv_tac(RIGHT_C(RATOR_C(RAND_C(SIMPLE_Ã_C(
+	RIGHT_C(un_¬_conv¨m:ÓÆ)))))));
+a(pure_rewrite_tac[const_times_series_thm] THEN rewrite_tac[]);
+(* *** Goal "2.2" *** *)
+a(conv_tac (LEFT_C(rewrite_conv[series_induction_thm1])));
+a(rewrite_tac[binomial_0_clauses]);
+a(rewrite_tac[series_def]);
+a(LEMMA_T ¨Binomial n (n+1) = 0Æ rewrite_thm_tac);
+a(bc_thm_tac binomial_less_0_thm THEN rewrite_tac[]);
+val €binomial_thm1› = save_pop_thm "binomial_thm1";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µx y n∑
+	(y + x) ^ n =
+	Series (Ãm∑ÓØ(Binomial n m) * x ^ m * y ^ (n - m)) (n+1)
+Æ);
+a(REPEAT strip_tac);
+a(cases_tac¨y = ÓØ 0Æ THEN1 all_var_elim_asm_tac1);
+(* *** Goal "1" *** *)
+a(rewrite_tac[series_def, binomial_eq_thm]);
+a(LEMMA_T ¨µk∑k º n ¥ Series (Ã m∑ ÓØ (Binomial n m) * x ^ m * ÓØ 0 ^ (n - m)) k = ÓØ 0Æ
+	(fn th => rewrite_tac[rewrite_rule[](µ_elim¨nÆ th)]));
+a(µ_tac THEN induction_tac ¨k:ÓÆ
+	THEN asm_rewrite_tac[series_def]
+	THEN_TRY PC_T1 "lin_arith" asm_prove_tac[]
+	THEN rewrite_tac[º_def]
+	THEN REPEAT strip_tac);
+a(all_var_elim_asm_tac1);
+a(rewrite_tac[pc_rule1"lin_arith" prove_rule[]
+	¨(k+1)+i = (i+1)+kÆ,
+	Ø_Ó_exp_0_1_thm]);
+(* *** Goal "2" *** *)
+a(LEMMA_T ¨(y + x) ^ n = y^n *(ÓØ 1 + y õ-õ1 * x)^nÆ
+	(fn th => rewrite_tac[th, binomial_thm1]));
+(* *** Goal "2.1" *** *)
+a(rewrite_tac[conv_rule(ONCE_MAP_C eq_sym_conv) Ø_Ó_exp_times_thm,
+	Ø_times_plus_distrib_thm,
+	Ø_times_assoc_thm1]);
+a(ALL_FC_T rewrite_tac[Ø_recip_clauses]);
+a(LEMMA_T ¨µk∑k º n + 1 ¥
+	y ^ n * Series (Ã m∑ ÓØ (Binomial n m) * (y õ-õ1 * x) ^ m) k =
+	Series (Ã m∑ ÓØ (Binomial n m) * x ^ m * y ^ (n - m)) kÆ
+	(fn th => rewrite_tac[rewrite_rule[](µ_elim¨n+1Æ th)]));
+a(µ_tac THEN induction_tac ¨k:ÓÆ
+	THEN asm_rewrite_tac[series_def,
+		Ø_times_plus_distrib_thm]
+	THEN_TRY PC_T1 "lin_arith" asm_prove_tac[]
+	THEN rewrite_tac[º_def]
+	THEN REPEAT strip_tac
+	THEN all_var_elim_asm_tac1);
+a(rewrite_tac[Ø_Ó_exp_plus_thm, Ø_Ó_exp_times_thm,
+	µ_elim¨(y õ-õ1)^kÆ Ø_times_order_thm]);
+a(rewrite_tac[Ø_times_assoc_thm1]);
+a(rewrite_tac[conv_rule(ONCE_MAP_C eq_sym_conv) Ø_Ó_exp_times_thm]);
+a(ALL_FC_T rewrite_tac[Ø_recip_clauses]);
+a(rewrite_tac[Ø_Ó_exp_0_1_thm] THEN PC_T1 "Ø_lin_arith" prove_tac[]);
+val €binomial_thm› = save_pop_thm "binomial_thm";
 =TEX
 \Hide{
 =SML
