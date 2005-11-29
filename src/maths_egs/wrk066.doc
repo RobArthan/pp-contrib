@@ -63,15 +63,18 @@ doctex wrk066 wrk066.th; texdvi -b wrk066; texdvi wrk066; texdvi wrk066
 
 \def\ThmsII#1#2{%
 {\vertbarfalse
+\begin{center}
 \begin{minipage}[t]{0.48\hsize}
 #1
 \end{minipage}
 \begin{minipage}[t]{0.48\hsize}
 #2
-\end{minipage}}}
+\end{minipage}
+\end{center}}}
 
 \def\ThmsIII#1#2#3{%
 {\vertbarfalse
+\begin{center}
 \begin{minipage}[t]{0.32\hsize}
 #1
 \end{minipage}
@@ -80,7 +83,8 @@ doctex wrk066 wrk066.th; texdvi -b wrk066; texdvi wrk066; texdvi wrk066
 \end{minipage}
 \begin{minipage}[t]{0.32\hsize}
 #3
-\end{minipage}}}
+\end{minipage}
+\end{center}}}
 
 \def\Hide#1{\relax}
 \Hide{%
@@ -113,7 +117,7 @@ doctex wrk066 wrk066.th; texdvi -b wrk066; texdvi wrk066; texdvi wrk066
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2005/11/22 16:29:18 $%
+\date{\FormatDate{$Date: 2005/11/22 17:33:30 $%
 }}
 
 \begin{document}
@@ -136,7 +140,7 @@ calculation of the areas of some simple plane sets.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK066; issue $Revision: 1.96 $%
+Reference: LEMMA1/HOL/WRK066; issue $Revision: 1.97 $%
 
 
 \end{centering}
@@ -2416,32 +2420,44 @@ proving that involves additional effort and the proof is not routine. The gauge 
 \]
 
 
+That the area bounded by a circle of radius $r$ is $\pi r^2$ now follows from what we have proved about the behaviour of areas under dilations (given that the set in question is the image of the set bounded by the unit circle under a dilation with scale factor $r$ in both directions).
+
 \ThmsIII{%
 =GFT
 area_circle_lemma1
 area_circle_lemma2
-=TEX
-}{%
-=GFT
 area_circle_lemma3
-area_circle_lemma4
 =TEX
 }{%
 =GFT
+area_circle_lemma4
 area_circle_int_thm
 area_unit_circle_thm
 =TEX
+}{%
+=GFT
+circle_dilate_thm
+area_circle_thm
+=TEX
 }
 
-That the area bounded by a circle of radius $r$ is $\pi r^2$ now follows from what we have proved about the behaviour of areas under dilations (given that the set in question is the image of the set bounded by the unit circle under a dilation with scale factor $r$ in both directions).
+Using this notion of area, we can calculate probabilities of events parametrised by pairs of real numbers:
+Ii $S \subseteq \R \times \R$ is a sample space with area $s \not= 0$ say, and $X \subseteq S$ has area $x$, then the probability that an event in $S$ belongs to $X$ is $x/s$.
+In this way, we may state and prove the Buffon needle theorem: 
+this says that if a needle of unit length is dropped at random onto the plane, then the probability that the needle crosses one of the lines $y = m$ with $m \in \Z$ is $2/\pi$.
+
+We take as the parameters {\em(i)}, the angle, $\theta$, between the needle and the horizontal, and, {\em(ii)}, the distance, $d$, between the uppermost end of the needle and the line $y = m$ immediately below it.
+So $S$ is the set $[0, \pi] \times [0, 1]$ and $X$ comprises those $(\theta, d) \in S$ such that the line segment between $(0, d)$ and $(\Cos{\theta}, d - \Sin{\theta})$ crosses the $x$-axis.
+$X$ and $S$ have areas $2$ and $\pi$ respectively which gives the stated probability of $2/\pi$.
+The proofs of the theorems named below implement this argument with the calculation of the area of $X$ as a separate lemma.
 
 \ThmsII{
 =GFT
-circle_dilate_thm
+buffon_needle_lemma
 =TEX
 }{%
 =GFT
-area_circle_thm
+buffon_needle_thm
 =TEX
 }
 
@@ -17217,6 +17233,147 @@ a(all_fc_tac[circle_dilate_thm]);
 a(POP_ASM_T rewrite_thm_tac);
 a(conv_tac (ONCE_MAP_C Ø_anf_conv) THEN taut_tac);
 val €area_circle_thm› = save_pop_thm"area_circle_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨
+	let	S = {( , d) |   ç ClosedInterval (ÓØ 0) – ± d ç ClosedInterval (ÓØ 0) (ÓØ 1)}
+	in let	x_axis = {(x, y) | y = ÓØ 0}
+	in let	needle( , d) =
+		{(x, y) | ∂t∑ t ç ClosedInterval (ÓØ 0) (ÓØ 1)
+			± x = t * Cos   ± y = d - t * Sin  }
+	in let	X = {( , d) | ( , d) ç S ± ≥needle( , d) ° x_axis = {}}
+	in	X Area ÓØ 2
+Æ);
+a(rewrite_tac[let_def, area_def]);
+a(∂_tac¨Ãx:Ø∑ —(ClosedInterval (ÓØ 0) –) x * Sin xÆ
+	THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(LEMMA_T ¨(Sin Int (Ãx∑~(Cos x)) – - (Ãx∑~(Cos x)) (ÓØ 0)) (ClosedInterval (ÓØ 0) –)Æ
+	(accept_tac o rewrite_rule[
+		sin_cos_–_thm, cos_def, int_def]));
+a(bc_thm_tac int_deriv_thm1);
+a(rewrite_tac[–_def] THEN REPEAT strip_tac);
+a(TRANS_DERIV_T ante_tac);
+a(conv_tac(ONCE_MAP_C Ø_anf_conv) THEN taut_tac);
+(* *** Goal "2" *** *)
+a(cases_tac¨≥x' ç ClosedInterval(ÓØ 0) –Æ
+	THEN asm_rewrite_tac[—_def]);
+(* *** Goal "2.1" *** *)
+a(asm_rewrite_tac[
+	pc_rule1"sets_ext" prove_rule[] ¨{z|F} = {}Æ]);
+a(LEMMA_T¨—({} : Ø SET) = Ãx∑ÓØ 0Æ (fn th => rewrite_tac[th, int_Ø_0_thm]));
+a(rewrite_tac[—_def]);
+(* *** Goal "2.2" *** *)
+a(LEMMA_T¨µX Y∑ Y = X ± — X IntâR Sin x' ¥ — Y IntâR Sin x'Æ bc_thm_tac
+	THEN1 (REPEAT strip_tac THEN asm_rewrite_tac[]));
+a(∂_tac¨ClosedInterval(ÓØ 0) (Sin x')Æ THEN REPEAT strip_tac);
+(* *** Goal "2.2.1" *** *)
+a(all_asm_ante_tac
+	THEN PC_T1 "sets_ext1" rewrite_tac[closed_interval_def]
+	THEN REPEAT strip_tac);
+(* *** Goal "2.2.1.1" *** *)
+a(all_var_elim_asm_tac1 THEN POP_ASM_T ante_tac);
+a(rewrite_tac[pc_rule1 "Ø_lin_arith" prove_rule[]
+	¨µy∑x + ~y = ÓØ 0 § x = yÆ]);
+a(REPEAT strip_tac THEN all_var_elim_asm_tac1);
+a(cases_tac¨x' = ÓØ 0Æ
+	THEN1 asm_rewrite_tac[sin_def]);
+a(cases_tac¨x' = –Æ
+	THEN1 asm_rewrite_tac[sin_cos_–_thm]);
+a(lemma_tac¨x' ç OpenInterval (ÓØ 0) –Æ
+	THEN1 (rewrite_tac[open_interval_def] 
+		THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(all_fc_tac[sin_0_–_0_less_thm]);
+a(once_rewrite_tac[Ø_times_comm_thm]);
+a(bc_thm_tac(rewrite_rule[](list_µ_elim
+	[¨Sin x'Æ, ¨tÆ, ¨ÓØ 1Æ]Ø_º_times_mono_thm)));
+a(asm_rewrite_tac[Ø_º_def]);
+(* *** Goal "2.2.1.2" *** *)
+a(strip_asm_tac(
+	rewrite_rule[Ø_abs_º_less_interval_thm, closed_interval_def]
+(µ_elim¨x'Æ abs_sin_abs_cos_º_1_thm))
+	THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(cases_tac¨x = ÓØ 0Æ THEN1 all_var_elim_asm_tac1);
+a(∂_tac¨ÓØ 0Æ THEN REPEAT strip_tac);
+a(∂_tac¨ÓØ 0Æ THEN REPEAT strip_tac);
+a(∂_tac¨ÓØ 0Æ THEN rewrite_tac[]);
+(* *** Goal "2.2.1.3.2" *** *)
+a(cases_tac¨x = Sin x'Æ THEN1 all_var_elim_asm_tac1);
+a(∂_tac¨Cos x'Æ THEN REPEAT strip_tac);
+a(∂_tac¨ÓØ 0Æ THEN REPEAT strip_tac);
+a(∂_tac¨ÓØ 1Æ THEN rewrite_tac[]);
+(* *** Goal "2.2.1.3.2.2" *** *)
+a(DROP_NTH_ASM_T 3 ante_tac);
+a(cases_tac¨x' = ÓØ 0Æ THEN1 
+	(all_var_elim_asm_tac1 THEN rewrite_tac[sin_def]
+		THEN strip_tac
+		THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(cases_tac¨x' = –Æ THEN1 
+	(all_var_elim_asm_tac1 THEN rewrite_tac[sin_cos_–_thm]
+		THEN strip_tac
+		THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(REPEAT strip_tac);
+a(lemma_tac¨ÓØ 0 < x' ± x' < – ± ÓØ 0 < x ± x < Sin x'Æ
+	THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(LIST_DROP_NTH_ASM_T (interval 5 12) discard_tac);
+(* *** Goal "2.2.1.3.2.2" *** *)
+a(lemma_tac¨µz∑ (Ãz∑x + ~(z * Sin x')) Cts zÆ
+	THEN REPEAT strip_tac
+	THEN1 REPEAT (simple_cts_tac THEN REPEAT strip_tac));
+a(ante_tac(list_µ_elim
+	[¨(Ãz∑x + ~(z * Sin x'))Æ, ¨ÓØ 0Æ, ¨ÓØ 1Æ]intermediate_value_thm));
+a(asm_rewrite_tac[]);
+a(STRIP_T (ante_tac o µ_elim¨ÓØ 0Æ));
+a(LEMMA_T¨x + ~ (Sin x') < ÓØ 0Æ asm_rewrite_thm_tac
+	THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(REPEAT strip_tac);
+a(∂_tac¨x'' * Cos x'Æ THEN REPEAT strip_tac);
+a(∂_tac¨ÓØ 0Æ THEN REPEAT strip_tac);
+a(∂_tac¨x''Æ THEN asm_rewrite_tac[Ø_º_def]);
+(* *** Goal "2.2.2" *** *)
+a(conv_tac(RIGHT_C(pure_once_rewrite_conv[
+	prove_rule[]¨Sin x' = Sin x' - ÓØ 0Æ])));
+a(bc_thm_tac int_Ø_—_interval_thm);
+a(cases_tac¨x' = ÓØ 0Æ THEN1 asm_rewrite_tac[sin_def]);
+a(cases_tac¨x' = –Æ THEN1 asm_rewrite_tac[sin_cos_–_thm]);
+a(DROP_NTH_ASM_T 3 (strip_asm_tac o rewrite_rule[closed_interval_def]));
+a(lemma_tac¨x' ç OpenInterval (ÓØ 0) –Æ
+	THEN1 (rewrite_tac[open_interval_def] 
+		THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(all_fc_tac[sin_0_–_0_less_thm]);
+a(asm_rewrite_tac[Ø_º_def]);
+val €buffon_needle_lemma› = save_pop_thm"buffon_needle_lemma";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨
+	let	S = {( , d) |   ç ClosedInterval (ÓØ 0) – ± d ç ClosedInterval (ÓØ 0) (ÓØ 1)}
+	in let	x_axis = {(x, y) | y = ÓØ 0}
+	in let	needle( , d) =
+		{(x, y) | ∂t∑ t ç ClosedInterval (ÓØ 0) (ÓØ 1)
+			± x = t * Cos   ± y = d - t * Sin  }
+	in let	X = {( , d) | ( , d) ç S ± ≥needle( , d) ° x_axis = {}}
+	in	X Ä S
+	±	∂x s∑	≥s = ÓØ 0
+		± 	X Area x
+		±	S Area s
+		±	x / s = ÓØ 2 / – 
+Æ);
+a(rewrite_tac[let_def] THEN REPEAT strip_tac
+	THEN1 PC_T1 "sets_ext1" asm_prove_tac[]);
+a(lemma_tac¨ÓØ 0 < –Æ THEN1 rewrite_tac[–_def]);
+a(lemma_tac¨ÓØ 0 º – ± ≥– = ÓØ 0Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(LEMMA_T¨ÓØ 0 º ÓØ 1Æ asm_tac THEN1 rewrite_tac[]);
+a(LEMMA_T¨{(x, y)|x ç ClosedInterval (ÓØ 0) – ± y ç ClosedInterval (ÓØ 0) (ÓØ 1)}
+             Area – * ÓØ 1Æ ante_tac
+	THEN1 all_fc_tac[area_rectangle_thm]);
+a(rewrite_tac[] THEN REPEAT strip_tac);
+a(∂_tac¨ÓØ 2Æ THEN ∂_tac¨–Æ THEN asm_rewrite_tac[]);
+a(accept_tac(rewrite_rule[let_def] buffon_needle_lemma));
+val €buffon_needle_thm› = save_pop_thm"buffon_needle_thm";
 =TEX
 %%%%
 %%%%
