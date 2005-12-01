@@ -117,7 +117,7 @@ doctex wrk066 wrk066.th; texdvi -b wrk066; texdvi wrk066; texdvi wrk066
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2005/11/22 17:33:30 $%
+\date{\FormatDate{$Date: 2005/11/29 13:23:56 $%
 }}
 
 \begin{document}
@@ -140,7 +140,7 @@ calculation of the areas of some simple plane sets.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK066; issue $Revision: 1.97 $%
+Reference: LEMMA1/HOL/WRK066; issue $Revision: 1.98 $%
 
 
 \end{centering}
@@ -421,6 +421,8 @@ The remaining theorems about polynomials build up to a proof that a polynomial f
 poly_roots_finite_thm
 =TEX
 ).
+This is proved using the special case of polynomial division in which the divisor is linear (which has the consequences familiarly known as the factor and remainder theorems).
+
 {\it En route} we get useful facts about the interaction of polynomial evaluation with list operations and also a formula for the difference of two like powers which will turn out, fortuitously, to be just what is needed to prove the convergence of geometric series much later on.
 
 Development of algebraic theory is not a main concern so we stop at this theorem.
@@ -448,24 +450,26 @@ id_eval_thm
 plus_eval_thm
 const_times_eval_thm
 times_eval_thm
+poly_induction_thm
 =TEX
 }{%
 =GFT
-poly_induction_thm
 poly_func_eq_poly_eval_thm
 const_poly_func_thm
 id_poly_func_thm
 plus_poly_func_thm
 times_poly_func_thm
 comp_poly_thm
+poly_eval_append_thm
+poly_eval_rev_thm
 =TEX
 }{%
 =GFT
-poly_eval_append_thm
-poly_eval_rev_thm
 poly_diff_powers_thm
 length_plus_coeffs_thm
 poly_linear_div_thm
+poly_remainder_thm
+poly_factor_thm
 poly_roots_finite_thm
 =TEX
 }
@@ -3062,6 +3066,42 @@ a(DROP_NTH_ASM_T 2 (asm_tac o rewrite_rule[length_rev_append_thm]));
 a(DROP_NTH_ASM_T 2 (asm_tac o rewrite_rule[rev_rev_thm]));
 a(¶_tac ¬l2® THEN ¶_tac ¬r® THEN asm_rewrite_tac[]);
 val Ûpoly_linear_div_thmÝ = save_pop_thm "poly_linear_div_thm";
+=TEX
+The so-called remainder theorem is just the above theorem with the explicit formula $f(c)$ for the remainder.
+%%%%
+%%%%
+=SML
+set_goal([], ¬µl1 c·
+	³l1 = []
+´	¶l2·
+		Length l2 < Length l1 
+	±	(Ìx· PolyEval l1 x) = (Ìx· (x - c)*PolyEval l2 x + PolyEval l1 c)
+®);
+a(REPEAT strip_tac);
+a(all_fc_tac[poly_linear_div_thm]);
+a(POP_ASM_T (strip_asm_tac o µ_elim¬c®));
+a(¶_tac¬l2® THEN asm_rewrite_tac[]);
+a(POP_ASM_T (ante_tac o µ_elim¬c®));
+a(rewrite_tac[]);
+a(STRIP_T rewrite_thm_tac);
+val Ûpoly_remainder_thmÝ = save_pop_thm "poly_remainder_thm";
+=TEX
+The so-called factor theorem is the special case when the remainder vanishes:
+%%%%
+%%%%
+=SML
+set_goal([], ¬µl1 c·
+	³l1 = []
+±	PolyEval l1 c = î¯ 0
+´	¶l2·
+		Length l2 < Length l1 
+	±	(Ìx· PolyEval l1 x) = (Ìx· (x - c)*PolyEval l2 x)
+®);
+a(REPEAT strip_tac);
+a(all_fc_tac[poly_remainder_thm]);
+a(POP_ASM_T (strip_asm_tac o µ_elim¬c®));
+a(¶_tac¬l2® THEN asm_rewrite_tac[]);
+val Ûpoly_factor_thmÝ = save_pop_thm "poly_factor_thm";
 =TEX
 We can now prove that a polynomial which is not identically zero has only finitely many
 roots:
