@@ -419,12 +419,16 @@ binomial_factorial_thm
 }
 
 \subsection{Application: Bertrand's Ballot Theorem}
-Bertrand's ballot problem is concerned with an election between too contestants.
-The problem is to calculate the probability that the winner's total is ahead of the loser's throughout the counting of the votes.
-The answer is the result of dividing the winner's majority by the total number of votes cast.
-I.e., if the winner receives $m$ votes and the loser $n$, the probability is $(m-n)/(m+n)$.
 
-Following Feller~\cite{Feller68}, we represent the ballot problem using {\em walks} (also called ``paths'' in~\cite{Feller68}.
+In Bertrand's ballot problem a ballot is held between two candidates, North and South, say.
+North beats South, the votes being counted one at a time by a single clerk.
+The problem is to calculate the probability that at all times during the count, North had a majority over South.
+
+
+The answer is the result of dividing the North's final majority by the total number of votes cast.
+I.e., if the North receives $M$ votes and South $N$, the probability is $(M - N)/(M + N)$.
+
+Following Feller~\cite{Feller68}, we represent the ballot problem using {\em walks} (also called ``paths'' in~\cite{Feller68}).
 We define a {\em walk} of length $n$ starting at $x$ is a sequence of integers $s_i$ such that $s_0 = x$, $|s_{m+1} - s_m| = 1$ for $0 \le i < n$ and (for definiteness) $s_{m+1} = s_n$ for $m \ge n$.
 
 πHOLCONST
@@ -437,7 +441,8 @@ We define a {\em walk} of length $n$ starting at $x$ is a sequence of integers $
 ‹ ±	(µm∑n º m ¥ s m = s n)
 ∞
 
-A walk leads to $y$ if its last element is $y$:
+In talking about walks, we often identify a walk $s_i$ with the polygonal path obtained by joining the points $(i, s_i)$ in the plane. Under this identification a walk starting at $x$ of length $n$ begins at $(0, x)$, takes $n$ diagonal north-east or south-east steps and then heads directly east indefinitely.
+The following definition captures the final $y$-value taken on by a walk.
 
 πHOLCONST
 ‹ €WalkTo› : Ó ≠ ˙ ≠ ˙ ≠ (Ó ≠ ˙) SET
@@ -447,13 +452,50 @@ A walk leads to $y$ if its last element is $y$:
 ‹ §	s ç Walk n x ± s n = y
 ∞
 
-In the ballot problem, define $s_i$ to be the (possibly zero or negative) majority of when the $i$-th vote is counted of the eventual winner.
-Then $s_i$ is a walk from $0$ to $m - n$ and any such walk corresponds to a possible order in which to count the votes.
-
-If $S$ is finite sample space with $\Size{s} \not= 0$ and $X$ is a subset of $S$, then the probability that an event in $S$ belongs to $X$ is $\Size{x}/\Size{s}$.
+Walks satisfy a discrete version of the intermediate value theorem: if $x$, $y$ and $z$ are integers such that $z$ lies between $x$ and $y$ then any walk from $x$ to $y$ takes the value $z$ at some stage.
 
 
 
+In the ballot problem, define $s_i$ to be the (possibly zero or negative) majority of North over South when the $i$-th vote is counted.
+Then $s_i$ is a walk of length $M + N$ from $0$ to $M - N$ and any such walk corresponds to exactly one possible order in which to count the votes.
+
+Thus the probability we have to calculate is $a/s$, where $s$ is the total number of walks, $_i$, of length $M + N$ from $0$ to $M - N$, and where $a$ is the number of these that are {\em favourable}, i.e., that are such that $s_i > 0$ for $i > 0$.
+For any $a$, a walk of length $M + N$ from $a$ to $x + M - N$ is uniquely determined by the set of indices $s_i$ for which $s_{i+1} - s_i = 1$.
+Thus the number of such walks is the number of ways of choosing $m$ numbers less than $M + N$, i.e., $s = \Binomial{M+N}{M}$.
+
+To calculate the number of favourable walks, we use what Feller calls the {\em reflection principle}. This says that, if $x$ and $y$ are positive integers, then there is a one-to-one correspondence between walks of length $M+N$, $s_i$, from $x$ to $y$ which cross the $x$-axis and arbitrary walks of length $M+N$ from $-x$ to $y$. To see this one observes that by the intermediate value theorem for walks a walk, $t_i$ of the second sort must have $t_i = 0$ for some $i$; reflecting the initial negative segment of $t_i$ in the $x$-axis gives a walk $s_i$ of the first sort. This reflection defines the required one-to-one correspondence.
+
+Now if $s_i$ is a favourable walk of length $M+N$ from $0$ to $M-N$ then $t_i = s_{i+1}$ defines a walk from $1$ to $M-N > 0$ which does not cross the $x$-axis.
+From the reflection principle, we have that the number of such walks is $a = \Binomial{M+N-1}{M-1} - \Binomial{M+N-1}{M}$.
+It then follows from a calculation using the definition of the binomial function in terms of factorials, that $a/s = (M-N)/(M+N)$.
+
+The following block of theorems implements the proof sketched above.
+
+\ThmsII{%
+=GFT
+walk_thm
+walk_to_thm
+walk_finite_size_thm
+walk_to_finite_size_thm
+walk_to_empty_thm
+walk_to_finite_thm
+walk_walk_to_thm
+walk_shift_thm
+walk_minus_thm
+=TEX
+}{%
+=GFT
+walk_to_minus_thm
+walk_to_intermediate_value_thm
+walk_to_reflection_thm
+ballot_lemma1
+ballot_lemma2
+ballot_lemma3
+ballot_lemma4
+ballot_lemma5
+ballot_thm
+=TEX
+}
 
 \bibliographystyle{fmu}
 \bibliography{fmu}
@@ -1010,6 +1052,54 @@ val €bijection_finite_size_thm1› = save_pop_thm "bijection_finite_size_thm1";
 %%%%
 %%%%
 =SML
+(*
+set_goal([], ¨µa b f n∑
+	a ç Finite
+±	a = {z | ∂x∑x ç b ± z = f x}
+±	(µy∑y ç a ¥ {x | x ç b ± y = f x} ç Finite ± #{x | x ç b ± y = f x} = n)
+¥	b ç Finite ± #b = n * #aÆ);
+a(REPEAT µ_tac THEN ¥_tac THEN REPEAT_N 2 (POP_ASM_T ante_tac));
+a(intro_µ_tac(¨bÆ, ¨bÆ) THEN finite_induction_tac ¨aÆ);
+(* *** Goal "1" *** *)
+a(rewrite_tac[size_empty_thm] THEN µ_tac);
+a(PC_T1 "sets_ext1" once_rewrite_tac[] THEN rewrite_tac[]
+	THEN strip_tac);
+a(LEMMA_T ¨b = {}Æ (fn th => rewrite_tac[th, size_empty_thm, empty_finite_thm]));
+a(PC_T "sets_ext1" contr_tac);
+a(spec_nth_asm_tac 2 ¨f xÆ);
+a(spec_nth_asm_tac 1 ¨xÆ);
+(* *** Goal "2" *** *)
+a(µ_tac THEN REPEAT ¥_tac);
+a(spec_nth_asm_tac 1 ¨xÆ);
+a(DROP_NTH_ASM_T 6 (ante_tac o µ_elim¨{z|z ç b ± ≥x = f z}Æ));
+a(rewrite_tac[] THEN ¥_tac);
+(* *** Goal "2.1" *** *)
+a(i_contr_tac THEN swap_nth_asm_concl_tac 1);
+a(PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "2.1.1" *** *)
+a(LEMMA_T ¨x' ç {x} ¿ aÆ ante_tac THEN1 POP_ASM_T (PC_T1 "sets_ext" rewrite_thm_tac));
+a(DROP_NTH_ASM_T 5 rewrite_thm_tac THEN strip_tac
+	THEN all_var_elim_asm_tac1);
+a(∂_tac¨x''Æ THEN REPEAT strip_tac);
+a(contr_tac THEN all_var_elim_asm_tac1);
+(* *** Goal "2.1.2" *** *)
+a(all_var_elim_asm_tac1);
+a(LEMMA_T ¨f x'' ç {x} ¿ aÆ ante_tac THEN1 asm_rewrite_tac[]);
+(* *** Goal "2.1.2.1" *** *)
+a(∂_tac¨x''Æ THEN REPEAT strip_tac);
+(* *** Goal "2.1.2.2" *** *)
+a(REPEAT strip_tac);
+a(contr_tac THEN all_var_elim_asm_tac1);
+(* *** Goal "2.2" *** *)
+a(i_contr_tac THEN swap_nth_asm_concl_tac 1);
+
+
+val €surjection_finite_size_thm› = save_pop_thm "surjection_finite_size_thm";
+*)
+=TEX
+%%%%
+%%%%
+=SML
 set_goal([], ¨µa m∑
 	 a ç Finite ± #a = m
 §	∂f∑	(µi j∑i < m ± j < m ± f i = f j ¥ i = j)
@@ -1127,6 +1217,43 @@ a(asm_rewrite_tac[size_empty_thm]);
 a(STRIP_T rewrite_thm_tac);
 a(PC_T1 "lin_arith" prove_tac[]);
 val €finite_size__thm› = save_pop_thm "finite_size__thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µa b∑
+	a ç Finite ± b ç Finite
+¥	(a ∏ b) ç Finite ± #(a ∏ b) = #a * #b
+Æ);
+a(REPEAT µ_tac THEN ¥_tac);
+a(finite_induction_tac¨aÆ);
+(* *** Goal "1" *** *)
+a(LEMMA_T ¨({} ∏ b) = {}Æ
+	(fn th => rewrite_tac[th, empty_finite_thm, size_empty_thm]));
+a(PC_T1 "sets_ext1" prove_tac[∏_def]);
+(* *** Goal "2" *** *)
+a(LEMMA_T ¨({x} ¿ a ∏ b) = ({x} ∏ b) ¿ (a ∏ b)Æ
+	(fn th => asm_rewrite_tac[th, ¿_finite_thm])
+	THEN1 PC_T1 "sets_ext1" prove_tac[∏_def]);
+a(lemma_tac¨({x} ∏ b) ° (a ∏ b) = {}Æ
+	THEN1 (PC_T1 "sets_ext1" asm_prove_tac[∏_def]
+		THEN contr_tac THEN all_var_elim_asm_tac1));
+a(lemma_tac¨({x} ∏ b) ç Finite ± #({x} ∏ b) = #bÆ);
+(* *** Goal "2.1" *** *)
+a(bc_thm_tac bijection_finite_size_thm);
+a(∂_tac¨Ãy∑ (x, y)Æ THEN asm_rewrite_tac[]
+	THEN REPEAT strip_tac);
+a(PC_T1 "sets_ext1" rewrite_tac[∏_def]);
+a(rewrite_tac[]);
+a(contr_tac THEN_TRY all_var_elim_asm_tac);
+a(spec_nth_asm_tac 1 ¨x2Æ);
+(* *** Goal "2.2" *** *)
+a(REPEAT strip_tac);
+a(ALL_FC_T rewrite_tac[size_singleton_¿_thm]);
+a(ante_tac(list_µ_elim[¨{x} ∏ bÆ, ¨a ∏ bÆ] size_¿_thm));
+a(asm_rewrite_tac[size_empty_thm, times_plus_distrib_thm]);
+a(PC_T1 "lin_arith" prove_tac[]);
+val €∏_finite_size_thm› = save_pop_thm "∏_finite_size_thm";
 =TEX
 %%%%
 %%%%
@@ -3145,12 +3272,12 @@ val €walk_to_reflection_thm› = save_pop_thm "walk_to_reflection_thm";
 %%%%
 =SML
 set_goal([], ¨µm n y∑
-	#{s | s ç WalkTo (m+n+1) (Ó˙ 0) y ± µi∑0 < i ¥ Ó˙ 0 < s i} =
+	#{s | s ç WalkTo (m+n+1) (Ó˙ 0) y ± µi∑Ó˙ 0 < s (i+1)} =
 	#{s | s ç WalkTo (m+n) (Ó˙ 1) y ± µ i∑ Ó˙ 0 < s i}
 Æ);
 a(REPEAT µ_tac);
 a(bc_thm_tac (taut_rule¨µp∑
-	{s | s ç WalkTo (m+n+1) (Ó˙ 0) y ± µi∑0 < i ¥ Ó˙ 0 < s i} ç Finite ± p ¥ pÆ));
+	{s | s ç WalkTo (m+n+1) (Ó˙ 0) y ± µi∑Ó˙ 0 < s (i+1)} ç Finite ± p ¥ pÆ));
 a(MAP_EVERY ∂_tac [¨yÆ, ¨nÆ, ¨mÆ]);
 a(bc_thm_tac bijection_finite_size_thm1);
 a(∂_tac¨Ãs∑Ãk∑s(k+1)Æ);
@@ -3189,10 +3316,6 @@ a(all_var_elim_asm_tac1 THEN asm_rewrite_tac[plus_assoc_thm1]);
 a(POP_ASM_T bc_thm_tac THEN PC_T1 "lin_arith" asm_prove_tac[]);
 (* *** Goal "3.3" *** *)
 a(asm_rewrite_tac[plus_assoc_thm1]);
-(* *** Goal "3.4" *** *)
-a(strip_asm_tac(µ_elim¨iÆ Ó_cases_thm)
-	THEN all_var_elim_asm_tac1);
-a(asm_rewrite_tac[]);
 (* *** Goal "4" *** *)
 a(all_var_elim_asm_tac1 THEN rewrite_tac[]);
 a(DROP_NTH_ASM_T 2 ante_tac THEN rewrite_tac[walk_to_def, plus_assoc_thm]
@@ -3207,11 +3330,10 @@ a(bc_thm_tac walk_shift_thm);
 a(∂_tac¨Ó˙ 0Æ THEN asm_rewrite_tac[pc_rule1"lin_arith" prove_rule[]
 	¨1 + m + n = m + n + 1Æ]);
 (* *** Goal "4.2" *** *)
-a(SPEC_NTH_ASM_T 6 ¨1Æ ante_tac);
+a(SPEC_NTH_ASM_T 6 ¨0Æ ante_tac);
 a(POP_ASM_T rewrite_thm_tac);
 (* *** Goal "5" *** *)
-a(all_var_elim_asm_tac1 THEN rewrite_tac[]);
-a(POP_ASM_T bc_thm_tac THEN REPEAT strip_tac);
+a(all_var_elim_asm_tac1 THEN asm_rewrite_tac[]);
 val €ballot_lemma1› = save_pop_thm "ballot_lemma1";
 =TEX
 %%%%
@@ -3220,7 +3342,7 @@ val €ballot_lemma1› = save_pop_thm "ballot_lemma1";
 set_goal([], ¨µm n∑ 
 	0 < n ± n < m + 1
 ¥	ÓØ(#{s | s ç WalkTo (m+n+1) (Ó˙ 0) (Ó˙ (m+1) - Ó˙ n)
-		± µi∑0 < i ¥ Ó˙ 0 < s i}) =
+		± µi∑Ó˙ 0 < s (i+1)}) =
 	ÓØ(Binomial (m + n) m) - ÓØ(Binomial (m+n) (m+1))Æ);
 a(REPEAT strip_tac);
 a(pure_rewrite_tac[pc_rule1"Ø_lin_arith" prove_rule[]
@@ -3386,7 +3508,7 @@ val €ballot_lemma4› = save_pop_thm "ballot_lemma4";
 =SML
 set_goal([], ¨µm∑
 	let	S = WalkTo m (Ó˙ 0) (Ó˙ m)
-	in let	X = {s | s ç S ± µ i∑ 0 < i ¥ Ó˙ 0 < s i}
+	in let	X = {s | s ç S ± µ i∑ Ó˙ 0 < s (i+1)}
 	in	0 < m ¥ X = S
 Æ);
 a(rewrite_tac[let_def] THEN REPEAT strip_tac);
@@ -3415,7 +3537,7 @@ a(DROP_NTH_ASM_T 2 (fn th =>
 	all_asm_ante_tac THEN rewrite_tac[th]
 	THEN REPEAT strip_tac));
 a(POP_ASM_T (asm_rewrite_thm_tac o conv_rule(ONCE_MAP_C eq_sym_conv)));
-a(cases_tac¨i º mÆ THEN asm_rewrite_tac[Ó˙_less_thm]);
+a(cases_tac¨i + 1 º mÆ THEN asm_rewrite_tac[Ó˙_less_thm]);
 val €ballot_lemma5› = save_pop_thm "ballot_lemma5";
 =TEX
 %%%%
@@ -3423,7 +3545,7 @@ val €ballot_lemma5› = save_pop_thm "ballot_lemma5";
 =SML
 set_goal([], ¨µm n∑
 	let	S = WalkTo (m+n) (Ó˙ 0) (Ó˙ m - Ó˙ n)
-	in let	X = {s | s ç S ± µ i∑ 0 < i ¥ Ó˙ 0 < s i}
+	in let	X = {s | s ç S ± µ i∑ Ó˙ 0 < s (i+1)}
 	in	S ç Finite
 	±	≥#S = 0
 	±	X Ä S
