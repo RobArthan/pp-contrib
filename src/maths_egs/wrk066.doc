@@ -117,7 +117,7 @@ doctex wrk066 wrk066.th; texdvi -b wrk066; texdvi wrk066; texdvi wrk066
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2005/11/29 13:23:56 $%
+\date{\FormatDate{$Date: 2005/12/01 10:32:58 $%
 }}
 
 \begin{document}
@@ -140,7 +140,7 @@ calculation of the areas of some simple plane sets.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK066; issue $Revision: 1.98 $%
+Reference: LEMMA1/HOL/WRK066; issue $Revision: 1.99 $%
 
 
 \end{centering}
@@ -308,6 +308,8 @@ Hd [1/2; 1/3] ç {x | x^2 < ÓØ 1}
 ' is the {\ProductHOL} syntax for writing the list whose elements are $1/2$ and $1/3$ and
 $Hd$ is the operator that takes the head element of a list, so that the membership assertion reduces to the true inequality $1/4 < 1$).
 
+=IGN
+open_theory "analysis" ;
 =SML
 force_delete_theory"analysis" handle Fail _ => ();
 open_theory"Ø";
@@ -2210,7 +2212,7 @@ riemann_sum_—_singleton_thm
 }
 
 Now we can start proving basic facts about the gauge integral.
-Our first few lemmas show that it is a linear operator which is weakly order-preserving.
+Our first few lemmas show that it is a linear operator .
 We then prove that integrals are unique when they exist.
 This follows from Cousin's lemma and linearity
 
@@ -2239,6 +2241,7 @@ The characteristic functions of singleton sets are integrable with integral 0, a
 \ThmsIII{
 =GFT
 int_Ø_0_º_thm
+int_Ø_º_thm
 int_Ø_0_dominated_thm
 =TEX
 }{%
@@ -2321,10 +2324,10 @@ int_deriv_thm1
 }
 
 
-Armed with the fundamental theorem, we calculate the integrals of two example integrands: the characteristic function of an interval and the example $1/\sqrt{1 - x^2}$ mentioned at the beginning of this section.
+Armed with the fundamental theorem, we calculate the integrals of some example integrands: the characteristic function of an interval; the example $1/\sqrt{1 - x^2}$ mentioned at the beginning of this section; and the reciprocal function.
 
 
-\ThmsII{%
+\ThmsIII{%
 =GFT
 int_Ø_—_interval_thm
 =TEX
@@ -2332,7 +2335,31 @@ int_Ø_—_interval_thm
 =GFT
 int_example_thm
 =TEX
+}{%
+=GFT
+int_recip_thm
+=TEX
 }
+
+We put the last of these theorems to work to show that the harmonic series $s_i = 1/m$ is divergent: the theorem says that if $0 < a < b$, then $\int_a^b(1/x)dx = \Log{b} - \Log{a}$.
+Since $1/x \le 1/a$ throughout this interval we have that $\Log{b} - \Log{a} \le  \int_a^b(1/a)dx = (b-a)/a$.
+Thus for positive integer $m$, taking $a = m$, $b = m +1$, we have that $\Log{m+1} - \Log{m} \le 1/m$. Adding these inequalities for $1 \le m \le n$, gives that $\Log{n} \le \sum_{m=1}^n 1/m$ and so the latter sequence of partial sums must diverge as $n$ tends to $\infty$.
+The following block of theorems implement this argument.
+
+\ThmsIII{%
+=GFT
+log_minus_log_estimate_thm
+=TEX
+}{%
+=GFT
+harmonic_series_estimate_thm
+=TEX
+}{%
+=GFT
+harmonic_series_divergent_thm
+=TEX
+}
+
 
 
 \subsubsection{Application: Areas of Plane Sets}
@@ -15257,6 +15284,27 @@ val €int_Ø_0_º_thm› = save_pop_thm"int_Ø_0_º_thm";
 %%%%
 %%%%
 =SML
+set_goal([], ¨µf g c d∑
+	(µx∑f x º g x)
+±	f IntâR c
+±	g IntâR d
+¥	c º d
+Æ);
+a(REPEAT strip_tac);
+a(LEMMA_T¨(Ãx∑g x + (Ãz∑~(f z)) x) IntâR d + ~cÆ
+	ante_tac
+	THEN1 (bc_tac [int_Ø_plus_thm, int_Ø_minus_thm]
+		THEN REPEAT strip_tac));
+a(rewrite_tac[] THEN REPEAT strip_tac);
+a(DROP_NTH_ASM_T 4 ante_tac);
+a(once_rewrite_tac[Ø_º_0_º_thm] THEN REPEAT strip_tac);
+a(bc_thm_tac int_Ø_0_º_thm);
+a(∂_tac¨(Ã x∑ g x + ~ (f x))Æ THEN asm_rewrite_tac[]);
+val €int_Ø_º_thm› = save_pop_thm "int_Ø_º_thm";
+=TEX
+%%%%
+%%%%
+=SML
 set_goal([], ¨µf g∑
 	(µx∑ÓØ 0 º f x)
 ± 	(µx∑f x º g x)
@@ -16862,6 +16910,83 @@ a(rewrite_tac[
 	arc_sin_1_minus_1_thm]);
 a(conv_tac(ONCE_MAP_C Ø_anf_conv) THEN taut_tac);
 val €int_example_thm› = save_pop_thm"int_example_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µa b∑ÓØ 0 < a ± a < b
+¥	((Ãx∑x õ-õ1) Int Log b - Log a) (ClosedInterval a b)Æ);
+a(REPEAT strip_tac THEN bc_thm_tac int_deriv_thm1);
+a(rewrite_tac[closed_interval_def] THEN REPEAT strip_tac);
+a(TRANS_DERIV_T strip_asm_tac);
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+val €int_recip_thm› = save_pop_thm"int_recip_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µa b∑ÓØ 0 < a ± a < b
+¥	Log b - Log a º (b - a) * a õ-õ1Æ);
+a(REPEAT strip_tac THEN once_rewrite_tac[Ø_times_comm_thm]
+	THEN bc_thm_tac int_Ø_º_thm);
+a(∂_tac¨Ãx∑a õ-õ1 * —(ClosedInterval a b) xÆ
+	THEN ∂_tac¨Ãx∑ —(ClosedInterval a b) x * x õ-õ1Æ
+	THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(rewrite_tac[—_def, closed_interval_def]);
+a(cases_tac¨a º x ± x º bÆ THEN asm_rewrite_tac[]);
+a(cases_tac¨a = xÆ THEN1 asm_rewrite_tac[]);
+a(lemma_tac¨a < xÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(all_fc_tac[Ø_less_recip_less_thm]);
+a(asm_rewrite_tac[Ø_º_def]);
+(* *** Goal "2" *** *)
+a(ALL_FC_T rewrite_tac[rewrite_rule[int_def] int_recip_thm]);
+(* *** Goal "3" *** *)
+a(bc_thm_tac int_Ø_const_times_thm);
+a(lemma_tac¨a º bÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(ALL_FC_T rewrite_tac[rewrite_rule[] int_Ø_—_interval_thm]);
+val €log_minus_log_estimate_thm› = save_pop_thm"log_minus_log_estimate_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µm∑
+	Log (ÓØ (m+1)) º Series (Ãm∑ ÓØ (m+1) õ-õ1) mÆ);
+a(REPEAT strip_tac THEN induction_tac¨m:ÓÆ);
+(* *** Goal "1" *** *)
+a(rewrite_tac[log_clauses, series_def]);
+(* *** Goal "2" *** *)
+a(ante_tac(list_µ_elim[¨ÓØ(m+1)Æ, ¨ÓØ((m+1)+1)Æ]
+	log_minus_log_estimate_thm));
+a(rewrite_tac[series_def, ÓØ_less_thm]);
+a(LEMMA_T¨(ÓØ ((m + 1) + 1) + ~ (ÓØ (m + 1))) = ÓØ 1Æ
+	rewrite_thm_tac
+	THEN1 (rewrite_tac[ÓØ_plus_homomorphism_thm]
+		THEN PC_T1 "Ø_lin_arith" prove_tac[]));
+a(intro_µ_tac(¨ÓØ (m + 1) õ-õ1Æ, ¨t:ØÆ));
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+val €harmonic_series_estimate_thm› = save_pop_thm"harmonic_series_estimate_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µc∑ ≥ Series (Ãm∑ ÓØ (m+1) õ-õ1) -> cÆ);
+a(contr_tac THEN all_fc_tac[lim_seq_bounded_thm]);
+a(strip_asm_tac(µ_elim¨Exp bÆ Ø_archimedean_thm));
+a(lemma_tac¨ÓØ 0 < Exp bÆ THEN1 rewrite_tac[exp_clauses]);
+a(strip_asm_tac (µ_elim¨mÆÓ_cases_thm)
+	THEN all_var_elim_asm_tac1
+	THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(LEMMA_T ¨Log(Exp b) < Log(ÓØ(i+1))Æ ante_tac
+	THEN1 all_fc_tac[log_less_mono_thm]);
+a(rewrite_tac[log_def] THEN contr_tac);
+a(strip_asm_tac(µ_elim¨iÆ harmonic_series_estimate_thm));
+a(lemma_tac¨ÓØ 0 º (Series (Ã m∑ ÓØ (m + 1) õ-õ1) i)Æ
+	THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(DROP_NTH_ASM_T 6 (ante_tac o µ_elim¨iÆ)
+	THEN asm_rewrite_tac[Ø_abs_def]);
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+val €harmonic_series_divergent_thm› = save_pop_thm"harmonic_series_divergent_thm";
 =TEX
 %%%%
 %%%% AREAS OF PLANE SETS
