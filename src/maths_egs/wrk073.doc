@@ -46,6 +46,9 @@ Contact: Rob Arthan < rda@lemma-one.com >
 \def\Z{\mathbb{Z}}
 \def\Q{\mathbb{Q}}
 
+\def\EnumerateName{\mbox{{\sf enumerate}}}
+\def\Enumerate#1{\EnumerateName_{#1}}
+
 \def\ExpName{\mbox{{\sf exp}}}
 \def\Exp#1{\ExpName(#1)}
 
@@ -419,7 +422,56 @@ binomial_factorial_thm
 =TEX
 }
 
-\subsection{Application: Bertrand's Ballot Theorem}
+\subsection{Sampling}
+
+If $A$ is a finite set of size $s$ say, there are $s^n$ ways of taking an ordered sample of $m$ not necessarily distinct elements of $A$ (``sampling with replacement'').
+If the samples are required to be distinct, then there are no samples unless $s = m + n \ge n$, say, and then the number of samples is $(m+n)(m+n-1)\ldots (m+1)$ (``sampling without replacement'').
+The following function gives this quantity as a function of $m$ and $n$.
+ 
+πHOLCONST
+‹ €DistinctSamples› : Ó ≠ Ó ≠ Ó
+˜¸¸¸¸¸¸
+‹ 	(µn∑ DistinctSamples n 0 = 1)
+‹ ±	(µm n∑ DistinctSamples n (m+1) = (n+m+1) * DistinctSamples n m)
+∞
+
+The following block of theorems help deal with sampling and provide some further useful combinatorial facts.
+The first in the block proves the existence of a polymorphic enumeration function assigning to each finite set $A$,
+a function $\Enumerate{A}$ which maps the set of natural numbers less than $\Size{A}$ bijectively onto $A$.
+This is used to prove a theorem about ``coverings'': let us say a set $B$ {\em covers} another set $A$, if there is a function $f$ and a natural number $m$ mapping $B$ to $A$ such that the inverse images $f^{-1}(y)$ as $y$ ranges over $A$ are all finite and of size $m$; in these circumstances, then if $A$ is finite, so is $B$ and $\Size{B} = m \times \Size{A}$.
+
+These facts (together with earlier counting principles) are then used to prove the statements made above about sampling, in which we use lists to represent ordered samples. This representation fits in nicely with earlier results connecting lists and finite sets.
+
+\ThmsIII{%
+=GFT
+enumerate_thm
+covering_finite_size_thm
+=TEX
+}{%
+=GFT
+samples_finite_size_thm
+distinct_samples_rw_thm
+=TEX
+}{%
+=GFT
+distinct_samples_up_thm
+distinct_samples_finite_size_thm
+=TEX
+}
+
+Determining probabilities in finite sample spaces is ``simply'' a matter of counting: if $S$ is finite sample space with $\Size{S} \not= 0$ and $X$ is a subset of $S$, then the probability that an event in $S$ belongs to $X$ is $\Size{X}/\Size{S}$.
+
+The next theorem gives the well-known calculation that in a group of 23 people, the probability that at least two people have the same birthday is greater than $1/2$.
+This is a simple consequence of the above theorems on sampling ($S$ and $S \ X$ being the set of samples of size 23 out of a set of size 365 with and without replacement respectively).
+In section~\ref{ballot}, we do a harder example.
+
+\ThmsIII{}{%
+=GFT
+birthdays_thm
+=TEX
+}{}
+
+\subsection{Application: Bertrand's Ballot Theorem}\label{ballot}
 
 In Bertrand's ballot problem a ballot is held between two candidates, North and South, say.
 North beats South, the votes being counted one at a time by a single clerk.
@@ -520,8 +572,18 @@ ballot_thm
 %%%%
 =SML
 val €binomial_def› = get_spec ¨BinomialÆ;
+val €distinct_samples_def› = get_spec ¨DistinctSamplesÆ;
 val €walk_def› = get_spec ¨WalkÆ;
 val €walk_to_def› = get_spec ¨WalkToÆ;
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µm n∑ÓØ (m^n) = ÓØ m ^ nÆ);
+a(REPEAT strip_tac THEN induction_tac¨n:ÓÆ
+	THEN  rewrite_tac[Ø_Ó_exp_def, Ó_exp_def]);
+a(asm_rewrite_tac[ÓØ_times_homomorphism_thm]);
+val €ÓØ_Ó_exp_thm› = save_pop_thm "ÓØ_Ó_exp_thm";
 =TEX
 %%%%
 %%%%
@@ -2308,6 +2370,315 @@ a(conv_tac(RIGHT_C(once_rewrite_conv[factorial_def])));
 a(rewrite_tac[ÓØ_plus_homomorphism_thm]);
 a(PC_T1 "Ø_lin_arith" prove_tac[]);
 val €binomial_factorial_thm› = save_pop_thm "binomial_factorial_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨∂enumerate∑µa ∑
+	a ç Finite
+§	(µ i j∑ i < #a ± j < #a ± enumerate a i = enumerate a j ¥ i = j)
+±	a = {x|∂ i∑ i < #a ± enumerate a i = x}
+Æ);
+a(prove_∂_tac THEN strip_tac);
+a(cases_tac¨a' ç FiniteÆ THEN asm_rewrite_tac[]);
+(* *** Goal "1" *** *)
+a(POP_ASM_T ante_tac THEN rewrite_tac[range_bijection_finite_size_thm1]);
+(* *** Goal "2" *** *)
+a(∂_tac¨Ãm:Ó∑ (y:'a)Æ THEN rewrite_tac[]);
+a(strip_tac THEN ≤_right_tac);
+a(swap_nth_asm_concl_tac 1);
+a(once_asm_rewrite_tac[] THEN DROP_ASMS_T discard_tac);
+a(bc_thm_tac Ä_finite_thm THEN ∂_tac¨{y}Æ
+	THEN rewrite_tac[singleton_finite_thm]
+	THEN PC_T1 "sets_ext1" prove_tac[]);
+val €enumerate_thm› = save_pop_thm "enumerate_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µa b f m∑
+	a ç Finite
+±	(µx∑x ç b ¥ f x ç a)
+±	(µy∑y ç a ¥ {x | x ç b ± y = f x} ç Finite ± #{x | x ç b ± y = f x} = m)
+¥	b ç Finite ± #b = m * #aÆ);
+a(REPEAT µ_tac THEN ¥_tac);
+a(strip_asm_tac(µ_elim¨mÆ range_finite_size_thm));
+a(LEMMA_T¨({i | i < m} ∏ a) ç Finite ± #({i | i < m} ∏ a) = # {i|i < m} * #aÆ
+	ante_tac
+	THEN1 (bc_thm_tac ∏_finite_size_thm THEN REPEAT strip_tac));
+a(asm_rewrite_tac[] THEN strip_tac);
+a(POP_ASM_T (rewrite_thm_tac o eq_sym_rule));
+a(bc_thm_tac(bijection_finite_size_thm));
+a(strip_asm_tac enumerate_thm);
+a(∂_tac¨Ã(i, y)∑enumerate {x | x ç b ± y = f x} iÆ
+	THEN rewrite_tac[]
+	THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(DROP_NTH_ASM_T 2 ante_tac THEN DROP_NTH_ASM_T 2 ante_tac);
+a(rewrite_tac[∏_def]);
+a(strip_asm_tac (µ_elim¨mÆÓ_cases_thm)
+	THEN all_var_elim_asm_tac1 THEN1 asm_rewrite_tac[]
+	THEN REPEAT strip_tac);
+a(DROP_NTH_ASM_T 10 (fn th =>
+		ante_tac (µ_elim¨Snd xÆ th)
+	THEN ante_tac (µ_elim¨Snd yÆ th)));
+a(DROP_NTH_ASM_T 6 rewrite_thm_tac
+	THEN REPEAT strip_tac);
+a(LIST_DROP_NTH_ASM_T[2, 3, 5, 6]
+	(MAP_EVERY ante_tac));
+a(rename_tac[] THEN LIST_GET_NTH_ASM_T [1, 2] rewrite_tac
+	THEN REPEAT strip_tac);
+a(lemma_tac¨enumerate {x'|x' ç b ± Snd x = f x'} (Fst x) ç
+	{x'|x' ç b ± Snd x = f x'}Æ);
+(* *** Goal "1.1" *** *)
+a(POP_ASM_T (fn th => conv_tac(RIGHT_C (once_rewrite_conv[th]))));
+a(rewrite_tac[]);
+a(∂_tac¨Fst xÆ THEN REPEAT strip_tac);
+(* *** Goal "1.2" *** *)
+a(lemma_tac¨enumerate {x'|x' ç b ± Snd x = f x'} (Fst x) ç
+	{x'|x' ç b ± Snd y = f x'}Æ);
+(* *** Goal "1.2.1" *** *)
+a(DROP_NTH_ASM_T 13 pure_rewrite_thm_tac);
+a(DROP_NTH_ASM_T 5 (fn th => conv_tac(RIGHT_C (once_rewrite_conv[th]))));
+a(rewrite_tac[]);
+a(∂_tac¨Fst yÆ THEN REPEAT strip_tac);
+a(LEMMA_T ¨Snd x = Snd yÆ 
+	(fn th => all_asm_ante_tac
+		THEN asm_tac th
+		THEN asm_rewrite_tac[]
+		THEN REPEAT strip_tac)
+	THEN1 (POP_ASM_T rewrite_thm_tac
+		THEN strip_tac));
+a(LIST_DROP_NTH_ASM_T [4] all_fc_tac);
+a(PC_T1 "prop_eq_pair" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(LIST_GET_NTH_ASM_T [7] all_fc_tac);
+a(LIST_GET_NTH_ASM_T [7] (ALL_FC_T(MAP_EVERY ante_tac)));
+a(DROP_NTH_ASM_T 3 rewrite_thm_tac
+	THEN REPEAT strip_tac);
+a(LEMMA_T ¨x ç {x'|x' ç b ± f x = f x'}Æ
+	ante_tac THEN1 asm_rewrite_tac[]);
+a(POP_ASM_T pure_once_rewrite_thm_tac);
+a(rewrite_tac[] THEN strip_tac);
+a(all_var_elim_asm_tac1);
+a(∂_tac¨(i, f x)Æ THEN asm_rewrite_tac[∏_def]);
+(* *** Goal "2.2" *** *)
+a(DROP_NTH_ASM_T 2 (strip_asm_tac o rewrite_rule[∏_def]));
+a(LIST_GET_NTH_ASM_T [8] (ALL_FC_T(MAP_EVERY ante_tac)));
+a(DROP_NTH_ASM_T 4 rewrite_thm_tac
+	THEN REPEAT strip_tac);
+a(LEMMA_T¨x ç {x|x ç b ± Snd x' = f x}Æ
+	(fn th => ante_tac th THEN PC_T1 "sets_ext1" prove_tac[]));
+a(POP_ASM_T pure_once_rewrite_thm_tac THEN rewrite_tac[]);
+a(all_var_elim_asm_tac1 THEN ∂_tac¨Fst x'Æ THEN REPEAT strip_tac);
+val €covering_finite_size_thm› = save_pop_thm "covering_finite_size_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µa n∑
+	a ç Finite
+¥	{L | Elems L Ä a ± #L = n} ç Finite
+±	#{L | Elems L Ä a ± #L = n} = #a ^ n
+Æ);
+a(REPEAT µ_tac THEN ¥_tac);
+a(induction_tac¨nÆ THEN rewrite_tac[Ó_exp_def]);
+(* *** Goal "1" *** *)
+a(LEMMA_T ¨{L|Elems L Ä a ± # L = 0} = {[]}Æ
+	(fn th => rewrite_tac[th, size_singleton_thm, singleton_finite_thm]));
+a(PC_T "sets_ext1" strip_tac THEN µ_tac THEN rewrite_tac[]);
+a(strip_asm_tac(µ_elim¨xÆlist_cases_thm)
+	THEN asm_rewrite_tac[elems_def, length_def]);
+(* *** Goal "2" *** *)
+a(ante_tac(list_µ_elim[¨aÆ, ¨{L | Elems L Ä a ± #L = n}Æ]
+	∏_finite_size_thm));
+a(asm_rewrite_tac[]);
+a(REPEAT ¥_tac THEN POP_ASM_T (rewrite_thm_tac o eq_sym_rule));
+a(bc_thm_tac(bijection_finite_size_thm));
+a(∂_tac¨Uncurry ConsÆ THEN rewrite_tac[uncurry_def]
+	THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(PC_T1 "prop_eq_pair" asm_prove_tac[]);
+(* *** Goal "2.2" *** *)
+a(POP_ASM_T ante_tac THEN strip_asm_tac(µ_elim¨xÆlist_cases_thm)
+	THEN all_var_elim_asm_tac1 
+	THEN rewrite_tac[length_def]);
+a(REPEAT strip_tac);
+a(∂_tac¨(x', list2)Æ THEN asm_rewrite_tac[∏_def]);
+a(DROP_NTH_ASM_T 2 ante_tac THEN rewrite_tac[elems_def]);
+a(PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "2.3" *** *)
+a(all_var_elim_asm_tac1);
+a(REPEAT_N 2 (POP_ASM_T ante_tac));
+a(rewrite_tac[elems_def, ∏_def]);
+a(REPEAT strip_tac THEN1 all_var_elim_asm_tac1);
+a(PC_T1 "sets_ext1" asm_prove_tac[]);
+(* *** Goal "2.4" *** *)
+a(all_var_elim_asm_tac1);
+a(POP_ASM_T ante_tac THEN rewrite_tac[∏_def, length_def]
+	THEN REPEAT strip_tac);
+val €samples_finite_size_thm› = save_pop_thm "samples_finite_size_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µn m∑
+	DistinctSamples n m =
+	if m = 0
+	then 1
+	else (n+m) * DistinctSamples n (m-1)
+Æ);
+a(REPEAT strip_tac);
+a(strip_asm_tac (µ_elim¨mÆÓ_cases_thm) THEN asm_rewrite_tac[distinct_samples_def]);
+val €distinct_samples_rw_thm› = save_pop_thm "distinct_samples_rw_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µn m∑
+	DistinctSamples n (m+1) = (n+1) * DistinctSamples (n+1) m
+Æ);
+a(REPEAT strip_tac);
+a(induction_tac¨mÆ);
+(* *** Goal "1" *** *)
+a(rewrite_tac [distinct_samples_def]);
+(* *** Goal "2" *** *)
+a(once_rewrite_tac[distinct_samples_def]);
+a(asm_rewrite_tac[]);
+a(PC_T1 "lin_arith" prove_tac[]);
+val €distinct_samples_up_thm› = save_pop_thm "distinct_samples_up_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µa n∑a ç Finite ± n º #a
+¥	{L | Elems L Ä a ± # L = n ± L ç Distinct} ç Finite
+±	#{L | Elems L Ä a ± # L = n ± L ç Distinct} = DistinctSamples (#a - n) n
+Æ);
+a(REPEAT µ_tac THEN ¥_tac THEN POP_ASM_T ante_tac);
+a(induction_tac¨n:ÓÆ);
+(* *** Goal "1" *** *)
+a(LEMMA_T ¨{L|Elems L Ä a ± # L = 0 ± L ç Distinct} = {[]}Æ
+	(fn th => asm_rewrite_tac[th, size_singleton_thm, singleton_finite_thm,
+	distinct_samples_def]));
+a(PC_T "sets_ext1" strip_tac THEN µ_tac THEN rewrite_tac[]);
+a(strip_asm_tac(µ_elim¨xÆlist_cases_thm)
+	THEN asm_rewrite_tac[elems_def, length_def, distinct_def]);
+(* *** Goal "2" *** *)
+a(strip_tac THEN i_contr_tac THEN PC_T1 "lin_arith" asm_prove_tac[]);
+(* *** Goal "3" *** *)
+a(¥_tac);
+a(DROP_NTH_ASM_T 2 ante_tac);
+a(POP_ASM_T (strip_asm_tac o once_rewrite_rule[plus_comm_thm]
+	 o rewrite_rule[º_def]));
+a(TOP_ASM_T (rewrite_thm_tac o eq_sym_rule));
+a(rewrite_tac[distinct_samples_up_thm, µ_elim¨nÆ plus_order_thm]);
+a(STRIP_T (rewrite_thm_tac o eq_sym_rule));
+a(bc_thm_tac covering_finite_size_thm);
+(* *** Goal "3" *** *)
+a(∂_tac¨TailÆ THEN rewrite_tac[] THEN REPEAT_UNTIL is_± strip_tac
+	THEN REPEAT_N 3 strip_tac THEN1 REPEAT strip_tac);
+(* *** Goal "3.1" *** *)
+a(DROP_NTH_ASM_T 3 ante_tac
+	THEN DROP_NTH_ASM_T 2 ante_tac
+	THEN strip_asm_tac (µ_elim¨xÆ list_cases_thm)
+	THEN all_var_elim_asm_tac1
+	THEN asm_rewrite_tac[length_def, elems_def, tail_def]
+	THEN PC_T1 "sets_ext" prove_tac[]);
+(* *** Goal "3.2" *** *)
+a(DROP_NTH_ASM_T 4 ante_tac
+	THEN DROP_NTH_ASM_T 2 ante_tac
+	THEN strip_asm_tac (µ_elim¨xÆ list_cases_thm)
+	THEN all_var_elim_asm_tac1
+	THEN asm_rewrite_tac[length_def, tail_def]
+	THEN taut_tac);
+(* *** Goal "3.3" *** *)
+a(POP_ASM_T ante_tac THEN POP_ASM_T ante_tac
+	THEN strip_asm_tac (µ_elim¨xÆ list_cases_thm)
+	THEN all_var_elim_asm_tac1
+	THEN asm_rewrite_tac[length_def, distinct_def, tail_def]
+	THEN taut_tac);
+(* *** Goal "3.4" *** *)
+a(REPEAT ¥_tac);
+a(ante_tac(list_µ_elim[¨aÆ, ¨Elems yÆ] size_Ä_diff_thm)
+	THEN DROP_NTH_ASM_T 4 (asm_rewrite_thm_tac o eq_sym_rule));
+a(LEMMA_T ¨#(Elems y) = #yÆ asm_rewrite_thm_tac
+	THEN1 (bc_thm_tac distinct_size_length_thm
+		THEN REPEAT strip_tac));
+a(rewrite_tac[µ_elim¨nÆ plus_order_thm]);
+a(STRIP_T rewrite_thm_tac);
+a(bc_thm_tac bijection_finite_size_thm);
+a(∂_tac¨Ãx∑Cons x yÆ THEN rewrite_tac[] THEN REPEAT strip_tac);
+(* *** Goal "3.4.1" *** *)
+a(bc_thm_tac Ä_finite_thm THEN ∂_tac¨aÆ THEN REPEAT strip_tac
+	THEN PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "3.4.2" *** *)
+a(PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "3.4.2.1" *** *)
+a(LIST_DROP_NTH_ASM_T [2, 3, 5, 7] (MAP_EVERY ante_tac)
+	THEN strip_asm_tac (µ_elim¨xÆ list_cases_thm)
+	THEN all_var_elim_asm_tac1
+	THEN rewrite_tac[length_def, tail_def, distinct_def, elems_def]);
+a(REPEAT strip_tac THEN ∂_tac¨x'Æ THEN PC_T1 "sets_ext1" asm_rewrite_tac[]);
+a(DROP_NTH_ASM_T 4 bc_thm_tac THEN rewrite_tac[elems_def]
+	THEN REPEAT strip_tac);
+(* *** Goal "3.4.2.2" *** *)
+a(POP_ASM_T ante_tac THEN all_var_elim_asm_tac1
+	THEN asm_rewrite_tac[elems_def]);
+a(REPEAT strip_tac THEN1 all_var_elim_asm_tac);
+a(PC_T1 "sets_ext1" asm_prove_tac[]);
+(* *** Goal "3.4.2.3" *** *)
+a(asm_rewrite_tac[length_def]);
+(* *** Goal "3.4.2.4" *** *)
+a(asm_rewrite_tac[distinct_def]);
+(* *** Goal "3.4.2.5" *** *)
+a(asm_rewrite_tac[tail_def]);
+val €distinct_samples_finite_size_thm› = save_pop_thm "distinct_samples_finite_size_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨
+	let	S = {L | Elems L Ä {i | i < 365} ± # L = 23} 
+	in let	X = {L | L ç S ± ≥L ç Distinct}
+	in	S ç Finite
+	±	≥#S = 0
+	±	X Ä S
+	±	#X / #S > 1/2
+Æ);
+a(rewrite_tac[let_def]);
+a(strip_asm_tac(µ_elim¨365Æ range_finite_size_thm));
+a(lemma_tac¨23 º #{i | i < 365}Æ THEN1 asm_rewrite_tac[]);
+a(all_fc_tac[distinct_samples_finite_size_thm]);
+a(all_fc_tac[samples_finite_size_thm]);
+a(REPEAT_N 2 (POP_ASM_T(ante_tac o µ_elim¨23Æ)) );
+a(POP_ASM_T discard_tac THEN strip_tac THEN strip_tac);
+a(pure_asm_rewrite_tac[conv_rule(ONCE_MAP_C eq_sym_conv)ÓØ_one_one_thm,
+	ÓØ_Ó_exp_thm,
+	Ø_frac_def]);
+a(asm_tac(rewrite_conv[]¨ÓØ 365 ^ 23Æ));
+a(pure_asm_rewrite_tac[ÓØ_one_one_thm]);
+a(rewrite_tac[]);
+a(REPEAT strip_tac THEN1 PC_T1 "sets_ext1" prove_tac[]);
+a(LEMMA_T¨{L | (Elems L Ä {i | i < 365} ± # L = 23) ± ≥L ç Distinct}
+ = {L | Elems L Ä {i | i < 365} ± # L = 23} \
+	{L | Elems L Ä {i | i < 365} ± # L = 23 ± L ç Distinct}Æ
+	rewrite_thm_tac
+	THEN1 PC_T1 "sets_ext1" prove_tac[]);
+a(lemma_tac¨{L | Elems L Ä {i | i < 365} ± # L = 23 ± L ç Distinct} Ä
+	{L | Elems L Ä {i | i < 365} ± # L = 23}Æ
+	THEN1 PC_T1 "sets_ext1" prove_tac[]);
+a(ALL_FC_T (MAP_EVERY (ante_tac o
+	once_rewrite_rule[conv_rule(ONCE_MAP_C eq_sym_conv)ÓØ_one_one_thm])) [size_Ä_diff_thm]);
+a(pure_rewrite_tac[ÓØ_plus_homomorphism_thm,
+	pc_rule1 "Ø_lin_arith" prove_rule[]
+	¨µa b c:Ø∑a = b + c § b = a - cÆ]
+	THEN strip_tac);
+a(pure_asm_rewrite_tac[ÓØ_Ó_exp_thm]);
+a(conv_tac(REPEAT_C (once_rewrite_conv[distinct_samples_rw_thm] THEN_C rewrite_conv[])));
+val €birthdays_thm› = save_pop_thm "birthdays_thm";
 =TEX
 %%%%
 %%%%
