@@ -69,7 +69,7 @@ Contact: Rob Arthan < rda@lemma-one.com >
 %\def\Binomial#1#2{\left(\begin{array}{c}#1\\#2\end{array}\right)}
 \def\Binomial#1#2{C_{#2}^{#1}}
 
-\title{Mathematical Case Studies: Number Theory}
+\title{Mathematical Case Studies: Some Number Theory}
 \author{Rob Arthan\\{\tt rda@lemma-one.com}}
 \makeindex
 \begin{document}
@@ -83,23 +83,24 @@ Beginnings of number theory in \ProductHOL.
 %\newpage
 \section{INTRODUCTION}
 
-Birthday problem etc. For inclusion in wrk073.doc presently.
+Some number theory.
 
-\section{THE THEORY {\em fincomb}}\label{theory}
+\section{THE THEORY {\em numbers}}\label{theory}
 
 \subsection{Preliminaries}
 =SML
-force_delete_theory "number_theory" handle Fail _ => ();
+force_delete_theory "numbers" handle Fail _ => ();
 open_theory"fincomb";
-new_theory "number_theory";
+new_theory "numbers";
 set_merge_pcs["basic_hol1", "'sets_alg", "'ú", "'¯"];
 =TEX
 
 \subsection{Divisors in î}
+We begin working in the natural numbers and develop the theory of divisors.
+We define an infix relation {\em Divides} such that ${\em n Divides m} iff. $m$ is a multiple of $n$.
+ 
 =SML
 declare_infix(200, "Divides");
-
-
 ¹HOLCONST
 Ü Û$DividesÝ : î ­ î ­ BOOL
 ÷üüüüüü
@@ -110,15 +111,99 @@ declare_infix(200, "Divides");
 ¹HOLCONST
 Ü ÛGcdÝ : î ­ î ­ î
 ÷üüüüüü
-Ü (µm n·		0 < m ± 0 < n
-Ü	´	0 < Gcd m n
-Ü	±	Gcd m n Divides m
-Ü	±	Gcd m n Divides n)
-Ü ± (µm n d·	0 < d
-Ü	±	d Divides m
+Ü µm n·	0 < m ± 0 < n
+Ü ´	Gcd m n Divides m
+Ü ±	Gcd m n Divides n
+Ü ± 	µd·	d Divides m
 Ü	±	d Divides n
-Ü	´	d Divides Gcd m n)
+Ü	´	d Divides Gcd m n
 °
+
+The most common textbook account exhibits the g.c.d. of $m$ and $n$ as the smallest positive value of the form $am + bn$.
+This requires $a$ and $b$ to range over negative integers.
+A slightly less symmetrical alternative is to take the g.c.d. to be the smallest positive value of the form $(am)\;Mod\;n$.
+This works over the natural numbers and the following theorems lead up to the proof that this does give the g.c.d.
+We have to develop various facts about multiplicative arithmetic over the natural numbers en route.
+
+\ThmsIII{
+=GFT
+times_eq_0_thm
+times_cancel_thm
+times_eq_eq_1_thm
+times_eq_1_thm
+div_mod_1_thm
+m_div_mod_m_thm
+zero_div_mod_thm
+less_div_mod_thm
+div_mod_times_cancel_thm
+=TEX
+}{%
+=GFT
+mod_clauses
+mod_eq_0_thm
+divides_0_thm
+divides_mod_thm
+divides_refl_thm
+divides_antisym_thm
+divides_trans_thm
+mod_plus_homomorphism_thm
+mod_times_homomorphism_thm
+=TEX
+}{%
+=GFT
+mod_î_exp_thm
+gcd_consistent_lemma1
+gcd_consistent_lemma2
+gcd_consistent_lemma3
+gcd_consistent_lemma4
+gcd_consistent_lemma5
+Gcd_consistent
+gcd_def
+=TEX
+}
+\subsection{Indexed Sums and Products in î}
+A useful application of the set fold operation is to define the following indexed sum operation. Given an index set, $a$, and a function, $f$, assigning a number to each member of $a$,
+=INLINEFT
+IndSum‰N a f
+=TEX
+\ is the indexed sum $\sum_{x\in a}f(x)$, which is defined on any set $a$ in which $f$ has finite support.
+
+
+¹HOLCONST
+Ü ÛIndSum‰NÝ : 'a SET ­ ('a ­ î) ­ î
+÷üüüüüü
+Ü µf·	IndSum‰N {} f = 0
+Ü ±	µx a·	a ¡ {x|³ f x = 0}  Finite ± ³x  a
+Ü	´	IndSum‰N ({x} À a) f = f x + IndSum‰N a f
+°
+
+We will write $\sum\,a\,f$ as shorthand for
+=INLINEFT
+IndSum‰N a f
+=TEX
+.
+=SML
+declare_alias("“", ¬IndSum‰N®);
+=TEX
+Similarly, we define indexed products:
+=TEX
+¹HOLCONST
+Ü ÛIndProd‰NÝ : 'a SET ­ ('a ­ î) ­ î
+÷üüüüüü
+Ü µf·	IndProd‰N {} f = 1
+Ü ±	µx a·	a ¡ {x|³ f x = 1}  Finite ± ³x  a
+Ü	´	IndProd‰N ({x} À a) f = f x * IndProd‰N a f
+°
+
+We will write $\prod\,a\,f$ as shorthand for
+=INLINEFT
+IndProd‰N a f
+=TEX
+.
+=SML
+declare_alias("", ¬IndProd‰N®);
+=TEX
+
 
 \subsection{Real Integral Domains}
 In general, an integral domain is a ring without zero divisors.
@@ -231,7 +316,7 @@ rat_thm
 \let\subsection\Hide
 \def\section#1{\Section{#1}\label{listing}}
 \let\subsection\Hide
-\include{numbers.th}}
+\include{wrk074.th}}
 
 =TEX
 
@@ -438,6 +523,16 @@ val Ûdivides_mod_thmÝ = save_pop_thm "divides_mod_thm";
 %%%%
 
 =SML
+set_goal([], ¬ µm· m Divides m ®);
+a(REPEAT strip_tac
+	THEN rewrite_tac[divides_def]
+	THEN ¶_tac ¬1® THEN rewrite_tac[]);
+val Ûdivides_refl_thmÝ = save_pop_thm "divides_refl_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
 set_goal([], ¬ µm n· n Divides m ± m Divides n ¤ m = n ®);
 a(REPEAT µ_tac THEN cases_tac¬n = 0®
 	THEN1 asm_rewrite_tac[divides_0_thm]);
@@ -460,6 +555,16 @@ a(all_var_elim_asm_tac THEN ALL_FC_T rewrite_tac[mod_clauses]);
 (* *** Goal "3" *** *)
 a(all_var_elim_asm_tac THEN ALL_FC_T rewrite_tac[mod_clauses]);
 val Ûdivides_antisym_thmÝ = save_pop_thm "divides_antisym_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬ µm n k· n Divides m ± m Divides k ´ n Divides k ®);
+a(REPEAT µ_tac THEN rewrite_tac[divides_def]
+	THEN REPEAT strip_tac);
+a(¶_tac¬k''*k'® THEN asm_rewrite_tac[times_assoc_thm]);
+val Ûdivides_trans_thmÝ = save_pop_thm "divides_trans_thm";
 
 =TEX
 %%%%
@@ -503,68 +608,6 @@ a(ALL_FC_T1 fc_¤_canon once_rewrite_tac
 	[mod_times_homomorphism_thm]);
 a(ALL_FC_T asm_rewrite_tac[mod_clauses]);
 val Ûmod_î_exp_thmÝ = save_pop_thm "mod_î_exp_thm";
-=TEX
-%%%%
-%%%%
-
-=SML
-val Ûî_sum_thmÝ =
-	rewrite_rule[plus_assoc_thm]
-		(list_µ_elim[¬0®, ¬$+:î­î­î®] set_fold_def);
-=TEX
-=SML
-val Ûmod_3_plus_thmÝ = rewrite_rule[](all_µ_intro(list_µ_elim[¬m:î®, ¬n:î®, ¬3®]mod_plus_homomorphism_thm));
-=TEX
-=SML
-val Ûmod_3_times_thmÝ = rewrite_rule[](all_µ_intro(list_µ_elim[¬m:î®, ¬n:î®, ¬3®]mod_times_homomorphism_thm));
-=TEX
-=SML
-val Ûmod_3_î_exp_thmÝ = rewrite_rule[](all_µ_intro(list_µ_elim[¬m:î®, ¬n:î®, ¬3®]mod_î_exp_thm));
-=TEX
-=SML
-val Ûmod_3_clausesÝ = rewrite_rule[](µ_elim¬3® mod_clauses);
-=TEX
-%%%%
-%%%%
-
-=SML
-set_goal([], ¬µdigits n·
-	SetFold 0 ($+) (Ìi·digits i * 10 ^ i) {i | i < n} Mod 3 =
-	SetFold 0 ($+) (Ìi·digits i) {i | i < n} Mod 3
-®);
-a(REPEAT strip_tac);
-a(induction_tac¬n®);
-(* *** Goal "1" *** *)
-a(rewrite_tac[î_sum_thm, pc_rule1"sets_ext1" prove_rule[]¬{x|F} = {}®]);
-(* *** Goal "1" *** *)
-a(PC_T1 "predicates" lemma_tac¬{i|i < n + 1} = {n} À {i|i < n} ± ³n  {i|i < n}
-	± {i|i < n}  Finite®
-	THEN1 rewrite_tac[range_finite_size_thm]);
-(* *** Goal "2.1" *** *)
-a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac
-	THEN PC_T1 "lin_arith" asm_prove_tac[]);
-(* *** Goal "2.2" *** *)
-a(ALL_FC_T asm_rewrite_tac[î_sum_thm]);
-a(once_rewrite_tac[mod_3_plus_thm]);
-a(asm_rewrite_tac[]);
-a(once_rewrite_tac[mod_3_times_thm]);
-a(once_rewrite_tac[mod_3_î_exp_thm]);
-a(LEMMA_T¬1 ^ n = 1® (fn th => rewrite_tac[th, mod_3_clauses]));
-a(DROP_ASMS_T discard_tac
-	THEN induction_tac¬n® THEN asm_rewrite_tac[î_exp_def]);
-val Ûdiv_3_rule_thm1Ý = save_pop_thm "div_3_rule_thm1";
-=TEX
-%%%%
-%%%%
-
-=SML
-set_goal([], ¬µdigits n·
-	3 Divides SetFold 0 ($+) (Ìi·digits i * 10 ^ i) {i | i < n} ¤
-	3 Divides SetFold 0 ($+) (Ìi·digits i) {i | i < n}
-®);
-a(REPEAT µ_tac);
-a(rewrite_tac[divides_mod_thm, div_3_rule_thm1]);
-val Ûdiv_3_rule_thmÝ = save_pop_thm "div_3_rule_thm";
 =TEX
 %%%%
 %%%%
@@ -743,11 +786,8 @@ a(lemma_tac¬0 < m' ± 0 < n' ± 0 < m' Mod n'®
 a(all_fc_tac [gcd_consistent_lemma1]);
 a(all_fc_tac [gcd_consistent_lemma5]);
 a(¶_tac¬(a*m') Mod n'® THEN asm_rewrite_tac[divides_mod_thm]);
-a(REPEAT strip_tac THEN DROP_ASM_T ¬0 < d®
-	(fn th => all_asm_ante_tac
-		THEN rewrite_tac[th]
-		THEN asm_tac th
-		THEN REPEAT strip_tac));
+a(µ_tac THEN cases_tac ¬³0 < d® THEN asm_rewrite_tac[]
+	THEN REPEAT strip_tac THEN1 all_var_elim_asm_tac1);
 a(bc_thm_tac gcd_consistent_lemma2
 	THEN REPEAT strip_tac);
 val _ = save_consistency_thm ¬Gcd® (pop_thm());
@@ -756,9 +796,278 @@ val _ = save_consistency_thm ¬Gcd® (pop_thm());
 %%%%
 
 =SML
-val Ûgcd_defÝ = get_spec¬Gcd®;
+val Ûgcd_defÝ = save_thm("gcd_def", get_spec¬Gcd®);
 =TEX
+%%%%
+%%%%
 
+=SML
+set_goal([], ¬µm n· 0 < m ± 0 < n ´ 0 < Gcd m n®);
+a(REPEAT strip_tac THEN all_fc_tac[gcd_def]);
+a(swap_nth_asm_concl_tac 5);
+a(DROP_NTH_ASM_T 3 ante_tac);
+a(LEMMA_T ¬Gcd m n = 0® rewrite_thm_tac THEN1 PC_T1"lin_arith" asm_prove_tac[]);
+a(rewrite_tac[divides_def] THEN PC_T1 "lin_arith" prove_tac[]);
+val Ûgcd_pos_thmÝ = save_pop_thm "gcd_pos_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µm n d·
+	0 < m ± 0 < n
+±	d Divides m ± d Divides n ± Gcd m n Divides d
+´	d = Gcd m n
+®);
+a(REPEAT strip_tac THEN all_fc_tac[gcd_def]
+	THEN all_fc_tac[divides_antisym_thm]);
+val Ûgcd_unique_thmÝ = save_pop_thm "gcd_unique_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µm· 0 < m ´ Gcd m m = m®);
+a(REPEAT strip_tac THEN conv_tac eq_sym_conv);
+a(bc_thm_tac gcd_unique_thm);
+a(asm_rewrite_tac[divides_refl_thm]);
+a(ALL_FC_T rewrite_tac[gcd_def]);
+val Ûgcd_idemp_thmÝ = save_pop_thm "gcd_idemp_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µm n d·
+	0 < m ± 0 < n
+´	Gcd m n = Gcd n m
+®);
+a(REPEAT strip_tac THEN bc_thm_tac gcd_unique_thm);
+a(REPEAT strip_tac THEN all_fc_tac[arb_gen gcd_def]
+	THEN all_fc_tac[arb_gen gcd_def]);
+val Ûgcd_comm_thmÝ = save_pop_thm "gcd_comm_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µm n d·
+	d Divides n 
+´	(d Divides (m+n) ¤ d Divides m)®);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(POP_ASM_T ante_tac THEN rewrite_tac[divides_mod_thm]);
+a(cases_tac¬d = 0® THEN1 (asm_rewrite_tac[] THEN taut_tac));
+a(DROP_NTH_ASM_T 2 ante_tac THEN rewrite_tac[divides_def]);
+a(lemma_tac¬0 < d® THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(asm_rewrite_tac[] THEN once_rewrite_tac[plus_comm_thm]
+	THEN REPEAT strip_tac
+	THEN all_var_elim_asm_tac1);
+a(POP_ASM_T ante_tac THEN ALL_FC_T rewrite_tac[mod_clauses]);
+(* *** Goal "2" *** *)
+a(all_asm_ante_tac THEN rewrite_tac[divides_def]
+		THEN REPEAT strip_tac
+		THEN all_var_elim_asm_tac1);
+a(¶_tac¬k' + k® THEN PC_T1 "lin_arith" prove_tac[]);
+val Ûdivides_plus_thmÝ = save_pop_thm "divides_plus_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µm n d·
+	0 < m ± 0 < n
+´	Gcd (m + n) n = Gcd m n
+®);
+a(REPEAT strip_tac THEN bc_thm_tac gcd_unique_thm);
+a(lemma_tac¬0 < m + n® THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(ALL_FC_T asm_rewrite_tac[gcd_def] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(lemma_tac  ¬Gcd (m + n) n Divides m + n ± Gcd (m + n) n Divides n® 
+	THEN1 ALL_FC_T rewrite_tac[gcd_def]);
+a(DROP_NTH_ASM_T 2 ante_tac);
+a(ALL_FC_T1 fc_¤_canon rewrite_tac[arb_gen divides_plus_thm]);
+(* *** Goal "2" *** *)
+a(lemma_tac¬Gcd m n Divides m ± Gcd m n Divides n® 
+	THEN1 ALL_FC_T rewrite_tac[gcd_def]);
+a(lemma_tac¬Gcd m n Divides m + n® 
+	THEN1 ALL_FC_T1 fc_¤_canon asm_rewrite_tac[arb_gen divides_plus_thm]);
+a(all_fc_tac[gcd_def]);
+val Ûgcd_plus_thmÝ = save_pop_thm "gcd_plus_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µm n·
+	0 < m ± 0 < n
+´	Gcd m n = if m < n then Gcd m (n-m) else if m = n then m else Gcd (m-n) n
+®);
+a(REPEAT strip_tac);
+a(strip_asm_tac (pc_rule1"lin_arith" prove_rule[]
+	¬m < n ² m = n ² (³m < n ± ³ m = n ± n < m)®)
+	THEN asm_rewrite_tac[]);
+(* *** Goal "1" *** *)
+a(LEMMA_T ¬m + 1 ¼ n® (strip_asm_tac o
+	rewrite_rule[¼_def, pc_rule1"lin_arith" prove_rule[]
+	¬µi· (m + 1) + i = (i + 1) + m®])
+	THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(all_var_elim_asm_tac1);
+a(LEMMA_T ¬0 < i + 1® asm_tac THEN REPEAT strip_tac);
+a(rewrite_tac[]);
+a(ALL_FC_T once_rewrite_tac [gcd_comm_thm]);
+a(ALL_FC_T rewrite_tac[arb_gen gcd_plus_thm]);
+(* *** Goal "2" *** *)
+a(ALL_FC_T rewrite_tac[gcd_idemp_thm]);
+(* *** Goal "3" *** *)
+a(LEMMA_T ¬n + 1 ¼ m® (strip_asm_tac o
+	rewrite_rule[¼_def, pc_rule1"lin_arith" prove_rule[]
+	¬µi· (n + 1) + i = (i + 1) + n®])
+	THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(LIST_DROP_NTH_ASM_T[2, 3, 4] discard_tac
+	THEN all_var_elim_asm_tac1);
+a(LEMMA_T ¬0 < i + 1® asm_tac THEN REPEAT strip_tac);
+a(rewrite_tac[]);
+a(ALL_FC_T rewrite_tac[arb_gen gcd_plus_thm]);
+val Ûeuclid_algorithm_thmÝ = save_pop_thm "euclid_algorithm_thm";
+=TEX
+%%%%
+%%%%
+=SML
+(*
+drop_main_goal();
+*)
+push_consistency_goal ¬IndSum‰N®;
+a(¶_tac ¬Ìa f·SetFold 0 ($ +) f a®);
+a(µ_tac THEN rewrite_tac[] THEN bc_thm_tac(set_fold_def));
+a(rewrite_tac[plus_assoc_thm]);
+val _ = save_consistency_thm ¬IndSum‰N® (pop_thm());
+val Ûind_sum_î_defÝ = save_thm("ind_sum_î_def", get_spec ¬IndSum‰N®);
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬µ f·
+	“ {} f = 0
+±	(µ x a· a  Finite ± ³ x  a
+´	“ ({x} À a) f = f x + “ a f)®);
+a(REPEAT strip_tac THEN1 rewrite_tac[ind_sum_î_def]);
+a(lemma_tac¬a ¡ {x|³ f x = 0}  Finite®
+	THEN1 (bc_thm_tac ¡_finite_thm THEN REPEAT strip_tac));
+a(ALL_FC_T rewrite_tac[ind_sum_î_def]);
+val Ûind_sum_î_def1Ý = save_pop_thm "ind_sum_î_def1";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬µ f·
+	“ {} f = 0
+±	({x|³ f x = 0}  Finite
+	´	(µ x a· ³ x  a
+	´	“ ({x} À a) f = f x + “ a f))®);
+a(REPEAT strip_tac THEN1 rewrite_tac[ind_sum_î_def]);
+a(lemma_tac¬a ¡ {x|³ f x = 0}  Finite®
+	THEN1 (bc_thm_tac ¡_finite_thm THEN REPEAT strip_tac));
+a(ALL_FC_T rewrite_tac[ind_sum_î_def]);
+val Ûind_sum_î_def2Ý = save_pop_thm "ind_sum_î_def2";
+=TEX
+%%%%
+%%%%
+=SML
+(*
+drop_main_goal();
+*)
+push_consistency_goal ¬IndProd‰N®;
+a(¶_tac ¬Ìa f·SetFold 1 ($ *) f a®);
+a(µ_tac THEN rewrite_tac[] THEN bc_thm_tac(set_fold_def));
+a(PC_T1 "lin_arith" prove_tac[]);
+val _ = save_consistency_thm ¬IndProd‰N® (pop_thm());
+val Ûind_prod_î_defÝ = save_thm("ind_prod_î_def", get_spec ¬IndProd‰N®);
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬µ f·
+	 {} f = 1
+±	(µ x a· a  Finite ± ³ x  a
+´	 ({x} À a) f = f x *  a f)®);
+a(REPEAT strip_tac THEN1 rewrite_tac[ind_prod_î_def]);
+a(lemma_tac¬a ¡ {x|³ f x = 1}  Finite®
+	THEN1 (bc_thm_tac ¡_finite_thm THEN REPEAT strip_tac));
+a(ALL_FC_T rewrite_tac[ind_prod_î_def]);
+val Ûind_prod_î_def1Ý = save_pop_thm "ind_prod_î_def1";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬µ f·
+	 {} f = 1
+±	({x|³ f x = 1}  Finite
+	´	(µ x a· ³ x  a
+	´	 ({x} À a) f = f x *  a f))®);
+a(REPEAT strip_tac THEN1 rewrite_tac[ind_prod_î_def]);
+a(lemma_tac¬a ¡ {x|³ f x = 1}  Finite®
+	THEN1 (bc_thm_tac ¡_finite_thm THEN REPEAT strip_tac));
+a(ALL_FC_T rewrite_tac[ind_prod_î_def]);
+val Ûind_prod_î_def2Ý = save_pop_thm "ind_prod_î_def2";
+=TEX
+%%%%
+%%%%
+
+=TEX
+=SML
+val Ûmod_3_plus_thmÝ = rewrite_rule[](all_µ_intro(list_µ_elim[¬m:î®, ¬n:î®, ¬3®]mod_plus_homomorphism_thm));
+=TEX
+=SML
+val Ûmod_3_times_thmÝ = rewrite_rule[](all_µ_intro(list_µ_elim[¬m:î®, ¬n:î®, ¬3®]mod_times_homomorphism_thm));
+=TEX
+=SML
+val Ûmod_3_î_exp_thmÝ = rewrite_rule[](all_µ_intro(list_µ_elim[¬m:î®, ¬n:î®, ¬3®]mod_î_exp_thm));
+=TEX
+=SML
+val Ûmod_3_clausesÝ = rewrite_rule[](µ_elim¬3® mod_clauses);
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µdigits n·
+	“ {i | i < n} (Ìi·digits i * 10 ^ i) Mod 3 =
+	“ {i | i < n} (Ìi·digits i) Mod 3
+®);
+a(REPEAT strip_tac);
+a(induction_tac¬n®);
+(* *** Goal "1" *** *)
+a(rewrite_tac[ind_sum_î_def1, pc_rule1"sets_ext1" prove_rule[]¬{x|F} = {}®]);
+(* *** Goal "1" *** *)
+a(PC_T1 "predicates" lemma_tac¬{i|i < n + 1} = {n} À {i|i < n} ± ³n  {i|i < n}
+	± {i|i < n}  Finite®
+	THEN1 rewrite_tac[range_finite_size_thm]);
+(* *** Goal "2.1" *** *)
+a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac
+	THEN PC_T1 "lin_arith" asm_prove_tac[]);
+(* *** Goal "2.2" *** *)
+a(ALL_FC_T asm_rewrite_tac[ind_sum_î_def1]);
+a(once_rewrite_tac[mod_3_plus_thm]);
+a(asm_rewrite_tac[]);
+a(once_rewrite_tac[mod_3_times_thm]);
+a(once_rewrite_tac[mod_3_î_exp_thm]);
+a(LEMMA_T¬1 ^ n = 1® (fn th => rewrite_tac[th, mod_3_clauses]));
+a(DROP_ASMS_T discard_tac
+	THEN induction_tac¬n® THEN asm_rewrite_tac[î_exp_def]);
+val Ûdiv_3_rule_thm1Ý = save_pop_thm "div_3_rule_thm1";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µdigits n·
+	3 Divides “ {i | i < n} (Ìi·digits i * 10 ^ i) ¤
+	3 Divides “ {i | i < n} (Ìi·digits i)
+®);
+a(REPEAT µ_tac);
+a(rewrite_tac[divides_mod_thm, div_3_rule_thm1]);
+val Ûdiv_3_rule_thmÝ = save_pop_thm "div_3_rule_thm";
 =TEX
 %%%%
 %%%% REAL INTEGRAL DOMAINS
@@ -980,7 +1289,7 @@ local
 		(ot output_banner par) handle ex => reraise ex "z_output_theory"
 	);
 in
-	val _ = output_theorems{out_file="numbers.th.doc", theory="-"};
+	val _ = output_theorems{out_file="wrk074.th.doc", theory="-"};
 end;
 =TEX
 } %\Hide
