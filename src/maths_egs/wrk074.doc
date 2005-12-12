@@ -106,7 +106,51 @@ declare_infix(200, "Divides");
 ˜¸¸¸¸¸¸
 ‹ µn m∑ n Divides m § ∂k∑ m = k * n
 ∞
+It is often convenient to reduce
+=INLINEFT
+n Divides m
+=TEX
+\ to
+=INLINEFT
+m Mod n = 0
+=TEX
+.
+The following block of theorems provide this and several other useful facts, e.g., that {\em Divides} is a partial ordering, i.e., it is reflexive, antisymmetric and transitive.
 
+\ThmsIII{
+=GFT
+times_eq_0_thm
+times_cancel_thm
+times_eq_eq_1_thm
+times_eq_1_thm
+div_mod_1_thm
+m_div_mod_m_thm
+zero_div_mod_thm
+less_div_mod_thm
+=TEX
+}{%
+=GFT
+div_mod_times_cancel_thm
+mod_clauses
+mod_eq_0_thm
+divides_0_thm
+divides_trans_thm
+divides_mod_thm
+divides_refl_thm
+divides_antisym_thm
+=TEX
+}{%
+=GFT
+divides_plus_thm
+divides_º_thm
+divides_1_thm
+mod_plus_homomorphism_thm
+mod_times_homomorphism_thm
+mod_Ó_exp_thm
+=TEX
+}
+
+We now specify the greatest common divisor function by requiring it to produce greatest lower bounds with respect to the divisor ordering.
 
 πHOLCONST
 ‹ €Gcd› : Ó ≠ Ó ≠ Ó
@@ -119,48 +163,45 @@ declare_infix(200, "Divides");
 ‹	¥	d Divides Gcd m n
 ∞
 
-The most common textbook account exhibits the g.c.d. of $m$ and $n$ as the smallest positive value of the form $am + bn$.
-This requires $a$ and $b$ to range over negative integers.
+We will need to prove the consistency of the above definition.
+Our approach is based on the one  which exhibits the greatest common divisor of $m$ and $n$ as the smallest positive value of the form $am + bn$.
+To follow that approach directly requires $a$ and $b$ to range over both positive and negative integers.
 A slightly less symmetrical alternative is to take the g.c.d. to be the smallest positive value of the form $(am)\;Mod\;n$.
-This works over the natural numbers and the following theorems lead up to the proof that this does give the g.c.d.
-We have to develop various facts about multiplicative arithmetic over the natural numbers en route.
+This works over the natural numbers and is the method we use.
+
+Various useful lemmas about greatest common divisors are then proved culminating in the theorem that Euclid's algorithm computes them.
 
 \ThmsIII{
 =GFT
-times_eq_0_thm
-times_cancel_thm
-times_eq_eq_1_thm
-times_eq_1_thm
-div_mod_1_thm
-m_div_mod_m_thm
-zero_div_mod_thm
-less_div_mod_thm
-div_mod_times_cancel_thm
-=TEX
-}{%
-=GFT
-mod_clauses
-mod_eq_0_thm
-divides_0_thm
-divides_mod_thm
-divides_refl_thm
-divides_antisym_thm
-divides_trans_thm
-mod_plus_homomorphism_thm
-mod_times_homomorphism_thm
-=TEX
-}{%
-=GFT
-mod_Ó_exp_thm
-gcd_consistent_lemma1
-gcd_consistent_lemma2
-gcd_consistent_lemma3
-gcd_consistent_lemma4
-gcd_consistent_lemma5
 Gcd_consistent
 gcd_def
+gcd_pos_thm
+=TEX
+}{%
+=GFT
+gcd_unique_thm
+gcd_idemp_thm
+gcd_comm_thm
+=TEX
+}{%
+=GFT
+gcd_plus_thm
+gcd_eq_mod_thm
+euclid_algorithm_thm
 =TEX
 }
+Now we define the set of prime numbers:
+
+πHOLCONST
+‹ €Prime› : Ó SET
+˜¸¸¸¸¸¸
+‹ Prime = {p | 1 < p ± µm n∑ p = m*n ¥ m = 1 ≤ n = 1}
+∞
+The first important fact we need about prime numbers is the fact that a number is prime iff. it is greater than 1 and whenever it divides a product it divides one of the factors.
+The right-to-left direction of this is simple.
+It is for this the other direction that we need to develop the theory of the g.c.d.
+
+
 \subsection{Indexed Sums and Products in Ó}
 A useful application of the set fold operation is to define the following indexed sum operation. Given an index set, $a$, and a function, $f$, assigning a number to each member of $a$,
 =INLINEFT
@@ -329,11 +370,49 @@ rat_thm
 %%%%
 =SML
 val €divides_def› = get_spec ¨$DividesÆ;
+val €prime_def› = get_spec ¨PrimeÆ;
 val €real_i_d_def› = get_spec ¨RealIDÆ;
 val €˙_def› = get_spec ¨˙âRÆ;
 val €real_field_def› = get_spec ¨RealFieldÆ;
 val €rat_def› = get_spec ¨%bbQ%âRÆ;
 val €field_of_fractions_def› = get_spec ¨FieldOfFractionsÆ;
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µm n a∑ (µi∑i ç a ¥ i º m) ± n ç a ¥ Max a ç aÆ);
+a(µ_tac THEN induction_tac ¨m:ÓÆ THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_asm_fc_tac[] THEN all_var_elim_asm_tac1);
+a(all_fc_tac[get_spec¨MaxÆ] THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(cases_tac¨m + 1 ç aÆ
+	THEN1 (all_fc_tac[get_spec¨MaxÆ] THEN asm_rewrite_tac[]));
+a(DROP_NTH_ASM_T 4 bc_thm_tac THEN ∂_tac¨nÆ
+	THEN REPEAT strip_tac);
+a(LIST_DROP_NTH_ASM_T [4] all_fc_tac);
+a(cases_tac¨i = m + 1Æ THEN1 all_var_elim_asm_tac1);
+a(PC_T1 "lin_arith" asm_prove_tac[]);
+val €max_ç_thm› = save_pop_thm"max_ç_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µm n a∑ (µi∑i ç a ¥ i º m) ± n ç a ¥ n º Max aÆ);
+a(µ_tac THEN induction_tac ¨m:ÓÆ THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_asm_fc_tac[] THEN all_var_elim_asm_tac1);
+a(all_fc_tac[get_spec¨MaxÆ] THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(cases_tac¨m + 1 ç aÆ
+	THEN1 (all_fc_tac[get_spec¨MaxÆ] THEN asm_rewrite_tac[]
+		THEN all_asm_fc_tac[]));
+a(DROP_NTH_ASM_T 4 bc_thm_tac THEN REPEAT strip_tac);
+a(LIST_DROP_NTH_ASM_T [4] all_fc_tac);
+a(cases_tac¨i = m + 1Æ THEN1 all_var_elim_asm_tac1);
+a(PC_T1 "lin_arith" asm_prove_tac[]);
+val €max_º_thm› = save_pop_thm"max_º_thm";
 =TEX
 %%%%
 %%%% DIVISORS IN Ó
@@ -390,7 +469,7 @@ val €times_eq_eq_1_thm› = save_pop_thm "times_eq_eq_1_thm";
 %%%%
 
 =SML
-set_goal([], ¨µm n∑m * n = 1 ¥ m = 1 ± n = 1Æ);
+set_goal([], ¨µm n∑m * n = 1 § m = 1 ± n = 1Æ);
 a(REPEAT µ_tac);
 a(cases_tac¨m = 0 ≤ n = 0 ≤ m = 1 ≤ n = 1Æ THEN_TRY
 	(all_var_elim_asm_tac1 THEN PC_T1 "lin_arith" asm_prove_tac[]));
@@ -399,6 +478,31 @@ a(LEMMA_T¨2 º m ± 2 º nÆ (strip_asm_tac o rewrite_rule[º_def])
 a(LIST_DROP_NTH_ASM_T [3, 4, 5, 6] discard_tac);
 a(all_var_elim_asm_tac1 THEN PC_T1 "lin_arith" asm_prove_tac[]);
 val €times_eq_1_thm› = save_pop_thm "times_eq_1_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µm n∑m^n = 1 § m = 1 ≤ n = 0Æ);
+a(REPEAT_UNTIL is_¥ strip_tac);
+(* *** Goal "1" *** *)
+a(induction_tac¨n:ÓÆ
+	THEN  asm_rewrite_tac[Ó_exp_def, times_eq_1_thm]);
+(* *** Goal "2" *** *)
+a(REPEAT strip_tac THEN_TRY asm_rewrite_tac[Ó_exp_def]);
+a(induction_tac¨n:ÓÆ
+	THEN  asm_rewrite_tac[Ó_exp_def]);
+val €Ó_exp_eq_1_thm› = save_pop_thm "Ó_exp_eq_1_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µm:Ó∑ m^1 = mÆ);
+a(REPEAT strip_tac);
+a(ante_tac(list_µ_elim[¨mÆ, ¨0Æ](±_right_elim Ó_exp_def)));
+a(rewrite_tac[±_left_elim Ó_exp_def]);
+val €Ó_exp_1_thm› = save_pop_thm "Ó_exp_1_thm";
 =TEX
 %%%%
 %%%%
@@ -459,6 +563,8 @@ set_goal([], ¨µk m n∑
 ±	(k*m) Mod k = 0
 ±	(k*m + n) Mod k = n Mod k
 ±	(m*k + n) Mod k = n Mod k
+±	(n + k*m) Mod k = n Mod k
+±	(n + m*k) Mod k = n Mod k
 ±	(k + n) Mod k = n Mod k
 ±	(n + k) Mod k = n Mod k
 ±	0 Mod k = 0
@@ -466,8 +572,8 @@ set_goal([], ¨µk m n∑
 ±	(m Mod k) Mod k = m Mod k
 Æ);
 a(REPEAT µ_tac THEN ¥_tac);
-a(rewrite_tac[µ_elim¨kÆ times_comm_thm]);
-a(ALL_FC_T rewrite_tac[
+a(rewrite_tac[µ_elim¨kÆ times_comm_thm, µ_elim¨nÆ plus_order_thm]);
+a(ALL_FC_T rewrite_tac[rewrite_rule[µ_elim¨nÆ plus_order_thm]
 	div_mod_times_cancel_thm, m_div_mod_m_thm, zero_div_mod_thm]);
 a(pure_once_rewrite_tac[prove_rule[]
 	¨m*k = m*k + 0 ± k + n = 1*k + n ± n + k = 1*k + nÆ]);
@@ -571,6 +677,68 @@ val €divides_trans_thm› = save_pop_thm "divides_trans_thm";
 %%%%
 
 =SML
+set_goal([], ¨µm n d∑
+	d Divides n 
+¥	(d Divides (m+n) § d Divides m)Æ);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(POP_ASM_T ante_tac THEN rewrite_tac[divides_mod_thm]);
+a(cases_tac¨d = 0Æ THEN1 (asm_rewrite_tac[] THEN taut_tac));
+a(DROP_NTH_ASM_T 2 ante_tac THEN rewrite_tac[divides_def]);
+a(lemma_tac¨0 < dÆ THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(asm_rewrite_tac[] THEN once_rewrite_tac[plus_comm_thm]
+	THEN REPEAT strip_tac
+	THEN all_var_elim_asm_tac1);
+a(POP_ASM_T ante_tac THEN ALL_FC_T rewrite_tac[mod_clauses]);
+(* *** Goal "2" *** *)
+a(all_asm_ante_tac THEN rewrite_tac[divides_def]
+		THEN REPEAT strip_tac
+		THEN all_var_elim_asm_tac1);
+a(∂_tac¨k' + kÆ THEN PC_T1 "lin_arith" prove_tac[]);
+val €divides_plus_thm› = save_pop_thm "divides_plus_thm";
+
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µm n∑
+	0 < m
+±	n Divides m
+¥	0 < n ± n º mÆ);
+a(rewrite_tac[divides_def] THEN REPEAT strip_tac
+	THEN all_var_elim_asm_tac1);
+(* *** Goal "1" *** *)
+a(swap_nth_asm_concl_tac 1);
+a(LEMMA_T¨n = 0Æ rewrite_thm_tac THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(POP_ASM_T ante_tac THEN cases_tac¨k = 0Æ
+	THEN1 asm_rewrite_tac[]);
+a(LEMMA_T¨1 º kÆ (strip_asm_tac o rewrite_rule[º_def])
+	THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(DROP_NTH_ASM_T 2 discard_tac THEN all_var_elim_asm_tac1);
+a(PC_T1 "lin_arith" prove_tac[]);
+val €divides_º_thm› = save_pop_thm "divides_º_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µm∑m Divides 1 § m = 1Æ);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(LEMMA_T¨0 < 1Æ asm_tac THEN1 rewrite_tac[]);
+a(all_fc_tac[divides_º_thm]);
+a(PC_T1 "lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(asm_rewrite_tac[divides_mod_thm]);
+val €divides_1_thm› = save_pop_thm "divides_1_thm";
+
+=TEX
+%%%%
+%%%%
+
+=SML
 set_goal([], ¨µm n k∑0 < k ¥ (m + n) Mod k = (m Mod k + n Mod k) Mod kÆ);
 a(REPEAT strip_tac);
 a(all_fc_tac[div_mod_thm]);
@@ -632,7 +800,7 @@ a(PC_T1 "predicates" lemma_tac
 	THEN1 (REPEAT strip_tac THEN asm_prove_tac[]));
 a(all_fc_tac[min_º_thm]);
 a(POP_ASM_T ante_tac THEN asm_rewrite_tac[]);
-val €gcd_consistent_lemma1› = save_pop_thm"gcd_consistent_lemma1";
+val €gcd_consistent_lemma1› = pop_thm();
 =TEX
 %%%%
 %%%%
@@ -653,7 +821,7 @@ a(ALL_FC_T once_rewrite_tac[mod_plus_homomorphism_thm]);
 a(all_var_elim_asm_tac1
 	THEN rewrite_tac[conv_rule (ONCE_MAP_C eq_sym_conv) times_assoc_thm]
 	THEN ALL_FC_T rewrite_tac[mod_clauses]);
-val €gcd_consistent_lemma2› = save_pop_thm"gcd_consistent_lemma2";
+val €gcd_consistent_lemma2› = pop_thm();
 =TEX
 %%%%
 %%%%
@@ -673,7 +841,7 @@ a(LEMMA_T ¨
 	(n+1)*(p*b*n + p*r) + sÆ rewrite_thm_tac THEN1
 	PC_T1 "lin_arith" prove_tac[]);
 a(rewrite_tac[rewrite_rule[](µ_elim¨n+1Æmod_clauses)]);
-val €gcd_consistent_lemma3› = save_pop_thm"gcd_consistent_lemma3";
+val €gcd_consistent_lemma3› = pop_thm();
 =TEX
 %%%%
 %%%%
@@ -698,7 +866,7 @@ a(LEMMA_T ¨
 	(n+1)*(p*b*n + p*r) + sÆ rewrite_thm_tac THEN1
 	PC_T1 "lin_arith" prove_tac[]);
 a(rewrite_tac[rewrite_rule[](µ_elim¨n+1Æmod_clauses)]);
-val €gcd_consistent_lemma4› = save_pop_thm"gcd_consistent_lemma4";
+val €gcd_consistent_lemma4› = pop_thm();
 =TEX
 %%%%
 %%%%
@@ -753,7 +921,7 @@ a(contr_tac);
 a(DROP_NTH_ASM_T 7 (ante_tac o µ_elim¨qÆ));
 a(asm_rewrite_tac[]);
 a(PC_T1 "lin_arith" asm_prove_tac[]);
-val €gcd_consistent_lemma5› = save_pop_thm"gcd_consistent_lemma5";
+val €gcd_consistent_lemma5› = pop_thm();
 =TEX
 %%%%
 %%%%
@@ -852,30 +1020,6 @@ val €gcd_comm_thm› = save_pop_thm "gcd_comm_thm";
 
 =SML
 set_goal([], ¨µm n d∑
-	d Divides n 
-¥	(d Divides (m+n) § d Divides m)Æ);
-a(REPEAT strip_tac);
-(* *** Goal "1" *** *)
-a(POP_ASM_T ante_tac THEN rewrite_tac[divides_mod_thm]);
-a(cases_tac¨d = 0Æ THEN1 (asm_rewrite_tac[] THEN taut_tac));
-a(DROP_NTH_ASM_T 2 ante_tac THEN rewrite_tac[divides_def]);
-a(lemma_tac¨0 < dÆ THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
-a(asm_rewrite_tac[] THEN once_rewrite_tac[plus_comm_thm]
-	THEN REPEAT strip_tac
-	THEN all_var_elim_asm_tac1);
-a(POP_ASM_T ante_tac THEN ALL_FC_T rewrite_tac[mod_clauses]);
-(* *** Goal "2" *** *)
-a(all_asm_ante_tac THEN rewrite_tac[divides_def]
-		THEN REPEAT strip_tac
-		THEN all_var_elim_asm_tac1);
-a(∂_tac¨k' + kÆ THEN PC_T1 "lin_arith" prove_tac[]);
-val €divides_plus_thm› = save_pop_thm "divides_plus_thm";
-=TEX
-%%%%
-%%%%
-
-=SML
-set_goal([], ¨µm n d∑
 	0 < m ± 0 < n
 ¥	Gcd (m + n) n = Gcd m n
 Æ);
@@ -894,6 +1038,30 @@ a(lemma_tac¨Gcd m n Divides m + nÆ
 	THEN1 ALL_FC_T1 fc_§_canon asm_rewrite_tac[arb_gen divides_plus_thm]);
 a(all_fc_tac[gcd_def]);
 val €gcd_plus_thm› = save_pop_thm "gcd_plus_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨
+	µm n∑	0 < m ± 0 < n ± 0 < m Mod n
+	¥	∂a∑ 0 < (a*m) Mod n
+	± 	(µb∑ 0 < (b*m) Mod n ¥ (a*m) Mod n º (b*m) Mod n)
+	±	Gcd m n = (a*m) Mod n
+Æ);
+a(REPEAT strip_tac);
+a(all_fc_tac[gcd_consistent_lemma1]);
+a(∂_tac¨aÆ THEN asm_rewrite_tac[]);
+a(conv_tac eq_sym_conv THEN bc_thm_tac gcd_unique_thm);
+a(asm_rewrite_tac[divides_mod_thm]);
+a(ALL_FC_T rewrite_tac[gcd_pos_thm, gcd_consistent_lemma5]);
+a(bc_thm_tac gcd_consistent_lemma2);
+a(ALL_FC_T asm_rewrite_tac[gcd_pos_thm]);
+a(LIST_DROP_NTH_ASM_T[1, 2, 3] discard_tac);
+a(ALL_FC_T (MAP_EVERY ante_tac) [all_µ_elim gcd_def]);
+a(rewrite_tac[divides_mod_thm]);
+a(ALL_FC_T rewrite_tac[gcd_pos_thm] THEN taut_tac);
+val €gcd_eq_mod_thm› = save_pop_thm"gcd_eq_mod_thm";
 =TEX
 %%%%
 %%%%
@@ -930,6 +1098,205 @@ a(LEMMA_T ¨0 < i + 1Æ asm_tac THEN REPEAT strip_tac);
 a(rewrite_tac[]);
 a(ALL_FC_T rewrite_tac[arb_gen gcd_plus_thm]);
 val €euclid_algorithm_thm› = save_pop_thm "euclid_algorithm_thm";
+=TEX
+%%%%
+%%%% PRIMES IN Ó
+%%%%
+
+=SML
+set_goal([], ¨µp∑ p ç Prime ¥ 0 < pÆ);
+a(rewrite_tac[prime_def] THEN PC_T1 "lin_arith" asm_prove_tac[]);
+val €prime_0_less_thm› = save_pop_thm"prime_0_less_thm";
+%%%%
+
+=SML
+set_goal([], ¨µp∑ p ç Prime ¥ 2 º pÆ);
+a(rewrite_tac[prime_def] THEN PC_T1 "lin_arith" asm_prove_tac[]);
+val €prime_2_º_thm› = save_pop_thm"prime_2_º_thm";
+=TEX
+%%%%
+%%%% PRIMES IN Ó
+%%%%
+
+=SML
+set_goal([], ¨µp∑ p ç Prime § (1 < p ± µd∑d Divides p § d = 1 ≤ d = p)Æ);
+a(rewrite_tac[prime_def, divides_def] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_var_elim_asm_tac1);
+a(list_spec_nth_asm_tac 2 [¨kÆ, ¨dÆ]);
+a(asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(∂_tac¨pÆ THEN asm_rewrite_tac[]);
+(* *** Goal "3" *** *)
+a(∂_tac¨1Æ THEN asm_rewrite_tac[]);
+(* *** Goal "4" *** *)
+a(all_var_elim_asm_tac1);
+a(DROP_NTH_ASM_T 2 (ante_tac o µ_elim ¨mÆ));
+a(LEMMA_T¨∂ k∑ m * n = k * mÆ asm_rewrite_thm_tac
+	THEN1 (∂_tac¨nÆ THEN PC_T1 "lin_arith" prove_tac[]));
+a(all_asm_ante_tac THEN cases_tac¨m = 0Æ THEN1 asm_rewrite_tac[]);
+a(strip_asm_tac (µ_elim¨nÆ Ó_cases_thm)
+	THEN all_var_elim_asm_tac1
+	THEN1 rewrite_tac[]);
+a(strip_asm_tac (µ_elim¨iÆ Ó_cases_thm)
+	THEN all_var_elim_asm_tac1
+	THEN1 rewrite_tac[]);
+a(PC_T1 "lin_arith" asm_prove_tac[]);
+val €prime_divides_thm› = save_pop_thm"prime_divides_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µm p∑
+	0 < m ± p ç Prime
+¥	Gcd m p = 1 ≤ Gcd m p = pÆ);
+a(REPEAT strip_tac
+	THEN all_fc_tac[prime_0_less_thm]
+		THEN all_asm_ante_tac);
+a(rewrite_tac[prime_divides_thm] THEN REPEAT strip_tac);
+a(lemma_tac¨Gcd m p Divides pÆ THEN1 all_fc_tac[gcd_def]);
+a(LIST_DROP_NTH_ASM_T [4] all_fc_tac);
+val €gcd_prime_thm› = save_pop_thm "gcd_prime_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µp∑
+	(µm n∑	p Divides m*n
+	¥	p Divides m ≤ p Divides n)
+±	1 < p
+¥	p ç Prime
+Æ);
+a(rewrite_tac[prime_def, divides_mod_thm] THEN contr_tac);
+a(all_var_elim_asm_tac1);
+a(DROP_NTH_ASM_T 4 (ante_tac o list_µ_elim[¨mÆ, ¨nÆ]));
+a(lemma_tac ¨0 < m*n Æ THEN1
+	PC_T1"lin_arith" asm_prove_tac[]);
+a(asm_rewrite_tac[]);
+a(ALL_FC_T rewrite_tac[m_div_mod_m_thm]);
+a(lemma_tac ¨0 < m ± 0 < nÆ THEN1
+	(LIST_DROP_NTH_ASM_T [1, 2, 3] discard_tac
+		THEN contr_tac THEN lemma_tac¨m = 0 ≤ n = 0Æ
+		THEN_TRY all_var_elim_asm_tac1 THEN
+			PC_T1"lin_arith" asm_prove_tac[]));
+a(cases_tac¨m < m*nÆ THEN1 
+	ALL_FC_T asm_rewrite_tac[less_div_mod_thm]);
+(* *** Goal "1" *** *)
+a(cases_tac¨n < m*nÆ THEN1 
+	(ALL_FC_T asm_rewrite_tac[less_div_mod_thm] THEN
+		PC_T1 "lin_arith" asm_prove_tac[]));
+a(LEMMA_T¨2 º mÆ (strip_asm_tac o rewrite_rule[º_def])
+	THEN1 PC_T1"lin_arith" asm_prove_tac[]);
+a(all_var_elim_asm_tac1 THEN PC_T1"lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(LEMMA_T¨2 º nÆ (strip_asm_tac o rewrite_rule[º_def])
+	THEN1 PC_T1"lin_arith" asm_prove_tac[]);
+a(all_var_elim_asm_tac1 THEN PC_T1"lin_arith" asm_prove_tac[]);
+val €prime_lemma1› = pop_thm ();
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µp m n∑
+	p ç Prime ± p Divides m*n
+¥	p Divides m ≤ p Divides n
+Æ);
+a(REPEAT µ_tac THEN ¥_tac);
+a(all_fc_tac[prime_0_less_thm]);
+a(cases_tac¨m = 0 ≤ n = 0Æ THEN_TRY
+	(asm_rewrite_tac[divides_0_thm]));
+a(lemma_tac¨0 < m ± 0 < nÆ THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(cases_tac¨Gcd m p = pÆ THEN1
+	(POP_ASM_T (once_rewrite_thm_tac o eq_sym_rule) THEN
+		all_fc_tac[gcd_def] THEN REPEAT strip_tac));
+a(cases_tac¨Gcd n p = pÆ THEN1
+	(POP_ASM_T (once_rewrite_thm_tac o eq_sym_rule) THEN
+		all_fc_tac[arb_gen gcd_def]
+			THEN REPEAT strip_tac));
+a(lemma_tac¨Gcd m p = 1 ± Gcd n p = 1Æ THEN1
+	(fc_tac[gcd_prime_thm]
+		THEN LIST_DROP_NTH_ASM_T [1, 2] fc_tac
+			THEN REPEAT strip_tac));
+a(asm_rewrite_tac[divides_mod_thm]);
+a(rewrite_tac[pc_rule1 "lin_arith" prove_rule[]
+	¨µa∑a = 0 § ≥0 < aÆ]);
+a(contr_tac);
+a(all_fc_tac[arb_gen gcd_eq_mod_thm]);
+a(LIST_DROP_NTH_ASM_T [1, 4] (MAP_EVERY ante_tac));
+a(asm_rewrite_tac[]);
+a(LIST_DROP_NTH_ASM_T (interval 1 14) discard_tac);
+a(conv_tac (ONCE_MAP_C eq_sym_conv) THEN contr_tac);
+a(LEMMA_T¨((a' * m)*(a * n)) Mod p = 1Æ ante_tac THEN1
+	ALL_FC_T once_asm_rewrite_tac[mod_times_homomorphism_thm]);
+(* *** Goal "1" *** *)
+a(DROP_NTH_ASM_T 5 (strip_asm_tac o rewrite_rule[prime_def]));
+a(ALL_FC_T asm_rewrite_tac[less_div_mod_thm]);
+(* *** Goal "2" *** *)
+a(DROP_NTH_ASM_T 4 ante_tac THEN asm_rewrite_tac[divides_mod_thm]
+	THEN REPEAT strip_tac);
+a(LEMMA_T¨((a' * a)*(m * n)) Mod p = 0Æ ante_tac THEN1
+	(ALL_FC_T once_asm_rewrite_tac[mod_times_homomorphism_thm]
+		THEN ALL_FC_T asm_rewrite_tac[mod_clauses]));
+a(conv_tac(ONCE_MAP_C anf_conv) THEN PC_T1 "lin_arith" prove_tac[]);
+val €prime_lemma2› = pop_thm ();
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µp∑
+	p ç Prime
+§	1 < p ± (µm n∑ p Divides m*n ¥ p Divides m ≤ p Divides n)
+Æ);
+a(REPEAT strip_tac THEN_LIST [
+	POP_ASM_T (strip_asm_tac o rewrite_rule[prime_def])
+		THEN asm_rewrite_tac[],
+	all_fc_tac[prime_lemma2],
+	all_fc_tac[prime_lemma1]]);
+val €prime_thm› = save_pop_thm "prime_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨ µm∑ 1 < m ¥ ∂p n∑p ç Prime ± m = p*n Æ);
+a(µ_tac THEN cov_induction_tac¨m:ÓÆ);
+a(REPEAT strip_tac);
+a(cases_tac¨m ç PrimeÆ THEN1
+	(∂_tac¨mÆ THEN ∂_tac¨1Æ THEN asm_rewrite_tac[]));
+a(POP_ASM_T (strip_asm_tac o rewrite_rule[prime_def]));
+a(cases_tac¨m' = 0Æ THEN1
+	(all_var_elim_asm_tac1 THEN PC_T1 "lin_arith" asm_prove_tac[]));
+a(lemma_tac¨1 < m'Æ THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(cases_tac¨≥m'< mÆ);
+(* *** Goal "1" *** *)
+a(cases_tac¨n = 0Æ THEN1
+	(all_var_elim_asm_tac1 THEN PC_T1 "lin_arith" asm_prove_tac[]));
+a(LEMMA_T¨2 º nÆ (strip_asm_tac o rewrite_rule[º_def])
+	THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(all_var_elim_asm_tac1 THEN  PC_T1 "lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(LIST_DROP_NTH_ASM_T [8] all_fc_tac);
+a(∂_tac¨pÆ THEN ∂_tac¨n'*nÆ THEN asm_rewrite_tac[times_assoc_thm]);
+val €prime_divisor_thm› = save_pop_thm "prime_divisor_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨ µm n∑ 1 < m ¥ n º m^nÆ);
+a(REPEAT strip_tac);
+a(induction_tac¨nÆ THEN rewrite_tac[Ó_exp_def]);
+a(cases_tac¨n = 0Æ
+	THEN1 (asm_rewrite_tac[Ó_exp_def]
+		THEN PC_T1 "lin_arith" asm_prove_tac[]));
+a(LEMMA_T ¨2 º mÆ (strip_asm_tac o rewrite_rule[º_def])
+	THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(all_var_elim_asm_tac1 THEN PC_T1 "lin_arith" asm_prove_tac[]);
+val €Ó_exp_linear_bound_thm› = save_pop_thm "Ó_exp_linear_bound_thm";
 =TEX
 %%%%
 %%%%
@@ -974,6 +1341,40 @@ val €ind_sum_Ó_def2› = save_pop_thm "ind_sum_Ó_def2";
 %%%%
 %%%%
 =SML
+set_goal([], ¨µ A f∑
+	A ç Finite
+±	ì A f = 0
+¥	µx∑x ç A ¥ f x = 0Æ);
+a(REPEAT µ_tac THEN ¥_tac THEN POP_ASM_T ante_tac);
+a(intro_µ_tac(¨fÆ, ¨fÆ));
+a(finite_induction_tac¨AÆ THEN1 rewrite_tac[]);
+a(ALL_FC_T rewrite_tac[ind_sum_Ó_def1]);
+a(REPEAT µ_tac THEN ¥_tac);
+a(REPEAT strip_tac THEN1 all_var_elim_asm_tac1);
+a(LIST_DROP_NTH_ASM_T [5] all_fc_tac);
+val €ind_sumÓ_0_thm› = save_pop_thm "ind_sum_Ó_0_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µ A; f g : 'a ≠ Ó∑
+	A ç Finite
+±	(µx∑x ç A ¥ f x = g x)
+¥	ì A f = ì A gÆ);
+a(REPEAT strip_tac);
+a(POP_ASM_T ante_tac THEN intro_µ_tac(¨fÆ, ¨fÆ));
+a(finite_induction_tac¨AÆ
+	THEN1 rewrite_tac[ind_sum_Ó_def1]);
+a(REPEAT strip_tac);
+a(lemma_tac¨µ x∑ x ç A ¥ f x = g xÆ
+	THEN1 (REPEAT strip_tac THEN all_asm_fc_tac[]));
+a(ALL_ASM_FC_T rewrite_tac[ind_sum_Ó_def1]);
+a(spec_nth_asm_tac 2 ¨xÆ);
+val €ind_sum_Ó_local_thm› = save_pop_thm "ind_sum_Ó_local_thm";
+=TEX
+%%%%
+%%%%
+=SML
 (*
 drop_main_goal();
 *)
@@ -1010,6 +1411,41 @@ a(lemma_tac¨a ° {x|≥ f x = 1} ç FiniteÆ
 	THEN1 (bc_thm_tac °_finite_thm THEN REPEAT strip_tac));
 a(ALL_FC_T rewrite_tac[ind_prod_Ó_def]);
 val €ind_prod_Ó_def2› = save_pop_thm "ind_prod_Ó_def2";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µ A f∑
+	A ç Finite
+±	ê A f = 1
+¥	µx∑x ç A ¥ f x = 1Æ);
+a(REPEAT µ_tac THEN ¥_tac THEN POP_ASM_T ante_tac);
+a(intro_µ_tac(¨fÆ, ¨fÆ));
+a(finite_induction_tac¨AÆ THEN1 rewrite_tac[]);
+a(ALL_FC_T rewrite_tac[ind_prod_Ó_def1]);
+a(REPEAT µ_tac THEN ¥_tac);
+a(all_fc_tac[times_eq_1_thm]);
+a(REPEAT strip_tac THEN1 all_var_elim_asm_tac1);
+a(LIST_DROP_NTH_ASM_T [6] all_fc_tac);
+val €ind_prod_Ó_1_thm› = save_pop_thm "ind_prod_Ó_1_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µ A f g∑
+	A ç Finite
+±	(µx∑x ç A ¥ f x = g x)
+¥	ê A f = ê A gÆ);
+a(REPEAT strip_tac);
+a(POP_ASM_T ante_tac THEN intro_µ_tac(¨fÆ, ¨fÆ));
+a(finite_induction_tac¨AÆ
+	THEN1 rewrite_tac[ind_prod_Ó_def1]);
+a(REPEAT strip_tac);
+a(lemma_tac¨µ x∑ x ç A ¥ f x = g xÆ
+	THEN1 (REPEAT strip_tac THEN all_asm_fc_tac[]));
+a(ALL_ASM_FC_T rewrite_tac[ind_prod_Ó_def1]);
+a(spec_nth_asm_tac 2 ¨xÆ THEN asm_rewrite_tac[]);
+val €ind_prod_Ó_local_thm› = save_pop_thm "ind_prod_Ó_local_thm";
 =TEX
 %%%%
 %%%%
@@ -1068,6 +1504,116 @@ set_goal([], ¨µdigits n∑
 a(REPEAT µ_tac);
 a(rewrite_tac[divides_mod_thm, div_3_rule_thm1]);
 val €div_3_rule_thm› = save_pop_thm "div_3_rule_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µp A f∑
+	A ç Finite
+±	p ç Prime
+±	p Divides ê A f
+¥	∂x∑ x ç A ± p Divides f x
+Æ);
+a(REPEAT strip_tac);
+a(POP_ASM_T ante_tac THEN intro_µ_tac(¨fÆ, ¨fÆ));
+a(finite_induction_tac¨AÆ);
+(* *** Goal "1" *** *)
+a(rewrite_tac [ind_prod_Ó_def1, divides_1_thm]);
+a(swap_nth_asm_concl_tac 1 THEN asm_rewrite_tac[prime_def]);
+(* *** Goal "2" *** *)
+a(ALL_FC_T rewrite_tac [ind_prod_Ó_def1]);
+a(REPEAT strip_tac);
+a(DROP_NTH_ASM_T 5 (fn th => fc_tac[rewrite_rule[prime_thm] th]));
+(* *** Goal "2.1" *** *)
+a(∂_tac¨xÆ THEN REPEAT strip_tac);
+(* *** Goal "2.2" *** *)
+a(LIST_DROP_NTH_ASM_T [4] all_fc_tac);
+a(∂_tac¨x'Æ THEN REPEAT strip_tac);
+val €prime_ê_thm› = save_pop_thm "prime_ê_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µm∑ 0 < m
+¥	∂ e∑
+	{k | ≥e k = 0} ç Finite
+±	{k | ≥e k = 0} Ä Prime
+±	m = ê {k | ≥e k = 0} (Ãp∑ p ^ e p)
+Æ);
+a(µ_tac);
+a(cov_induction_tac¨mÆ);
+a(cases_tac¨m = 0Æ THEN1 asm_rewrite_tac[]);
+a(cases_tac¨m = 1Æ THEN1 all_var_elim_asm_tac1
+	THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(POP_ASM_T discard_tac THEN ∂_tac¨Ãm:Ó∑0Æ
+	THEN rewrite_tac[pc_rule1"sets_ext1" prove_rule[]
+		¨{x|F} = {}Æ, ind_prod_Ó_def1,
+		empty_finite_thm]
+	THEN contr_tac);
+(* *** Goal "2" *** *)
+a(lemma_tac¨1 < mÆ THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(all_fc_tac[prime_divisor_thm] THEN all_var_elim_asm_tac1);
+a(DROP_NTH_ASM_T 6 (strip_asm_tac o µ_elim¨nÆ));
+(* *** Goal "2.1" *** *)
+a(i_contr_tac THEN swap_nth_asm_concl_tac 1);
+a(DROP_NTH_ASM_T 3 ante_tac THEN cases_tac¨n = 0Æ
+	THEN1 asm_rewrite_tac[] THEN REPEAT strip_tac);
+a(all_fc_tac[prime_2_º_thm]);
+a(POP_ASM_T (strip_asm_tac o rewrite_rule[º_def]));
+a(all_var_elim_asm_tac1);
+a(DROP_NTH_ASM_T 2 ante_tac THEN PC_T1 "lin_arith" prove_tac[]);
+(* *** Goal "2.2" *** *)
+a(lemma_tac¨n = 0Æ
+	THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(DROP_NTH_ASM_T 5 ante_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2.3" *** *)
+a(∂_tac¨Ãk∑if k = p then e p + 1 else e kÆ
+	THEN rewrite_tac[]);
+a(LEMMA_T ¨{k|≥ (if k = p then e p + 1 else e k) = 0} =
+	{p} ¿ {k|≥ e k = 0}Æ
+	(fn th => asm_rewrite_tac[th, ¿_finite_thm, singleton_finite_thm])
+	THEN1(PC_T1 "sets_ext1" rewrite_tac[] THEN strip_tac
+		THEN cases_tac¨x = pÆ THEN asm_rewrite_tac[])
+	THEN REPEAT strip_tac);
+(* *** Goal "2.3.1" *** *)
+a(LIST_DROP_NTH_ASM_T [2, 4] (MAP_EVERY ante_tac));
+a(PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "2.3.2" *** *)
+a(POP_ASM_T discard_tac);
+a(cases_tac¨e p = 0Æ);
+(* *** Goal "2.3.2.1" *** *)
+a(LEMMA_T¨≥p ç {k|≥ e k = 0}Æ asm_tac THEN1 asm_rewrite_tac[]);
+a(ALL_FC_T asm_rewrite_tac[ind_prod_Ó_def1]);
+a(rewrite_tac[Ó_exp_1_thm]
+	THEN  bc_tac[prove_rule[]¨µx y∑x = y ¥p*x = p*yÆ,
+		ind_prod_Ó_local_thm]
+	THEN REPEAT strip_tac);
+a(rewrite_tac[]);
+a(cases_tac¨x = pÆ THEN1 all_var_elim_asm_tac);
+a(asm_rewrite_tac[]);
+(* *** Goal "2.3.2.2" *** *)
+a(LEMMA_T ¨{p} ¿ {k|≥ e k = 0} = {p} ¿ {k|≥ e k = 0 ± ≥k = p}Æ
+	rewrite_thm_tac
+	THEN1 (POP_ASM_T ante_tac THEN PC_T1 "sets_ext1" prove_tac[]));
+a(LEMMA_T ¨{k|≥ e k = 0} = {p} ¿ {k|≥ e k = 0 ± ≥k = p}Æ
+	rewrite_thm_tac
+	THEN1 (POP_ASM_T ante_tac THEN PC_T1 "sets_ext1" prove_tac[]));
+a(LEMMA_T¨≥p ç {k|≥ e k = 0 ± ≥k = p}Æ asm_tac
+	THEN1 (POP_ASM_T ante_tac THEN PC_T1 "sets_ext1" prove_tac[]));
+a(LEMMA_T¨{k|≥ e k = 0 ± ≥k = p} ç FiniteÆ strip_asm_tac
+	THEN1 (bc_thm_tac Ä_finite_thm THEN ∂_tac¨{k|≥ e k = 0}Æ
+		THEN REPEAT strip_tac
+		THEN PC_T1 "sets_ext1" prove_tac[]));
+a(ALL_FC_T rewrite_tac[ind_prod_Ó_def1]);
+a(rewrite_tac[Ó_exp_def, times_assoc_thm]);
+a(bc_tac[prove_rule[]¨µx y∑x = y ± a = b ¥ p*a*x = p*b*yÆ,
+		ind_prod_Ó_local_thm]
+	THEN REPEAT strip_tac);
+a(asm_rewrite_tac[]);
+val €fund_thm_arith_thm1› = save_pop_thm "fund_thm_arith_thm1";
 =TEX
 %%%%
 %%%% REAL INTEGRAL DOMAINS
