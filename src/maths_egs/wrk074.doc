@@ -130,14 +130,15 @@ times_eq_0_thm
 times_cancel_thm
 times_eq_eq_1_thm
 times_eq_1_thm
+Ó_exp_clauses
 Ó_exp_eq_0_thm
 Ó_exp_eq_1_thm
 Ó_exp_1_thm
 Ó_exp_divides_thm
-div_mod_1_thm
 =TEX
 }{%
 =GFT
+div_mod_1_thm
 m_div_mod_m_thm
 zero_div_mod_thm
 less_div_mod_thm
@@ -146,10 +147,10 @@ mod_clauses
 mod_eq_0_thm
 divides_0_thm
 divides_trans_thm
-divides_mod_thm
 =TEX
 }{%
 =GFT
+divides_mod_thm
 divides_refl_thm
 divides_antisym_thm
 divides_plus_thm
@@ -466,6 +467,17 @@ a(LEMMA_T¨2 º m ± 2 º nÆ (strip_asm_tac o rewrite_rule[º_def])
 a(LIST_DROP_NTH_ASM_T [3, 4, 5, 6] discard_tac);
 a(all_var_elim_asm_tac1 THEN PC_T1 "lin_arith" asm_prove_tac[]);
 val €times_eq_1_thm› = save_pop_thm "times_eq_1_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µm:Ó∑ m ^ 0 = 1 ± m ^ 1 = m ± m ^ 2 = m * mÆ);
+a(pure_rewrite_tac[prove_rule[]¨2 = 1 + 1Æ, Ó_exp_def]);
+a(pure_once_rewrite_tac[prove_rule[]¨1 = 0 + 1Æ]
+	THEN pure_rewrite_tac[Ó_exp_def]
+	THEN rewrite_tac[]);
+val €Ó_exp_clauses› = save_pop_thm "Ó_exp_clauses";
 =TEX
 %%%%
 %%%%
@@ -1835,6 +1847,35 @@ a(ALL_FC_T once_rewrite_tac[exponent_thm]);
 a(POP_ASM_T (rewrite_thm_tac o eq_sym_rule));
 a(DROP_NTH_ASM_T  3 (rewrite_thm_tac o eq_sym_rule));
 val €unique_factorisation_thm› = save_pop_thm "unique_factorisation_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µm∑
+	m ç SquareFree § µp∑p ç Prime ¥ ≥p^2 Divides m
+Æ);
+a(rewrite_tac[square_free_def, Ó_exp_clauses] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_fc_tac[prime_2_º_thm]);
+a(swap_nth_asm_concl_tac 2 THEN all_asm_fc_tac[]);
+a(all_var_elim_asm_tac1);
+(* *** Goal "2" *** *)
+a(swap_nth_asm_concl_tac 1);
+a(cases_tac¨n = 0Æ THEN1 all_var_elim_asm_tac1);
+(* *** Goal "2.1" *** *)
+a(rewrite_tac[divides_0_thm]);
+a(swap_nth_asm_concl_tac 1 THEN REPEAT strip_tac);
+a(∂_tac¨2Æ THEN asm_rewrite_tac[prime_2_thm, divides_0_thm]);
+(* *** Goal "2.2" *** *)
+a(lemma_tac¨1 < nÆ THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(all_fc_tac[prime_divisor_thm] THEN all_var_elim_asm_tac1);
+a(LIST_DROP_NTH_ASM_T [5] all_fc_tac);
+a(swap_nth_asm_concl_tac 1 THEN bc_thm_tac divides_trans_thm);
+a(∂_tac¨(p * n') * p * n'Æ THEN REPEAT strip_tac);
+a(rewrite_tac[divides_def]);
+a(∂_tac¨n' * n'Æ THEN PC_T1 "lin_arith" prove_tac[]);
+val €square_free_prime_thm› = save_pop_thm "square_free_prime_thm";
 =TEX
 \Hide{
 =SML
