@@ -164,7 +164,7 @@ The first block of theorems extends the repertoire of lemmas about finite sets a
 The approach to this topic in the {\ProductHOL} library tends to characterise a finite set, $A$, as one that can be written as $\Elems{L}$ for some list $L$ and the size $\Size{A}$ as the length $\Size{L}$ where $L$ is a list of distinct elements with $\Elems{L} = A$.
 
 The first few theorems are aimed at an alternative characterisation of a finite set $A$ as one that is in one-one correspondence with an initial subset of the natural numbers, $\{i | i < m\}$ for some $m$.
-{\em En route} is proved various useful facts, e.g., that finiteness and size are preserved under bijections.
+{\em En route} are proved various useful facts, e.g., that finiteness and size are preserved under bijections.
 
 \ThmsIII{%
 =GFT
@@ -173,23 +173,25 @@ size_€_diff_thm
 €_finite_size_thm
 €_size_eq_thm
 size_disjoint_À_thm
-range_finite_size_thm
+À_finite_size_¼_thm
 =TEX
 }{%
 =GFT
+range_finite_size_thm
 length_map_thm
 elems_map_thm
 map_distinct_thm
 nth__elems_thm
 elems_nth_thm
-distinct_nth_thm
 =TEX
 }{%
 =GFT
+distinct_nth_thm
 bijection_finite_size_thm
 bijection_finite_size_thm1
 range_bijection_finite_size_thm
 surjection_finite_size_thm
+range_finite_size_thm1
 =TEX
 }
 
@@ -1079,6 +1081,24 @@ val Ûsize_disjoint_À_thmÝ = save_pop_thm "size_disjoint_À_thm";
 %%%%
 %%%%
 =SML
+set_goal([], ¬µa b·
+	a  Finite
+±	b  Finite
+´	a À b  Finite ± #(a À b) ¼ #a + #b
+®);
+a(REPEAT strip_tac THEN1 asm_rewrite_tac[À_finite_thm]);
+a(LEMMA_T¬# (a À b) + # (a ¡ b) = # a + # b® ante_tac
+	THEN1 all_fc_tac[size_À_thm]);
+a(PC_T1 "lin_arith" prove_tac[]);
+val ÛÀ_finite_size_¼_thmÝ = save_pop_thm "À_finite_size_¼_thm";
+
+
+
+
+=TEX
+%%%%
+%%%%
+=SML
 set_goal([], ¬µm· {i | i < m}  Finite ± #{i | i < m} = m®);
 a(µ_tac THEN rewrite_tac[list_finite_size_thm]);
 a(induction_tac¬m®);
@@ -1326,6 +1346,21 @@ a(all_fc_tac[€_finite_size_thm] THEN REPEAT strip_tac);
 a(PC_T1 "lin_arith" asm_prove_tac[]);
 pop_thm()
 ));
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬µm· {i | 1 ¼ i ± i ¼ m}  Finite ± #{i | 1 ¼ i  ± i ¼ m} = m®);
+a(µ_tac THEN strip_asm_tac(µ_elim¬m:î®range_finite_size_thm));
+a(POP_ASM_T(fn th => conv_tac(RIGHT_C(RIGHT_C(once_rewrite_conv[eq_sym_rule th])))));
+a(bc_thm_tac bijection_finite_size_thm);
+a(¶_tac¬Ìk·k + 1® THEN asm_rewrite_tac[]
+	THEN PC_T1 "sets_ext" REPEAT strip_tac
+	THEN_TRY (all_var_elim_asm_tac1 THEN PC_T1 "lin_arith" asm_prove_tac[]));
+a(all_asm_ante_tac THEN rewrite_tac[¼_def] THEN REPEAT strip_tac
+	THEN all_var_elim_asm_tac1);
+a(¶_tac¬i® THEN PC_T1 "lin_arith" prove_tac[]);
+val Ûrange_finite_size_thm1Ý = save_pop_thm "range_finite_size_thm1";
 =TEX
 %%%%
 %%%%
