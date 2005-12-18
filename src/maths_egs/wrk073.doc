@@ -170,12 +170,14 @@ The first few theorems are aimed at an alternative characterisation of a finite 
 =GFT
 singleton_finite_thm
 size_Ä_diff_thm
+Ä_finite_size_thm
+Ä_size_eq_thm
 size_disjoint_¿_thm
 range_finite_size_thm
-length_map_thm
 =TEX
 }{%
 =GFT
+length_map_thm
 elems_map_thm
 map_distinct_thm
 nth_ç_elems_thm
@@ -1006,6 +1008,59 @@ val €size_Ä_diff_thm› = save_pop_thm "size_Ä_diff_thm";
 =TEX
 %%%%
 %%%%
+
+=SML
+val €Ä_finite_size_thm› = save_thm("Ä_finite_size_thm", (
+set_goal([], ¨µa b∑ a ç Finite ± b Ä a ¥ b ç Finite ± #b º #aÆ);
+a(REPEAT strip_tac THEN1 all_fc_tac[Ä_finite_thm]);
+a(POP_ASM_T ante_tac THEN intro_µ_tac(¨bÆ, ¨bÆ));
+a(finite_induction_tac¨aÆ THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(LEMMA_T ¨b = {}Æ rewrite_thm_tac);
+a(PC_T1"sets_ext1" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(cases_tac¨x ç bÆ);
+(* *** Goal "2.1" *** *)
+a(PC_T1 "predicates" lemma_tac¨b \ {x} Ä a ± ≥x ç b \ {x}Æ
+	THEN1 PC_T1 "sets_ext1" asm_prove_tac[]);
+a(all_fc_tac[Ä_finite_thm]);
+a(LEMMA_T¨b = {x} ¿ (b \ {x})Æ once_rewrite_thm_tac
+	THEN1 PC_T1 "sets_ext1" asm_prove_tac[]);
+a(ALL_FC_T rewrite_tac[size_singleton_¿_thm]);
+a(all_asm_fc_tac[]);
+(* *** Goal "2.2" *** *)
+a(lemma_tac¨b Ä aÆ THEN1 PC_T1 "sets_ext1" asm_prove_tac[]);
+(* *** Goal "2.2.1" *** *)
+a(asm_fc_tac[] THEN all_var_elim_asm_tac);
+(* *** Goal "2.2.2" *** *)
+a(ALL_FC_T rewrite_tac[size_singleton_¿_thm]);
+a(asm_fc_tac[] THEN PC_T1 "lin_arith" asm_prove_tac[]);
+pop_thm()
+));
+=TEX
+%%%%
+%%%%
+
+=SML
+val €Ä_size_eq_thm› = save_thm ("Ä_size_eq_thm", (
+set_goal([],¨µa b∑ a ç Finite ± b Ä a ± #b = #a ¥ b = aÆ);
+a(contr_tac);
+a(lemma_tac¨a \ b Ä a ± ≥a \ b = {}Æ THEN1
+	PC_T1 "sets_ext1" asm_prove_tac[]);
+a(all_fc_tac[Ä_finite_thm]);
+a(LEMMA_T ¨# (b ¿ (a \ b)) + # (b ° (a \ b)) = # b + # (a \ b)Æ ante_tac THEN1
+	(bc_thm_tac size_¿_thm THEN REPEAT strip_tac));
+a(LEMMA_T ¨b ¿ (a \ b) = a ± b ° (a \ b) = {}Æ rewrite_thm_tac THEN1
+	PC_T1 "sets_ext1" asm_prove_tac[]);
+a(rewrite_tac[size_empty_thm]);
+a(lemma_tac ¨≥ #(a \ b) = 0Æ THEN_LIST
+	[id_tac, PC_T1 "lin_arith" asm_prove_tac[]]);
+a(ALL_FC_T1 fc_§_canon asm_rewrite_tac[size_0_thm]);
+pop_thm()
+));
+=TEX
+%%%%
+%%%%
 =SML
 set_goal([], ¨µa b c∑
 	a ç Finite
@@ -1236,16 +1291,19 @@ val €range_bijection_finite_size_thm› = save_pop_thm "range_bijection_finite_siz
 %%%%
 %%%%
 =SML
+val €surjection_finite_size_thm› = save_thm( "surjection_finite_size_thm", (
 set_goal([], ¨µa b f∑
 	a ç Finite
-±	b = {z | ∂x∑x ç a ± z = f x}
+±	b Ä {z | ∂x∑x ç a ± z = f x}
 ¥	b ç Finite ± #b º #aÆ);
-a(REPEAT µ_tac THEN ¥_tac THEN all_var_elim_asm_tac1);
-a(finite_induction_tac¨aÆ);
+a(REPEAT µ_tac THEN ¥_tac);
+a(lemma_tac¨{z | ∂x∑x ç a ± z = f x} ç Finite ± #{z | ∂x∑x ç a ± z = f x} º #aÆ);
 (* *** Goal "1" *** *)
+a(POP_ASM_T discard_tac THEN finite_induction_tac¨aÆ);
+(* *** Goal "1.1" *** *)
 a(rewrite_tac[pc_rule1"sets_ext1" prove_rule[]¨{x|F}= {}Æ,
 	empty_finite_thm, size_empty_thm]);
-(* *** Goal "2" *** *)
+(* *** Goal "1.2" *** *)
 a(ALL_FC_T rewrite_tac[size_singleton_¿_thm]);
 a(cases_tac¨{z|∂ x'∑ x' ç {x} ¿ a ± z = f x'} = 
 	{z|∂ x∑ x ç a ± z = f x}Æ
@@ -1263,7 +1321,11 @@ a(DROP_ASMS_T discard_tac THEN PC_T1 "sets_ext1" rewrite_tac[]
 	THEN_TRY all_var_elim_asm_tac1
 	THEN asm_prove_tac[]
 	THEN all_var_elim_asm_tac1 THEN asm_prove_tac[]);
-val €surjection_finite_size_thm› = save_pop_thm "surjection_finite_size_thm";
+(* *** Goal "2" *** *)
+a(all_fc_tac[Ä_finite_size_thm] THEN REPEAT strip_tac);
+a(PC_T1 "lin_arith" asm_prove_tac[]);
+pop_thm()
+));
 =TEX
 %%%%
 %%%%
