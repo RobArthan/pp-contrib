@@ -19,22 +19,22 @@ Contact: Rob Arthan < rda@lemma-one.com >
 
 \def\ThmsII#1#2{%
 {\vertbarfalse
-\begin{minipage}[t]{0.48\hsize}
+\begin{minipage}[t]{0.49\hsize}
 #1
 \end{minipage}
-\begin{minipage}[t]{0.48\hsize}
+\begin{minipage}[t]{0.49\hsize}
 #2
 \end{minipage}}}
 
 \def\ThmsIII#1#2#3{%
 {\vertbarfalse
-\begin{minipage}[t]{0.32\hsize}
+\begin{minipage}[t]{0.325\hsize}
 #1
 \end{minipage}
-\begin{minipage}[t]{0.32\hsize}
+\begin{minipage}[t]{0.325\hsize}
 #2
 \end{minipage}
-\begin{minipage}[t]{0.32\hsize}
+\begin{minipage}[t]{0.325\hsize}
 #3
 \end{minipage}}}
 \def\Hide#1{\relax}
@@ -60,7 +60,7 @@ Contact: Rob Arthan < rda@lemma-one.com >
 
 \def\Abs#1{|#1|}
 
-\def\ElemsName{\mbox{{\em Elems}}}
+\def\ElemsName{\mbox{{\sf elems}}}
 \def\Elems#1{\ElemsName(#1)}
 
 \def\SizeName{\#}
@@ -68,6 +68,17 @@ Contact: Rob Arthan < rda@lemma-one.com >
 
 %\def\Binomial#1#2{\left(\begin{array}{c}#1\\#2\end{array}\right)}
 \def\Binomial#1#2{C_{#2}^{#1}}
+
+\def\DividesName{\mathrel{\mbox{{\sf divides}}}}
+\def\Divides#1#2{#1\DividesName#2}
+
+\def\DivName{\mathop{\mbox{{\sf div}}}}
+\def\Div#1#2{#1\DivName#2}
+
+\def\ModName{\mathop{\mbox{{\sf mod}}}}
+\def\Mod#1#2{#1\ModName#2}
+
+\def\Prime{\mbox{{\sf prime}}}
 
 \title{Mathematical Case Studies: Some Number Theory}
 \author{Rob Arthan\\{\tt rda@lemma-one.com}}
@@ -102,8 +113,7 @@ set_merge_pcs["basic_hol1", "'sets_alg", "'ú", "'¯"];
 =TEX
 
 \subsection{Divisors in î}
-We begin working in the natural numbers and develop the theory of divisors.
-We define an infix relation {\em Divides} such that {\em n Divides m} iff. $m$ is a multiple of $n$.
+We begin to develop the theory of divisors by first defining an infix relation, $\DividesName$, such that $\Divides{n}{m}$ iff. $m$ is a multiple of $n$.
  
 =SML
 declare_infix(200, "Divides");
@@ -134,10 +144,12 @@ times_eq_1_thm
 î_exp_eq_1_thm
 î_exp_1_thm
 î_exp_divides_thm
-div_mod_1_thm
+î_exp_times_thm
+î_exp_î_exp_thm
 =TEX
 }{%
 =GFT
+div_mod_1_thm
 m_div_mod_m_thm
 zero_div_mod_thm
 less_div_mod_thm
@@ -204,6 +216,7 @@ gcd_eq_mod_thm
 euclid_algorithm_thm
 =TEX
 }
+
 Now we define the set of prime numbers:
 
 ¹HOLCONST
@@ -337,7 +350,7 @@ prime_divisors_finite_thm
 }
 \subsection{Divergence of the Series of Prime Reciprocals}
 The next block of theorems lead up to the proof that the sum $\sum_p 1/p$ taken over all primes p diverges.
-This is done using essentially the argument given in Hardy and Wright~\cite{Hardy78}[Theorem 19].
+This is done using essentially the argument given in Hardy and Wright~\cite{Hardy78}.
 It is convenient to define the notion of a square-free number, i.e., a number that is not divisible by a square other than 1.
 
 ¹HOLCONST
@@ -371,28 +384,58 @@ square_free_divisor_thm1
 =TEX
 }
 
-We now consider a positive $n$ and derive an upper bound for the number of $m \le n^2$ all of whose prime divisors lie in some finite set of primes, $P$.
-Using the above facts about square-free numbers, we deduce that there at most $n \times 2^\Size{P}$ suh $m$.
-We then consider the number of $m \le n^2$ which have a prime divisor that is not in $P$. Setting $Q$ to be the set of primes no greater than $n^2$ which are not in $P$, we find that the number of such $m$ is at most $\sum_{q \in Q} n^2 / q$.
-Adding these two estimates together gives the following.
+We now give a series of theorems that build up to the proof that
+$\sum_p 1/p$ taken over prime $p \le n$
+is unbounded as $n$ tends to infinity.
+The argument is that of~\cite{Hardy78}[Theorem 19] adapted to fit into the typed framework of HOL.
 
+Consider a finite set of primes, $P$ and a positive natural number $n$. If $m \le n^2$, then either all prime divisors of $m$ are in $P$ or not. We will estimate the number of $m$ falling under each of the two cases:
 
-\ThmsIII{
+\begin{itemize}
+\item
+If all the prime divisors of $m$ lie in $P$, $m$ can be written as $m = k^2d$ where $k \le n$ and where $d$ is a square-free number whose prime divisors lie in $P$.
+There are at most $n$ choices for $k$ and $2^{\Size{P}}$ so there are at most $n2^{\Size{P}}$ such $m$.
+\item
+If $m$ is divisible by a prime $q$ that is not in $P$, we have $m = kq$ for some $k \le \Div{n^2}{q}$. 
+The number of such $m$ is therefore
+$\sum_q \Div{n^2}{q}$ taken over all prime $q$ with $q \not\in P$ and $q \le n^2$.
+\end{itemize}
+
+Let $Q$ be the set of primes $q \le n^2$ which are not in $P$, then, as any $m \le n^2$ falls under one of the two cases, one has:
+\begin{eqnarray}
+n^2 &\le&  n2^{\Size{P}} +
+	\sum_{q \in Q}
+	\Div{n^2}{q}
+\end{eqnarray}
+
+Putting $n = 2^{\Size{P}+1}$ this gives:
+\begin{eqnarray}
+2^{2\Size{P}+2} &\le&  2^{2\Size{P}+1} +
+	\sum_{q \in Q}
+	\Div{2^{2\Size{P}+2}}{q}
+\end{eqnarray}
+
+Whence, subtracting $2^{2\Size{P}+1}$ from both sides and then, observing that $\Div{i}{q} \le i/q$, and dividing through by $2^{2\Size{P}+2}$, one has:
+\begin{eqnarray}
+2^{2\Size{P}+1} &\le& \sum_{q \in Q} \Div{2^{2\Size{P}+2}}{q}\\
+1/2 &\le& \sum_{q \in Q} 1/q
+\end{eqnarray}
+
+I.e., given any finite set of primes $P$, taking $Q$ to be the set of primes q that are not in $P$ and that satisfy $q \le 2^{2\Size{P}+2}$, the sum of reciprocals of the elements of $Q$ is greater than $1/2$.
+That the sum of the series of reciprocals of the primes diverges follows by an easy induction (given any initial subsequence of the sequence of primes for which the sum or reciprocals is $s$, say, the above argument gives a longer initial subsequence whose sum is $s +1/2$).
+The following block of theorems implement the above proof.
+
+\ThmsII{
 =GFT
 recip_primes_div_estimate_thm1
 divisors_finite_size_thm
 recip_primes_div_estimate_thm2
 recip_primes_div_estimate_thm3
-=TEX
-}{
-=GFT
-î_exp_times_thm
-î_exp_î_exp_thm
 recip_primes_div_estimate_thm4
-î¯_ind_sum_thm
 =TEX
 }{
 =GFT
+î¯_ind_sum_thm
 ind_sum_¼_mono_thm
 î¯_div_¼_thm
 recip_primes_div_estimate_thm5
@@ -593,6 +636,33 @@ a(¶_tac¬1® THEN rewrite_tac[]);
 (* *** Goal "2" *** *)
 a(¶_tac¬m*k'® THEN asm_rewrite_tac[plus_assoc_thm1, î_exp_def, times_assoc_thm]);
 val Ûî_exp_divides_thmÝ = save_pop_thm "î_exp_divides_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µm n k:î·
+	(m ^ n) * (m ^ k) = m ^ (n + k)
+®);
+a(REPEAT strip_tac);
+a(induction_tac ¬k® THEN rewrite_tac[î_exp_def,
+	plus_assoc_thm1]);
+a(POP_ASM_T (rewrite_thm_tac o eq_sym_rule));
+a(PC_T1 "lin_arith" asm_prove_tac[]);
+val Ûî_exp_times_thmÝ = save_pop_thm "î_exp_times_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µm n k:î·
+	(m ^ n) ^ k = m ^ (n*k)
+®);
+a(REPEAT strip_tac);
+a(induction_tac ¬k® THEN asm_rewrite_tac[î_exp_def]);
+a(rewrite_tac[î_exp_times_thm]);
+a(conv_tac (ONCE_MAP_C anf_conv) THEN strip_tac);
+val Ûî_exp_î_exp_thmÝ = save_pop_thm "î_exp_î_exp_thm";
 =TEX
 %%%%
 %%%%
@@ -2578,33 +2648,6 @@ a(bc_thm_tac (pc_rule1 "lin_arith" prove_rule[]
 	¬µa b c d:î·a ¼ c ± b ¼ d ´ a + b ¼ c + d®)
 	THEN REPEAT strip_tac);
 val Ûrecip_primes_div_estimate_thm3Ý = save_pop_thm "recip_primes_div_estimate_thm3";
-=TEX
-%%%%
-%%%%
-
-=SML
-set_goal([], ¬µm n k:î·
-	(m ^ n) * (m ^ k) = m ^ (n + k)
-®);
-a(REPEAT strip_tac);
-a(induction_tac ¬k® THEN rewrite_tac[î_exp_def,
-	plus_assoc_thm1]);
-a(POP_ASM_T (rewrite_thm_tac o eq_sym_rule));
-a(PC_T1 "lin_arith" asm_prove_tac[]);
-val Ûî_exp_times_thmÝ = save_pop_thm "î_exp_times_thm";
-=TEX
-%%%%
-%%%%
-
-=SML
-set_goal([], ¬µm n k:î·
-	(m ^ n) ^ k = m ^ (n*k)
-®);
-a(REPEAT strip_tac);
-a(induction_tac ¬k® THEN asm_rewrite_tac[î_exp_def]);
-a(rewrite_tac[î_exp_times_thm]);
-a(conv_tac (ONCE_MAP_C anf_conv) THEN strip_tac);
-val Ûî_exp_î_exp_thmÝ = save_pop_thm "î_exp_î_exp_thm";
 =TEX
 %%%%
 %%%%
