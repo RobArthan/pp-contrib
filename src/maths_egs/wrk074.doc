@@ -535,12 +535,32 @@ Using this we can derive an explicit formula for the set %bbQ%.
 \ThmsII{
 =GFT
 field_of_fractions_field_thm
+field_of_fractions_thm
 rat_field_of_fractions_thm
 =TEX
 }{
 =GFT
-field_of_fractions_thm
 rat_thm
+rat_thm1
+=TEX
+}
+\section{Irrationality of Quadratic Surds}
+We prove that any quadratic surd that is not an integer is irrational, and in particular, that $\sqrt{2}$ is irrational.
+The proof is as follows:
+if $m^2 = kn^2$ for any natural numbers $k$, $m$ and $n$ with $k$ positive and $n > 1$, then any prime divisor of $n$ is also a prime divisor of $m$.
+Thus, by infinite descent, the only solutions of this equation with $k$ and $n$ positive have $n = 1$, i.e., the only solutions are when $k = m^2$ is a square.
+Thus to prove that $\sqrt{2}$ is irrational it suffices to show that it is not an integer.
+
+\ThmsII{
+=GFT
+sqrt_eq_thm
+quadratic_surd_thm1
+quadratic_surd_thm
+=TEX
+}{
+=GFT
+sqrt_2_lemma
+sqrt_2_irrational_thm
 =TEX
 }
 
@@ -3113,6 +3133,281 @@ a(¶_tac¬ú¯ i® THEN ¶_tac¬ú¯(îú(m+1))® THEN
 a(strip_tac THEN1 prove_tac[]);
 a(¶_tac¬îú(m+1)® THEN rewrite_tac[ú¯_îú_thm]);
 val Ûrat_thmÝ = save_pop_thm "rat_thm";
+=TEX
+%%%%
+%%%% 
+
+=SML
+set_goal([], ¬
+ %bbQ% = {x | ¶a b : î·³b = 0 ± (x = a/b ² x = ~(a/b))}
+®);
+a(rewrite_tac[rat_thm] THEN PC_T1 "sets_ext1" REPEAT strip_tac
+	THEN all_var_elim_asm_tac1);
+(* *** Goal "1" *** *)
+a(strip_asm_tac(µ_elim¬i® ú_cases_thm)
+	THEN all_var_elim_asm_tac1
+	THEN rewrite_tac[ú¯_îú_thm]);
+(* *** Goal "1.1" *** *)
+a(¶_tac¬m'® THEN ¶_tac¬m+1® THEN rewrite_tac[¯_frac_def]);
+a(lemma_tac¬³î¯(m+1) = î¯ 0® THEN1 rewrite_tac[î¯_one_one_thm]);
+a(ALL_FC_T rewrite_tac[¯_over_times_recip_thm]);
+(* *** Goal "1.2" *** *)
+a(¶_tac¬m'® THEN ¶_tac¬m+1® THEN rewrite_tac[¯_frac_def]);
+a(lemma_tac¬³î¯(m+1) = î¯ 0® THEN1 rewrite_tac[î¯_one_one_thm]);
+a(ALL_FC_T rewrite_tac[¯_over_times_recip_thm]);
+a(conv_tac(ONCE_MAP_C ¯_anf_conv) THEN rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(POP_ASM_T (strip_asm_tac o once_rewrite_rule[plus_comm_thm] o
+		rewrite_rule[¼_def,
+		pc_rule1 "lin_arith" prove_rule[]
+		¬³b = 0 ¤ 1 ¼ b®])
+	THEN all_var_elim_asm_tac1);
+a(¶_tac¬îú a® THEN ¶_tac¬i®);
+a(lemma_tac¬³î¯(i+1) = î¯ 0® THEN1 rewrite_tac[î¯_one_one_thm]);
+a(rewrite_tac[¯_frac_def, ú¯_îú_thm]);
+a(ALL_FC_T rewrite_tac[¯_over_times_recip_thm]);
+(* *** Goal "3" *** *)
+a(POP_ASM_T (strip_asm_tac o once_rewrite_rule[plus_comm_thm] o
+		rewrite_rule[¼_def,
+		pc_rule1 "lin_arith" prove_rule[]
+		¬³b = 0 ¤ 1 ¼ b®])
+	THEN all_var_elim_asm_tac1);
+a(¶_tac¬~(îú a)® THEN ¶_tac¬i®);
+a(lemma_tac¬³î¯(i+1) = î¯ 0® THEN1 rewrite_tac[î¯_one_one_thm]);
+a(rewrite_tac[¯_frac_def, ú¯_îú_thm]);
+a(ALL_FC_T rewrite_tac[¯_over_times_recip_thm]);
+a(conv_tac(ONCE_MAP_C ¯_anf_conv) THEN rewrite_tac[]);
+val Ûrat_thm1Ý = save_pop_thm "rat_thm1";
+
+=TEX
+%%%%
+%%%% IRRATIONALITY OF QUADRATIC SURDS
+
+=SML
+set_goal([], ¬
+	µx y· î¯ 0 ¼ x ± x^2 = y ´ x = Sqrt y
+®);
+a(REPEAT strip_tac);
+a(lemma_tac¬î¯ 0 ¼ y®);
+(* *** Goal "1" *** *)
+a(all_var_elim_asm_tac1 THEN rewrite_tac[¯_î_exp_square_thm]);
+a(bc_thm_tac ¯_0_¼_0_¼_times_thm THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(lemma_tac¬x^2 = Sqrt y^2 ± î¯ 0 ¼ Sqrt y® THEN1
+	(all_fc_tac [sqrt_def] THEN asm_rewrite_tac[]));
+a(fc_tac[square_root_unique_thm]);
+a(PC_T1 "¯_lin_arith" asm_prove_tac[]);
+val Ûsqrt_eq_thmÝ = save_pop_thm "sqrt_eq_thm";
+=TEX
+%%%%
+%%%%
+
+The main result is proved using three lemmas.
+The first lemma is the following.
+It justifies the steps in the infinite descent.
+
+=SML
+set_goal([], ¬
+µk m n·	0 < k ± m * m = k * n * n ± 1 < n
+´	¶m1 n1·0 < n1 ± n1 < n ± m1 * m1 = k * n1 * n1
+®);
+a(REPEAT strip_tac);
+a(all_fc_tac[prime_divisor_thm]);
+a(all_fc_tac[prime_0_less_thm]);
+a(lemma_tac ¬p Divides m*m® THEN1
+	(asm_rewrite_tac[divides_mod_thm,
+		pc_rule1"lin_arith" prove_rule[]
+		¬µx y z·x*(p*y)*z = p*x*y*z®] THEN
+			ALL_FC_T rewrite_tac[mod_clauses]));
+a(fc_tac[prime_thm]);
+a(LIST_DROP_NTH_ASM_T [2] fc_tac);
+(* *** Goal "1" same as "2" *** *)
+a(POP_ASM_T (strip_asm_tac o rewrite_rule[divides_def]));
+a(¶_tac¬k'® THEN ¶_tac¬n'® THEN all_var_elim_asm_tac1
+	THEN REPEAT strip_tac);
+(* *** Goal "1.1" *** *)
+a(contr_tac THEN1
+	(lemma_tac¬n' = 0® THEN_TRY all_var_elim_asm_tac1 THEN PC_T1 "lin_arith" asm_prove_tac[]));
+(* *** Goal "1.2" *** *)
+a(LEMMA_T ¬2 ¼ p® (strip_asm_tac o rewrite_rule[¼_def])
+	THEN1 all_fc_tac[prime_2_¼_thm]);
+a(cases_tac¬n' = 0® THEN1
+	(all_var_elim_asm_tac1 THEN PC_T1 "lin_arith" asm_prove_tac[]));
+a(all_var_elim_asm_tac1 THEN PC_T1 "lin_arith" asm_prove_tac[]);
+(* *** Goal "1.3" *** *)
+a(bc_thm_tac times_cancel_thm);
+a(¶_tac¬p® THEN REPEAT strip_tac);
+a(bc_thm_tac times_cancel_thm);
+a(¶_tac¬p® THEN REPEAT strip_tac);
+a(PC_T1 "lin_arith" asm_prove_tac[]);
+val Ûquadratic_surd_lemma1Ý = pop_thm();
+=TEX
+The infinite descent bottoms out at 1, from which we we conclude that if $m^2 = kn^2$ has a natural number solution with $n$ positive, then $k$ is a perfect square.
+
+=SML
+set_goal([], ¬
+µk n m·	î¯ 0 < î¯ k ± î¯ 0 < î¯ n ± î¯ m ^ 2 = î¯ k * (î¯ n ^ 2)
+´	¶i· î¯ i ^ 2 = î¯ k
+®);
+a(rewrite_tac[¯_î_exp_square_thm,
+	î¯_times_homomorphism_thm1, î¯_one_one_thm, î¯_less_thm]);
+a(REPEAT strip_tac);
+a(PC_T1 "predicates" lemma_tac
+	¬¶y·y  { y | 0 < y ± ¶x· x * x = k * y * y }®
+		THEN1 (¶_tac¬n® THEN REPEAT strip_tac
+			THEN ¶_tac¬m® THEN REPEAT strip_tac));
+a(all_fc_tac[min__thm]);
+a(cases_tac¬1 < Min { y | 0 < y ± ¶x· x * x = k * y * y }®
+	THEN1 all_fc_tac[quadratic_surd_lemma1]);
+(* *** Goal "1" *** *)
+a(PC_T1 "predicates" lemma_tac
+	¬n1  { y | 0 < y ± ¶x· x * x = k * y * y }®
+		THEN1 (REPEAT strip_tac THEN ¶_tac¬m1® THEN REPEAT strip_tac));
+a(all_fc_tac[min_¼_thm] THEN PC_T1 "lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(lemma_tac¬Min { y | 0 < y ± ¶x· x * x = k * y * y } = 1®
+	THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(¶_tac¬x® THEN asm_rewrite_tac[]);
+val Ûquadratic_surd_lemma2Ý = pop_thm();
+=TEX
+
+We now have the general result that rational square roots of prime numbers are integers, expressed explicitly:
+=SML
+set_goal([], ¬µk a b·
+	³b = 0 ± (a/b)^2 = î¯ k
+´	¶i· î¯ i ^ 2 = î¯ k
+®);
+a(REPEAT strip_tac);
+a(cases_tac¬k = 0® THEN1
+	(¶_tac¬0® THEN asm_rewrite_tac[¯_î_exp_square_thm]));
+a(lemma_tac¬³î¯ b = î¯ 0® THEN1
+	asm_rewrite_tac[î¯_one_one_thm]);
+a(swap_nth_asm_concl_tac 3);
+a(rewrite_tac[¯_frac_def] THEN ALL_FC_T rewrite_tac[¯_over_times_recip_thm]);
+a(contr_tac THEN LEMMA_T¬
+	(î¯ a * î¯ b ›-›1) ^ 2 * î¯ b ^ 2 = î¯ k * î¯ b ^ 2® ante_tac
+	THEN1 asm_rewrite_tac[]);
+a(LEMMA_T¬µx y z:¯·(x*y)^2*z^2 = (x*z*y)^2® rewrite_thm_tac THEN1
+	(rewrite_tac[¯_î_exp_square_thm]
+		THEN PC_T1"¯_lin_arith" prove_tac[]));
+a(ALL_FC_T rewrite_tac[¯_times_recip_thm]);
+a(lemma_tac¬î¯ 0 < î¯ k ± î¯ 0 < î¯ b® THEN1
+	(rewrite_tac[î¯_less_thm] THEN PC_T1 "lin_arith" asm_prove_tac[]));
+a(contr_tac THEN all_fc_tac[quadratic_surd_lemma2]);
+a(all_asm_fc_tac[]);
+val Ûquadratic_surd_thm1Ý = save_pop_thm"quadratic_surd_thm1";
+=TEX
+
+The next reexpresses the result in terms of the square root function and the set %bbQ% (which requires us also to deal with the possibility that $a/b$ is negative).
+
+=SML
+set_goal([], ¬
+µi· î¯ 0 ¼ i ± i  ú ± Sqrt i  %bbQ% ´ Sqrt i  ú
+®);
+a(rewrite_tac[rat_thm1, ú_thm] THEN contr_tac
+	THEN all_var_elim_asm_tac1);
+(* *** Goal "1" *** *)
+a(all_asm_ante_tac);
+a(strip_asm_tac(µ_elim¬i'® ú_cases_thm)
+	THEN all_var_elim_asm_tac1
+	THEN rewrite_tac[ú¯_îú_thm]
+	THEN REPEAT strip_tac);
+(* *** Goal "1.1" *** *)
+a(LEMMA_T¬Sqrt (î¯ m)^2 = î¯ m® ante_tac THEN1
+	ALL_FC_T rewrite_tac[sqrt_thm]);
+a(asm_rewrite_tac[] THEN contr_tac THEN
+	all_fc_tac[quadratic_surd_thm1]);
+a(lemma_tac¬î¯ 0 ¼ î¯ i® THEN1
+	rewrite_tac[î¯_¼_thm]);
+a(all_fc_tac[sqrt_eq_thm]);
+a(DROP_NTH_ASM_T 4 (ante_tac o µ_elim¬îú i®));
+a(asm_rewrite_tac[ú¯_îú_thm]);
+(* *** Goal "1.2" *** *)
+a(¶_tac¬îú 0® THEN rewrite_tac[ú¯_îú_thm]);
+a(swap_nth_asm_concl_tac 3);
+a(rewrite_tac[pc_rule1"¯_lin_arith" prove_rule[]
+	¬µx·î¯ 0 ¼ ~x ¤ x ¼ î¯ 0®,
+	î¯_¼_thm]);
+a(swap_nth_asm_concl_tac 1 THEN all_var_elim_asm_tac1);
+a(rewrite_tac[sqrt_0_1_thm]);
+(* *** Goal "2" *** *)
+a(all_asm_ante_tac);
+a(strip_asm_tac(µ_elim¬i'® ú_cases_thm)
+	THEN all_var_elim_asm_tac1
+	THEN rewrite_tac[ú¯_îú_thm]
+	THEN REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(LEMMA_T¬Sqrt (î¯ m)^2 = î¯ m® ante_tac THEN1
+	ALL_FC_T rewrite_tac[sqrt_thm]);
+a(LEMMA_T¬µx:¯·(~x)^2 = x^2® asm_rewrite_thm_tac THEN1
+	(rewrite_tac[¯_î_exp_square_thm] THEN
+		PC_T1 "¯_lin_arith" prove_tac[]));
+a(contr_tac THEN all_fc_tac[quadratic_surd_thm1]);
+a(lemma_tac¬î¯ 0 ¼ î¯ i® THEN1
+	rewrite_tac[î¯_¼_thm]);
+a(all_fc_tac[sqrt_eq_thm]);
+a(DROP_NTH_ASM_T 4 (ante_tac o µ_elim¬îú i®));
+a(asm_rewrite_tac[ú¯_îú_thm]);
+(* *** Goal "2.2" *** *)
+a(¶_tac¬îú 0® THEN rewrite_tac[ú¯_îú_thm]);
+a(swap_nth_asm_concl_tac 3);
+a(rewrite_tac[pc_rule1"¯_lin_arith" prove_rule[]
+	¬µx·î¯ 0 ¼ ~x ¤ x ¼ î¯ 0®,
+	î¯_¼_thm]);
+a(swap_nth_asm_concl_tac 1 THEN all_var_elim_asm_tac1);
+a(rewrite_tac[sqrt_0_1_thm]);
+val Ûquadratic_surd_thmÝ = save_pop_thm"quadratic_surd_thm";
+=TEX
+
+=SML
+set_goal([], ¬
+	³Sqrt (î¯ 2)  ú
+®);
+a(rewrite_tac[ú_thm] THEN contr_tac);
+a(all_asm_ante_tac);
+a(strip_asm_tac(µ_elim¬i® ú_cases_thm)
+	THEN all_var_elim_asm_tac1
+	THEN rewrite_tac[ú¯_îú_thm]
+	THEN contr_tac);
+(* *** Goal "1" *** *)
+a(LEMMA_T¬î¯ 0 ¼ î¯ 2® asm_tac THEN REPEAT strip_tac);
+a(all_fc_tac[sqrt_thm]);
+a(POP_ASM_T ante_tac THEN asm_rewrite_tac[¯_î_exp_square_thm,
+	î¯_times_homomorphism_thm1, î¯_one_one_thm]);
+a(DROP_ASMS_T discard_tac);
+a(cases_tac¬m = 0® THEN1 asm_rewrite_tac[]);
+a(cases_tac¬m = 1® THEN1 asm_rewrite_tac[]);
+a(cases_tac¬m = 2® THEN1 asm_rewrite_tac[]);
+a(LEMMA_T¬3 ¼ m® (ante_tac o rewrite_rule[¼_def])
+	THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(DROP_ASMS_T discard_tac THEN REPEAT strip_tac
+	THEN all_var_elim_asm_tac1);
+a(PC_T1 "lin_arith" prove_tac[]);
+(* *** Goal "2" *** *)
+a(LEMMA_T¬î¯ 0 ¼ î¯ 2® asm_tac THEN REPEAT strip_tac);
+a(all_fc_tac[sqrt_0_¼_thm, sqrt_thm]);
+a(swap_nth_asm_concl_tac 2 THEN asm_rewrite_tac[]);
+a(rewrite_tac[pc_rule1"¯_lin_arith" prove_rule[]
+	¬µx·î¯ 0 ¼ ~x ¤ x ¼ î¯ 0®,
+	î¯_¼_thm]);
+a(swap_nth_asm_concl_tac 1 THEN all_var_elim_asm_tac1);
+a(asm_rewrite_tac[¯_î_exp_square_thm]);
+val Ûsqrt_2_lemmaÝ = save_pop_thm"sqrt_2_lemma";
+=TEX
+
+And, using the fact that $\sqrt{2}$ is not an integer, we get the specific conclusion of the third proof:
+
+=SML
+set_goal([], ¬³Sqrt (î¯ 2)  %bbQ%®);
+a(contr_tac);
+a(LEMMA_T ¬î¯ 0 ¼ î¯ 2® asm_tac THEN1 rewrite_tac[]);
+a(lemma_tac ¬î¯ 2  ú® THEN1
+	(rewrite_tac[ú_thm] THEN ¶_tac¬îú 2®
+		THEN rewrite_tac[ú¯_îú_thm]
+		THEN REPEAT strip_tac));
+a(all_fc_tac[quadratic_surd_thm]);
+a(all_fc_tac[sqrt_2_lemma]);
+val Ûsqrt_2_irrational_thmÝ = save_pop_thm"sqrt_2_irrational_thm";
 
 =TEX
 \Hide{
