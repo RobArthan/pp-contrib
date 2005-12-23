@@ -1894,6 +1894,47 @@ val €ind_prod_Ó_k_1_thm› = save_pop_thm "ind_prod_Ó_k_1_thm";
 %%%%
 %%%%
 
+=SML
+set_goal([], ¨µm∑ ê {k | 1 º k ± k º m} (Ãk∑k) = m!Æ);
+a(REPEAT strip_tac);
+a(induction_tac¨mÆ THEN rewrite_tac[factorial_def]);
+(* *** Goal "1" *** *)
+a(rewrite_tac[ind_prod_Ó_def,
+	pc_rule1"lin_arith" prove_rule[]¨µk∑≥(1 º k ± k = 0)Æ,
+	pc_rule1"sets_ext1" prove_rule[]¨{x|F}={}Æ]);
+(* *** Goal "2" *** *)
+a(LEMMA_T ¨{k| 1 º k ± k º m + 1} =
+	{m+1} ¿ {k| 1 º k ± k º m}Æ
+	rewrite_thm_tac
+	THEN1 (PC_T1 "sets_ext1" REPEAT strip_tac
+		THEN_TRY all_var_elim_asm_tac1
+		THEN_TRY PC_T1 "lin_arith" asm_prove_tac[]));
+a(LEMMA_T ¨≥m+1 ç {k|1 º k ± k º m}Æ
+	asm_tac
+	THEN1 rewrite_tac[]);
+a(lemma_tac¨{k|1 º k ± k º m} ç FiniteÆ
+	THEN1 rewrite_tac[range_finite_size_thm1]);
+a(ALL_FC_T asm_rewrite_tac[ind_prod_Ó_def]);
+val €factorial_ind_prod_Ó_thm› = save_pop_thm "factorial_ind_prod_Ó_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µm∑ 0 < m ¥ (m - 1)! = ê {k | 1 º k ± k < m} (Ãk∑k)Æ);
+a(µ_tac THEN STRIP_T (strip_asm_tac o
+	rewrite_rule[pc_rule1"lin_arith" prove_rule[]
+	¨µm∑0 < m § 1 º mÆ, º_def]));
+a(all_var_elim_asm_tac1);
+a(rewrite_tac[pc_rule1"lin_arith" prove_rule[]
+	¨µk∑k < 1 + i § k º iÆ,
+	factorial_ind_prod_Ó_thm]);
+val €factorial_ind_prod_Ó_thm1› = save_pop_thm "factorial_ind_prod_Ó_thm1";
+
+=TEX
+%%%%
+%%%%
+
 =TEX
 =SML
 val €mod_3_plus_thm› = rewrite_rule[](all_µ_intro(list_µ_elim[¨m:ÓÆ, ¨n:ÓÆ, ¨3Æ]mod_plus_homomorphism_thm));
@@ -3918,7 +3959,7 @@ a(ALL_FC_T rewrite_tac[
 	rewrite_rule[](µ_elim¨i+1Æwilson_lemma1)]);
 a(LEMMA_T¨i < i + 1Æ asm_tac THEN1 rewrite_tac[]);
 a(ALL_FC_T rewrite_tac[less_div_mod_thm]);
-val €wilson_thm1› = save_pop_thm"wilson_thm1";
+val €wilson_lemma2› = pop_thm();
 =TEX
 %%%%
 %%%%
@@ -3986,7 +4027,7 @@ a(POP_ASM_T ante_tac THEN ALL_FC_T rewrite_tac[mod_clauses]);
 a(all_fc_tac[prime_2_º_thm]);
 a(lemma_tac¨1 < pÆ THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
 a(ALL_FC_T rewrite_tac[less_div_mod_thm]);
-val €wilson_lemma2› = pop_thm();
+val €wilson_lemma3› = pop_thm();
 =TEX
 %%%%
 %%%%
@@ -3994,8 +4035,13 @@ val €wilson_lemma2› = pop_thm();
 =SML
 set_goal([], ¨µp∑
 	1 < p
-¥	(p ç Prime § ê {m| 0 < m ± m < p} (Ã m∑ m) Mod p = p - 1)Æ);
-a(contr_tac THEN all_fc_tac[wilson_thm1, wilson_lemma2]);
+¥	(p ç Prime § (p - 1)! Mod p = p - 1)Æ);
+a(µ_tac THEN ¥_tac);
+a(lemma_tac¨0 < pÆ THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(ALL_FC_T rewrite_tac[factorial_ind_prod_Ó_thm1]);
+a(rewrite_tac[pc_rule1 "lin_arith" prove_rule[]
+	¨µk∑1 º k § 0 < kÆ]);
+a(contr_tac THEN all_fc_tac[wilson_lemma2, wilson_lemma3]);
 val €wilson_thm› = save_pop_thm"wilson_thm";
 =TEX
 \Hide{
