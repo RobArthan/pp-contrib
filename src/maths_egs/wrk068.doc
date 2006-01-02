@@ -46,6 +46,9 @@ doctex wrk068 wrk068.th; texdvi -b wrk068; texdvi wrk068; texdvi wrk068
 
 \def\Abs#1{|#1|}
 
+\def\SizeName{\#}
+\def\Size#1{\#\left(#1\right)}
+
 \tabstop=0.4in
 \def\ThmsI#1{%
 {\vertbarfalse#1}}
@@ -78,7 +81,7 @@ doctex wrk068 wrk068.th; texdvi -b wrk068; texdvi wrk068; texdvi wrk068
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2004/09/27 15:10:07 $%
+\date{\FormatDate{$Date: 2005/11/22 17:33:30 $%
 }}
 
 \begin{document}
@@ -97,7 +100,7 @@ We exhibit a few examples of groups and show that the various abstract notions l
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK068; issue $Revision: 1.24 $%
+Reference: LEMMA1/HOL/WRK068; issue $Revision: 1.25 $%
 
 
 \end{centering}
@@ -255,7 +258,7 @@ There seems to be no conceptual or practical gain in treating such a relation as
 ‹ µ X $¶∑ Equiv(X, $¶) § Refl(X, $¶) ± Sym(X, $¶) ± Trans(X, $¶)
 ∞
 Now we can define the notions of equivalence class and the quotient set (which is the set of all equivalence classes).
-There is no need to stipulate that relations be equivalence relations in these definitions, that is done in the  statements of the theorems about them.
+There is no need to stipulate that the relations be equivalence relations in these definitions --- that is done in the  statements of the theorems about them.
 We arrange things so that if
 =INLINEFT
 ¶
@@ -305,7 +308,7 @@ declare_infix(200, "Respects");
 ∞
 
 We say that a relation, $R$, refines another, $S$ iff. $R$-equivalence implies $S$-equivalence.
-In other words, iff. each $R$-equivalence class is contained in and $S$-equivalence class.
+In other words, iff. each $R$-equivalence class is contained in an $S$-equivalence class.
 =SML
 declare_infix(200, "Refines");
 =TEX
@@ -329,7 +332,7 @@ The consistency of this definition is not proved automatically, and the developm
 Given any function $f : X \rightarrow Y$, the relation, $R_f$, say, defined so that $x\,R_f\,y$ holds iff. $f(x) = f(y)$ is an equivalence relation.
 $f$ respects an equivalence relation $R$ iff. $R$ refines $R_f$.
 Given such an $R$, $f$ induces a function, $\overline{f}$, from the quotient of $X/R$ to $Y$.
-The following function is the function comprising the union over all $R$ of the corresponding $\overline{f}$ extended to a total function in an unspecified way.
+The following function comprises the union over all $R$ of the corresponding $\overline{f}$ extended to a total function in an unspecified way.
 We write it using the postfix notation
 =INLINEFT
 f õ-
@@ -449,6 +452,7 @@ force_delete_theory"groups" handle Fail _ => ();
 open_theory"equiv_rel";
 new_theory"groups";
 set_merge_pcs["basic_hol1", "'sets_alg"];
+new_parent "fincomb";
 =TEX
 %%%%
 %%%%
@@ -656,7 +660,7 @@ If $G$ is a group then $G$ itself and its unit subgroup are both subgroups of $G
 The relation of being a subgroup is transitive.
 If $K$ and $H$ are subgroups of $G$ and the carrier set of $K$ is contained in that of $H$,
 then $K$ is subgroup of $H$.
-Two subgroups are equal iff. there carrier sets are equal.
+Two subgroups are equal iff. their carrier sets are equal.
 
 \ThmsII{%
 =GFT
@@ -793,7 +797,9 @@ If $H$ and $K$ are groups with elements of the same type, we will write $H.K$ fo
 πHOLCONST
 ‹ €GroupTimesGroup› :'a GROUP ≠ 'a GROUP ≠ 'a GROUP
 ˜¸¸¸¸¸¸
-‹ µH K∑ GroupTimesGroup H K = MkGROUP ((Car H.Car K)H) (Ãx y∑(x.y)H) (Unit H) (Ãx∑(x õ~)H)
+‹ µH K∑
+‹	GroupTimesGroup H K =
+‹	MkGROUP ((Car H.Car K)H) (Ãx y∑(x.y)H) (Unit H) (Ãx∑(x õ~)H)
 ∞
 
 =SML
@@ -878,7 +884,8 @@ The following image group construction is needed in the statement of the first i
 ‹ €Img› : ('a ≠ 'b) ≠ 'a SET ≠ 'b GROUP  ≠ 'b GROUP
 ˜¸¸¸¸¸¸
 ‹ µ f X G∑
-‹	Img f X G = MkGROUP{y | ∂x∑x ç X ± y = f x} (Ãx y∑ (x.y)G) (Unit G) (Ãx∑ (x õ~)G)
+‹	Img f X G =
+‹	MkGROUP {y | ∂x∑x ç X ± y = f x} (Ãx y∑ (x.y)G) (Unit G) (Ãx∑ (x õ~)G)
 ∞
 
 The next theorem states that the image of a group homomorphism is a subgroup of the range of the homomorphism:
@@ -959,7 +966,7 @@ third_isomorphism_thm
 \subsection{The Symmetric Group}
 
 The symmetric group on a set $X$ is the group of all one-to-one onto functions from $X$ to $X$.
-In a typed context, it is convenient to turn this round and say that it is the group of all one-to-one onto functions from the universe of the type to itself that fix anything not in $X$.
+In a typed context, it is convenient to turn this round and say that it is the group of all functions from the universe of the type of the elements of $X$ to itself that are one-to-one and onto and that fix anything not in $X$.
 This has several technical advantages and involves no loss of generality.
 Before giving the definition, we need to define the notion of an inverse function.
 (This definition probably belongs elsewhere in the theory hierarchy.)
@@ -991,6 +998,36 @@ sym_group_group_thm
 }{%
 =GFT
 cayley_thm
+=TEX
+}
+\subsection{Finite Groups}
+If $G$ is a group (or any structure with the same signature as a group), we will write $\Size{G}$ for the number of elements of the carrier set of $G$.
+To allow this, we make \# an alias of the following function:
+
+
+πHOLCONST
+‹ €SizeâG› : 'a GROUP ≠ Ó
+˜¸¸¸¸¸¸
+‹ µ G∑ SizeâG G = #(Car G)
+∞
+
+=SML
+declare_alias("#", ¨SizeâGÆ);
+=TEX
+
+We prove the theorem of Lagrange that if $G$ is a finite group, and $H$ is a subgroup of $G$, then $H$ and the set of cosets $G/H$ are both finite and $\Size{G} = \Size{H} \times \Size{G/H}$.
+
+\ThmsIII{
+=GFT
+finite_subgroup_thm
+=TEX
+}{%
+=GFT
+finite_cosets_thm
+=TEX
+}{%
+=GFT
+lagrange_cosets_thm
 =TEX
 }
 
@@ -1434,6 +1471,7 @@ val €group_product_def› = get_spec¨GroupTimesGroupÆ;
 val €quotient_group_def› = get_spec¨QuotientGroupÆ;
 val €img_def› = get_spec¨ImgÆ;
 val €isomorphism_def› = get_spec¨IsomorphismÆ;
+val €size_group_def› = get_spec¨SizeâGÆ;
 =TEX
 =SML
 push_consistency_goal¨InverseÆ;
@@ -1721,7 +1759,7 @@ fun simplify_asm (thm : THM)  : THM = (
 =TEX
 That gives a general tactic for groups which is parametrised by a conversional to control how the the term structure is to be traversed:
 =SML
-fun gen_group_nf_tac (cnvl : CONV -> CONV) : TACTIC = (fn gl as (hyps, conc) =>
+fun €gen_group_nf_tac› (cnvl : CONV -> CONV) : TACTIC = (fn gl as (hyps, conc) =>
 	let	val thm1 = cnvl eq_rw_conv conc;
 		val thm2 = all_¥_intro (asm_±_intro_rule (iterate simplify_asm thm1));
 		val lemma_tm = fst(dest_¥(concl thm2));
@@ -1736,11 +1774,11 @@ fun gen_group_nf_tac (cnvl : CONV -> CONV) : TACTIC = (fn gl as (hyps, conc) =>
 =TEX
 Next, we define the form we will use most frequently which uses the standard top-down traversal doing as much as you can at each node before doing sub-nodes.
 =SML
-val group_nf_tac : TACTIC = gen_group_nf_tac TOP_MAP_C;
+val €group_nf_tac› : TACTIC = gen_group_nf_tac TOP_MAP_C;
 =TEX
 We also derive a tactic which will simplify assertions that expressions are members of a group:
 =SML
-fun gen_group_ç_tac (cnvl : CONV -> CONV) : TACTIC = (fn gl as (hyps, conc) =>
+fun €gen_group_ç_tac› (cnvl : CONV -> CONV) : TACTIC = (fn gl as (hyps, conc) =>
 	let	val thm1 = cnvl ç_rw_conv conc;
 		val thm2 = all_¥_intro (asm_±_intro_rule thm1);
 		val lemma_tm = fst(dest_¥(concl thm2));
@@ -1752,7 +1790,7 @@ fun gen_group_ç_tac (cnvl : CONV -> CONV) : TACTIC = (fn gl as (hyps, conc) =>
 	in	LEMMA_T lemma_tm thm_tac gl
 	end
 );
-val group_ç_tac : TACTIC = REPEAT (gen_group_ç_tac ONCE_MAP_C);
+val €group_ç_tac› : TACTIC = REPEAT (gen_group_ç_tac ONCE_MAP_C);
 =SML
 set_goal([], ¨
 	µG : 'a GROUP; H : 'b GROUP; f : 'a ≠ 'b∑
@@ -2941,6 +2979,82 @@ a(group_nf_tac THEN REPEAT strip_tac);
 a(∂_tac¨xÆ THEN REPEAT strip_tac);
 a(asm_rewrite_tac[]);
 val €cayley_thm› = save_pop_thm "cayley_thm";
+=TEX
+=SML
+set_goal([], ¨
+µG H∑
+	G ç Group ± Car G ç Finite
+±	H ç Subgroup G
+¥	Car H ç Finite
+Æ);
+a(rewrite_tac[subgroup_def] THEN REPEAT strip_tac);
+a(all_fc_tac[Ä_finite_thm]);
+val €finite_subgroup_thm› = save_pop_thm "finite_subgroup_thm";
+=TEX
+=SML
+set_goal([], ¨
+µG H : 'a GROUP∑
+	G ç Group ± Car G ç Finite
+±	H ç Subgroup G
+¥	Car (G/H) ç Finite
+Æ);
+a(rewrite_tac[quotient_group_def,
+	group_ops_def] THEN REPEAT strip_tac);
+a(bc_thm_tac(prove_rule[]¨µX∑X ç Finite ± #X º #(Car G) ¥ X ç FiniteÆ));
+a(∂_tac¨GÆ THEN bc_thm_tac surjection_finite_size_thm);
+a(∂_tac¨Ãx:'a∑(x. Car H)GÆ THEN asm_rewrite_tac[]);
+val €finite_cosets_thm› = save_pop_thm "finite_cosets_thm";
+=TEX
+=SML
+set_goal([], ¨
+µG H∑
+	G ç Group
+±	Car G ç Finite
+±	H ç Subgroup G
+¥	Car H ç Finite
+±	Car(G/H) ç Finite
+±	#G = #H * #(G/H)
+Æ);
+a(REPEAT µ_tac THEN ¥_tac THEN all_fc_tac[finite_subgroup_thm,
+	finite_cosets_thm] THEN REPEAT strip_tac);
+a(all_asm_ante_tac THEN rewrite_tac[size_group_def]
+	THEN REPEAT strip_tac);
+a(bc_thm_tac(prove_rule[]¨µp∑ Car G ç Finite ± p ¥ pÆ));
+a(∂_tac¨GÆ THEN bc_thm_tac covering_finite_size_thm);
+a(∂_tac¨Ãx:'a∑(x. Car H)GÆ THEN asm_rewrite_tac[]);
+a(±_tac THEN µ_tac THEN ¥_tac);
+(* *** Goal "1" *** *)
+a(rewrite_tac[quotient_group_def, group_ops_def]
+	THEN asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(bc_thm_tac bijection_finite_size_thm);
+a(all_fc_tac[quotient_group_rep_∂_thm]
+	THEN all_var_elim_asm_tac1);
+a(∂_tac¨Ãg :'a∑ (x.g)GÆ THEN asm_rewrite_tac[]
+	THEN REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(GET_NTH_ASM_T 8 (fn th => PC_T1 "sets_ext1" all_fc_tac[rewrite_rule[subgroup_def] th]));
+a(ALL_FC_T rewrite_tac[left_cancel_thm]);
+(* *** Goal "2.2" *** *)
+a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac);
+(* *** Goal "2.2.1" *** *)
+a(ALL_FC_T (MAP_EVERY ante_tac)[right_coset_eq_thm]);
+a(rewrite_tac[right_congruent_def] THEN strip_tac);
+a(∂_tac¨((x õ~) G . x') GÆ THEN REPEAT strip_tac);
+a(group_nf_tac THEN REPEAT strip_tac);
+(* *** Goal "2.2.2" *** *)
+a(all_var_elim_asm_tac1 THEN group_ç_tac
+	THEN REPEAT strip_tac);
+a(GET_NTH_ASM_T 6 (fn th => PC_T1 "sets_ext1" all_fc_tac[rewrite_rule[subgroup_def] th]));
+(* *** Goal "2.2.3" *** *)
+a(all_var_elim_asm_tac1);
+a(GET_NTH_ASM_T 6 (fn th => PC_T1 "sets_ext1" all_fc_tac[rewrite_rule[subgroup_def] th]));
+a(lemma_tac¨(x . x'') G ç Car GÆ
+	THEN1 (group_ç_tac THEN REPEAT strip_tac));
+a(ALL_FC_T1 fc_§_canon rewrite_tac[right_coset_eq_thm]);
+a(rewrite_tac[right_congruent_def]);
+a(group_nf_tac THEN REPEAT strip_tac);
+val €lagrange_cosets_thm› = save_pop_thm "lagrange_cosets_thm";
 =TEX
 %%%%
 %%%%
