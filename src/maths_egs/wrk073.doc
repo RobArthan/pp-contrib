@@ -518,15 +518,21 @@ Walks satisfy a discrete version of the intermediate value theorem: if $x$, $y$ 
 In the ballot problem, define $s_i$ to be the (possibly zero or negative) majority of North over South when the $i$-th vote is counted.
 Then $s_i$ is a walk of length $M + N$ from $0$ to $M - N$ and any such walk corresponds to exactly one possible order in which to count the votes.
 
-Thus the probability we have to calculate is $a/s$, where $s$ is the total number of walks, $_i$, of length $M + N$ from $0$ to $M - N$, and where $a$ is the number of these that are {\em favourable}, i.e., that are such that $s_i > 0$ for $i > 0$.
-For any $a$, a walk of length $M + N$ from $a$ to $x + M - N$ is uniquely determined by the set of indices $s_i$ for which $s_{i+1} - s_i = 1$.
+πHOLCONST
+‹ €BallotCounts› : Ó ≠ Ó ≠ (Ó ≠ ˙) SET
+˜¸¸¸¸¸¸
+‹ µm n∑ BallotCounts m n = WalkTo (m + n) (Ó˙ 0) (Ó˙ m - Ó˙ n)
+∞
+
+Thus the probability we have to calculate is $x/s$, where $s$ is the total number of walks, $_i$, of length $M + N$ from $0$ to $M - N$, and where $x$ is the number of these that are {\em favourable}, i.e., that are such that $s_i > 0$ for $i > 0$.
+For any $Q$, a walk of length $M + N$ from $Q$ to $Q + M - N$ is uniquely determined by the set of indices $s_i$ for which $s_{i+1} - s_i = 1$.
 Thus the number of such walks is the number of ways of choosing $m$ numbers less than $M + N$, i.e., $s = \Binomial{M+N}{M}$.
 
-To calculate the number of favourable walks, we use what Feller calls the {\em reflection principle}. This says that, if $x$ and $y$ are positive integers, then there is a one-to-one correspondence between walks of length $M+N$, $s_i$, from $x$ to $y$ which cross the $x$-axis and arbitrary walks of length $M+N$ from $-x$ to $y$. To see this one observes that by the intermediate value theorem for walks a walk, $t_i$ of the second sort must have $t_i = 0$ for some $i$; reflecting the initial negative segment of $t_i$ in the $x$-axis gives a walk $s_i$ of the first sort. This reflection defines the required one-to-one correspondence.
+To calculate the number of favourable walks, we use what Feller calls the {\em reflection principle}. This says that, if $i$ and $j$ are positive integers, then there is a one-to-one correspondence between walks of length $M+N$, $s_i$, from $i$ to $j$ which cross the $x$-axis and arbitrary walks of length $M+N$ from $-i$ to $j$. To see this one observes that, by the intermediate value theorem for walks, a walk, $t_i$, of the second sort must have $t_i = 0$ for some $i$; reflecting the initial negative segment of $t_i$ in the $x$-axis gives a walk $s_i$ of the first sort. This reflection defines the required one-to-one correspondence.
 
 Now if $s_i$ is a favourable walk of length $M+N$ from $0$ to $M-N$ then $t_i = s_{i+1}$ defines a walk from $1$ to $M-N > 0$ which does not cross the $x$-axis.
 From the reflection principle, we have that the number of such walks is $a = \Binomial{M+N-1}{M-1} - \Binomial{M+N-1}{M}$.
-It then follows from a calculation using the definition of the binomial function in terms of factorials, that $a/s = (M-N)/(M+N)$.
+It then follows from a calculation using the definition of the binomial function in terms of factorials, that $x/s = (M-N)/(M+N)$.
 
 The following block of theorems implements the proof sketched above.
 
@@ -581,10 +587,12 @@ val €binomial_def› = get_spec ¨BinomialÆ;
 val €distinct_samples_def› = get_spec ¨DistinctSamplesÆ;
 val €walk_def› = get_spec ¨WalkÆ;
 val €walk_to_def› = get_spec ¨WalkToÆ;
+val €ballot_counts_def› = get_spec ¨BallotCountsÆ;
 val €Ó_exp_def› = get_spec ¨1 ^ 2Æ;
 =TEX
 %%%%
 %%%%
+
 =SML
 set_goal([], ¨µm n∑ÓØ (m^n) = ÓØ m ^ nÆ);
 a(REPEAT strip_tac THEN induction_tac¨n:ÓÆ
@@ -2775,6 +2783,9 @@ val €distinct_samples_finite_size_thm› = save_pop_thm "distinct_samples_finite_s
 =TEX
 %%%%
 %%%%
+If a naive approach to the calculations were taken, the following would take 15 seconds or so to run through (prior to version 2.7.7 of ProofPower).
+The contrivances below cut this down to a second or so (as also do performance enhancements in versions 2.7.7 and later of ProofPower).
+
 =SML
 set_goal([], ¨
 	let	S = {L | Elems L Ä {i | 1 º i ± i º 365} ± # L = 23} 
@@ -2795,13 +2806,15 @@ a(pure_asm_rewrite_tac[conv_rule(ONCE_MAP_C eq_sym_conv)ÓØ_one_one_thm,
 	ÓØ_Ó_exp_thm,
 	Ø_frac_def]);
 a(asm_tac(rewrite_conv[]¨ÓØ 365 ^ 23Æ));
-a(pure_asm_rewrite_tac[ÓØ_one_one_thm]);
-a(rewrite_tac[]);
+a(PC_T1"predicates" rewrite_tac[] THEN strip_tac
+	THEN1 (pure_asm_rewrite_tac[ÓØ_one_one_thm]
+		THEN PC_T1 "lin_arith" prove_tac[]));
 a(REPEAT strip_tac THEN1 PC_T1 "sets_ext1" prove_tac[]);
+a(pure_rewrite_tac[ÓØ_one_one_thm]);
 a(LEMMA_T¨{L | (Elems L Ä {i | 1 º i ± i º 365} ± # L = 23) ± ≥L ç Distinct}
  = {L | Elems L Ä {i | 1 º i ± i º 365} ± # L = 23} \
 	{L | Elems L Ä {i | 1 º i ± i º 365} ± # L = 23 ± L ç Distinct}Æ
-	rewrite_thm_tac
+	pure_rewrite_thm_tac
 	THEN1 PC_T1 "sets_ext1" prove_tac[]);
 a(lemma_tac¨{L | Elems L Ä {i | 1 º i ± i º 365} ± # L = 23 ± L ç Distinct} Ä
 	{L | Elems L Ä {i | 1 º i ± i º 365} ± # L = 23}Æ
@@ -2811,9 +2824,21 @@ a(ALL_FC_T (MAP_EVERY (ante_tac o
 a(pure_rewrite_tac[ÓØ_plus_homomorphism_thm,
 	pc_rule1 "Ø_lin_arith" prove_rule[]
 	¨µa b c:Ø∑a = b + c § b = a - cÆ]
-	THEN strip_tac);
-a(pure_asm_rewrite_tac[ÓØ_Ó_exp_thm]);
-a(conv_tac(REPEAT_C (once_rewrite_conv[distinct_samples_rw_thm] THEN_C rewrite_conv[])));
+	THEN STRIP_T pure_rewrite_thm_tac);
+a(LIST_DROP_NTH_ASM_T [3, 6, 9] pure_rewrite_tac);
+a(LEMMA_T ¨µa b c d:Ø∑ÓØ 0 < b ± ÓØ 0 < d ± a*d < b*c ¥ a/b < c/dÆ
+	bc_thm_tac
+	THEN1 (REPEAT strip_tac
+		THEN1 ALL_FC_T1 fc_§_canon asm_rewrite_tac[Ø_cross_mult_less_thm]));
+a(pure_asm_rewrite_tac[ÓØ_Ó_exp_thm,
+	pc_rule1 "Ø_lin_arith" prove_rule[]
+	¨µa b c:Ø∑a < ÓØ 2 * (b - c) § a + ÓØ 2 * c < ÓØ 2 * bÆ,
+	REPEAT_C (once_rewrite_conv[distinct_samples_rw_thm] THEN_C rewrite_conv[])
+	¨DistinctSamples (365-23) 23Æ]);
+a(pure_rewrite_tac[ÓØ_plus_homomorphism_thm1,
+	ÓØ_times_homomorphism_thm1,
+	ÓØ_less_thm]);
+a(rewrite_tac[]);
 val €birthdays_thm› = save_pop_thm "birthdays_thm";
 =TEX
 %%%%
@@ -4024,7 +4049,7 @@ val €ballot_lemma5› = save_pop_thm "ballot_lemma5";
 %%%%
 =SML
 set_goal([], ¨µm n∑
-	let	S = WalkTo (m+n) (Ó˙ 0) (Ó˙ m - Ó˙ n)
+	let	S = BallotCounts m n
 	in let	X = {s | s ç S ± µ i∑ Ó˙ 0 < s (i+1)}
 	in	S ç Finite
 	±	≥#S = 0
@@ -4033,7 +4058,7 @@ set_goal([], ¨µm n∑
 Æ);
 a(once_rewrite_tac[taut_rule¨µp1 p2 p3 p4∑
 	p1 ± p2 ± p3 ± p4 § p3 ± p1 ± (p1 ¥ p2) ± (p1 ± p2 ¥ p4)Æ]);
-a(rewrite_tac[let_def]);
+a(rewrite_tac[let_def, ballot_counts_def]);
 a(REPEAT strip_tac THEN1 PC_T1 "sets_ext1" prove_tac[]);
 (* *** Goal "1" *** *)
 a(rewrite_tac[walk_to_finite_thm]);
