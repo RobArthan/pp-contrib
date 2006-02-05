@@ -1,0 +1,268 @@
+=IGN
+********************************************************************************
+wrk075.doc: this file is supplementary material for the ProofPower system
+
+Copyright (c) 2004 Lemma 1 Ltd.
+
+This file is supplied under the GNU General Public Licence (GPL) version 2.
+
+See the file LICENSE supplied with ProofPower source for the terms of the GPL
+or visit the OpenSource web site at http://www.opensource.org/
+
+Contact: Rob Arthan < rda@lemma-one.com >
+********************************************************************************
+=TEX
+\documentclass[12pt]{article}
+\usepackage{ProofPower}
+\usepackage{A4}
+\usepackage{latexsym}
+\def\ZAxDesLabel{}
+\def\ZGenericLabel{}
+\def\ZOtherLabel{}
+\def\ZSchemaLabel{}
+\def\Hide#1{\relax}
+\title{On Refinement of Continuous Systems \\ (DRAFT)}
+\author{R.D. Arthan}
+\makeindex
+\begin{document}
+\maketitle
+\section{Introduction}\label{Intro}
+
+This note is the third in a planned series concerned with specification via
+pre- and post-conditions in a partial correctness setting.
+It applies the general notion of specification and refinement given in the first note in the series
+\cite{LEMMA1/ZED/WRK069} to continuous systems.
+
+\Hide{
+The following ML sets up a context for giving the {\ProductZ} specifications.
+=SML
+open_theory"refcalc";
+set_pc"z_library1";
+force_delete_theory"ctssys" handle Fail _ => ();
+new_theory"ctssys";
+new_parent"z_reals";
+ReaderWriterSupport.PrettyNames.add_new_symbols[
+	(["refinedby"], Value "Ã", ReaderWriterSupport.PrettyNames.Simple), 
+	(["ident"], Value "é", ReaderWriterSupport.PrettyNames.Simple)
+] handle Fail _ => ();
+=TEX
+}
+
+The Z specification uses infix or postfix notation for the following relation
+and function symbols (in addition to those defined in the first note).
+
+¹Z
+Ü function 50  _ ^ _
+°
+
+\section{A CATEGORY OF RELATIONS}
+
+We are going to construct work with systems of relations that can naturally be expressed diagrammatically.
+The diagrams comprises boxes with input ports and output ports and edges each of which wires an input port to an output port.
+A box with $m$ inputs and $n$ outputs represents a relation between $V^m$ and $V^n$ for some suitable value domain $V$.
+The wires connect produce new relations from old by adding equational constraints.
+The diagrams need not form directed graphs: feedback loops are allowed and correspond to existential quantification.
+
+
+Our approach to the syntax and semantics of diagrams is informed by the idea of a traced monoidal category.
+
+If $V$ is any set, $V^m$ gives the set of all $m$-tuples with values ranging over $V$.
+Typically $V^m$ represents the vector of inputs or outputs of a box in a diagram.
+
+[ U ]œœœœœœœœœœœ
+Ü Û_ ^ _İ : ğU ¸ î ­ ğ(seq U)
+÷üüüüüü
+Ü µV : ğU; m:î· V ^ m =  {s : seq V | #s = m}
+ˆüüüüüüüüüüüüüü
+
+For each set $V$, there is a category, which we shall call $Rel[V]$, whose objects are the natural numbers and whose morphisms (a.k.a. arrows) from $m$ to $n$ are the relations between $V^m$ and $V^n$ composed via ordinary relational composition\footnote{
+We take the objects to be the natural numbers, $m$, rather than the sets $V^m$ for technical convenience to avoid having the category collapse when $V = \{\}$.
+}.
+We represent the category in Z by defining its set of morphisms.
+A morphism is given as labelled triple whose components give the domain ($d$), codomain ($c$), and the relation ($r$).
+
+¹Z
+Ü ÛRelİ[V] ¦ Ş{m, n : î · {R : V^m ª V^n· (d ¦ m, c ¦ n, r ¦ R)}}
+°
+
+The composition of morphisms that makes $Rel[V]$ into a category is the ``horizontal'' composition defined below.
+
+[V]œœœœœœœœœœœ
+Ü ÛHComposeİ : Rel[V] ¸ Rel[V] ß Rel[V]
+÷üüüüüü
+Ü dom HCompose = {R, S : Rel[V] | R.c = S.d} ;
+Ü µR, S : Rel[V] | R.c = S.d ·
+Ü	HCompose(R, S) = (d ¦ R.d, c ¦ S.c, r ¦ R.r » S.r)
+ˆüüüüüüüüüüüüüü
+
+The category becomes a monoidal category under a product given by addition on objects and by the following ``vertical composition'' on morphisms.
+
+ 
+[V]œœœœœœœœœœœ
+Ü ÛVComposeİ : Rel[V] ¸ Rel[V] ­ Rel[V]
+÷üüüüüü
+Ü µR, S : Rel[V] ·
+Ü	VCompose(R, S) = (d ¦ R.d + S.d, c ¦ R.c + S.c,
+Ü		r ¦ {a, b, c, d : seq V | (a, c)  R.r ± (b, d)  S.r· (a ë b, c ë d)})
+ˆüüüüüüüüüüüüüü
+
+Finally, we get a traced monoidal category by defining the following operator that corresponds to adding $k$ feedback loops into a diagram.
+ 
+[V]œœœœœœœœœœœ
+Ü ÛFeedbackİ : Rel[V] ¸ î ß Rel[V]
+÷üüüüüü
+Ü dom Feedback = {R : Rel[V]; k : î | ¶m, n : î·R.d = m + k ± R.c = n + k} ;
+Ü µR : Rel[V]; k, m, n : î | R.d = m + k ± R.c = n + k ·
+Ü	Feedback(R, k) = (d ¦ m, c ¦ n,
+Ü		r ¦ {a, b : seq V | ¶c:V^k· (a ë c, b ë c)  R.r})
+ˆüüüüüüüüüüüüüü
+
+To use the relation category, we will generally need to know something about the value domain, $V$.
+However, we can define at least one generic construction corresponding to patching inputs to outputs according to a wiring diagram (given as a relation between input port numbers and output port numbers):
+
+
+[V]œœœœœœœœœœœ
+Ü ÛPatchİ : î ¸ î ¸ (î ª î) ­ Rel[V]
+÷üüüüüü
+Ü µm, n : î; d : î ª î·
+Ü	Patch(m, n, d) = (d ¦ m, c ¦ n,
+Ü		r ¦ {a : V^m; b : V^n | µi : 1..m; j : 1..n |(i, j)  d· b j = a i})
+ˆüüüüüüüüüüüüüü
+
+\section{SIGNAL FLOW GRAPHS}
+
+A {\em signal} will be a real-valued function of a real variable.
+
+¹Z
+Ü ÛSIGNALİ ¦ ¯ ­ ¯
+°
+
+The category of signal flow graphs is then the relational category with the value domain given by signals.
+
+
+¹Z
+Ü ÛSFGİ ¦ Rel[SIGNAL]
+°
+
+We instantiate the notions of predicates, pre- post-conditions
+and specifications from \cite{LEMMA1/ZED/WRK069} so that we can use them to express properties of signals:
+
+¹Z
+Ü ÛS_PREDİ ¦ PRED[SIGNAL]
+°
+¹Z
+Ü ÛS_PRE_CONDİ ¦ PRE_COND[SIGNAL]
+°
+¹Z
+Ü ÛS_POST_CONDİ ¦ POST_COND[SIGNAL, SIGNAL]
+°
+¹Z
+Ü ÛS_SPECİ ¦ SPEC[SIGNAL, SIGNAL]
+°
+We now have a notion of diagram which is in quite close analogy with the notion of imperative program considered in \cite{LEMMA1/ZED/WRK070}.
+
+¹Z
+Ü ÛDIAGRAMİ ::=
+Ü	ÛAtomİ (SFG)
+Ü |	ÛSeqİ (DIAGRAM ¸ DIAGRAM)
+Ü |	ÛParİ (DIAGRAM ¸ DIAGRAM)
+Ü |	ÛHideİ (DIAGRAM ¸ î)
+Ü |	ÛSpecİ (S_SPEC ¸ DIAGRAM)
+°
+
+
+\bibliographystyle{fmu}
+\bibliography{fmu}
+
+
+\newpage
+\appendix
+\section{SOME CATEGORY THEORY}
+A category with the set of objects $O$ and the set of arrows $A$ is represented by a member of the following generic schema,
+in which we agree to write composition in the category left to right.
+
+
+¹Z
+Ü function 40 leftassoc  _ »‰c _
+°
+
+
+ÿ CAT[O, A] üüüüüüüüüüü
+Ü Û_ »‰c _İ : A ¸ A ß A ;
+Ü Ûdom‰cİ, Ûcod‰cİ : A ­ O ;
+Ü Ûid‰cİ : O ­ A
+÷üüüüüü
+Ü dom (_ »‰c _) = {f, g : A | cod‰c f = dom‰c g} ;
+Ü µf, g, h : A | cod‰c f = dom‰c g ± cod‰c g = dom‰c h ·
+Ü	(f »‰c g) »‰c h = f »‰c (g »‰c h) ;
+Ü µf, g :  A | cod‰c f = dom‰c g ·
+Ü	dom‰c (f »‰c g) = dom‰c f ± cod‰c (f »‰c g) = cod‰c g ;
+Ü µ X : O ·
+Ü	dom‰c (id‰c X) = cod‰c (id‰c X) = X ;
+Ü µ f : A ·
+Ü	id‰c(dom‰c f) »‰c f = f »‰c id‰c(cod‰c f) = f
+ˆüüüüüüüüüüüüüü
+¹Z
+Ü rel_cat_thm ?ô [V](
+Ü	(_ »‰c _ ¦ HCompose[V],
+Ü	dom‰c ¦ (ÌR:Rel[V]·R.d),
+Ü	cod‰c ¦ (ÌR:Rel[V]·R.c),
+Ü	id‰c ¦ (Ìm:î·(d ¦ m, c ¦ m, r ¦ id(V^m))))  CAT[î, Rel[V]])
+°
+
+
+\newpage
+\appendix
+=TEX
+{\HOLindexOff\small
+\let\Section\section
+\def\section#1{\Section{#1}\label{THEORYLISTING}}
+\include{wrk075.th}}
+
+\twocolumn[\section{INDEX}\label{INDEX}]
+{\small\printindex}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PROOF SCRIPTS BEGIN HERE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PROOF SCRIPTS BEGIN HERE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PROOF SCRIPTS BEGIN HERE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PROOF SCRIPTS BEGIN HERE
+%%
+%% Comment out next line to include the proofs in the printed document:
+\end{document}
+
+\section{Proofs}
+=TEX
+\ftlinepenalty=999
+=SML
+val Ûset_exp_defİ = z_get_specñ(_^_)®;
+val Ûrel_defİ = z_get_specñRel[V]®;
+val Ûh_compose_defİ = z_get_specñHCompose®;
+val Ûv_compose_defİ = z_get_specñVCompose®;
+val Ûfeedback_defİ = z_get_specñFeedback®;
+val Ûcat_defİ = z_get_specñCAT®;
+=TEX
+%%%%
+%%%%
+
+=SML
+(*
+set_goal([], get_conjecture"-" "rel_cat_thm");
+a(rewrite_tac[cat_def, h_compose_def] THEN REPEAT strip_tac);
+
+val Ûrefinement_u_thmİ = save_pop_thm "refinement_u_thm";
+set_u_simp_eqn_cxt (u_simp_eqn_cxt [refinement_u_thm]) "'ctssys";
+set_merge_pcs["'ctssys", "'refcalc", "z_library1"];
+*)
+=TEX
+=SML
+=TEX
+\section{Epilogue}
+=SML
+z_output_theory{out_file="wrk075.th.doc", theory="-"};
+=TEX
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PROOF SCRIPTS END HERE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PROOF SCRIPTS END HERE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PROOF SCRIPTS END HERE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PROOF SCRIPTS END HERE
+=TEX
+\end{document}
+=IGN
