@@ -99,14 +99,18 @@ The weakest precondition for a relational composition is given by the following 
 \newpage
 \section{A CATEGORY OF RELATIONS}
 
-We are going to construct work with systems of relations that can naturally be expressed diagrammatically.
-The diagrams comprises boxes with input ports and output ports and edges each of which wires an input port to an output port.
+We are going to work with systems of relations that can naturally be expressed diagrammatically.
+The elements of the diagrams are called {\em boxes} and {\em wires}.
 A box with $m$ inputs and $n$ outputs represents a relation between $V^m$ and $V^n$ for some suitable value domain $V$.
-The wires connect produce new relations from old by adding equational constraints.
+The produce new relations from old by adding equational constraints.
 The diagrams need not form directed graphs: feedback loops are allowed and correspond to existential quantification.
 
 
 Our approach to the syntax and semantics of diagrams is informed by the idea of a traced monoidal category.
+The idea is that diagrams correspond to functor expressions in such a category.  Composition in the category corresponds to wiring diagrams in series.
+The monoid operator corresponds to putting two diagrams together without adding any wiring.
+Finally the trace operator corresponds to adding feedback loops to diagram.
+
 
 If $V$ is any set, $V^m$ gives the set of all $m$-tuples with values ranging over $V$.
 Typically $V^m$ represents the vector of inputs or outputs of a box in a diagram.
@@ -208,7 +212,7 @@ We now have a notion of diagram which is in quite close analogy with the notion 
 ‹	€Atom› (SFG)
 ‹ |	€Seq› (DIAGRAM ∏ DIAGRAM)
 ‹ |	€Par› (DIAGRAM ∏ DIAGRAM)
-‹ |	€Hide› (DIAGRAM ∏ Ó)
+‹ |	€Loop› (DIAGRAM ∏ Ó)
 ‹ |	€Spec› (S_SPEC ∏ DIAGRAM)
 ∞
 
@@ -244,6 +248,9 @@ in which we agree to write composition in the category left to right.
 ‹ µ f : A ∑
 ‹	idâc(domâc f) ªâc f = f ªâc idâc(codâc f) = f
 à¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+
+We can now state the theorem that $Rel[V]$ with the appropriate structure is indeed a category.
+
 πZ
 ‹ rel_cat_thm ?Ù [V](
 ‹	(_ ªâc _ ¶ HCompose[V],
@@ -378,9 +385,7 @@ val €Ã_ç_≠_thm› = save_pop_thm "Ã_ç_≠_thm";
 =TEX
 %%%%
 %%%%
-
 =SML
-(*
 set_goal([], get_conjecture"-" "rel_cat_thm");
 a(rewrite_tac[cat_def, h_compose_def] THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
@@ -450,13 +455,54 @@ a(strip_tac);
 a(conv_tac(ONCE_MAP_C z_¬_conv));
 a(ALL_FC_T rewrite_tac[h_compose_def]);
 (* *** Goal "8" *** *)
-a(lemma_tacÒ((Ã m : Ó ∑ (c ¶ m, d ¶ m, r ¶ id(V ^ m))) X) ç Rel[V]Æ);
-(* *** Goal "8.1" *** *)
-
-
-
-val €wp_comp_thm› = save_pop_thm "wp_comp_thm";
-*)
+a(LEMMA_T ÒX ç ÓÆ asm_tac THEN REPEAT strip_tac);
+a(conv_tac (RANDS_C(RAND_C z_¬_conv)));
+a(lemma_tacÒ(c ¶ X, d ¶ X, r ¶ id(V ^ X)) ç Rel[V]Æ
+	THEN1 asm_rewrite_tac[pc_rule1 "z_rel_ext" prove_rule[]
+		ÒµA:É∑ id A ç A ™ AÆ,
+		ç_rel_thm]);
+a(conv_tac(ONCE_MAP_C z_¬_conv));
+a(rewrite_tac[]);
+(* *** Goal "9" *** *)
+a(LEMMA_T ÒX ç ÓÆ asm_tac THEN REPEAT strip_tac);
+a(conv_tac (LEFT_C(RAND_C z_¬_conv)));
+a(lemma_tacÒ(c ¶ X, d ¶ X, r ¶ id(V ^ X)) ç Rel[V]Æ
+	THEN1 asm_rewrite_tac[pc_rule1 "z_rel_ext" prove_rule[]
+		ÒµA:É∑ id A ç A ™ AÆ,
+		ç_rel_thm]);
+a(conv_tac(ONCE_MAP_C z_¬_conv));
+a(rewrite_tac[]);
+(* *** Goal "10" *** *)
+a(TOP_ASM_T (strip_asm_tac o rewrite_rule[ç_rel_thm]));
+a(LEMMA_T Òf.c ç ÓÆ asm_tac THEN REPEAT strip_tac);
+a(LEMMA_T Òf.d ç ÓÆ asm_tac THEN REPEAT strip_tac);
+a(conv_tac(MAP_C z_¬_conv));
+a(lemma_tacÒ(c ¶ f.d, d ¶ f.d, r ¶ id(V ^ f.d)) ç Rel[V]
+	± (c ¶ f.d, d ¶ f.d, r ¶ id(V ^ f.d)).c = f.d
+	± (c ¶ f.c, d ¶ f.c, r ¶ id(V ^ f.c)) ç Rel[V]
+	± f.c = (c ¶ f.c, d ¶ f.c, r ¶ id(V ^ f.c)).dÆ
+	THEN1 asm_rewrite_tac[pc_rule1 "z_rel_ext" prove_rule[]
+		ÒµA:É∑ id A ç A ™ AÆ,
+		ç_rel_thm]);
+a(ALL_FC_T rewrite_tac[h_compose_def]);
+a(ALL_FC_T rewrite_tac[pc_rule1 "z_rel_ext" prove_rule[]
+		ÒµA:É; B:É; R:É∑ R ç A ™ B ¥
+			R ª id B = id A ª R = RÆ]);
+(* *** Goal "11" *** *)
+a(TOP_ASM_T (strip_asm_tac o rewrite_rule[ç_rel_thm]));
+a(LEMMA_T Òf.c ç ÓÆ asm_tac THEN REPEAT strip_tac);
+a(conv_tac(MAP_C z_¬_conv));
+a(lemma_tacÒ(c ¶ f.c, d ¶ f.c, r ¶ id(V ^ f.c)) ç Rel[V]
+	± f.c = (c ¶ f.c, d ¶ f.c, r ¶ id(V ^ f.c)).dÆ
+	THEN1 asm_rewrite_tac[pc_rule1 "z_rel_ext" prove_rule[]
+		ÒµA:É∑ id A ç A ™ AÆ,
+		ç_rel_thm]);
+a(ALL_FC_T rewrite_tac[h_compose_def]);
+a(ALL_FC_T rewrite_tac[pc_rule1 "z_rel_ext" prove_rule[]
+		ÒµA:É; B:É; R:É∑ R ç A ™ B ¥
+			R ª id B = id A ª R = RÆ]);
+a(PC_T1 "z_library_ext" rewrite_tac[]);
+val €rel_cat_thm› = save_pop_thm "rel_cat_thm";
 
 =TEX
 \section{Epilogue}
