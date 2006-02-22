@@ -21,7 +21,7 @@ Contact: Rob Arthan < rda@lemma-one.com >
 \def\ZOtherLabel{}
 \def\ZSchemaLabel{}
 \def\Hide#1{\relax}
-\title{On Refinement of Continuous Systems \\ (DRAFT)}
+\title{On Precondition Calculation in a Traced Monoidal Category \\ (DRAFT)}
 \author{R.D. Arthan}
 \makeindex
 \begin{document}
@@ -29,9 +29,9 @@ Contact: Rob Arthan < rda@lemma-one.com >
 \section{Introduction}\label{Intro}
 
 This note is the third in a planned series concerned with specification via
-pre- and post-conditions in a partial correctness setting.
+pre- and post-conditions.
 It applies the general notion of specification and refinement given in the first note in the series
-\cite{LEMMA1/ZED/WRK069} to continuous systems.
+\cite{LEMMA1/ZED/WRK069} to systems formed by wiring together primitive building blocks.
 
 \Hide{
 The following ML sets up a context for giving the {\ProductZ} specifications.
@@ -58,13 +58,15 @@ and function symbols (in addition to those defined in the first note).
 ‹ function 50  _ ^ _
 ∞
 
-\newpage
+% \newpage
 \section{WEAKEST PRE-CONDITIONS}
+
 In \cite{LEMMA1/ZED/WRK070}, we give an account of precondition calculation for a small programming language.
 In this note, we will be exploring weakest precondition calculation in a less familiar situation.
 It is therefore helpful to formalise the abstract concept.
 
-The simplest notion of weakest precondition pulls a post-condition represented as a set back through a relation:
+The simplest notion of weakest precondition pulls a post-condition represented as a set back through a relation.
+Since the material in this section is largely illustrative, we conentrate on this simpler notion.
 
 ù[ Y, Z ]úúúúúúúúúúú
 ‹ €WPS› : (Y ™ Z) ∏ Z ≠ Y
@@ -73,46 +75,26 @@ The simplest notion of weakest precondition pulls a post-condition represented a
 ‹	WPS(S, C) = {y : Y | S ®{y}© Ä C}
 à¸¸¸¸¸¸¸¸¸¸¸¸¸¸
 
-As noted in \cite{LEMMA1/ZED/WRK070}, a more general notion of weakest precondition calculation deals with relations.
-In general, if $S$ and $P$ are binary relations,
-we want to specify  $WP(S, P)$ so that it is the weakest (i.e., largest) relation $R$ such that $R\;ª\;S \subseteq P$.
-We use an explicit formula for $WP$ (cf. the clause for atoms in the function {\em prec\_calc} in \cite{LEMMA1/ZED/WRK070}).
 
-ù[ X, Y, Z ]úúúúúúúúúúú
-‹ €WP› : (Y ™ Z) ∏ (X ™ Z) ≠ (X ™ Y)
-˜¸¸¸¸¸¸
-‹ µS : Y ™ Z; P : X ™ Z∑
-‹	WP(S, P) = {x : X; y : Y | S ®{y}© Ä P®{x}©}
-à¸¸¸¸¸¸¸¸¸¸¸¸¸¸
-
-The following theorem shows that our explicit definition for $WP(S, P)$ is indeed the weakests $R$ such that $R\;ª\;S \subseteq P$.
+The following theorem shows that our explicit definition for $WP(S, C)$ is indeed the weakests $R$ such that $R\;ª\;S \subseteq P$.
 
 πZ
-‹ wp_correct_thm ?Ù
-‹	µS : É; P : É∑ WP(S, P) ª S Ä P;
-‹	µR : É; S : É; P : É | R ª S Ä P ∑ R Ä WP(S, P)
-∞
-
-The relationalal formulation of weakest precondition may be defined in terms of the set formulation:
-
-
-πZ
-‹ wp_wps_thm ?Ù
-‹	µS : É; P : É∑ WP(S, P) = {x : É; y : É | y ç WPS(S, P®{x}©)}
+‹ wps_correct_thm ?Ù
+‹	µS : É; C : É∑ S®WPS(S, C)© Ä C;
+‹	µS : É; B : É; C : É | S®B© Ä C ∑ B Ä WPS(S, C)
 ∞
 
 The weakest pre-condition of a conjunction (intersection) is a conjunction:
 
 πZ
-‹ wp_cap_thm ?Ù
-‹	µR : É; P, Q : É∑ WP(R, P ° Q) = WP(R, P) ° WP(R, Q)
+‹ wps_cap_thm ?Ù
+‹	µR : É; B, C : É∑ WPS(R, B ° C) = WPS(R, B) ° WPS(R, C)
 ∞
-
-The weakest precondition for a relational composition is given by the following theorem.
+The weakest precondition for a relational composition is given by an appropriate form of functional composition.
 
 πZ
-‹ wp_comp_thm ?Ù
-‹	µR : É; S : É; P : É∑ WP(R ª S, P) = WP(R, WP(S, P))
+‹ wps_comp_thm ?Ù
+‹	µR : É; S : É; A : É∑ WPS(R ª S, A) = WPS(R, WPS(S, A))
 ∞
 
 πZ
@@ -134,7 +116,8 @@ The weakest precondition for a relational composition is given by the following 
 πZ
 ‹ wps_prod_thm ?Ù
 ‹	µR : É; S : É; B : É; C : É ∑
-‹		WPS(R ** S, B ∏ C) = (WPS(R, B) ∏ WPS(S, C)) ¿ (É \ (dom R ∏ dom S))
+‹		WPS(R ** S, B ∏ C) =
+‹		(WPS(R, B) ∏ WPS(S, C)) ¿ (É \ (dom R ∏ dom S))
 ∞
 
 ù[ X, Y, V ]úúúúúúúúúúú
@@ -148,8 +131,51 @@ The weakest precondition for a relational composition is given by the following 
 πZ
 ‹ wps_proj_exists_thm ?Ù
 ‹	µR : É;  C : É ∑
-‹	{x: É; v: É | (x, v) ç WPS(R ° (É ** (id _)), C ∏ É)∑ x} Ä WPS(Projâ∂ R, C)
+‹	 WPS(Projâ∂ R, C) =
+‹	{x: É | µv:É∑ (x, v) ç WPS(R ° (É ** (id _)), C ∏ É)∑ x}
 ∞
+
+As noted in \cite{LEMMA1/ZED/WRK070}, a more general notion of weakest precondition calculation deals with relations.
+In general, if $S$ and $P$ are binary relations,
+we want to specify  $WP(S, P)$ so that it is the weakest (i.e., largest) relation $R$ such that $R\;ª\;S \subseteq P$.
+We use an explicit formula for $WP$ (cf. the clause for atoms in the function {\em prec\_calc} in \cite{LEMMA1/ZED/WRK070}).
+
+ù[ X, Y, Z ]úúúúúúúúúúú
+‹ €WP› : (Y ™ Z) ∏ (X ™ Z) ≠ (X ™ Y)
+˜¸¸¸¸¸¸
+‹ µS : Y ™ Z; P : X ™ Z∑
+‹	WP(S, P) = {x : X; y : Y | S ®{y}© Ä P®{x}©}
+à¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+
+The following theorem shows that our explicit definition for $WP(S, P)$ is indeed the weakests $R$ such that $R\;ª\;S \subseteq P$.
+
+πZ
+‹ wp_correct_thm ?Ù
+‹	µS : É; P : É∑ WP(S, P) ª S Ä P;
+‹	µR : É; S : É; P : É | R ª S Ä P ∑ R Ä WP(S, P)
+∞
+
+The relational formulation of weakest precondition may be defined in terms of the set formulation:
+
+πZ
+‹ wp_wps_thm ?Ù
+‹	µS : É; P : É∑ WP(S, P) = {x : É; y : É | y ç WPS(S, P®{x}©)}
+∞
+
+The weakest pre-condition of a conjunction (intersection) is a conjunction:
+
+πZ
+‹ wp_cap_thm ?Ù
+‹	µR : É; P, Q : É∑ WP(R, P ° Q) = WP(R, P) ° WP(R, Q)
+∞
+
+The weakest precondition for a relational composition is given by the following theorem.
+
+πZ
+‹ wp_comp_thm ?Ù
+‹	µR : É; S : É; P : É∑ WP(R ª S, P) = WP(R, WP(S, P))
+∞
+
 
 \newpage
 \section{A CATEGORY OF RELATIONS}
@@ -368,48 +394,30 @@ val €wps_rw_thm› = save_pop_thm "wps_rw_thm";
 =TEX
 %%%%
 %%%%
+
 =SML
-set_goal([], ÒµS:É;P: É∑
-	WP (S, P) = {x:É; y:É| µz:É∑(y, z) ç S ¥ (x, z) ç P}Æ);
-a(rewrite_tac[z_image_singleton_thm, z_gen_pred_u_elim wp_def]);
+set_goal([], get_conjecture"-" "wps_correct_thm");
+a(PC_T1 "z_library_ext" rewrite_tac[wps_rw_thm]);
 a(PC_T1 "z_library_ext" prove_tac[]);
-val €wp_rw_thm› = save_pop_thm "wp_rw_thm";
+val €wps_correct_thm› = save_pop_thm "wps_correct_thm";
 =TEX
 %%%%
 %%%%
 
 =SML
-set_goal([], get_conjecture"-" "wp_correct_thm");
-a(PC_T1 "z_library_ext" rewrite_tac[wp_rw_thm]);
+set_goal([], get_conjecture"-" "wps_cap_thm");
+a(PC_T1 "z_library_ext" rewrite_tac[wps_rw_thm]);
 a(PC_T1 "z_library_ext" prove_tac[]);
-val €wp_correct_thm› = save_pop_thm "wp_correct_thm";
+val €wps_cap_thm› = save_pop_thm "wps_cap_thm";
 =TEX
 %%%%
 %%%%
 
 =SML
-set_goal([], get_conjecture"-" "wp_wps_thm");
-a(rewrite_tac[z_image_singleton_thm]);
-a(PC_T1 "z_library_ext" rewrite_tac[wp_rw_thm, wps_rw_thm]);
-val €wp_wps_thm› = save_pop_thm "wp_wps_thm";
-=TEX
-%%%%
-%%%%
-
-=SML
-set_goal([], get_conjecture"-" "wp_cap_thm");
-a(PC_T1 "z_library_ext" rewrite_tac[wp_rw_thm]);
+set_goal([], get_conjecture"-" "wps_comp_thm");
+a(PC_T1 "z_library_ext" rewrite_tac[wps_rw_thm]);
 a(PC_T1 "z_library_ext" prove_tac[]);
-val €wp_cap_thm› = save_pop_thm "wp_cap_thm";
-=TEX
-%%%%
-%%%%
-
-=SML
-set_goal([], get_conjecture"-" "wp_comp_thm");
-a(PC_T1 "z_library_ext" rewrite_tac[wp_rw_thm]);
-a(PC_T1 "z_library_ext" prove_tac[]);
-val €wp_comp_thm› = save_pop_thm "wp_comp_thm";
+val €wps_comp_thm› = save_pop_thm "wps_comp_thm";
 =TEX
 %%%%
 %%%%
@@ -477,20 +485,68 @@ val €wps_prod_thm› = save_pop_thm "wps_prod_thm";
 %%%%
 
 =SML
-(*
 set_goal([], get_conjecture"-" "wps_proj_exists_thm");
 a(PC_T1 "z_library_ext" rewrite_tac[
 	z_gen_pred_u_elim rel_prod_def,
 	wps_rw_thm,
 	z_gen_pred_u_elim proj_∂_def]);
 a(PC_T1 "z_library_ext" REPEAT strip_tac);
+(* *** Goal "1" *** *)
 a(all_var_elim_asm_tac1);
-a(DROP_NTH_ASM_T 2 (ante_tac o z_µ_elimÒ(z, v')Æ));
+a(DROP_NTH_ASM_T 2 (strip_asm_tac o z_µ_elimÒz.1Æ));
+a(DROP_NTH_ASM_T 1 (ante_tac o z_µ_elimÒz.2Æ));
+a(conv_tac(ONCE_MAP_C z_tuple_lang_intro_conv));
 a(asm_rewrite_tac[]);
-a(STRIP_T bc_thm_tac);
-
+(* *** Goal "2" *** *)
+a(DROP_NTH_ASM_T 2 (fn th => fc_tac[th]));
+a(DROP_NTH_ASM_T 1 (ante_tac o list_µ_elim[¨vÆ, ¨vÆ, ¨x1Æ, ¨zÆ]));
+a(rewrite_tac[]);
 val €wps_proj_exists_thm› = save_pop_thm "wps_proj_exists_thm";
-*)
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ÒµS:É;P: É∑
+	WP (S, P) = {x:É; y:É| µz:É∑(y, z) ç S ¥ (x, z) ç P}Æ);
+a(rewrite_tac[z_image_singleton_thm, z_gen_pred_u_elim wp_def]);
+a(PC_T1 "z_library_ext" prove_tac[]);
+val €wp_rw_thm› = save_pop_thm "wp_rw_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], get_conjecture"-" "wp_correct_thm");
+a(PC_T1 "z_library_ext" rewrite_tac[wp_rw_thm]);
+a(PC_T1 "z_library_ext" prove_tac[]);
+val €wp_correct_thm› = save_pop_thm "wp_correct_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], get_conjecture"-" "wp_wps_thm");
+a(rewrite_tac[z_image_singleton_thm]);
+a(PC_T1 "z_library_ext" rewrite_tac[wp_rw_thm, wps_rw_thm]);
+val €wp_wps_thm› = save_pop_thm "wp_wps_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], get_conjecture"-" "wp_cap_thm");
+a(PC_T1 "z_library_ext" rewrite_tac[wp_rw_thm]);
+a(PC_T1 "z_library_ext" prove_tac[]);
+val €wp_cap_thm› = save_pop_thm "wp_cap_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], get_conjecture"-" "wp_comp_thm");
+a(PC_T1 "z_library_ext" rewrite_tac[wp_rw_thm]);
+a(PC_T1 "z_library_ext" prove_tac[]);
+val €wp_comp_thm› = save_pop_thm "wp_comp_thm";
 =TEX
 %%%%
 %%%%
