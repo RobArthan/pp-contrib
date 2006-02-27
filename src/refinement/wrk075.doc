@@ -127,6 +127,17 @@ Finally, we get a traced monoidal category by defining the following operator th
 ˆüüüüüüüüüüüüüü
 
 To use the relation category, we will generally need to know something about the value domain, $V$.
+However, we can describe some generic constructions that just impose equational constraints.
+The first of these is the operator that makes the monoidal category into a symmetric monoidal category:
+
+[V]œœœœœœœœœœœ
+Ü ÛSwitchİ : î ¸ î ­ Rel[V]
+÷üüüüüü
+Ü µm, n : î·
+Ü	Switch(m, n) = (d ¦ m + n, c ¦ n + m,
+Ü		r ¦ {a : V^m; b : V^n · (a ë b, b ë a)})
+ˆüüüüüüüüüüüüüü
+
 However, we can define at least one generic construction corresponding to patching inputs to outputs according to a wiring diagram (given as a relation between input port numbers and output port numbers):
 
 
@@ -373,16 +384,54 @@ A (strict) monoidal category is a category equipped with an associative bifuncto
 °
 
 
-ÿ ÛTRA_MON_CATİ[O, A] üüüüüüüüüüü
+ÿ ÛSYM_MON_CATİ[O, A] üüüüüüüüüüü
 Ü MON_CAT[O, A] ;
+Ü Sym : O ¸ O ­ A
+÷üüüüüü
+Ü µ X, Y : O · dom‰c(Sym(X, Y)) = X «‰o Y ± cod‰c(Sym(X, Y)) = Y «‰o  X ;
+Ü µ X, Y : O · Sym(X, Y) »‰c Sym(Y, X) = id‰c (X «‰o Y) ;
+Ü µ X, Y, Z : O ·
+Ü	Sym(X, Y «‰o Z) =
+Ü	(id‰c X «‰a Sym(Y, Z)) »‰c (Sym(X, Z) «‰a id‰c Y)
+ˆüüüüüüüüüüüüüü
+
+¹Z
+Ü rel_sym_mon_cat_thm ?ô [V](
+Ü	(_ »‰c _ ¦ HCompose[V],
+Ü	dom‰c ¦ (ÌR:Rel[V]· R.d),
+Ü	cod‰c ¦ (ÌR:Rel[V]· R.c),
+Ü	id‰c ¦ (Ìm:î· (d ¦ m, c ¦ m, r ¦ id(V^m))),
+Ü	_ «‰o _ ¦ (Ìm, n:î· m + n),
+Ü	_ «‰a _ ¦ VCompose[V],
+Ü	I‰« ¦ (d ¦ 0, c ¦ 0, r ¦ id(V^0)),
+Ü	Sym ¦ Switch[V])  SYM_MON_CAT[î, Rel[V]])
+°
+
+=SML
+(*
+=TEX
+ÿ ÛTRA_MON_CAT2İ[O, A] üüüüüüüüüüü
+Ü SYM_MON_CAT[O, A] ;
 Ü Trace : O ¸ O ¸ O ­ A ß A
 ÷üüüüüü
 Ü µ X, Y, Z : O ·
 Ü	dom (Trace(X, Y, Z)) = {f : A | dom‰c f = X «‰o Z ± cod‰c f = Y «‰o Z} ;
-Ü (* and ... µ X, Y, Z : O; f : A | dom‰c f = X «‰o Z ± cod‰c f = Y «‰o Z· ... *)
-Ü	true
+Ü µ X, Y, Z : O; f : A ·
+Ü	dom‰c (Trace(X, Y, Z) f) = X ± cod‰c (Trace(X, Y, Z) f) = Y ;
+Ü µ X, W, Y, Z : O; f, h : A |
+Ü	dom‰c f = W «‰o Z ± cod‰c f = Y «‰o Z ;
+Ü	dom‰c h = X ± cod‰c h = W ·
+Ü	Trace(X, Y, Z) ((h «‰a id‰c Z) »‰c f) =
+Ü	h »‰c Trace(W, Y, Z) f ;
+Ü µ X, W, Y, Z : O; f, h : A |
+Ü	dom‰c f = X «‰o Z ± cod‰c f = W «‰o Z ;
+Ü	dom‰c h = W ± cod‰c h = X ·
+Ü	Trace(X, Y, Z) (f »‰c (h «‰a id‰c Z)) =
+Ü	h »‰c Trace(X, W, Z) f
 ˆüüüüüüüüüüüüüü
-
+=SML
+*)
+=TEX
 
 
 \newpage
@@ -416,8 +465,11 @@ val Ûrel_defİ = z_get_specñRel[V]®;
 val Ûh_compose_defİ = z_get_specñHCompose®;
 val Ûv_compose_defİ = z_get_specñVCompose®;
 val Ûfeedback_defİ = z_get_specñFeedback®;
+val Ûswitch_defİ = z_get_specñSwitch®;
+val Ûpatch_defİ = z_get_specñPatch®;
 val Ûcat_defİ = z_get_specñCAT®;
 val Ûmon_cat_defİ = z_get_specñMON_CAT®;
+val Ûsym_mon_cat_defİ = z_get_specñSYM_MON_CAT®;
 =TEX
 %%%%
 %%%%
@@ -923,6 +975,168 @@ a(all_fc_tac[z_fun__clauses]);
 a(conv_tac(ONCE_MAP_C z_Â_conv));
 a(ALL_FC_T rewrite_tac[v_compose_def]);
 val Ûrel_mon_cat_thmİ = save_pop_thm "rel_mon_cat_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ñ[V](µm, n : î· µa : V^m; b : V^n· a ë b  V^(m+n))®);
+a(REPEAT strip_tac);
+a(REPEAT_N 2 (POP_ASM_T ante_tac));
+a(lemma_tacñ0 ¼ m + n® THEN1 PC_T1 "z_lin_arith" asm_prove_tac[]);
+a(ALL_FC_T rewrite_tac[z_gen_pred_u_elim set_exp_def]);
+a(REPEAT strip_tac THEN all_var_elim_asm_tac1);
+(* *** Goal "1" *** *)
+a(all_fc_tac[z_seq_u_thm]);
+a(ALL_FC_T1 fc_¤_canon asm_rewrite_tac[z_ë_seq_x_thm]);
+(* *** Goal "2" *** *)
+a(all_fc_tac[z_seq_u_thm]);
+a(ALL_FC_T rewrite_tac[z_size_ë_thm]);
+val Ûë_seq_exp_thmİ = save_pop_thm "ë_seq_exp_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ñ
+	µs : (seq _) | #s = 0 · s = §¢;
+	µs : (seq _); i : î | #s = i + 1 · ¶s1 : (seq _); x : ƒ· #s1 = i ± s = s1 ë §x¢®);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(strip_asm_tac(z_µ_elimñs® z_seq_cases_thm));
+a(all_var_elim_asm_tac1);
+a(i_contr_tac THEN swap_nth_asm_concl_tac 2);
+a(lemma_tacñ§x¢  (seq_)® THEN1 rewrite_tac[z_singleton_seq_thm]);
+a(ALL_FC_T rewrite_tac[z_size_ë_thm]);
+a(rewrite_tac[z_size_singleton_seq_thm]);
+a(lemma_tacñ#s1  î® THEN1 ALL_FC_T rewrite_tac[z_size_seq_î_thm]);
+a(PC_T1 "z_lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(strip_asm_tac(z_µ_elimñs® z_seq_cases_thm));
+(* *** Goal "2.1" *** *)
+a(i_contr_tac THEN swap_nth_asm_concl_tac 2);
+a(asm_rewrite_tac[z_size_seqd_thm]);
+a(PC_T1 "z_lin_arith" asm_prove_tac[]);
+(* *** Goal "2.2" *** *)
+a(z_¶_tacñ(s1 ¦ s1, x ¦ x)® THEN asm_rewrite_tac[]);
+a(swap_nth_asm_concl_tac 3 THEN all_var_elim_asm_tac1);
+a(lemma_tacñ§x¢  (seq_)® THEN1 rewrite_tac[z_singleton_seq_thm]);
+a(ALL_FC_T rewrite_tac[z_size_ë_thm]);
+a(asm_rewrite_tac[z_size_singleton_seq_thm]);
+val Ûz_size_seq_cases_thmİ = save_pop_thm "z_size_seq_cases_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ñµs1, t1, s2, t2 : (seq _) |
+	#s2 = #t2 ± s1 ë s2 = t1 ë t2 · s1 = t1 ± s2 = t2®);
+a(REPEAT_UNTIL is_± strip_tac);
+a(lemma_tacñ¶m:î·#t2 = m® THEN1
+	(z_¶_tacñ#t2® THEN REPEAT strip_tac
+		THEN all_fc_tac[z_size_seq_î_thm]));
+a(LIST_DROP_NTH_ASM_T [1, 3, 4, 5, 6, 7, 8] (MAP_EVERY ante_tac));
+a(z_intro_µ_tacñ(s1¦s1, s2¦s2, t1¦t1, t2¦t2)®);
+a(z_¼_induction_tac ñm®);
+(* *** Goal "1" *** *)
+a(REPEAT_UNTIL is_± strip_tac);
+a(DROP_NTH_ASM_T 3 ante_tac THEN asm_rewrite_tac[]);
+a(strip_tac);
+a(all_fc_tac[z_size_seq_cases_thm] THEN all_var_elim_asm_tac1);
+a(DROP_NTH_ASM_T 2 ante_tac);
+a(ALL_FC_T rewrite_tac[z_ë_§¢_thm]);
+(* *** Goal "2" *** *)
+a(REPEAT_UNTIL is_± strip_tac);
+a(DROP_NTH_ASM_T 3 ante_tac THEN asm_rewrite_tac[]);
+a(strip_tac);
+a(all_fc_tac[z_size_seq_cases_thm] THEN all_var_elim_asm_tac1);
+a(rename_tac[(ñs1'®, "s2"), (ñs1''®, "t2")]
+	THEN DROP_NTH_ASM_T 6 ante_tac);
+a(lemma_tacñ§x¢  (seq_) ± §x'¢  (seq_)® THEN1 rewrite_tac[z_singleton_seq_thm]);
+a(ALL_FC_T rewrite_tac[z_ë_assoc_thm1]);
+a(lemma_tacñs1 ë s2  (seq_) ± t1 ë t2  (seq_)®
+	THEN1 ALL_FC_T1 fc_¤_canon asm_rewrite_tac[z_ë_seq_x_thm]);
+a(ALL_FC_T1 fc_¤_canon rewrite_tac[z_ë_one_one_thm]);
+a(strip_tac THEN asm_rewrite_tac[]);
+a(lemma_tacñ#s2 = #t2® THEN1 asm_rewrite_tac[]);
+a(z_spec_nth_asm_tac 17 ñ(s1'¦s1, s2'¦s2, t1'¦t1, t2'¦t2)®);
+a(REPEAT strip_tac);
+val Ûz_ë_one_one_thm1İ = save_pop_thm "z_ë_one_one_thm1";
+=TEX
+%%%%
+%%%%
+
+=SML
+(*
+set_goal([], ñ[V](µm, n : î·
+	HCompose[V] (Switch[V] (m, n), Switch[V] (n, m)) =
+	(c ¦ m + n, d ¦ m + n, r ¦ id (V ^ (m + n))))®);
+a(REPEAT strip_tac THEN
+	rename_tac[(¬m:ú®, "M"), (¬n:ú®, "N")]);
+a(LEMMA_Tñ(M, N)  î ¸ î® asm_tac THEN1 REPEAT strip_tac);
+a(LEMMA_Tñ(N, M)  î ¸ î® asm_tac THEN1 REPEAT strip_tac);
+a(strip_asm_tac (±_left_elim (µ_elim¬V®switch_def)));
+a(all_fc_tac[z_fun__clauses]);
+a(lemma_tacñ(Switch[V] (M, N)).c = (Switch[V] (N, M)).d®
+	THEN1 ALL_FC_T rewrite_tac[switch_def]);
+a(ALL_FC_T rewrite_tac[h_compose_def]);
+a(ALL_FC_T rewrite_tac[switch_def]);
+a(PC_T1 "z_library_ext" once_rewrite_tac[]);
+a(REPEAT_UNTIL is_¤ strip_tac);
+a(PC_T1 "z_library_ext" once_rewrite_tac[]);
+a(PC_T1 "z_library_ext" once_rewrite_tac[]);
+a(REPEAT strip_tac THEN all_var_elim_asm_tac1);
+(* *** Goal "1" *** *)
+a(all_fc_tac[ë_seq_exp_thm]);
+(* *** Goal "2" *** *)
+a(LIST_DROP_NTH_ASM_T [2, 3, 4, 5] (MAP_EVERY ante_tac));
+a(ALL_FC_T rewrite_tac[z_gen_pred_u_elim set_exp_def]);
+a(REPEAT strip_tac THEN all_var_elim_asm_tac1);
+a(all_fc_tac[z_seq_u_thm]);
+a(ALL_FC_T rewrite_tac[z_ë_one_one_thm1]);
+(* *** Goal "3" *** *)
+
+
+val Ûswitch_switch_thmİ = save_pop_thm "switch_switch_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], get_conjecture"-" "rel_sym_mon_cat_thm");
+a(rewrite_tac[sym_mon_cat_def, rel_mon_cat_thm,
+	switch_def] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(ALL_FC_T rewrite_tac[z_plus_î_thm]);
+a(LEMMA_Tñ(X, Y)  î ¸ î® asm_tac THEN1 REPEAT strip_tac);
+a(strip_asm_tac (±_left_elim (µ_elim¬V®switch_def)));
+a(all_fc_tac[z_fun__clauses]);
+a(conv_tac(ONCE_MAP_C z_Â_conv));
+a(ALL_FC_T rewrite_tac[switch_def]);
+(* *** Goal "2" *** *)
+a(ALL_FC_T rewrite_tac[z_plus_î_thm]);
+a(LEMMA_Tñ(X, Y)  î ¸ î® asm_tac THEN1 REPEAT strip_tac);
+a(strip_asm_tac (±_left_elim (µ_elim¬V®switch_def)));
+a(all_fc_tac[z_fun__clauses]);
+a(conv_tac(ONCE_MAP_C z_Â_conv));
+a(ALL_FC_T rewrite_tac[switch_def]);
+(* *** Goal "3" *** *)
+a(ALL_FC_T rewrite_tac[z_plus_î_thm]);
+a(LEMMA_TñX + Y  î® asm_tac THEN1 PC_T1 "z_lin_arith" asm_prove_tac[]);
+a(conv_tac(ONCE_MAP_C z_Â_conv));
+a(LEMMA_Tñ(X, Y)  î ¸ î® asm_tac THEN1 REPEAT strip_tac);
+a(LEMMA_Tñ(Y, X)  î ¸ î® asm_tac THEN1 REPEAT strip_tac);
+a(strip_asm_tac (±_left_elim (µ_elim¬V®switch_def)));
+a(all_fc_tac[z_fun__clauses]);
+a(lemma_tacñ(Switch[V] (X, Y)).c = (Switch[V] (Y, X)).d®
+	THEN1 ALL_FC_T rewrite_tac[switch_def]);
+a(ALL_FC_T rewrite_tac[h_compose_def]);
+a(ALL_FC_T rewrite_tac[switch_def]);
+a(PC_T1 "z_library_ext" once_rewrite_tac[]);
+a(rewrite_tac[]);
+
+val Ûrel_sym_mon_cat_thmİ = save_pop_thm "rel_sym_mon_cat_thm";
+*)
 =TEX
 \section{Epilogue}
 =SML
