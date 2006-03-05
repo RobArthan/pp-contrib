@@ -261,8 +261,8 @@ We write $p \perp c$ when this holds.
 Ü	((Atom t) â c‰1)
 Ü ±	((Seq(p‰1, p‰2) â c‰1) ¤ p‰1 â c‰1 ± p‰2 â semantics p‰1 ¨c‰1©)
 Ü ±	((If(c‰2, p‰1, p‰2) â c‰1) ¤ p‰1 â c‰1 ¡ c‰2 ± p‰2 â c‰1 \ c‰2)
-Ü ±	((While(c‰2, p‰1) â c‰1) ¤ p‰1 â (c‰1 ¡ c‰2))
-Ü ±	((Spec((prec, postc), p‰1) â c‰1) ¤ (c‰1 € prec ± p‰1 â c‰1))
+Ü ±	((While(c‰2, p‰1) â c‰1) ¤ p‰1 â c‰1 ¡ c‰2 ± p‰1 â semantics p‰1 ¨c‰1 ¡ c‰2© ¡ c‰2)
+Ü ±	((Spec((prec, postc), p‰1) â c‰1) ¤ c‰1 € prec ± p‰1 â c‰1)
 °
 Uprightness enjoys the following two useful properties:
 ¹Z
@@ -791,7 +791,12 @@ a(lemma_tacñc2 \ c € c1 \ c®
 	THEN all_asm_fc_tac[]);
 (* *** Goal "3" *** *)
 a(REPEAT strip_tac);
+(* *** Goal "3.1" *** *)
 a(lemma_tacñc2 ¡ c € c1 ¡ c®
+	THEN1 PC_T1 "z_library_ext" asm_prove_tac[]
+	THEN all_asm_fc_tac[]);
+(* *** Goal "3.2" *** *)
+a(lemma_tacñsemantics p1 ¨c2 ¡ c© ¡ c € semantics p1 ¨c1 ¡ c© ¡ c®
 	THEN1 PC_T1 "z_library_ext" asm_prove_tac[]
 	THEN all_asm_fc_tac[]);
 (* *** Goal "4" *** *)
@@ -821,8 +826,14 @@ a(LEMMA_Tñ(c1 À c2) \ c = (c1 \ c) À (c2 \ c)® rewrite_thm_tac
 	THEN all_asm_fc_tac[]);
 (* *** Goal "3" *** *)
 a(REPEAT strip_tac);
+(* *** Goal "3.1" *** *)
 a(LEMMA_Tñ(c1 À c2) ¡ c = (c1 ¡ c) À (c2 ¡ c)® rewrite_thm_tac
 	THEN1 PC_T1 "z_library_ext" asm_prove_tac[]
+	THEN all_asm_fc_tac[]);
+(* *** Goal "3.2" *** *)
+a(LEMMA_Tñsemantics p1 ¨(c1 À c2) ¡ c© ¡ c = (semantics p1 ¨c1 ¡ c© ¡ c) À (semantics p1 ¨c2 ¡ c© ¡ c)®
+		rewrite_thm_tac
+	THEN1 PC_T1 "z_library_ext" prove_tac[]
 	THEN all_asm_fc_tac[]);
 (* *** Goal "4" *** *)
 a(PC_T1 "z_sets_ext" asm_prove_tac[]);
@@ -979,11 +990,18 @@ a(bc_thm_tac(rewrite_rule[] (conv_rule z_µ_elim_conv upright_mono_thm)));
 a(¶_tac ñran (prec_calc (p2, postc'))®);
 a(asm_rewrite_tac[if_lemma]);
 (* *** Goal "3" *** *)
-a(REPEAT strip_tac);
 a(lemma_tacñ¶body_prec:ƒ; body_postc:ƒ· (body_prec, body_postc) = guess_spec p1®
 	THEN1 (z_¶_tacñ(body_prec¦(guess_spec p1).1, body_postc¦(guess_spec p1).2)®
 		THEN PC_T1 "z_library_ext" REPEAT strip_tac));
 a(ALL_FC_T rewrite_tac[prec_calc_def] THEN POP_ASM_T discard_tac);
+a(REPEAT strip_tac);
+(* *** Goal "3.1" *** *)
+a(bc_thm_tac(rewrite_rule[] (conv_rule z_µ_elim_conv upright_mono_thm)));
+a(¶_tac ñran(prec_calc (p1, body_postc))® THEN asm_rewrite_tac[]);
+a(PC_T1 "z_library_ext" REPEAT strip_tac);
+a(all_asm_fc_tac[] THEN all_asm_fc_tac[]);
+a(TOP_ASM_T ante_tac THEN PC_T1 "z_library_ext" prove_tac[]);
+(* *** Goal "3.2" *** *)
 a(bc_thm_tac(rewrite_rule[] (conv_rule z_µ_elim_conv upright_mono_thm)));
 a(¶_tac ñran(prec_calc (p1, body_postc))® THEN asm_rewrite_tac[]);
 a(PC_T1 "z_library_ext" REPEAT strip_tac);
