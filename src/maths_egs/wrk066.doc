@@ -117,7 +117,7 @@ doctex wrk066 wrk066.th; texdvi -b wrk066; texdvi wrk066; texdvi wrk066
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2005/12/22 17:04:16 $%
+\date{\FormatDate{$Date: 2006/01/03 11:02:35 $%
 }}
 
 \begin{document}
@@ -140,7 +140,7 @@ calculation of the areas of some simple plane sets.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK066; issue $Revision: 1.103 $%
+Reference: LEMMA1/HOL/WRK066; issue $Revision: 1.104 $%
 
 
 \end{centering}
@@ -764,6 +764,7 @@ id_cts_thm
 plus_cts_thm
 times_cts_thm
 poly_cts_thm
+¯_î_exp_cts_thm
 =TEX
 }{%
 =GFT
@@ -772,13 +773,15 @@ minus_cts_thm
 minus_comp_cts_thm
 recip_cts_thm
 recip_comp_cts_thm
+¯_î_exp_comp_cts_thm
 abs_cts_thm
+abs_comp_cts_thm
 cts_extension_thm1
 cts_extension_thm
-open_¯_delta_thm
 =TEX
 }{%
 =GFT
+open_¯_delta_thm
 lim_seq_open_¯_thm
 cts_open_¯_thm
 closed_interval_closed_thm
@@ -851,7 +854,7 @@ times_const_deriv_thm
 comp_deriv_thm
 minus_deriv_thm
 minus_comp_deriv_thm
-power_deriv_thm
+¯_î_exp_deriv_thm
 =TEX
 }{%
 =GFT
@@ -926,10 +929,8 @@ where $f$ is required to be differentiable on $[a, b]$ which is often useful in 
 In each of these mean value theorems, our statement of the theorem is what is obtained from the traditional statement by cross-multiplying to eliminate division in favour of multiplication.
 This is convenient in practice and brings out a symmetry in {\em cauchy\_mean\_value\_thm} (which is actually slightly more general as a result).
 
-
 By contrast with Harrison's approach, later on, when we need explicit numerical estimates, for example, in demonstrating the existence of $\pi$, we tend to use theorems like the mean value theorem, rather than obtaining numerical estimates from power series.
 {\em deriv\_linear\_estimate\_thm} is an example of this kind of estimation.
-There would be little difficulty, however, in extending the results on the transcendental functions to give estimates for the error term in a polynomial approximation to a value of the power series.
 
 
 \ThmsIII{%
@@ -1318,6 +1319,26 @@ declare_postfix(330, "!");
 Ü	0 ! = 1
 Ü ±	(µm·(m+1)! = (m+1)*m!)
 °
+
+Using the factorial function, we can state Taylor's theorem.
+While this theorem is not used in our approach to the transcendental functions, it is proved here for completeness, using one or two lemmas about the factorial function and a generalisation to $n$-th derivatives of Rolle's theorem.
+
+\ThmsIII{%
+=GFT
+factorial_linear_estimate_thm
+factorial_0_less_thm
+=TEX
+}{%
+=GFT
+factorial_times_recip_thm
+gen_rolle_thm
+=TEX
+}{%
+=GFT
+taylor_thm
+=TEX
+}
+
 =GFT
 =TEX
 \subsubsection{The Exponential Function}\label{TheExponentialFunction}
@@ -1356,7 +1377,7 @@ That this homomorphism is order-preserving follows from
 =GFT
 factorial_linear_estimate_thm
 factorial_0_less_thm
-exp_deriv_coeffs_thm
+factorial_times_recip_thm
 exp_series_convergence_thm
 exp_consistency_thm
 Exp_consistent
@@ -4512,11 +4533,43 @@ val Ûrecip_comp_cts_thmÝ = save_pop_thm "recip_comp_cts_thm";
 =TEX
 %%%%
 %%%%
+
+=SML
+set_goal([], ¬µm t· (Ìx·x^m) Cts t®);
+a(REPEAT strip_tac THEN induction_tac ¬m:î®
+	THEN rewrite_tac[¯_î_exp_def, const_cts_thm]);
+a(conv_tac(LEFT_C (Ì_un_Â_rands_conv))
+	THEN bc_thm_tac times_cts_thm);
+a(asm_rewrite_tac[id_cts_thm]);
+val Û¯_î_exp_cts_thmÝ = save_pop_thm "¯_î_exp_cts_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬µf m t·f Cts t ´ (Ìx·f x ^ m) Cts t®);
+a(REPEAT strip_tac);
+a(pure_rewrite_tac[prove_rule[]
+	¬(Ìx·f x ^ m) = (Ìx·(Ìy·y ^ m)(f x))®]);
+a(bc_thm_tac comp_cts_thm THEN REPEAT strip_tac);
+a(rewrite_tac[¯_î_exp_cts_thm]);
+val Û¯_î_exp_comp_cts_thmÝ = save_pop_thm "¯_î_exp_comp_cts_thm";
+=TEX
+%%%%
+%%%%
 =SML
 set_goal([], ¬µt· Abs Cts t®);
 a(rewrite_tac[cts_lim_seq_thm] THEN REPEAT strip_tac);
 a(all_fc_tac[abs_lim_seq_thm]);
 val Ûabs_cts_thmÝ = save_pop_thm "abs_cts_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬µf m t·f Cts t ´ (Ìx·Abs(f x)) Cts t®);
+a(REPEAT strip_tac);
+a(bc_thm_tac comp_cts_thm THEN REPEAT strip_tac);
+a(rewrite_tac[abs_cts_thm]);
+val Ûabs_comp_cts_thmÝ = save_pop_thm "abs_comp_cts_thm";
 =TEX
 %%%%
 %%%%
@@ -4528,9 +4581,14 @@ val Ûsimple_cts_tacÝ : TACTIC = (fn gl as (_, tm) =>
 	in
 	conv_tac (simple_eq_match_conv const_thm) ORELSE
 	conv_tac (simple_eq_match_conv id_thm) ORELSE
-	(conv_tac (LEFT_C Ì_un_Â_rands_conv) THEN FIRST (map bc_thm_tac [
-			plus_cts_thm, times_cts_thm, minus_comp_cts_thm, recip_comp_cts_thm]
-		)) ORELSE
+	(conv_tac (LEFT_C Ì_un_Â_rands_conv) THEN 
+		(FIRST (map bc_thm_tac [
+			plus_cts_thm, times_cts_thm,
+			minus_comp_cts_thm, recip_comp_cts_thm,
+			abs_comp_cts_thm])
+		ORELSE (conv_tac (LEFT_C(SIMPLE_Ì_C (RIGHT_C(Â_conv))))
+			THEN FIRST (map bc_thm_tac [
+				¯_î_exp_comp_cts_thm])))) ORELSE
 	conv_tac (LEFT_C È_conv ORELSE_C RAND_C (LEFT_C Â_conv))
 	end	gl
 );
@@ -4538,10 +4596,10 @@ val Ûsimple_cts_tacÝ : TACTIC = (fn gl as (_, tm) =>
 set_goal([], ¬(Ìx·c) Cts (î¯ 2)®);
 a simple_cts_tac;
 val test1 = pop_thm();
-set_goal([], ¬(Ìx·x*y + î¯ 3) Cts t®);
+set_goal([], ¬(Ìx·x* Abs y + î¯ 3) Cts t®);
 a(REPEAT (simple_cts_tac THEN REPEAT strip_tac));
 val test2 = pop_thm();
-set_goal([], ¬(Ìx·î¯ 3 * ((1/2)+x)›-›1) Cts 1/3®);
+set_goal([], ¬(Ìx·î¯ 3 * ((1/2)+x^7)›-›1) Cts 1/3®);
 a(REPEAT (simple_cts_tac THEN REPEAT strip_tac));
 a(rewrite_tac[]);
 val test2 = pop_thm();
@@ -5175,7 +5233,7 @@ a(conv_tac(RANDS_C ¯_anf_conv) THEN REPEAT strip_tac);
 (* *** Goal "2.2" *** *)
 a(bc_thm_tac times_deriv_thm);
 a(asm_rewrite_tac[id_deriv_thm]);
-val Ûpower_deriv_thmÝ = save_pop_thm "power_deriv_thm";
+val Û¯_î_exp_deriv_thmÝ = save_pop_thm "¯_î_exp_deriv_thm";
 =TEX
 %%%%
 %%%%
@@ -5723,11 +5781,11 @@ val Ûrat_deriv_thmsÝ = [
 	times_deriv_thm,
 	minus_deriv_thm,
 	recip_deriv_thm,
-	power_deriv_thm,
-	rewrite_rule[](µ_elim¬0® power_deriv_thm),
-	rewrite_rule[](µ_elim¬1® power_deriv_thm),
-	rewrite_rule[](µ_elim¬2® power_deriv_thm),
-	rewrite_rule[](µ_elim¬3® power_deriv_thm),
+	¯_î_exp_deriv_thm,
+	rewrite_rule[](µ_elim¬0® ¯_î_exp_deriv_thm),
+	rewrite_rule[](µ_elim¬1® ¯_î_exp_deriv_thm),
+	rewrite_rule[](µ_elim¬2® ¯_î_exp_deriv_thm),
+	rewrite_rule[](µ_elim¬3® ¯_î_exp_deriv_thm),
 	comp_deriv_thm
 ];
 val Ûrat_deriv_ruleÝ = deriv_rule rat_deriv_thms;
@@ -9295,7 +9353,7 @@ a(REPEAT strip_tac);
 a(conv_tac (RATOR_C (RATOR_C(RAND_C Ì_un_Â_rands_conv))));
 a(once_rewrite_tac[pc_rule1 "¯_lin_arith" prove_rule[] ¬µa b c:¯· (a * b) * c = b * a * c®]);
 a(rewrite_tac[î¯_plus_homomorphism_thm]);
-a(accept_tac (rewrite_rule[const_deriv_thm, power_deriv_thm] (
+a(accept_tac (rewrite_rule[const_deriv_thm, ¯_î_exp_deriv_thm] (
 	list_µ_elim[¬Ì x:¯· s (n + 1)®, ¬î¯ 0®, ¬x®, ¬Ìx:¯·x ^ (n + 1)®, ¬(î¯ n + î¯ 1)* x ^ n®] 	
 			times_deriv_thm
 )));
@@ -9736,7 +9794,192 @@ a(ALL_FC_T (MAP_EVERY (strip_asm_tac o conv_rule(ONCE_MAP_C eq_sym_conv)))
 a(ALL_FC_T rewrite_tac[¯_recip_clauses]);
 a(rewrite_tac[¯_times_assoc_thm1]);
 a(ALL_FC_T rewrite_tac[¯_recip_clauses]);
-val Ûexp_deriv_coeffs_thmÝ = save_pop_thm "exp_deriv_coeffs_thm";
+val Ûfactorial_times_recip_thmÝ = save_pop_thm "factorial_times_recip_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µn D a b·
+	a < b
+±	(µm x· m ¼ n ± a ¼ x ± x ¼ b ´ D m Cts x)
+±	(µm x· m ¼ n ± a < x ± x < b ´ (D m Deriv D(m+1) x) x)
+±	(µm· m ¼ n ´ D m a = î¯ 0)
+±	D 0 b = î¯ 0
+´	¶x· a < x ± x < b ± D (n+1) x = î¯ 0
+®);
+a(REPEAT strip_tac);
+a(LEMMA_T¬µk·k ¼ n ´ ¶x· a < x ± x < b ± D (k+1) x = î¯ 0®
+	bc_thm_tac THEN strip_tac);
+a(induction_tac¬k® THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(lemma_tac¬¶ x· a < x ± x < b ± (D 0 Deriv î¯ 0) x®
+	THEN1 bc_thm_tac rolle_thm);
+(* *** Goal "1.1" *** *)
+a(¶_tac¬D 1® THEN asm_rewrite_tac[]);
+a(LIST_GET_NTH_ASM_T [2, 3, 4]
+	 (rewrite_tac o map (rewrite_rule[] o µ_elim¬0®)));
+(* *** Goal "1.2" *** *)
+a(¶_tac ¬x® THEN asm_rewrite_tac[]);
+a(LEMMA_T¬(D 0 Deriv D(0+1) x) x® (strip_asm_tac o rewrite_rule[])
+	THEN1 (DROP_NTH_ASM_T 6 bc_thm_tac THEN asm_rewrite_tac[]));
+a(all_fc_tac[deriv_unique_thm]);
+(* *** Goal "2" *** *)
+a(PC_T1 "lin_arith" asm_prove_tac[]);
+(* *** Goal "3" *** *)
+a(lemma_tac¬¶ y· a < y ± y < x ± (D (k+1) Deriv î¯ 0) y®
+	THEN1 bc_thm_tac rolle_thm);
+(* *** Goal "3.1" *** *)
+a(¶_tac¬D ((k+1)+1)® THEN asm_rewrite_tac[]);
+a(REPEAT strip_tac);
+(* *** Goal "3.1.1" *** *)
+a(DROP_NTH_ASM_T 10 bc_thm_tac
+	THEN REPEAT strip_tac
+	THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
+(* *** Goal "3.1.2" *** *)
+a(DROP_NTH_ASM_T 9 bc_thm_tac
+	THEN REPEAT strip_tac
+	THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
+(* *** Goal "3.1.3" *** *)
+a(DROP_NTH_ASM_T 6 bc_thm_tac
+	THEN REPEAT strip_tac
+	THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
+(* *** Goal "3.2" *** *)
+a(¶_tac ¬y® THEN asm_rewrite_tac[]);
+a(REPEAT strip_tac THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(lemma_tac¬(D (k+1) Deriv D((k+1)+1) y) y®
+	THEN1 (DROP_NTH_ASM_T 10 bc_thm_tac THEN asm_rewrite_tac[]
+		THEN PC_T1 "¯_lin_arith" asm_prove_tac[]));
+a(all_fc_tac[deriv_unique_thm]);
+val Ûgen_rolle_thmÝ = save_pop_thm "gen_rolle_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µn D a b·
+	a < b
+±	(µm x· m ¼ n ± a ¼ x ± x ¼ b ´ D m Cts x)
+±	(µm x· m ¼ n ± a < x ± x < b ´ (D m Deriv D(m+1) x) x)
+±	(µm· m ¼ n ´ D m a = î¯ 0)
+´	¶x· a < x ± x < b
+±	D 0 b = D (n+1) x * (b - a) ^ (n+1) * î¯ ((n+1) !) ›-›1
+®);
+a(REPEAT strip_tac);
+a(lemma_tac¬¶G·µm x·
+	G m = Ìx·
+	D 0 b * (x + ~a) ^ ((n+1)-m) * î¯ (((n+1)-m) !) ›-›1
+	+ ~(D m x) * (b + ~a) ^ (n+1) * î¯ ((n+1) !) ›-›1®
+	THEN1 prove_¶_tac);
+a(lemma_tac¬¶ x· a < x ± x < b ± G (n + 1) x = î¯ 0®);
+(* *** Goal "1" *** *)
+a(bc_thm_tac gen_rolle_thm THEN REPEAT strip_tac);
+(* *** Goal "1.1" *** *)
+a(asm_rewrite_tac[]);
+a(REPEAT (simple_cts_tac THEN REPEAT strip_tac));
+a(LIST_DROP_NTH_ASM_T [7] all_fc_tac);
+(* *** Goal "1.2" *** *)
+a(LIST_DROP_NTH_ASM_T [6] all_fc_tac);
+a(asm_rewrite_tac[]);
+a(DROP_NTH_ASM_T 4 (strip_asm_tac o rewrite_rule[¼_def]));
+a(all_var_elim_asm_tac1);
+a(rewrite_tac[pc_rule1"lin_arith" prove_rule[]
+	¬(m + i) + 1 = i + (m + 1)®]);
+a(rewrite_tac[pc_rule1"lin_arith" prove_rule[]
+	¬i + (m + 1) = (i+1)+m®]);
+a(rewrite_tac[pc_rule1"lin_arith" prove_rule[]
+	¬(i+1)+m = (m+i)+1®]);
+a(RAT_DERIV_T (ante_tac o µ_elim¬D(m+1)x®));
+a(REPEAT (conv_tac(ONCE_MAP_C ¯_anf_conv)));
+a(asm_rewrite_tac[]);
+a(bc_thm_tac(prove_rule[]¬µf a b·a = b ´ (f Deriv a) x ´ (f Deriv b) x®));
+a(rewrite_tac[pc_rule1"¯_lin_arith" prove_rule[]
+	¬µa y z:¯· a * y + y + z = (a + î¯ 1)*y +z®,
+	î¯_plus_homomorphism_thm1]);
+a(rewrite_tac[¯_times_assoc_thm1,
+	factorial_times_recip_thm]);
+(* *** Goal "1.3" *** *)
+a(LIST_DROP_NTH_ASM_T [3] (ALL_FC_T asm_rewrite_tac));
+a(POP_ASM_T(strip_asm_tac o rewrite_rule[¼_def]));
+a(all_var_elim_asm_tac1);
+a(rewrite_tac[pc_rule1"lin_arith" prove_rule[]
+	¬(m + i) + 1 = (i + 1) + m®,
+	¯_î_exp_0_1_thm]);
+(* *** Goal "1.4" *** *)
+a(asm_rewrite_tac[]);
+a(conv_tac(ONCE_MAP_C ¯_anf_conv) THEN strip_tac);
+(* *** Goal "2" *** *)
+a(¶_tac¬x® THEN REPEAT strip_tac);
+a(POP_ASM_T ante_tac THEN asm_rewrite_tac[factorial_def]);
+a(PC_T1 "¯_lin_arith" prove_tac[]);
+val Ûtaylor_lemma1Ý = pop_thm();
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µn f D a b·
+	a < b
+±	D 0 = f
+±	(µ m x· m ¼ n ± a ¼ x ± x ¼ b ´ D m Cts x)
+±	(µ m x· m ¼ n ± a < x ± x < b ´ (D m Deriv D (m + 1) x) x)
+´	¶x· a < x ± x < b
+±	f b =
+	PowerSeries (Ìm· D m a * î¯(m!)›-›1) (n+1) (b-a) +
+	D (n+1) x * (b-a) ^ (n+1) * î¯((n+1)!)›-›1
+®);
+a(PC_T1 "predicates" REPEAT strip_tac THEN all_var_elim_asm_tac1);
+a(lemma_tac¬¶G·µm·
+	G m = Ìx·
+	D m x - PowerSeries (Ìk· D (k+m) a * î¯(k!)›-›1) ((n+1)-m) (x-a)®
+	THEN1 prove_¶_tac);
+a(lemma_tac¬¶ x· a < x ± x < b ±
+	G 0 b = G (n+1) x * (b-a) ^ (n+1)* î¯ ((n+1) !) ›-›1®);
+(* *** Goal "1" *** *)
+a(bc_thm_tac taylor_lemma1 THEN REPEAT strip_tac);
+(* *** Goal "1.1" *** *)
+a(LIST_DROP_NTH_ASM_T[6] all_fc_tac);
+a(asm_rewrite_tac[]);
+a(REPEAT (simple_cts_tac THEN REPEAT strip_tac));
+a(conv_tac(LEFT_C(SIMPLE_Ì_C(RAND_C(un_Â_conv¬x:¯®)))));
+a(bc_thm_tac comp_cts_thm);
+a(REPEAT strip_tac
+	THEN REPEAT (simple_cts_tac THEN REPEAT strip_tac));
+a(bc_thm_tac poly_cts_thm);
+a(rewrite_tac[power_series_def, poly_func_eq_poly_eval_thm]);
+a(¶_tac¬((Ì k· D (k + m) a * î¯ (k !) ›-›1) To ((n + 1) - m))®
+	THEN REPEAT strip_tac);
+(* *** Goal "1.2" *** *)
+a(LIST_DROP_NTH_ASM_T [5] all_fc_tac);
+a(asm_rewrite_tac[]);
+a(DROP_NTH_ASM_T 4 (strip_asm_tac o rewrite_rule[¼_def]));
+a(all_var_elim_asm_tac1);
+a(rewrite_tac[pc_rule1"lin_arith" prove_rule[]
+	¬(m + i) + 1 = (i + 1) + m®]);
+a(DERIV_T (power_series_deriv_coeffs_thm::rat_deriv_thms)
+	(ante_tac o µ_elim¬D(m+1)x®));
+a(asm_rewrite_tac[]);
+a(rewrite_tac[pc_rule1"lin_arith" prove_rule[]
+	¬(i + 1) + m = i + (m + 1)®]);
+a(REPEAT (conv_tac(ONCE_MAP_C ¯_anf_conv)));
+a(rewrite_tac[pc_rule1"lin_arith" prove_rule[]
+	¬µm'·(m' + 1) + m = m' + m + 1®,
+	pc_rule1"¯_lin_arith" prove_rule[]
+	¬µx y z:¯· x * y * z = (y * x) * z®,
+	factorial_times_recip_thm]);
+(* *** Goal "1.3" *** *)
+a(asm_rewrite_tac[]);
+a(POP_ASM_T (strip_asm_tac o rewrite_rule[¼_def]));
+a(all_var_elim_asm_tac1);
+a(rewrite_tac[pc_rule1"lin_arith" prove_rule[]
+	¬(m + i) + 1 = (i + 1) + m®,
+	power_series_0_arg_thm,
+	factorial_def]);
+(* *** Goal "1.4" *** *)
+a(¶_tac¬x® THEN POP_ASM_T ante_tac THEN asm_rewrite_tac[]);
+a(rewrite_tac[power_series_series_thm, series_def]);
+a(PC_T1 "¯_lin_arith" prove_tac[]);
+val Ûtaylor_thmÝ = save_pop_thm "taylor_thm";
 =TEX
 We can now show using the ratio test and some calculations that the usual series
 for the exponential converges for all positive arguments:
@@ -9845,7 +10088,7 @@ a(pure_once_rewrite_tac[prove_rule[]¬µm· î¯(m !) ›-›1 = (Ìm· î¯(m !) ›-›1) m®]);
 a(strip_tac THEN all_fc_tac[power_series_main_thm2]);
 a(POP_ASM_T (strip_asm_tac o rewrite_rule[factorial_def]));
 a(DROP_NTH_ASM_T 3 ante_tac);
-a(rewrite_tac[exp_deriv_coeffs_thm] THEN REPEAT strip_tac);
+a(rewrite_tac[factorial_times_recip_thm] THEN REPEAT strip_tac);
 a(¶_tac¬f®  THEN asm_rewrite_tac[]);
 a(µ_tac THEN LEMMA_T¬f y = df y® asm_rewrite_thm_tac);
 a(bc_thm_tac lim_seq_unique_thm);
@@ -10566,10 +10809,10 @@ a(pure_rewrite_tac[factorial_def]
 a(LEMMA_T¬µn·2*n+3 = 2*(n+1)+1® rewrite_thm_tac THEN1 PC_T1 "lin_arith" prove_tac[]);
 a(rewrite_tac[mod_2_div_2_thm, plus_assoc_thm]);
 a(once_rewrite_tac[pc_rule1"¯_lin_arith" prove_rule[]¬µa b c d:¯·a*b*c*d = c*a*b*d®]);
-a(rewrite_tac[exp_deriv_coeffs_thm]);
+a(rewrite_tac[factorial_times_recip_thm]);
 a(LEMMA_T¬2*(n+1) + 2 = (2*(n+1) + 1) + 1 ± 2*(n+2) = (2*(n+1) + 1) + 1®
 	rewrite_thm_tac THEN1 PC_T1 "lin_arith" prove_tac[]);
-a(rewrite_tac[exp_deriv_coeffs_thm]);
+a(rewrite_tac[factorial_times_recip_thm]);
 a(PC_T1 "¯_lin_arith" prove_tac[]);
 val Ûsin_deriv_coeffs_thmÝ = save_pop_thm "sin_deriv_coeffs_thm";
 =TEX
