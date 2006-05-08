@@ -16,6 +16,7 @@ Contact: Rob Arthan < rda@lemma-one.com >
 \usepackage{ProofPower}
 \usepackage{A4}
 \usepackage{latexsym}
+\usepackage{epsf}
 \def\ZAxDesLabel{}
 \def\ZGenericLabel{}
 \def\ZOtherLabel{}
@@ -399,7 +400,11 @@ A (strict) monoidal category is a category equipped with an associative bifuncto
 ˜¸¸¸¸¸¸
 ‹ µf, g, h : A∑ (f ´âa g) ´âa h = f ´âa (g ´âa h) ;
 ‹ µf : A∑ (f ´âa Iâ´) = (Iâ´ ´âa f) = f ;
-‹ µ X, Y : O∑ X ´âo Y = domâc (idâc X ´âa idâc Y)
+‹ µ X, Y : O∑ X ´âo Y = domâc (idâc X ´âa idâc Y);
+‹ µ X, Y : O∑ idâc X ´âa idâc Y = idâc (X ´âo Y) ;
+‹ µ f, g, p, q : A |
+‹	codâc f = domâc g ± codâc p = domâc q ∑
+‹	(f ªâc g) ´âa (p ªâc q) = (f ´âa p) ªâc (g ´âa q)
 à¸¸¸¸¸¸¸¸¸¸¸¸¸¸
 
 πZ
@@ -531,7 +536,7 @@ It says that if products with identity arrows commute with the trace operator.
 ‹ TRA_MON_CAT_SIG[O, A]
 ˜¸¸¸¸¸¸
 ‹ µ W, X, Y, Z : O; f : A |
-‹	domâc f = W ´âo Z ± codâc f = Y ´âo Z ∑
+‹	domâc f = X ´âo Z ± codâc f = Y ´âo Z ∑ (* not domâc f = W  ´âo Z *)
 ‹	Trc(W ´âo X, W ´âo Y, Z) (idâc W ´âa f) =
 ‹	idâc W ´âa Trc(X, Y, Z) f
 à¸¸¸¸¸¸¸¸¸¸¸¸¸¸
@@ -575,6 +580,17 @@ Finally, we put all these pieces together to complete the definition of a traced
 πZ
 ‹ rel_tra_mon_cat_thm ?Ù [V](RelTraMonCat[V] ç TRA_MON_CAT[Ó, Rel[V]])
 ∞
+
+
+\begin{figure}[p]
+\begin{center}
+\epsffile{wrk075.eps}
+\end{center}
+\caption{The Traced Monoidal Category Axioms}
+\label{tmc_axioms}
+\end{figure}
+
+
 =TEX
 \newpage
 \appendix
@@ -714,7 +730,7 @@ fun €cond_def_thms› (def_thm : THM) = (
 =SML
 val €set_exp_rw_thm› = hd(cond_def_thms set_exp_def);
 val €h_compose_rw_thm› = hd(cond_def_thms h_compose_def);
-val €h_id_rw_thms› = hd(cond_def_thms h_id_def);
+val €h_id_rw_thm› = hd(cond_def_thms h_id_def);
 val €v_compose_rw_thm› = hd(cond_def_thms v_compose_def);
 val €switch_rw_thm› = hd(cond_def_thms switch_def);
 val €patch_rw_thm› = hd(cond_def_thms patch_def);
@@ -1107,115 +1123,6 @@ val €z_plus_Ó_thm› = save_pop_thm "z_plus_Ó_thm";
 %%%%
 
 =SML
-set_goal([], get_conjecture"-" "rel_mon_cat_thm");
-a(rewrite_tac[mon_cat_def, rel_mon_cat_def,
-	rewrite_rule[rel_cat_def] rel_cat_thm, v_compose_def] THEN REPEAT strip_tac);
-(* *** Goal "1" *** *)
-a(PC_T1 "z_library_ext" prove_tac[]
-	THEN_TRY all_var_elim_asm_tac1
-	THEN_TRY PC_T1 "z_lin_arith" asm_prove_tac[]);
-a(z_∂_tacÒx1 + x2Æ THEN rewrite_tac[]);
-a(z_∂_tacÒ(m ¶ x1, n ¶ x2)Æ THEN REPEAT strip_tac);
-(* *** Goal "2" *** *)
-a(LEMMA_TÒ0 º 0Æ asm_tac THEN1 REPEAT strip_tac);
-a(ALL_FC_T rewrite_tac[h_id_ç_rel_thm]);
-(* *** Goal "3" *** *)
-a(strip_asm_tac (±_left_elim (µ_elim¨VÆv_compose_def)));
-a(LEMMA_TÒ(f, g) ç Rel[V] ∏ Rel[V]Æ asm_tac THEN1 REPEAT strip_tac);
-a(LEMMA_TÒ(g, h) ç Rel[V] ∏ Rel[V]Æ asm_tac THEN1 REPEAT strip_tac);
-a(all_fc_tac[z_fun_ç_clauses]);
-a(ALL_FC_T once_rewrite_tac[v_compose_def]);
-a(ALL_FC_T rewrite_tac[v_compose_def]);
-a(rewrite_tac[z_plus_assoc_thm]);
-a(PC_T "z_library_ext" strip_tac THEN REPEAT strip_tac
-	THEN all_var_elim_asm_tac1);
-(* *** Goal "3.1" *** *)
-a(z_∂_tacÒ(a ¶ a', b'' ¶ b' Î b, c ¶ c', d'' ¶ d' Î d)Æ
-	THEN asm_rewrite_tac[]);
-a(all_fc_tac[z_seq_u_thm]);
-a(conv_tac(LEFT_C (PC_C1 "z_sets_ext" rewrite_conv[])));
-a(ALL_FC_T1 fc_§_canon asm_rewrite_tac[z_Î_seq_x_thm,
-	z_Î_assoc_thm]);
-a(z_∂_tacÒ(a ¶ b', b'' ¶ b, c ¶ d', d'' ¶ d)Æ
-	THEN asm_rewrite_tac[]
-	THEN REPEAT strip_tac);
-(* *** Goal "3.2" *** *)
-a(z_∂_tacÒ(a'' ¶ a Î a', b ¶ b', c'' ¶ c Î c', d ¶ d')Æ
-	THEN asm_rewrite_tac[]);
-a(all_fc_tac[z_seq_u_thm]);
-a(conv_tac(LEFT_C (PC_C1 "z_sets_ext" rewrite_conv[])));
-a(ALL_FC_T1 fc_§_canon asm_rewrite_tac[z_Î_seq_x_thm,
-	z_Î_assoc_thm]);
-a(z_∂_tacÒ(a'' ¶ a, b ¶ a', c'' ¶ c, d ¶ c')Æ
-	THEN asm_rewrite_tac[]
-	THEN REPEAT strip_tac);
-(* *** Goal "4" *** *)
-a(LEMMA_TÒ 0 º 0Æ asm_tac THEN1 REPEAT strip_tac);
-a(lemma_tacÒHId[V] 0 ç Rel[V]Æ
-	THEN1 ALL_FC_T rewrite_tac[h_id_ç_rel_thm]);
-a(LEMMA_TÒ(f, HId[V]0) ç Rel[V] ∏ Rel[V]Æ asm_tac
-	THEN1 REPEAT strip_tac);
-a(LEMMA_TÒ(HId[V]0, f) ç Rel[V] ∏ Rel[V]Æ asm_tac
-	THEN1 REPEAT strip_tac);
-a(ALL_FC_T rewrite_tac[v_compose_def]);
-a(ALL_FC_T rewrite_tac[h_id_def]);
-a(rewrite_tac[set_exp_0_thm, id_singleton_thm]);
-a(PC_T "z_library_ext" strip_tac THEN REPEAT strip_tac
-	THEN all_var_elim_asm_tac1);
-(* *** Goal "4.1" *** *)
-a(z_∂_tacÒ(a' ¶ ß¢, b ¶ a, c' ¶ ß¢, d ¶ c)Æ
-	THEN asm_rewrite_tac[]);
-a(conv_tac(LEFT_C (PC_C1 "z_sets_ext" rewrite_conv[])));
-a(asm_rewrite_tac[z_ß¢_seq_thm]);
-a(all_fc_tac[z_seq_u_thm]);
-a(ALL_FC_T rewrite_tac[z_Î_ß¢_thm, z_ß¢_Î_thm]);
-(* *** Goal "4.2" *** *)
-a(z_∂_tacÒ(a ¶ b, b' ¶ ß¢, c ¶ d, d' ¶ ß¢)Æ
-	THEN asm_rewrite_tac[]);
-a(conv_tac(LEFT_C (PC_C1 "z_sets_ext" rewrite_conv[])));
-a(asm_rewrite_tac[z_ß¢_seq_thm]);
-a(all_fc_tac[z_seq_u_thm]);
-a(ALL_FC_T rewrite_tac[z_Î_ß¢_thm, z_ß¢_Î_thm]);
-(* *** Goal "5" *** *)
-a(LEMMA_TÒ 0 º 0Æ asm_tac THEN1 REPEAT strip_tac);
-a(lemma_tacÒHId[V] 0 ç Rel[V]Æ
-	THEN1 ALL_FC_T rewrite_tac[h_id_ç_rel_thm]);
-a(LEMMA_TÒ(HId[V]0, f) ç Rel[V] ∏ Rel[V]Æ asm_tac
-	THEN1 REPEAT strip_tac);
-a(ALL_FC_T rewrite_tac[v_compose_def]);
-a(ALL_FC_T rewrite_tac[h_id_def]);
-a(rewrite_tac[set_exp_0_thm, id_singleton_thm]);
-a(PC_T "z_library_ext" strip_tac THEN REPEAT strip_tac);
-a(PC_T "z_library_ext" strip_tac THEN REPEAT strip_tac
-	THEN1 all_var_elim_asm_tac1);
-(* *** Goal "5.1" *** *)
-a(all_fc_tac[z_seq_u_thm]);
-a(ALL_FC_T asm_rewrite_tac[z_Î_ß¢_thm, z_ß¢_Î_thm]);
-(* *** Goal "5.2" *** *)
-a(z_∂_tacÒ(a ¶ ß¢, b ¶ x1, c ¶ ß¢, d ¶ x2)Æ
-	THEN asm_rewrite_tac[]);
-a(conv_tac(LEFT_C (PC_C1 "z_sets_ext" rewrite_conv[])));
-a(asm_rewrite_tac[z_ß¢_seq_thm]);
-a(all_fc_tac[rel_seq_thm]);
-a(all_fc_tac[z_seq_u_thm]);
-a(ALL_FC_T asm_rewrite_tac[z_Î_ß¢_thm, z_ß¢_Î_thm]);
-(* *** Goal "6" *** *)
-a(ALL_FC_T rewrite_tac[z_plus_Ó_thm]);
-a(lemma_tacÒHId[V] X ç Rel[V] ± HId[V] Y ç Rel[V]Æ
-	THEN1 ALL_FC_T rewrite_tac[h_id_ç_rel_thm]);
-a(LEMMA_TÒ(HId[V] X, HId[V] Y) ç Rel[V] ∏ Rel[V]Æ asm_tac
-	THEN1 REPEAT strip_tac);
-a(strip_asm_tac (±_left_elim (µ_elim¨VÆv_compose_def)));
-a(all_fc_tac[z_fun_ç_clauses]);
-a(conv_tac(ONCE_MAP_C z_¬_conv));
-a(ALL_FC_T rewrite_tac[v_compose_def]);
-a(ALL_FC_T rewrite_tac[h_id_def]);
-val €rel_mon_cat_thm› = save_pop_thm "rel_mon_cat_thm";
-=TEX
-%%%%
-%%%%
-
-=SML
 set_goal([], Ò[V](µm, n : Ó∑ µa : V^m; b : V^n∑ a Î b ç V^(m+n))Æ);
 a(REPEAT strip_tac);
 a(REPEAT_N 2 (POP_ASM_T ante_tac));
@@ -1356,6 +1263,241 @@ a(rename_tac[(Òs2Æ, "ss2")]
 	THEN ALL_FC_T1 fc_§_canon asm_rewrite_tac[z_Î_seq_x_thm]);
 a(asm_rewrite_tac[z_singleton_seq_x_thm]);
 val €z_Î_onto_thm› = save_pop_thm "z_Î_onto_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], get_conjecture"-" "rel_mon_cat_thm");
+a(rewrite_tac[mon_cat_def, rel_mon_cat_def,
+	rewrite_rule[rel_cat_def] rel_cat_thm, v_compose_def] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(PC_T1 "z_library_ext" prove_tac[]
+	THEN_TRY all_var_elim_asm_tac1
+	THEN_TRY PC_T1 "z_lin_arith" asm_prove_tac[]);
+a(z_∂_tacÒx1 + x2Æ THEN rewrite_tac[]);
+a(z_∂_tacÒ(m ¶ x1, n ¶ x2)Æ THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(LEMMA_TÒ0 º 0Æ asm_tac THEN1 REPEAT strip_tac);
+a(ALL_FC_T rewrite_tac[h_id_ç_rel_thm]);
+(* *** Goal "3" *** *)
+a(strip_asm_tac (±_left_elim (µ_elim¨VÆv_compose_def)));
+a(LEMMA_TÒ(f, g) ç Rel[V] ∏ Rel[V]Æ asm_tac THEN1 REPEAT strip_tac);
+a(LEMMA_TÒ(g, h) ç Rel[V] ∏ Rel[V]Æ asm_tac THEN1 REPEAT strip_tac);
+a(all_fc_tac[z_fun_ç_clauses]);
+a(ALL_FC_T once_rewrite_tac[v_compose_def]);
+a(ALL_FC_T rewrite_tac[v_compose_def]);
+a(rewrite_tac[z_plus_assoc_thm]);
+a(PC_T "z_library_ext" strip_tac THEN REPEAT strip_tac
+	THEN all_var_elim_asm_tac1);
+(* *** Goal "3.1" *** *)
+a(z_∂_tacÒ(a ¶ a', b'' ¶ b' Î b, c ¶ c', d'' ¶ d' Î d)Æ
+	THEN asm_rewrite_tac[]);
+a(all_fc_tac[z_seq_u_thm]);
+a(conv_tac(LEFT_C (PC_C1 "z_sets_ext" rewrite_conv[])));
+a(ALL_FC_T1 fc_§_canon asm_rewrite_tac[z_Î_seq_x_thm,
+	z_Î_assoc_thm]);
+a(z_∂_tacÒ(a ¶ b', b'' ¶ b, c ¶ d', d'' ¶ d)Æ
+	THEN asm_rewrite_tac[]
+	THEN REPEAT strip_tac);
+(* *** Goal "3.2" *** *)
+a(z_∂_tacÒ(a'' ¶ a Î a', b ¶ b', c'' ¶ c Î c', d ¶ d')Æ
+	THEN asm_rewrite_tac[]);
+a(all_fc_tac[z_seq_u_thm]);
+a(conv_tac(LEFT_C (PC_C1 "z_sets_ext" rewrite_conv[])));
+a(ALL_FC_T1 fc_§_canon asm_rewrite_tac[z_Î_seq_x_thm,
+	z_Î_assoc_thm]);
+a(z_∂_tacÒ(a'' ¶ a, b ¶ a', c'' ¶ c, d ¶ c')Æ
+	THEN asm_rewrite_tac[]
+	THEN REPEAT strip_tac);
+(* *** Goal "4" *** *)
+a(LEMMA_TÒ 0 º 0Æ asm_tac THEN1 REPEAT strip_tac);
+a(lemma_tacÒHId[V] 0 ç Rel[V]Æ
+	THEN1 ALL_FC_T rewrite_tac[h_id_ç_rel_thm]);
+a(LEMMA_TÒ(f, HId[V]0) ç Rel[V] ∏ Rel[V]Æ asm_tac
+	THEN1 REPEAT strip_tac);
+a(LEMMA_TÒ(HId[V]0, f) ç Rel[V] ∏ Rel[V]Æ asm_tac
+	THEN1 REPEAT strip_tac);
+a(ALL_FC_T rewrite_tac[v_compose_def]);
+a(ALL_FC_T rewrite_tac[h_id_def]);
+a(rewrite_tac[set_exp_0_thm, id_singleton_thm]);
+a(PC_T "z_library_ext" strip_tac THEN REPEAT strip_tac
+	THEN all_var_elim_asm_tac1);
+(* *** Goal "4.1" *** *)
+a(z_∂_tacÒ(a' ¶ ß¢, b ¶ a, c' ¶ ß¢, d ¶ c)Æ
+	THEN asm_rewrite_tac[]);
+a(conv_tac(LEFT_C (PC_C1 "z_sets_ext" rewrite_conv[])));
+a(asm_rewrite_tac[z_ß¢_seq_thm]);
+a(all_fc_tac[z_seq_u_thm]);
+a(ALL_FC_T rewrite_tac[z_Î_ß¢_thm, z_ß¢_Î_thm]);
+(* *** Goal "4.2" *** *)
+a(z_∂_tacÒ(a ¶ b, b' ¶ ß¢, c ¶ d, d' ¶ ß¢)Æ
+	THEN asm_rewrite_tac[]);
+a(conv_tac(LEFT_C (PC_C1 "z_sets_ext" rewrite_conv[])));
+a(asm_rewrite_tac[z_ß¢_seq_thm]);
+a(all_fc_tac[z_seq_u_thm]);
+a(ALL_FC_T rewrite_tac[z_Î_ß¢_thm, z_ß¢_Î_thm]);
+(* *** Goal "5" *** *)
+a(LEMMA_TÒ 0 º 0Æ asm_tac THEN1 REPEAT strip_tac);
+a(lemma_tacÒHId[V] 0 ç Rel[V]Æ
+	THEN1 ALL_FC_T rewrite_tac[h_id_ç_rel_thm]);
+a(LEMMA_TÒ(HId[V]0, f) ç Rel[V] ∏ Rel[V]Æ asm_tac
+	THEN1 REPEAT strip_tac);
+a(ALL_FC_T rewrite_tac[v_compose_def]);
+a(ALL_FC_T rewrite_tac[h_id_def]);
+a(rewrite_tac[set_exp_0_thm, id_singleton_thm]);
+a(PC_T "z_library_ext" strip_tac THEN REPEAT strip_tac);
+a(PC_T "z_library_ext" strip_tac THEN REPEAT strip_tac
+	THEN1 all_var_elim_asm_tac1);
+(* *** Goal "5.1" *** *)
+a(all_fc_tac[z_seq_u_thm]);
+a(ALL_FC_T asm_rewrite_tac[z_Î_ß¢_thm, z_ß¢_Î_thm]);
+(* *** Goal "5.2" *** *)
+a(z_∂_tacÒ(a ¶ ß¢, b ¶ x1, c ¶ ß¢, d ¶ x2)Æ
+	THEN asm_rewrite_tac[]);
+a(conv_tac(LEFT_C (PC_C1 "z_sets_ext" rewrite_conv[])));
+a(asm_rewrite_tac[z_ß¢_seq_thm]);
+a(all_fc_tac[rel_seq_thm]);
+a(all_fc_tac[z_seq_u_thm]);
+a(ALL_FC_T asm_rewrite_tac[z_Î_ß¢_thm, z_ß¢_Î_thm]);
+(* *** Goal "6" *** *)
+a(ALL_FC_T rewrite_tac[z_plus_Ó_thm]);
+a(lemma_tacÒHId[V] X ç Rel[V] ± HId[V] Y ç Rel[V]Æ
+	THEN1 ALL_FC_T rewrite_tac[h_id_ç_rel_thm]);
+a(LEMMA_TÒ(HId[V] X, HId[V] Y) ç Rel[V] ∏ Rel[V]Æ asm_tac
+	THEN1 REPEAT strip_tac);
+a(strip_asm_tac (±_left_elim (µ_elim¨VÆv_compose_def)));
+a(all_fc_tac[z_fun_ç_clauses]);
+a(conv_tac(ONCE_MAP_C z_¬_conv));
+a(ALL_FC_T rewrite_tac[v_compose_def]);
+a(ALL_FC_T rewrite_tac[h_id_def]);
+(* *** Goal "7" *** *)
+a(lemma_tacÒ0 º X + YÆ THEN1 PC_T1 "z_lin_arith" asm_prove_tac[]);
+a(ALL_FC_T rewrite_tac[h_id_def, z_plus_Ó_thm]);
+a(z_cond_rw_tac[v_compose_rw_thm] THEN rewrite_tac[]);
+(* *** Goal "7.1" *** *)
+a(PC_T1"z_sets_ext" once_rewrite_tac[]
+	THEN asm_rewrite_tac[ç_rel_thm,
+		pc_rule1 "z_rel_ext" prove_rule[]
+		ÒµA:É∑ id A ç A ™ AÆ]);
+(* *** Goal "7.2" *** *)
+a(REPEAT_N 3(PC_T1"z_sets_ext" once_rewrite_tac[])
+	THEN REPEAT strip_tac);
+(* *** Goal "7.2.1" *** *)
+a(all_fc_tac[pc_rule1 "z_library_ext" prove_rule[]Ò
+	µA:É;x:É; y:É|(x, y) ç id A ∑y = xÆ]
+	THEN all_var_elim_asm_tac1);
+a(PC_T1 "z_library_ext" once_rewrite_tac[]
+	THEN rewrite_tac[]);
+a(bc_thm_tac Î_set_exp_bc_thm THEN asm_rewrite_tac[]);
+a(ALL_FC_T rewrite_tac[pc_rule1 "z_library_ext" prove_rule[]Ò
+	µA:É;x:É; y:É|(x, y) ç id A ∑x ç AÆ]);
+(* *** Goal "7.2.2" *** *)
+a(all_fc_tac[pc_rule1 "z_library_ext" prove_rule[]Ò
+	µA:É;x:É; y:É|(x, y) ç id A ∑y = x ± y ç AÆ]
+	THEN all_var_elim_asm_tac1);
+a(swap_nth_asm_concl_tac 1 THEN ALL_FC_T rewrite_tac[z_gen_pred_u_elim set_exp_def]
+	THEN swap_nth_asm_concl_tac 1);
+a(all_fc_tac[z_Î_onto_thm] THEN all_var_elim_asm_tac1
+	THEN strip_tac);
+a(z_∂_tacÒ(a¶s1, b¶s2, c¶s1, d¶s2)Æ THEN asm_rewrite_tac[]);
+a(PC_T1 "z_library_ext" once_rewrite_tac[]
+	THEN asm_rewrite_tac[]);
+a(ALL_FC_T asm_rewrite_tac[z_gen_pred_u_elim set_exp_def]);
+(* *** Goal "8" *** *)
+a(REPEAT_N 2 (POP_ASM_T ante_tac));
+a(conv_tac(ONCE_MAP_C z_¬_conv) THEN REPEAT strip_tac);
+a(z_cond_rw_tac[v_compose_rw_thm, h_compose_rw_thm] THEN asm_rewrite_tac[]);
+(* *** Goal "8.1" *** *)
+a(REPEAT strip_tac);
+(* *** Goal "8.2" *** *)
+a(PC_T1 "z_sets_ext" asm_rewrite_tac[]);
+a(all_asm_ante_tac THEN rewrite_tac[ç_rel_thm]);
+a(REPEAT_UNTIL is_± strip_tac);
+a(LIST_DROP_NTH_ASM_T [1, 2] (fn ths =>
+	all_asm_ante_tac THEN rewrite_tac ths));
+a(REPEAT strip_tac THEN_TRY asm_rewrite_tac[]
+	THEN_TRY PC_T1 "z_lin_arith" asm_prove_tac[]
+	THEN_TRY ALL_FC_T rewrite_tac[pc_rule1"z_library_ext" prove_rule[]Ò
+	µr, s:É; A, B, C:É| r ç A ™ B ± s ç B ™ C∑ rªs ç A ™ CÆ]);
+(* *** Goal "8.2.1" *** *)
+a(REPEAT_N 3 (PC_T1 "z_library_ext" once_rewrite_tac[])
+	THEN REPEAT strip_tac
+	THEN all_var_elim_asm_tac1);
+(* *** Goal "8.2.1.1" *** *)
+a(bc_thm_tac Î_set_exp_bc_thm THEN asm_rewrite_tac[]);
+a(ALL_FC_T rewrite_tac[pc_rule1 "z_library_ext" prove_rule[]Ò
+	µA:É; B:É; r:É;x:É; y:É|(x, y) ç r ± r ç A ™ B∑x ç A ± y ç BÆ]);
+(* *** Goal "8.2.1.2" *** *)
+a(bc_thm_tac Î_set_exp_bc_thm THEN asm_rewrite_tac[]);
+a(ALL_FC_T rewrite_tac[pc_rule1 "z_library_ext" prove_rule[]Ò
+	µA:É; B:É; r:É;x:É; y:É|(x, y) ç r ± r ç A ™ B∑x ç A ± y ç BÆ]);
+(* *** Goal "8.2.2" *** *)
+a(REPEAT_N 3 (PC_T1 "z_library_ext" once_rewrite_tac[])
+	THEN REPEAT strip_tac
+	THEN all_var_elim_asm_tac1);
+(* *** Goal "8.2.2.1" *** *)
+a(bc_thm_tac Î_set_exp_bc_thm THEN asm_rewrite_tac[]);
+a(ALL_FC_T rewrite_tac[pc_rule1 "z_library_ext" prove_rule[]Ò
+	µA:É; B:É; r:É;x:É; y:É|(x, y) ç r ± r ç A ™ B∑x ç A ± y ç BÆ]);
+(* *** Goal "8.2.2.2" *** *)
+a(bc_thm_tac Î_set_exp_bc_thm THEN asm_rewrite_tac[]);
+a(ALL_FC_T rewrite_tac[pc_rule1 "z_library_ext" prove_rule[]Ò
+	µA:É; B:É; r:É;x:É; y:É|(x, y) ç r ± r ç A ™ B∑x ç A ± y ç BÆ]);
+(* *** Goal "8.3" *** *)
+a(REPEAT_N 3 (PC_T1 "z_library_ext" once_rewrite_tac[])
+	THEN REPEAT strip_tac
+	THEN all_var_elim_asm_tac1);
+(* *** Goal "8.3.1" *** *)
+a(REPEAT_N 2 (POP_ASM_T ante_tac));
+a(PC_T1 "z_library_ext" once_rewrite_tac[]
+	THEN REPEAT strip_tac);
+a(z_∂_tacÒy Î y'Æ THEN asm_rewrite_tac[]
+	THEN REPEAT strip_tac);
+(* *** Goal "8.3.1.1" *** *)
+a(z_∂_tacÒ(a'¶a, b'¶b, c¶y, d¶y')Æ THEN asm_rewrite_tac[]);
+a(DROP_NTH_ASM_T 14 (strip_asm_tac o rewrite_rule[ç_rel_thm]));
+a(DROP_NTH_ASM_T 15 (strip_asm_tac o rewrite_rule[ç_rel_thm]));
+a(ALL_FC_T (MAP_EVERY ante_tac)[pc_rule1 "z_library_ext" prove_rule[]Ò
+	µA:É; B:É; r:É;x:É; y:É|(x, y) ç r ± r ç A ™ B∑y ç BÆ]);
+a(ALL_FC_T rewrite_tac[z_gen_pred_u_elim set_exp_def]);
+a(PC_T1 "z_library_ext" once_rewrite_tac[]
+	THEN REPEAT strip_tac);
+(* *** Goal "8.3.1.2" *** *)
+a(z_∂_tacÒ(a¶y, b¶y', c'¶c, d'¶d)Æ THEN asm_rewrite_tac[]);
+a(DROP_NTH_ASM_T 14 (strip_asm_tac o rewrite_rule[ç_rel_thm]));
+a(DROP_NTH_ASM_T 15 (strip_asm_tac o rewrite_rule[ç_rel_thm]));
+a(ALL_FC_T (MAP_EVERY ante_tac)[pc_rule1 "z_library_ext" prove_rule[]Ò
+	µA:É; B:É; r:É;x:É; y:É|(x, y) ç r ± r ç A ™ B∑y ç BÆ]);
+a(ALL_FC_T rewrite_tac[z_gen_pred_u_elim set_exp_def]);
+a(PC_T1 "z_library_ext" once_rewrite_tac[]
+	THEN REPEAT strip_tac);
+(* *** Goal "8.3.2" *** *)
+a(lemma_tacÒa' = c ± b' = dÆ);
+a(DROP_NTH_ASM_T 17 (strip_asm_tac o rewrite_rule[ç_rel_thm]));
+a(ALL_FC_T (MAP_EVERY ante_tac)[pc_rule1 "z_library_ext" prove_rule[]Ò
+	µA:É; B:É; r:É;x:É; y:É|(x, y) ç r ± r ç A ™ B∑y ç BÆ]);
+a(LIST_DROP_NTH_ASM_T [1, 2, 3] discard_tac);
+a(DROP_NTH_ASM_T 16 (strip_asm_tac o rewrite_rule[ç_rel_thm]));
+a(ALL_FC_T (MAP_EVERY ante_tac)[pc_rule1 "z_library_ext" prove_rule[]Ò
+	µA:É; B:É; r:É;x:É; y:É|(x, y) ç r ± r ç A ™ B∑x ç AÆ]);
+a(LIST_DROP_NTH_ASM_T [1, 3] discard_tac);
+a(ALL_FC_T asm_rewrite_tac[z_gen_pred_u_elim set_exp_def]);
+a(REPEAT_N 2 strip_tac THEN lemma_tacÒ#b' = #dÆ
+	THEN1 asm_rewrite_tac[]);
+a(all_fc_tac[z_seq_u_thm]);
+a(LIST_DROP_NTH_ASM_T [1, 2, 7, 8] discard_tac);
+a(ALL_FC_T rewrite_tac[z_Î_one_one_thm1]);
+(* *** Goal "8.3.2.2" *** *)
+a(all_var_elim_asm_tac1);
+a(z_∂_tacÒ(a'¶a, b'¶b, c¶c', d¶d')Æ THEN asm_rewrite_tac[]);
+a(PC_T1 "z_library_ext" once_rewrite_tac[]
+	THEN REPEAT strip_tac);
+(* *** Goal "8.3.2.1" *** *)
+a(z_∂_tacÒcÆ THEN asm_rewrite_tac[]);
+(* *** Goal "8.3.2.2" *** *)
+a(z_∂_tacÒdÆ THEN asm_rewrite_tac[]);
+val €rel_mon_cat_thm› = save_pop_thm "rel_mon_cat_thm";
 =TEX
 %%%%
 %%%%
@@ -2008,7 +2150,6 @@ val €rel_tra_mon_cat_nat_thm› = save_pop_thm "rel_tra_mon_cat_nat_thm";
 %%%%
 
 =SML
-(*
 set_goal([], Ò[V](RelTraMonCat[V] ç TRA_MON_CAT_VAN[Ó, Rel[V]])Æ);
 a(rewrite_tac[tra_mon_cat_van_def,
 	rel_tra_mon_cat_def,
@@ -2016,27 +2157,232 @@ a(rewrite_tac[tra_mon_cat_van_def,
 		rel_tra_mon_cat_sig_thm]
 	THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
-
-
+a(REPEAT_N 2 (POP_ASM_T ante_tac));
+a(strip_asm_tac(z_µ_elimÒ0Æ(µ_elimÒVÆh_id_ç_rel_thm)));
+a(conv_tac(ONCE_MAP_C z_¬_conv) THEN REPEAT strip_tac);
+a(z_cond_rw_tac[trace_rw_thm, v_compose_rw_thm, h_id_rw_thm]
+	THEN asm_rewrite_tac[]
+	THEN REPEAT strip_tac
+	THEN_TRY asm_rewrite_tac[ç_rel_thm]);
+(* *** Goal "1.1" (duplicating "1.3") *** *)
+a(rewrite_tac[pc_rule1 "z_library_ext" prove_rule[]Ò
+	µA : É∑id A ç A ™ AÆ]);
+(* *** Goal "1.2" *** *)
+a(REPEAT_N 3(PC_T1 "z_library_ext" once_rewrite_tac[])
+	THEN REPEAT_UNTIL is_± strip_tac);
+a(DROP_NTH_ASM_T 3 ante_tac);
+a(rewrite_tac[set_exp_0_thm, id_singleton_thm]);
+a(REPEAT_UNTIL is_± strip_tac THEN all_var_elim_asm_tac1);
+a(ALL_FC_T rewrite_tac[z_Î_ß¢_thm]);
+a(DROP_NTH_ASM_T 6 (strip_asm_tac o rewrite_rule[ç_rel_thm]));
+a(ALL_FC_T rewrite_tac[pc_rule1 "z_library_ext" prove_rule[]Ò
+	µA:É; B:É; r:É;x:É; y:É|(x, y) ç r ± r ç A ™ B∑x ç A ± y ç BÆ]);
+(* *** Goal "1.4" (1.3 duplicated 1.1) *** *)
+a(PC_T1 "z_library_ext" once_rewrite_tac[]
+	THEN asm_rewrite_tac[]);
+a(PC_T1 "z_library_ext" once_rewrite_tac[]
+	THEN asm_rewrite_tac[]
+	THEN REPEAT strip_tac);
+(* *** Goal "1.4.2" *** *)
+a(LIST_DROP_NTH_ASM_T [3, 9] (MAP_EVERY ante_tac));
+a(rewrite_tac[id_singleton_thm, set_exp_0_thm]);
+a(REPEAT strip_tac THEN all_var_elim_asm_tac1);
+a(LIST_DROP_NTH_ASM_T [7, 8] (MAP_EVERY ante_tac));
+a(ALL_FC_T rewrite_tac[z_gen_pred_u_elim set_exp_def]
+	THEN REPEAT strip_tac);
+a(LIST_DROP_NTH_ASM_T [5, 6] (MAP_EVERY ante_tac));
+a(ALL_FC_T rewrite_tac[z_Î_ß¢_thm]);
+a(contr_tac THEN all_var_elim_asm_tac1);
+(* *** Goal "1.4.2" *** *)
+a(DROP_NTH_ASM_T 5 (ante_tac o rewrite_rule[ç_rel_thm]));
+a(asm_rewrite_tac[] THEN REPEAT strip_tac);
+a(ALL_FC_T rewrite_tac[pc_rule1 "z_library_ext" prove_rule[]Ò
+	µA:É; B:É; r:É;x:É; y:É|(x, y) ç r ± r ç A ™ B∑x ç A ± y ç BÆ]);
+(* *** Goal "1.4.3" *** *)
+a(DROP_NTH_ASM_T 5 (ante_tac o rewrite_rule[ç_rel_thm]));
+a(asm_rewrite_tac[] THEN REPEAT strip_tac);
+a(ALL_FC_T rewrite_tac[pc_rule1 "z_library_ext" prove_rule[]Ò
+	µA:É; B:É; r:É;x:É; y:É|(x, y) ç r ± r ç A ™ B∑x ç A ± y ç BÆ]);
+(* *** Goal "1.4.4" *** *)
+a(z_∂_tacÒß¢Æ THEN rewrite_tac[set_exp_0_thm]);
+a(z_∂_tacÒ(a'¶x1, b'¶ß¢, c'¶x2, d¶ß¢)Æ THEN asm_rewrite_tac[id_singleton_thm]);
+a(DROP_NTH_ASM_T 5 (strip_asm_tac o rewrite_rule[ç_rel_thm]));
+a(ALL_FC_T (MAP_EVERY ante_tac)[pc_rule1 "z_library_ext" prove_rule[]Ò
+	µA:É; B:É; r:É;x:É; y:É|(x, y) ç r ± r ç A ™ B∑x ç A ± y ç BÆ]);
+a(PC_T1 "z_library_ext" once_rewrite_tac[]);
+a(ALL_FC_T rewrite_tac[z_gen_pred_u_elim set_exp_def]);
+a(rewrite_tac[z_ß¢_seq_thm] THEN taut_tac);
+(* *** Goal "2" *** *)
+a(REPEAT_N 2 (POP_ASM_T ante_tac));
+a(lemma_tacÒX + W ç Ó ± Y + W ç ÓÆ THEN1 PC_T1 "z_lin_arith" asm_prove_tac[]);
+a(ALL_FC_T rewrite_tac[z_plus_Ó_thm]);
+a(conv_tac(ONCE_MAP_C z_¬_conv) THEN REPEAT strip_tac);
+a(z_cond_rw_tac[trace_rw_thm, v_compose_rw_thm]
+	THEN asm_rewrite_tac[ç_rel_thm]
+	THEN REPEAT strip_tac
+	THEN_TRY PC_T1 "z_lin_arith" asm_prove_tac[]);
+(* *** Goal "2.1" *** *)
+a(REPEAT_N 3 (PC_T1 "z_library_ext" once_rewrite_tac[]));
+a(REPEAT strip_tac);
+(* *** Goal "2.2" *** *)
+a(REPEAT_N 2 (PC_T1 "z_library_ext" once_rewrite_tac[])
+	THEN REPEAT strip_tac);
+(* *** Goal "2.2.1" *** *)
+a(lemma_tacÒW + Z ç ÓÆ THEN1 PC_T1 "z_lin_arith" asm_prove_tac[]);
+a(swap_nth_asm_concl_tac 3
+	THEN LIST_GET_NTH_ASM_T [4, 5] (MAP_EVERY ante_tac)
+	THEN ALL_FC_T rewrite_tac[z_gen_pred_u_elim set_exp_def]
+	THEN swap_nth_asm_concl_tac 1);
+a(REPEAT strip_tac THEN all_fc_tac[z_Î_onto_thm]);
+a(all_var_elim_asm_tac1 THEN z_∂_tacÒs1Æ THEN asm_rewrite_tac[]);
+a(lemma_tacÒs1 ç V ^ # s1Æ THEN1
+	ALL_FC_T asm_rewrite_tac[z_gen_pred_u_elim set_exp_def]);
+a(ALL_FC_T asm_rewrite_tac[Î_set_exp_thm]);
+a(z_∂_tacÒs2Æ THEN ALL_FC_T asm_rewrite_tac[z_gen_pred_u_elim set_exp_def]);
+a(all_fc_tac[z_seq_u_thm]);
+a(ALL_FC_T asm_rewrite_tac[z_Î_assoc_thm]);
+(* *** Goal "2.2.2" *** *)
+a(z_∂_tacÒc Î c'Æ THEN ALL_FC_T asm_rewrite_tac[Î_set_exp_thm]);
+a(LIST_DROP_NTH_ASM_T [2, 5, 6, 7] (MAP_EVERY ante_tac)
+	THEN ALL_FC_T rewrite_tac[z_gen_pred_u_elim set_exp_def]
+	THEN REPEAT strip_tac);
+a(DROP_NTH_ASM_T 9 ante_tac THEN all_fc_tac[z_seq_u_thm]);
+a(ALL_FC_T asm_rewrite_tac[z_Î_assoc_thm]);
 val €rel_tra_mon_cat_van_thm› = save_pop_thm "rel_tra_mon_cat_van_thm";
-*)
 =TEX
 %%%%
 %%%%
 
 =SML
-(*
 set_goal([], Ò[V](RelTraMonCat[V] ç TRA_MON_CAT_SUP[Ó, Rel[V]])Æ);
 a(rewrite_tac[tra_mon_cat_sup_def,
 	rel_tra_mon_cat_def,
 	rewrite_rule[rel_tra_mon_cat_def]
 		rel_tra_mon_cat_sig_thm]
 	THEN REPEAT strip_tac);
+a(REPEAT_N 2 (POP_ASM_T ante_tac));
+a(lemma_tacÒW + X ç Ó ± W + Y ç ÓÆ THEN1 PC_T1 "z_lin_arith" asm_prove_tac[]);
+a(ALL_FC_T rewrite_tac[z_plus_Ó_thm]);
+a(conv_tac(ONCE_MAP_C z_¬_conv) THEN REPEAT strip_tac);
+a(z_cond_rw_tac[trace_rw_thm, v_compose_rw_thm, h_id_rw_thm]
+	THEN asm_rewrite_tac[]
+	THEN REPEAT strip_tac
+	THEN_TRY asm_rewrite_tac[ç_rel_thm,
+		pc_rule1 "z_rel_ext" prove_rule[]
+		ÒµA:É∑ id A ç A ™ AÆ,
+		ç_rel_thm]
+	THEN REPEAT strip_tac
+	THEN_TRY PC_T1 "z_lin_arith" asm_prove_tac[]);
 (* *** Goal "1" *** *)
-
-
+a(REPEAT_N 3 (PC_T1 "z_library_ext" once_rewrite_tac[]));
+a(REPEAT strip_tac THEN all_var_elim_asm_tac1);
+(* *** Goal "1.1" *** *)
+a(bc_thm_tac Î_set_exp_bc_thm);
+a(strip_tac THEN1 REPEAT strip_tac);
+a(strip_tac THEN1 PC_T1 "z_lin_arith" asm_prove_tac[]);
+a(strip_tac THEN1 all_fc_tac [pc_rule1 "z_library_ext" prove_rule[]Ò
+	µA:É;x:É; y:É|(x, y) ç id A ∑x ç AÆ]);
+a(DROP_NTH_ASM_T 11 (strip_asm_tac o rewrite_rule[ç_rel_thm]));
+a(ALL_FC_T (MAP_EVERY ante_tac) [pc_rule1 "z_library_ext" prove_rule[]Ò
+	µA:É; B:É; r:É;x:É; y:É|(x, y) ç r ± r ç A ™ B∑x ç AÆ]);
+a(asm_rewrite_tac[]);
+(* *** Goal "1.2" *** *)
+a(bc_thm_tac Î_set_exp_bc_thm);
+a(strip_tac THEN1 REPEAT strip_tac);
+a(strip_tac THEN1 PC_T1 "z_lin_arith" asm_prove_tac[]);
+a(strip_tac THEN1 all_fc_tac [pc_rule1 "z_library_ext" prove_rule[]Ò
+	µA:É;x:É; y:É|(x, y) ç id A ∑y ç AÆ]);
+a(DROP_NTH_ASM_T 11 (strip_asm_tac o rewrite_rule[ç_rel_thm]));
+a(ALL_FC_T (MAP_EVERY ante_tac) [pc_rule1 "z_library_ext" prove_rule[]Ò
+	µA:É; B:É; r:É;x:É; y:É|(x, y) ç r ± r ç A ™ B∑y ç BÆ]);
+a(asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(REPEAT_N 3 (PC_T1 "z_library_ext" once_rewrite_tac[]));
+a(REPEAT strip_tac);
+(* *** Goal "3" *** *)
+a(REPEAT_N 2 (PC_T1 "z_library_ext" once_rewrite_tac[]));
+a(REPEAT strip_tac);
+(* *** Goal "3.1" *** *)
+a(all_fc_tac[pc_rule1 "z_library_ext" prove_rule[]Ò
+	µA:É; x, y:É|(x, y) ç id A∑y = x ± y ç AÆ]
+	THEN all_var_elim_asm_tac);
+a(swap_nth_asm_concl_tac 1
+	THEN LIST_GET_NTH_ASM_T [9, 10, 11] (MAP_EVERY ante_tac)
+	THEN ALL_FC_T rewrite_tac[z_gen_pred_u_elim set_exp_def]
+	THEN swap_nth_asm_concl_tac 1);
+a(REPEAT strip_tac THEN rewrite_tac[]
+	THEN all_fc_tac[z_Î_onto_thm]
+	THEN all_var_elim_asm_tac1);
+a(POP_ASM_T (strip_asm_tac o eq_sym_rule));
+a(lemma_tac Òa' Î b' = s1' Î (s2' Î c)Æ
+	THEN1 (all_fc_tac[z_seq_u_thm]
+		THEN ALL_FC_T asm_rewrite_tac[z_Î_assoc_thm]));
+a(DROP_NTH_ASM_T 14 discard_tac);
+a(DROP_NTH_ASM_T 26 (strip_asm_tac o rewrite_rule[ç_rel_thm]));
+a(all_fc_tac [pc_rule1 "z_library_ext" prove_rule[]Ò
+	µA:É; B:É; r:É;x:É; y:É|(x, y) ç r ± r ç A ™ B∑x ç A ± y ç BÆ]);
+a(swap_nth_asm_concl_tac 1
+	THEN DROP_NTH_ASM_T 2 ante_tac
+	THEN ALL_FC_T asm_rewrite_tac[z_gen_pred_u_elim set_exp_def]
+	THEN swap_nth_asm_concl_tac 1);
+a(lemma_tacÒ# b' = # (s2' Î c)Æ
+	THEN1 (all_fc_tac[z_seq_u_thm]
+		THEN ALL_FC_T asm_rewrite_tac[z_size_Î_thm]));
+a(lemma_tacÒs2' ç (seq_) ± c ç (seq_)Æ
+	THEN1 ALL_FC_T rewrite_tac[z_seq_u_thm]);
+a(lemma_tacÒs2' Î c ç (seq_)Æ THEN1 all_fc_tac[z_Î_ç_seq_thm]);
+a(LIST_DROP_NTH_ASM_T[2, 3] discard_tac);
+a(lemma_tacÒa' ç (seq_) ± b' ç (seq_) ± s1' ç (seq_) Æ
+	THEN1 ALL_FC_T rewrite_tac[z_seq_u_thm]);
+a(lemma_tacÒa' = s1' ± b' = (s2' Î c)Æ
+	THEN1 ALL_FC_T rewrite_tac[z_Î_one_one_thm1]);
+a(all_var_elim_asm_tac1);
+a(LIST_DROP_NTH_ASM_T[1, 2] discard_tac);
+a(REPEAT strip_tac THEN rewrite_tac[]);
+a(strip_asm_tac(z_µ_elimÒ(s ¶ d, m ¶ #s2, n ¶ #c)Æ(µ_elim¨VÆ z_Î_onto_thm))
+	THEN all_var_elim_asm_tac1);
+a(lemma_tac Òs1' Î (s1'' Î s2'') = s1 Î (s2 Î c)Æ
+	THEN1 (all_fc_tac[z_seq_u_thm]
+		THEN ALL_FC_T asm_rewrite_tac[z_Î_assoc_thm]));
+a(lemma_tacÒs1' ç (seq_) ± s1 ç (seq_) ± s2 ç (seq_) ± c ç (seq_)Æ
+	THEN1 ALL_FC_T rewrite_tac[z_seq_u_thm]);
+a(lemma_tacÒ# (s1'' Î s2'') = # (s2 Î c)Æ
+	THEN1 ALL_FC_T asm_rewrite_tac[z_size_Î_thm]);
+a(lemma_tacÒs1'' Î s2'' ç (seq_) ± (s2 Î c) ç (seq_)Æ THEN1 ALL_FC_T rewrite_tac[z_Î_ç_seq_thm]);
+a(LIST_DROP_NTH_ASM_T [4, 5] discard_tac);
+a(all_fc_tac[z_Î_one_one_thm1] THEN all_var_elim_asm_tac1);
+a(LIST_DROP_NTH_ASM_T [2, 3, 4, 5] discard_tac);
+a(lemma_tacÒs1'' ç (seq_) ± s2'' ç (seq_) ± s2 ç (seq_) ± c ç (seq_)Æ
+	THEN1 ALL_FC_T rewrite_tac[z_seq_u_thm]);
+a(rename_tac[(Òs2Æ, "e")] THEN all_fc_tac[z_Î_one_one_thm1] THEN all_var_elim_asm_tac1);
+a(z_∂_tacÒ(a¶s1, b¶s2', c'¶s1, d¶e)Æ THEN asm_rewrite_tac[]);
+a(PC_T1 "z_library_ext" once_rewrite_tac[]
+	THEN ALL_FC_T asm_rewrite_tac[z_gen_pred_u_elim set_exp_def]);
+a(z_∂_tacÒcÆ THEN asm_rewrite_tac[]);
+(* *** Goal "3.2" *** *)
+a(all_var_elim_asm_tac1 THEN bc_thm_tac Î_set_exp_bc_thm);
+a(REPEAT strip_tac);
+a(all_fc_tac [pc_rule1 "z_library_ext" prove_rule[]Ò
+	µA:É;x:É; y:É|(x, y) ç id A ∑x ç AÆ]);
+(* *** Goal "3.3" *** *)
+a(all_var_elim_asm_tac1 THEN bc_thm_tac Î_set_exp_bc_thm);
+a(REPEAT strip_tac);
+a(all_fc_tac [pc_rule1 "z_library_ext" prove_rule[]Ò
+	µA:É;x:É; y:É|(x, y) ç id A ∑y ç AÆ]);
+(* *** Goal "3.4" *** *)
+a(all_fc_tac[pc_rule1 "z_library_ext" prove_rule[]Ò
+	µA:É; x, y:É|(x, y) ç id A∑y = x ± y ç AÆ]
+	THEN all_var_elim_asm_tac);
+a(z_∂_tacÒc'Æ THEN all_var_elim_asm_tac1 THEN REPEAT strip_tac);
+a(z_∂_tacÒ(a'¶a, b'¶b Î c', c''¶a, d'¶d Î c')Æ THEN asm_rewrite_tac[]);
+a(LEMMA_T Òb Î c' ç V^(X+Z) ± d Î c' ç V^(Y+Z)Æ ante_tac
+	THEN1 (REPEAT strip_tac THEN bc_thm_tac Î_set_exp_bc_thm THEN REPEAT strip_tac));
+a(DROP_NTH_ASM_T 3 ante_tac);
+a(lemma_tacÒX + Z ç Ó ± Y + Z ç ÓÆ THEN1 PC_T1 "z_lin_arith" asm_prove_tac[]);
+a(ALL_FC_T rewrite_tac[z_gen_pred_u_elim set_exp_def]);
+a(REPEAT strip_tac THEN all_fc_tac[z_seq_u_thm]
+	THEN ALL_FC_T rewrite_tac[z_Î_assoc_thm]);
 val €rel_tra_mon_cat_sup_thm› = save_pop_thm "rel_tra_mon_cat_sup_thm";
-*)
 =TEX
 %%%%
 %%%%
@@ -2098,27 +2444,15 @@ val €tra_mon_cat_rw_thm› = save_pop_thm "tra_mon_cat_rw_thm";
 %%%%
 
 =SML
-(*
 set_goal([], get_conjecture"-" "rel_tra_mon_cat_thm");
 a(rewrite_tac[tra_mon_cat_rw_thm]);
 a(rewrite_tac[rel_tra_mon_cat_sig_thm,
 	rel_tra_mon_cat_dom_thm,
 	rel_tra_mon_cat_nat_thm,
-	rel_tra_mon_cat_yan_thm]);
-
-(* *** Goal "1" *** *)
-(* *** Goal "4" *** *)
-a(REPEAT_N 4 (POP_ASM_T ante_tac));
-a(ALL_FC_T rewrite_tac[z_plus_Ó_thm]);
-a(conv_tac(ONCE_MAP_C z_¬_conv));
-a(REPEAT strip_tac);
-
-
-
-set_labelled_goal "10" ;
-
+	rel_tra_mon_cat_yan_thm,
+	rel_tra_mon_cat_sup_thm,
+	rel_tra_mon_cat_van_thm]);
 val €rel_tra_mon_cat_thm› = save_pop_thm "rel_tra_mon_cat_thm";
-*)
 =TEX
 \section{Epilogue}
 =SML
