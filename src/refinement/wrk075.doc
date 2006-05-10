@@ -22,17 +22,19 @@ Contact: Rob Arthan < rda@lemma-one.com >
 \def\ZOtherLabel{}
 \def\ZSchemaLabel{}
 \def\Hide#1{\relax}
-\title{On Precondition Calculation in a Traced Monoidal Category \\ (DRAFT)}
+\title{A Traced Monoidal Category of Relations\\ (DRAFT)}
 \author{R.D. Arthan}
 \makeindex
 \begin{document}
 \maketitle
 \section{Introduction}\label{Intro}
 
-This note is the third in a nseries concerned with specification via
+This note is the third in a series concerned with specification via
 pre- and post-conditions.
-It applies the general notion of specification and refinement given in the first note in the series
-\cite{LEMMA1/ZED/WRK069} to systems formed by wiring together primitive building blocks.
+It sets up a generic framework for systems formed by wiring together primitive building block.
+Such systems will be modelled as relations using existentially quantified equations for the fixed points that correspond to feedback loops in the wiring diagram.
+The approach is based on the notion of traced monoidal categories, e.g., see~\cite{Hasegawa03}.
+The category-phobic reader should not despair as the discussion here is self-contained, and the relatively simple ideas that fall under this fancy name do provide a very nice general ``syntax'' for use in thinking about diagrammatic models.
 
 \Hide{
 The following ML sets up a context for giving the {\ProductZ} specifications.
@@ -49,185 +51,98 @@ ReaderWriterSupport.PrettyNames.add_new_symbols[
 =TEX
 }
 
-The Z specification uses infix or postfix notation for the following function symbol (in addition to those defined in the first note).
-¹Z
-Ü function 50  _ ^ _
-°
+\section{TRACED MONOIDAL CATEGORIES}
+In this section we formalise the notion of a traced monoidal category.
+The reader can think of this as just providing a convenient syntax for expressing diagrams of components connected by ``wires'' of some sort, together with a set of algebraic relations expressing some evident identities that ought to hold in such diagrams.
+
+As an example, consider what one can call the {\em Kirchhoff category} which models a class of electrical circuits.
+Some building blocks for these circuits are shown in figure~\ref{kir_blks} on~\pageref{kir_blks}.
+Here one should think of the nodes labelled $X_i$ as inputs and of those labelled $Y_j$ as outputs.
+The values of these labels range over some set of names.
+Circuits are constructed by wiring together inputs and outputs (and deleting the labels on the resulting internal nodes).
+The resistor building block is labelled with a non-negative real number $R$ giving its resistance in ohms.
 
 
-%\newpage
-\section{A CATEGORY OF RELATIONS}
 
-We are going to work with systems of relations that can naturally be expressed diagrammatically.
-The elements of the diagrams are called {\em boxes} and {\em wires}.
-A box with $m$ inputs and $n$ outputs represents a relation between $V^m$ and $V^n$ for some suitable value domain $V$.
-The produce new relations from old by adding equational constraints.
-The diagrams need not form directed graphs: feedback loops are allowed and correspond to existential quantification.
+\begin{figure}
+\begin{center}
+\epsffile{wrk075f.eps}
+\end{center}
+\caption{Kirchhoff Category: Some Building Blocks}
+\label{kir_blks}
+\end{figure}
 
+The laws of Kirchhoff and Ohm imply relationships that must hold between the voltages, $V_{X_i}$, $V_{Y_k}$, and currents, $I_{X_i}$, $I_{Y_k}$,  that obtain at the labelled nodes in a physical realisation of a circuit. Taking the sense of current flow so that the nodes labelled $X_i$ act as positive current sources, the four building blocks of figure~\ref{kir_blks} impose the following constraints:
 
-Our approach to the syntax and semantics of diagrams is informed by the idea of a traced monoidal category.
-The idea is that diagrams correspond to functor expressions in such a category.  Composition in the category corresponds to wiring diagrams in series.
-The monoid operator corresponds to putting two diagrams together without adding any wiring.
-Finally the trace operator corresponds to adding feedback loops to diagram.
+\begin{center}
+\begin{tabular}{llll}
+Fan-out: & 
+$\begin{array}[c]{l}
+V_{Y_1} = V_{Y_2} = V_{X_1}\\
+I_{Y_1} + I_{Y_2} = I_{X_1}
+\end{array}$
+&
+Fan-in: & 
+$\begin{array}[c]{l}
+V_{Y_1} = V_{X_1} = V_{X_2}\\
+I_{Y_1} = I_{X_1} + I_{X_2}
+\end{array}$
+\\
+Cross-over: & 
+$\begin{array}[c]{ll}
+V_{Y_i} = V_{X_{3-i}}\\
+I_{Y_i} = I_{X_{3-i}}
+\end{array}$
+&
+Resistor: & 
+$\begin{array}[c]{ll}
+V_{Y_1} = V_{X_1} - RI_{X_1}\\
+I_{Y_1} = I_{X_1}
+\end{array}$
+\end{tabular}
+\end{center}
 
-
-If $V$ is any set, $V^m$ gives the set of all $m$-tuples with values ranging over $V$.
-Typically $V^m$ represents the vector of inputs or outputs of a box in a diagram.
-
-[ U ]œœœœœœœœœœœ
-Ü Û_ ^ _İ : ğU ¸ î ­ ğ(seq U)
-÷üüüüüü
-Ü µV : ğU; m:î· V ^ m =  {s : seq V | #s = m}
-ˆüüüüüüüüüüüüüü
-
-For each set $V$, there is a category, which we shall call $Rel[V]$, whose objects are the natural numbers and whose morphisms (a.k.a. arrows) from $m$ to $n$ are the relations between $V^m$ and $V^n$ composed via ordinary relational composition\footnote{
-We take the objects to be the natural numbers, $m$, rather than the sets $V^m$ for technical convenience to avoid having the category collapse when $V = \{\}$.
-}.
-We represent the category in Z by defining its set of morphisms.
-A morphism is given as labelled triple whose components give the domain ($d$), codomain ($c$), and the relation ($r$).
-
-¹Z
-Ü ÛRelİ[V] ¦ Ş{m, n : î · {R : V^m ª V^n· (d ¦ m, c ¦ n, r ¦ R)}}
-°
-
-The composition of morphisms that makes $Rel[V]$ into a category is the ``horizontal'' composition defined below.
-
-[V]œœœœœœœœœœœ
-Ü ÛHComposeİ : Rel[V] ¸ Rel[V] ß Rel[V]
-÷üüüüüü
-Ü dom HCompose = {R, S : Rel[V] | R.c = S.d} ;
-Ü µR, S : Rel[V] | R.c = S.d ·
-Ü	HCompose(R, S) = (d ¦ R.d, c ¦ S.c, r ¦ R.r » S.r)
-ˆüüüüüüüüüüüüüü
-
-
-The following function gives the identity arrows in the category.
-
-[V]œœœœœœœœœœœ
-Ü ÛHIdİ : î ­ Rel[V]
-÷üüüüüü
-Ü µ m : î · HId m = (d ¦ m, c ¦ m, r ¦ id(V^m))
-ˆüüüüüüüüüüüüüü
-
-The category becomes a monoidal category under a product given by addition on objects and by the following ``vertical composition'' on morphisms.
-
- 
-[V]œœœœœœœœœœœ
-Ü ÛVComposeİ : Rel[V] ¸ Rel[V] ­ Rel[V]
-÷üüüüüü
-Ü µR, S : Rel[V] ·
-Ü	VCompose(R, S) = (d ¦ R.d + S.d, c ¦ R.c + S.c,
-Ü		r ¦ {a, b, c, d : seq V | (a, c)  R.r ± (b, d)  S.r· (a ë b, c ë d)})
-ˆüüüüüüüüüüüüüü
-
-Finally, we get a traced monoidal category by defining the following operator that corresponds to adding $k$ feedback loops into a diagram.
- 
-[V]œœœœœœœœœœœ
-Ü ÛTraceİ : (î ¸ î ¸ î) ­ Rel[V] ß Rel[V]
-÷üüüüüü
-Ü µm, n, k : î·
-Ü dom (Trace(m, n, k)) = {R : Rel[V] | R.d = m + k ± R.c = n + k} ;
-Ü µm, n, k : î; R : Rel[V] | R.d = m + k ± R.c = n + k ·
-Ü	Trace (m, n, k) R = (d ¦ m, c ¦ n,
-Ü		r ¦ {a: V^m; b : V^n | ¶c:V^k· (a ë c, b ë c)  R.r})
-ˆüüüüüüüüüüüüüü
-
-To use the relation category, we will generally need to know something about the value domain, $V$.
-However, we can describe some generic constructions that just impose equational constraints.
-The first of these is the operator that makes the monoidal category into a symmetric monoidal category:
-
-[V]œœœœœœœœœœœ
-Ü ÛSwitchİ : î ¸ î ­ Rel[V]
-÷üüüüüü
-Ü µm, n : î·
-Ü	Switch(m, n) = (d ¦ m + n, c ¦ n + m,
-Ü		r ¦ {a : V^m; b : V^n · (a ë b, b ë a)})
-ˆüüüüüüüüüüüüüü
-
-However, we can define at least one generic construction corresponding to patching inputs to outputs according to a wiring diagram (given as a relation between input port numbers and output port numbers):
+On solving these equations for the four circuits in figure~\ref{kir_eq} on page~\ref{kir_eq}, one finds that the four circuits are equivalent.
+The idea of a traced monoidal category will formalise the process of building up the overall input-output relationship of a circuit from its constituent parts.
+The algebraic laws satisfied by a traced monoidal category capture equivalences like that of the first two circuits in figure~\ref{kir_eq} which are essentially independent of the semantics of the basic building blocks.
+The laws also provide a way of structuring proofs that do depend on the semantics (like the other equivalences in figure~\ref{kir_eq}).
 
 
-[V]œœœœœœœœœœœ
-Ü ÛPatchİ : î ¸ î ¸ (î ª î) ­ Rel[V]
-÷üüüüüü
-Ü µm, n : î; d : î ª î·
-Ü	Patch(m, n, d) = (d ¦ m, c ¦ n,
-Ü		r ¦ {a : V^m; b : V^n | µi : 1..m; j : 1..n |(i, j)  d· b j = a i})
-ˆüüüüüüüüüüüüüü
+\begin{figure}
+\begin{center}
+\epsffile{wrk075g.eps}
+\end{center}
+\caption{Kirchoff Category: Four Equivalent Circuits}
+\label{kir_eq}
+\end{figure}
 
-\section{SIGNAL FLOW GRAPHS}
+The operators that we are using to build diagrams are shown in~\ref{building_ops} on page~\pageref{building_ops}.
+The notion of traced monoidal category that we are now going to define may be viewed as an algevraic theory of these operators.
+The formalisation of this notion deals with the operators in turn.
 
-A {\em signal} will be a real-valued function of a real variable.
+\begin{figure}
+\begin{center}
+\epsffile{wrk075h.eps}
+\end{center}
+\caption{Building Diagrams}
+\label{building_ops}
+\end{figure}
+
+The first stage in the formalisation deals with horizontal composition.
+Horizontal composition is a partial operation: in the Kirchoff category, two circuits $f$ and $g$ can only be composed horizontally if $f$ has the same number of outputs as $g$ has of inputs.
+The composition is associative in the sense that
+=INLINEFT
+f»(g»h) = (f»g)»h
+=TEX
+\ whenever these composites are defined.
+In the Kirchoff category, a vertical stack of an appropriate number of resistors with $R = 0$ provides a unit for the composition.
+All this means that horizontal composition is the composition operator of a {\em category} whose morphisms or {\em arrows} are the diagrams and whose objects are the vectors of inputs or outputs of a circuit.
+
+Formally, we specify a category in Z to be a member of the generic schema $CAT$ defined below. The generic parameters $O$ and $A$ give the sets of objects and arrows of the category respectively. In the Kirchhoff category, the domain and codomain operators correspond to the operations of reading off the lists of inputs or outputs of a circuit and the identity operator corresponds to
+the operation of constructing a vertical stacks of resistors with $R = 0$.
 
 ¹Z
-Ü ÛSIGNALİ ¦ ¯ ­ ¯
-°
-
-The category of signal flow graphs is then the relational category with the value domain given by signals.
-
-
-¹Z
-Ü ÛSFGİ ¦ Rel[SIGNAL]
-°
-
-We instantiate the notions of predicates, pre- post-conditions
-and specifications from \cite{LEMMA1/ZED/WRK069} so that we can use them to express properties of signals:
-
-¹Z
-Ü ÛS_PREDİ ¦ PRED[SIGNAL]
-°
-¹Z
-Ü ÛS_PRE_CONDİ ¦ PRE_COND[SIGNAL]
-°
-¹Z
-Ü ÛS_POST_CONDİ ¦ POST_COND[SIGNAL, SIGNAL]
-°
-¹Z
-Ü ÛS_SPECİ ¦ SPEC[SIGNAL, SIGNAL]
-°
-We now have a notion of diagram which is in quite close analogy with the notion of imperative program considered in \cite{LEMMA1/ZED/WRK070}.
-
-¹Z
-Ü ÛDIAGRAMİ ::=
-Ü	ÛAtomİ (SFG)
-Ü |	ÛSeqİ (DIAGRAM ¸ DIAGRAM)
-Ü |	ÛParİ (DIAGRAM ¸ DIAGRAM)
-Ü |	ÛLoopİ (DIAGRAM ¸ î)
-Ü |	ÛSpecİ (S_SPEC ¸ DIAGRAM)
-°
- 
-[V]œœœœœœœœœœœ
-Ü ÛFeedbackİ : Rel[V] ¸ î ß Rel[V]
-÷üüüüüü
-Ü dom Feedback = {R : Rel[V]; k : î | ¶m, n : î·R.d = m + k ± R.c = n + k} ;
-Ü µR : Rel[V]; k, m, n : î | R.d = m + k ± R.c = n + k ·
-Ü	Feedback(R, k) = Trace(m, n, k) R
-ˆüüüüüüüüüüüüüü
-
-¹ZAX
-Ü Ûsemanticsİ : DIAGRAM ­ SFG
-÷üüüüüü
-Ü µt : SFG; d‰1, d‰2 : DIAGRAM; n : î; s : S_SPEC·
-Ü	semantics (Atom t) = t
-Ü ±	semantics (Seq(d‰1, d‰2)) = HCompose(semantics d‰1, semantics d‰2)
-Ü ±	semantics (Par(d‰1, d‰2)) = VCompose(semantics d‰1, semantics d‰2)
-Ü ±	semantics (Loop(d‰1, n)) = Feedback(semantics d‰1, n)
-Ü ±	semantics (Spec(s, d‰1)) = semantics d‰1
-°
-
-\bibliographystyle{fmu}
-\bibliography{fmu}
-
-\newpage
-\appendix
-\newpage
-\section{SOME CATEGORY THEORY}
-A category with the set of objects $O$ and the set of arrows $A$ is represented by a member of the following generic schema,
-in which we agree to write composition in the category left to right.
-
-
-¹Z
-Ü function 40 leftassoc  _ »‰c _, _ «‰o _, _ «‰a_
+Ü function 40 leftassoc  _ »‰c _
 °
 
 
@@ -247,23 +162,16 @@ in which we agree to write composition in the category left to right.
 Ü	id‰c(dom‰c f) »‰c f = f »‰c id‰c(cod‰c f) = f
 ˆüüüüüüüüüüüüüü
 
-We can now state the theorem that $Rel[V]$ with the appropriate structure is indeed a category.
+We now look at vertical composition: in the Kirchhoff category, vertical composition is associative, has a unit given by an empty diagram, and it commutes with horizontal composition in the sense illustrated in  figure~\ref{bifunc} on page~\pageref{bifunc}.
+In categorical terminology, the vertical composition is an associative bifunctor « with unit, $e$ and a category possessing such additional structure is called a (strict) monoidal category.
+
+Formally, we specify a (strict) monoidal category by the following generic schema {\em MON\_CAT}. In which $«_o$ and $«_a$ give the vertical composition operations for objects and arrows respectively and $I‰«$ gives the unit. ($«_o$ is not strictly necessary here, but it helps to make the definition succinct).
+In informal narrative, we will often omit the subscript from $«_o$ and $«_a$.
 
 ¹Z
-Ü ÛRelCatİ [V] ¦
-Ü	(_ »‰c _ ¦ HCompose[V],
-Ü	dom‰c ¦ (ÌR:Rel[V]· R.d),
-Ü	cod‰c ¦ (ÌR:Rel[V]· R.c),
-Ü	id‰c ¦ HId[V])
-°
-¹Z
-Ü rel_cat_thm ?ô [V](RelCat[V]  CAT[î, Rel[V]])
+Ü function 40 leftassoc _ «‰o _, _ «‰a_
 °
 
-
-A (strict) monoidal category is a category equipped with an associative bifunctor « with unit, $e$.
-In diagrams, we will show « by stacking functors vertically and we will often refer to it as vertical compostion, while referring to the ordinary composition of arrows as horizontal composition.
-For example, figure~\ref{bifunc} on page~\pageref{bifunc} illustrates what it means for « to be a bifunctor following this convention.
 
 ÿ ÛMON_CATİ[O, A] üüüüüüüüüüü
 Ü CAT[O, A] ;
@@ -289,29 +197,30 @@ For example, figure~\ref{bifunc} on page~\pageref{bifunc} illustrates what it me
 \label{bifunc}
 \end{figure}
 
-¹Z
-Ü ÛRelMonCatİ [V] ¦
-Ü	(_ »‰c _ ¦ HCompose[V],
-Ü	dom‰c ¦ (ÌR:Rel[V]· R.d),
-Ü	cod‰c ¦ (ÌR:Rel[V]· R.c),
-Ü	id‰c ¦ HId[V],
-Ü	_ «‰o _ ¦ (Ìm, n:î· m + n),
-Ü	_ «‰a _ ¦ VCompose[V],
-Ü	I‰« ¦ HId[V](0))
-°
-
-¹Z
-Ü rel_mon_cat_thm ?ô [V](RelMonCat[V]  MON_CAT[î, Rel[V]])
-°
-A symmetric monoidal category is a monoidal category possessing a symmetry operator providing an isomorphism between
+In the Kirchoff category, we included a cross-over for two wires as a basic building block.
+Since any permutation of a finite list of objects can be written as a product of permutations that exchange adjacent objects, this can be used to implement any permutation of a set of wires.
+Any such permutation is an isomorphism in the category, i.e., an arrow with an inverse with respect to horizontal composition.
+In particular, if $X$ and $Y$ are objects in the category (vectors of labelled wires), one has an isomorphism or {\em symmetry} between the vertical compositions
 =INLINEFT
-X £ Y
+X « Y
 =TEX
 \ and
 =INLINEFT
-Y £ X
+Y « X
 =TEX
-\ for any objects $X$ and $Y$ satisfying a condition that ensures that any diagram involving £ and the symmetry that ought to commute does commute.
+.
+Subject to an appropriate condition which ensures that symmetry compose just like transpositions of elements in an ordered list, this means that our category is what is called a {\em symmetric monoidal category}.
+
+Formally a symmetric monoidal category is to be a member of the following generic schema. Here, for objects $X$ and $X$, the arrow $Sym(X, Y)$ is the isomorphism between
+=INLINEFT
+X « Y
+=TEX
+\ and
+=INLINEFT
+Y « X
+=TEX
+.
+
 ÿ ÛSYM_MON_CATİ[O, A] üüüüüüüüüüü
 Ü MON_CAT[O, A] ;
 Ü Sym : O ¸ O ­ A
@@ -322,21 +231,8 @@ Y £ X
 Ü	Sym(X «‰o Y, Z) =
 Ü	(id‰c X «‰a Sym(Y, Z)) »‰c (Sym(X, Z) «‰a id‰c Y)
 ˆüüüüüüüüüüüüüü
-¹Z
-Ü ÛRelSymMonCatİ [V] ¦
-Ü	(_ »‰c _ ¦ HCompose[V],
-Ü	dom‰c ¦ (ÌR:Rel[V]· R.d),
-Ü	cod‰c ¦ (ÌR:Rel[V]· R.c),
-Ü	id‰c ¦ HId[V],
-Ü	_ «‰o _ ¦ (Ìm, n:î· m + n),
-Ü	_ «‰a _ ¦ VCompose[V],
-Ü	I‰« ¦ HId[V](0),
-Ü	Sym ¦ Switch[V])
-°
+Finally, we deal with the feeback or {\em trace} operator.
 
-¹Z
-Ü rel_sym_mon_cat_thm ?ô [V](RelSymMonCat[V]  SYM_MON_CAT[î, Rel[V]])
-°
 We now give the definition of a traced monoidal category in stages.
 A traced monoidal category will be a symmetric monoidal category equipped with a trace operator which comprises a partial function from arrows to arrows parameterised by three objects:
 
@@ -485,6 +381,147 @@ Finally, we put all these pieces together to complete the definition of a traced
 Ü TRA_MON_CAT_YAN[O, A]
 ˆüüüüüüüüüüüüüü
 
+
+
+%\newpage
+\section{A CATEGORY OF RELATIONS}
+
+We are going to work with systems of relations that can naturally be expressed diagrammatically.
+The elements of the diagrams are called {\em boxes} and {\em wires}.
+A box with $m$ inputs and $n$ outputs represents a relation between $V^m$ and $V^n$ for some suitable value domain $V$.
+The produce new relations from old by adding equational constraints.
+The diagrams need not form directed graphs: feedback loops are allowed and correspond to existential quantification.
+
+
+Our approach to the syntax and semantics of diagrams is informed by the idea of a traced monoidal category.
+The idea is that diagrams correspond to functor expressions in such a category.  Composition in the category corresponds to wiring diagrams in series.
+The monoid operator corresponds to putting two diagrams together without adding any wiring.
+Finally the trace operator corresponds to adding feedback loops to diagram.
+
+
+If $V$ is any set, $V^m$ gives the set of all $m$-tuples with values ranging over $V$.
+Typically $V^m$ represents the vector of inputs or outputs of a box in a diagram.
+
+¹Z
+Ü function 50  _ ^ _
+°
+
+[ U ]œœœœœœœœœœœ
+Ü Û_ ^ _İ : ğU ¸ î ­ ğ(seq U)
+÷üüüüüü
+Ü µV : ğU; m:î· V ^ m =  {s : seq V | #s = m}
+ˆüüüüüüüüüüüüüü
+
+For each set $V$, there is a category, which we shall call $Rel[V]$, whose objects are the natural numbers and whose morphisms (a.k.a. arrows) from $m$ to $n$ are the relations between $V^m$ and $V^n$ composed via ordinary relational composition\footnote{
+We take the objects to be the natural numbers, $m$, rather than the sets $V^m$ for technical convenience to avoid having the category collapse when $V = \{\}$.
+}.
+We represent the category in Z by defining its set of morphisms.
+A morphism is given as labelled triple whose components give the domain ($d$), codomain ($c$), and the relation ($r$).
+
+¹Z
+Ü ÛRelİ[V] ¦ Ş{m, n : î · {R : V^m ª V^n· (d ¦ m, c ¦ n, r ¦ R)}}
+°
+
+The composition of morphisms that makes $Rel[V]$ into a category is the ``horizontal'' composition defined below.
+
+[V]œœœœœœœœœœœ
+Ü ÛHComposeİ : Rel[V] ¸ Rel[V] ß Rel[V]
+÷üüüüüü
+Ü dom HCompose = {R, S : Rel[V] | R.c = S.d} ;
+Ü µR, S : Rel[V] | R.c = S.d ·
+Ü	HCompose(R, S) = (d ¦ R.d, c ¦ S.c, r ¦ R.r » S.r)
+ˆüüüüüüüüüüüüüü
+
+
+The following function gives the identity arrows in the category.
+
+[V]œœœœœœœœœœœ
+Ü ÛHIdİ : î ­ Rel[V]
+÷üüüüüü
+Ü µ m : î · HId m = (d ¦ m, c ¦ m, r ¦ id(V^m))
+ˆüüüüüüüüüüüüüü
+
+The category becomes a monoidal category under a product given by addition on objects and by the following ``vertical composition'' on morphisms.
+
+ 
+[V]œœœœœœœœœœœ
+Ü ÛVComposeİ : Rel[V] ¸ Rel[V] ­ Rel[V]
+÷üüüüüü
+Ü µR, S : Rel[V] ·
+Ü	VCompose(R, S) = (d ¦ R.d + S.d, c ¦ R.c + S.c,
+Ü		r ¦ {a, b, c, d : seq V | (a, c)  R.r ± (b, d)  S.r· (a ë b, c ë d)})
+ˆüüüüüüüüüüüüüü
+
+Finally, we get a traced monoidal category by defining the following operator that corresponds to adding $k$ feedback loops into a diagram.
+ 
+[V]œœœœœœœœœœœ
+Ü ÛTraceİ : (î ¸ î ¸ î) ­ Rel[V] ß Rel[V]
+÷üüüüüü
+Ü µm, n, k : î·
+Ü dom (Trace(m, n, k)) = {R : Rel[V] | R.d = m + k ± R.c = n + k} ;
+Ü µm, n, k : î; R : Rel[V] | R.d = m + k ± R.c = n + k ·
+Ü	Trace (m, n, k) R = (d ¦ m, c ¦ n,
+Ü		r ¦ {a: V^m; b : V^n | ¶c:V^k· (a ë c, b ë c)  R.r})
+ˆüüüüüüüüüüüüüü
+
+To use the relation category, we will generally need to know something about the value domain, $V$.
+However, we can describe some generic constructions that just impose equational constraints.
+The first of these is the operator that makes the monoidal category into a symmetric monoidal category:
+
+[V]œœœœœœœœœœœ
+Ü ÛSwitchİ : î ¸ î ­ Rel[V]
+÷üüüüüü
+Ü µm, n : î·
+Ü	Switch(m, n) = (d ¦ m + n, c ¦ n + m,
+Ü		r ¦ {a : V^m; b : V^n · (a ë b, b ë a)})
+ˆüüüüüüüüüüüüüü
+
+
+We can now state the theorem that $Rel[V]$ with the appropriate structure is indeed a category.
+
+¹Z
+Ü ÛRelCatİ [V] ¦
+Ü	(_ »‰c _ ¦ HCompose[V],
+Ü	dom‰c ¦ (ÌR:Rel[V]· R.d),
+Ü	cod‰c ¦ (ÌR:Rel[V]· R.c),
+Ü	id‰c ¦ HId[V])
+°
+¹Z
+Ü rel_cat_thm ?ô [V](RelCat[V]  CAT[î, Rel[V]])
+°
+
+
+
+¹Z
+Ü ÛRelMonCatİ [V] ¦
+Ü	(_ »‰c _ ¦ HCompose[V],
+Ü	dom‰c ¦ (ÌR:Rel[V]· R.d),
+Ü	cod‰c ¦ (ÌR:Rel[V]· R.c),
+Ü	id‰c ¦ HId[V],
+Ü	_ «‰o _ ¦ (Ìm, n:î· m + n),
+Ü	_ «‰a _ ¦ VCompose[V],
+Ü	I‰« ¦ HId[V](0))
+°
+
+¹Z
+Ü rel_mon_cat_thm ?ô [V](RelMonCat[V]  MON_CAT[î, Rel[V]])
+°
+¹Z
+Ü ÛRelSymMonCatİ [V] ¦
+Ü	(_ »‰c _ ¦ HCompose[V],
+Ü	dom‰c ¦ (ÌR:Rel[V]· R.d),
+Ü	cod‰c ¦ (ÌR:Rel[V]· R.c),
+Ü	id‰c ¦ HId[V],
+Ü	_ «‰o _ ¦ (Ìm, n:î· m + n),
+Ü	_ «‰a _ ¦ VCompose[V],
+Ü	I‰« ¦ HId[V](0),
+Ü	Sym ¦ Switch[V])
+°
+
+¹Z
+Ü rel_sym_mon_cat_thm ?ô [V](RelSymMonCat[V]  SYM_MON_CAT[î, Rel[V]])
+°
+
 ¹Z
 Ü ÛRelTraMonCatİ [V] ¦
 Ü	(_ »‰c _ ¦ HCompose[V],
@@ -502,6 +539,70 @@ Finally, we put all these pieces together to complete the definition of a traced
 ¹Z
 Ü rel_tra_mon_cat_thm ?ô [V](RelTraMonCat[V]  TRA_MON_CAT[î, Rel[V]])
 °
+
+
+\section{SIGNAL FLOW GRAPHS}
+
+A {\em signal} will be a real-valued function of a real variable.
+
+¹Z
+Ü ÛSIGNALİ ¦ ¯ ­ ¯
+°
+
+The category of signal flow graphs is then the relational category with the value domain given by signals.
+
+
+¹Z
+Ü ÛSFGİ ¦ Rel[SIGNAL]
+°
+
+We instantiate the notions of predicates, pre- post-conditions
+and specifications from \cite{LEMMA1/ZED/WRK069} so that we can use them to express properties of signals:
+
+¹Z
+Ü ÛS_PREDİ ¦ PRED[SIGNAL]
+°
+¹Z
+Ü ÛS_PRE_CONDİ ¦ PRE_COND[SIGNAL]
+°
+¹Z
+Ü ÛS_POST_CONDİ ¦ POST_COND[SIGNAL, SIGNAL]
+°
+¹Z
+Ü ÛS_SPECİ ¦ SPEC[SIGNAL, SIGNAL]
+°
+We now have a notion of diagram which is in quite close analogy with the notion of imperative program considered in \cite{LEMMA1/ZED/WRK070}.
+
+¹Z
+Ü ÛDIAGRAMİ ::=
+Ü	ÛAtomİ (SFG)
+Ü |	ÛSeqİ (DIAGRAM ¸ DIAGRAM)
+Ü |	ÛParİ (DIAGRAM ¸ DIAGRAM)
+Ü |	ÛLoopİ (DIAGRAM ¸ î)
+Ü |	ÛSpecİ (S_SPEC ¸ DIAGRAM)
+°
+ 
+[V]œœœœœœœœœœœ
+Ü ÛFeedbackİ : Rel[V] ¸ î ß Rel[V]
+÷üüüüüü
+Ü dom Feedback = {R : Rel[V]; k : î | ¶m, n : î·R.d = m + k ± R.c = n + k} ;
+Ü µR : Rel[V]; k, m, n : î | R.d = m + k ± R.c = n + k ·
+Ü	Feedback(R, k) = Trace(m, n, k) R
+ˆüüüüüüüüüüüüüü
+
+¹ZAX
+Ü Ûsemanticsİ : DIAGRAM ­ SFG
+÷üüüüüü
+Ü µt : SFG; d‰1, d‰2 : DIAGRAM; n : î; s : S_SPEC·
+Ü	semantics (Atom t) = t
+Ü ±	semantics (Seq(d‰1, d‰2)) = HCompose(semantics d‰1, semantics d‰2)
+Ü ±	semantics (Par(d‰1, d‰2)) = VCompose(semantics d‰1, semantics d‰2)
+Ü ±	semantics (Loop(d‰1, n)) = Feedback(semantics d‰1, n)
+Ü ±	semantics (Spec(s, d‰1)) = semantics d‰1
+°
+
+\bibliographystyle{fmu}
+\bibliography{fmu}
 
 =TEX
 \newpage
@@ -533,7 +634,6 @@ val Ûh_id_defİ = z_get_specñHId®;
 val Ûv_compose_defİ = z_get_specñVCompose®;
 val Ûtrace_defİ = z_get_specñTrace®;
 val Ûswitch_defİ = z_get_specñSwitch®;
-val Ûpatch_defİ = z_get_specñPatch®;
 val Ûcat_defİ = z_get_specñCAT®;
 val Ûrel_cat_defİ = z_get_specñRelCat®;
 val Ûmon_cat_defİ = z_get_specñMON_CAT®;
@@ -641,7 +741,6 @@ val Ûh_compose_rw_thmİ = hd(cond_def_thms h_compose_def);
 val Ûh_id_rw_thmİ = hd(cond_def_thms h_id_def);
 val Ûv_compose_rw_thmİ = hd(cond_def_thms v_compose_def);
 val Ûswitch_rw_thmİ = hd(cond_def_thms switch_def);
-val Ûpatch_rw_thmİ = hd(cond_def_thms patch_def);
 val Ûtrace_rw_thmİ = hd(tl(cond_def_thms trace_def));
 =TEX
 %%%%
