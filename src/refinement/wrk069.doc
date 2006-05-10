@@ -235,6 +235,10 @@ and function symbols:
 πZ
 ‹ function 40 _ %sqcap% _
 ∞
+πZ
+‹ function 40  _**_
+∞
+
 We use postfix notation for the following function and generic symbols:
 πZ
 ‹ function 7 _ Á$Í
@@ -720,6 +724,142 @@ Our final theorem characterises this sublattice.
 \bibliography{fmu}
 \newpage
 \appendix
+
+\section{WEAKEST PRE-CONDITIONS FOR RELATIONS}
+
+In \cite{LEMMA1/ZED/WRK070}, we give an account of precondition calculation for a small programming language.
+In subsequent work, we plan to explore weakest precondition calculation in less familiar situations.
+It is therefore helpful to formalise the abstract concept.
+In this appendix we give an account of weakest pre-conditions arbitrary relations in Z.
+
+What is done here is motivated by the notion of a traced monoidal category, but no knowledge of these is required.
+Readers familiar with the basic ideas of category theory will appreciate that the class of all relations in Z under relational composition (which we sometimes call ``horizontal composition'') form a category (but not one that we could formalise in Z).
+This category becomes a monoidal category under a ``vertical'' composition operator given by a relational product and then becomes a traced monoidal category under a trace operator which we will define by existential quantification.
+Our aim is to show how the weakest pre-condition behaves with respect to these operators.
+
+The simplest notion of weakest precondition pulls a simple predicate back through a relation.
+Thinking of predicates as sets, this notion is defined as follows:
+
+ù[ Y, Z ]úúúúúúúúúúú
+‹ €WPS› : (Y ™ Z) ∏ Z ≠ Y
+˜¸¸¸¸¸¸
+‹ µS : Y ™ Z; C : Z∑ WPS(S, C) = {y : Y | S ®{y}© Ä C}
+à¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+
+
+The following theorem shows that our explicit definition for $WPS(S, C)$ does indeed give the largest set (i.e., weakest predicate), $B$, such that
+=INLINEFT
+S®B© Ä C
+=TEX
+.
+
+πZ
+‹ wps_correct_thm ?Ù
+‹	µS : É ™ É; C : É∑ S®WPS(S, C)© Ä C;
+‹	µS : É ™ É; B : É; C : É | S®B© Ä C ∑ B Ä WPS(S, C)
+∞
+(Note: É is defined in the {\ProductZ} library to be the generic object which gives the universe of all elements of a type. In declarations, it gives a similar effect to a type variable in HOL or ML).
+
+Weakest pre-conditions through a given relation $R$ commute with intersections (conjunctions):
+
+πZ
+‹ wps_cap_thm ?Ù µR : É ™ É; B, C : É∑
+‹	WPS(R, B ° C) = WPS(R, B) ° WPS(R, C)
+∞
+
+Weakest pre-conditions through a given relation $R$ do not commute with unions (disjunctions) in general, but the following does hold:
+
+πZ
+‹ wps_cup_thm ?Ù µR : É ™ É; B, C : É∑
+‹	WPS(R, B) ¿ WPS(R, C) Ä WPS(R, B ¿ C)
+∞
+
+The weakest pre-condition for a relational composition (``horizontal'' composition) is given by an appropriate form of functional composition.
+
+πZ
+‹ wps_comp_thm ?Ù µR : É ™ É; S : É ™ É; A : É∑
+‹	WPS(R ª S, A) = WPS(R, WPS(S, A))
+∞
+
+The following theorem may be helpful in understanding some of the
+results which follow.
+It shows that any point not in the domain of the relation $S$ satisfies any weakest pre-condition through $S$.
+
+
+πZ
+‹ wps_compl_dom_thm ?Ù µS : É ™ É; C : É ∑ (É ∏ É) \ dom S Ä WPS(S, C)
+∞
+
+(Here
+=INLINEFT
+É ∏ É
+=TEX
+\ gives the total relation at the appropriate type).
+
+We now define the ``vertical'' composition of two arbitrary relations.
+
+ù[ X, Y, V, W ]úúúúúúúúúúú
+‹ €_**_› : (X ™ Y) ∏ (V ™ W) ≠ (X ∏ V ™ Y ∏ W)
+˜¸¸¸¸¸¸
+‹ µR : X ™ Y; S : V ™ W∑
+‹	R ** S =
+‹	{x : X; y : Y; v : V; w : W | (x, y) ç R ± (v, w) ç S ∑ ( (x, v), (y, w) )}
+à¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+
+The weakest pre-condition through a vertical composite is as follows:
+
+πZ
+‹ wps_prod_thm ?Ù µR : É ™ É; S : É ™ É; B : É; C : É ∑
+‹	WPS(R ** S, B ∏ C) =
+‹	(WPS(R, B) ∏ WPS(S, C)) ¿ ((É ∏ É) \ (dom R ∏ dom S))
+∞
+
+Now we define the existential trace operator.
+It can be thought of as finding a fixed point.
+
+ù[ X, Y, V ]úúúúúúúúúúú
+‹ €Trcâ∂› : (X ∏ V ™ Y ∏ V) ≠ (X ™ Y)
+˜¸¸¸¸¸¸
+‹ µR : (X ∏ V ™ Y ∏ V)∑
+‹	Trcâ∂ R = {x : X; y : Y | ∂v : V∑ ((x, v), (y, v)) ç R}
+à¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+The following theorem gives a formula for the weakest pre-condition through an existential trace:
+
+πZ
+‹ wps_trc_exists_thm ?Ù µR : É ∏ É ™ É ∏ É;  C : É ∑
+‹	WPS(Trcâ∂ R, C) = {x: É | µv:É∑ (x, v) ç WPS(R ° (É ** (id _)), C ∏ É)∑ x}
+∞
+
+As noted in \cite{LEMMA1/ZED/WRK070}, a more general notion of weakest precondition calculation, which has useful compositionality properties, deals with relations.
+In general, if $S$ and $P$ are binary relations,
+we want to specify  $WP(S, P)$ so that it is the weakest (i.e., largest) relation $R$ such that $R\;ª\;S \subseteq P$.
+We use an explicit formula for $WP$ (cf. the clause for atoms in the function {\em prec\_calc} in \cite{LEMMA1/ZED/WRK070}).
+
+ù[ X, Y, Z ]úúúúúúúúúúú
+‹ €WP› : (Y ™ Z) ∏ (X ™ Z) ≠ (X ™ Y)
+˜¸¸¸¸¸¸
+‹ µS : Y ™ Z; P : X ™ Z∑ WP(S, P) = {x : X; y : Y | S ®{y}© Ä P®{x}©}
+à¸¸¸¸¸¸¸¸¸¸¸¸¸¸
+
+The following theorem shows that our explicit definition for $WP(S, P)$ is indeed the weakests $R$ such that $R\;ª\;S \subseteq P$.
+
+πZ
+‹ wp_correct_thm ?Ù
+‹	µS : É ™ É; P : É ™ É∑ WP(S, P) ª S Ä P;
+‹	µR : É ™ É; S : É ™ É; P : É ™ É | R ª S Ä P ∑ R Ä WP(S, P)
+∞
+
+The relational formulation of weakest precondition may be defined in terms of the set formulation:
+
+πZ
+‹ wp_wps_thm ?Ù µS : É; P : É∑ WP(S, P) = {x : É; y : É | y ç WPS(S, P®{x}©)}
+∞
+
+From the above, one can calculate relational weakest pre-conditions for intersections, compositions etc. using the
+corresponding theorems for predicate weakest pre-conditions.
+
+
+
 =TEX
 {\HOLindexOff\small
 \let\Section\section
@@ -799,6 +939,10 @@ val €join_def› = save_thm( "join_def" , ±_right_elim (z_get_u_specÒJoinÆ));
 val €reduced_def› = save_thm( "reduced_def" , z_get_u_specÒREDUCEDÆ);
 val €meet2_def› = save_thm( "meet2_def" , ±_right_elim (z_get_u_specÒ(_%sqcap%_)Æ));
 val €join2_def› = save_thm( "join2_def" , ±_right_elim (z_get_u_specÒ(_%sqcup%_)Æ));
+val €wps_def› = z_get_specÒWPSÆ;
+val €rel_prod_def› = z_get_specÒ(_**_)Æ;
+val €trc_∂_def› = z_get_specÒTrcâ∂Æ;
+val €wp_def› = z_get_specÒWPÆ;
 =TEX
 =SML
 set_goal([], get_conjecture"-" "reduce_reduce_cnj");
@@ -1162,6 +1306,171 @@ a(cases_tacÒx3 = ‚Æ THEN1 all_var_elim_asm_tac1);
 a(all_fc_tac[augmented_u_cases_thm] THEN all_var_elim_asm_tac1);
 a(z_∂_tacÒ(x'' ¶ x, y ¶ x')Æ THEN REPEAT strip_tac);
 val ran_lift_thm = save_pop_thm"ran_lift_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ÒµR:É; x : É∑R®{x}© = {z : É | (x, z) ç R}Æ);
+a(PC_T1 "z_library_ext" REPEAT strip_tac
+	THEN_TRY all_var_elim_asm_tac1);
+a(z_∂_tacÒxÆ THEN asm_rewrite_tac[]);
+val €z_image_singleton_thm› = save_pop_thm "z_image_singleton_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ÒµS:É;C: É∑
+	WPS (S, C) = {y:É| µz:É∑(y, z) ç S ¥ z ç C}Æ);
+a(rewrite_tac[z_image_singleton_thm, z_gen_pred_u_elim wps_def]);
+a(PC_T1 "z_library_ext" prove_tac[]);
+val €wps_rw_thm› = save_pop_thm "wps_rw_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], get_conjecture"-" "wps_correct_thm");
+a(PC_T1 "z_library_ext" rewrite_tac[wps_rw_thm]);
+a(PC_T1 "z_library_ext" prove_tac[]);
+val €wps_correct_thm› = save_pop_thm "wps_correct_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], get_conjecture"-" "wps_cap_thm");
+a(PC_T1 "z_library_ext" rewrite_tac[wps_rw_thm]);
+a(PC_T1 "z_library_ext" prove_tac[]);
+val €wps_cap_thm› = save_pop_thm "wps_cap_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], get_conjecture"-" "wps_cup_thm");
+a(PC_T1 "z_library_ext" rewrite_tac[wps_rw_thm]);
+a(PC_T1 "z_library_ext" prove_tac[]);
+val €wps_cup_thm› = save_pop_thm "wps_cup_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], get_conjecture"-" "wps_comp_thm");
+a(PC_T1 "z_library_ext" rewrite_tac[wps_rw_thm]);
+a(PC_T1 "z_library_ext" prove_tac[]);
+val €wps_comp_thm› = save_pop_thm "wps_comp_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ÒµC:É∑WPS({}, C) = ÉÆ);
+a(rewrite_tac[wps_rw_thm]);
+val €wps_empty_thm› = save_pop_thm "wps_empty_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], get_conjecture"-" "wps_compl_dom_thm");
+a(PC_T1 "z_library_ext" rewrite_tac[wps_rw_thm]);
+a(PC_T1 "z_library_ext" prove_tac[]);
+val €wps_compl_dom_thm› = save_pop_thm "wps_compl_dom_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], Ò
+	µR : É; S : É; x1 : É; y1 : É; v1 : É; w1 : É∑
+	(∂ x : É; y : É; v : É; w : É
+	| (x, y) ç R ± (v, w) ç S
+ 	∑ (x = x1 ± v = v1) ± y = y1 ± w = w1)
+§	(x1, y1) ç R ± (v1, w1) ç S
+Æ);
+a(PC_T1 "z_library_ext" REPEAT strip_tac
+	THEN_TRY all_var_elim_asm_tac1);
+a(z_∂_tacÒ(x ¶ x1, v ¶ v1, y ¶ y1, w ¶ w1)Æ THEN asm_rewrite_tac[]);
+val €rel_prod_rw_thm› = save_pop_thm "rel_prod_rw_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ÒµR : É; S : É∑ dom (R ** S) = dom R ∏ dom SÆ);
+a(PC_T1 "z_library_ext" rewrite_tac[
+	z_gen_pred_u_elim rel_prod_def,
+	rel_prod_rw_thm]);
+a(PC_T1 "z_library_ext" prove_tac[]);
+a(z_∂_tacÒ(y, y')Æ THEN asm_rewrite_tac[]);
+val €dom_rel_prod_thm› = save_pop_thm "dom_rel_prod_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], get_conjecture"-" "wps_prod_thm");
+a(PC_T1 "z_library_ext" rewrite_tac[wps_rw_thm,
+	rel_prod_rw_thm,
+	z_gen_pred_u_elim rel_prod_def]);
+a(PC_T1 "z_library_ext" prove_tac[]);
+(* *** Goal "1" *** *)
+a(DROP_NTH_ASM_T 4 (ante_tac o z_µ_elim Ò(z, y')Æ));
+a(asm_rewrite_tac[] THEN taut_tac);
+(* *** Goal "2" *** *)
+a(DROP_NTH_ASM_T 4 (ante_tac o z_µ_elim Ò(y, z)Æ));
+a(asm_rewrite_tac[] THEN taut_tac);
+val €wps_prod_thm› = save_pop_thm "wps_prod_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], get_conjecture"-" "wps_trc_exists_thm");
+a(PC_T1 "z_library_ext" rewrite_tac[
+	z_gen_pred_u_elim rel_prod_def,
+	wps_rw_thm,
+	z_gen_pred_u_elim trc_∂_def]);
+a(PC_T1 "z_library_ext" REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_var_elim_asm_tac1);
+a(DROP_NTH_ASM_T 2 (strip_asm_tac o z_µ_elimÒz.1Æ));
+a(DROP_NTH_ASM_T 1 (ante_tac o z_µ_elimÒz.2Æ));
+a(conv_tac(ONCE_MAP_C z_tuple_lang_intro_conv));
+a(asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(DROP_NTH_ASM_T 2 (fn th => fc_tac[th]));
+a(DROP_NTH_ASM_T 1 (ante_tac o list_µ_elim[¨vÆ, ¨vÆ, ¨x1Æ, ¨zÆ]));
+a(rewrite_tac[]);
+val €wps_trc_exists_thm› = save_pop_thm "wps_trc_exists_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ÒµS:É;P: É∑
+	WP (S, P) = {x:É; y:É| µz:É∑(y, z) ç S ¥ (x, z) ç P}Æ);
+a(rewrite_tac[z_image_singleton_thm, z_gen_pred_u_elim wp_def]);
+a(PC_T1 "z_library_ext" prove_tac[]);
+val €wp_rw_thm› = save_pop_thm "wp_rw_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], get_conjecture"-" "wp_correct_thm");
+a(PC_T1 "z_library_ext" rewrite_tac[wp_rw_thm]);
+a(PC_T1 "z_library_ext" prove_tac[]);
+val €wp_correct_thm› = save_pop_thm "wp_correct_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], get_conjecture"-" "wp_wps_thm");
+a(rewrite_tac[z_image_singleton_thm]);
+a(PC_T1 "z_library_ext" rewrite_tac[wp_rw_thm, wps_rw_thm]);
+val €wp_wps_thm› = save_pop_thm "wp_wps_thm";
 =TEX
 \section{Epilogue}
 =SML
