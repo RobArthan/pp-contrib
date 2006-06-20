@@ -1,0 +1,148 @@
+=TEX
+\documentclass[12pt,a4paper]{article}
+\usepackage{latexsym}
+\usepackage{ProofPower}
+\title{Primitive Recursion over Binary Representations}
+\author{Rob Arthan}
+\makeindex
+\begin{document}
+\vfill
+\maketitle
+=SML
+
+πHOLCONST
+‹ Bits : Ó ≠ Ó SET
+˜¸¸¸¸¸¸
+‹	(µn∑0 ç Bits n § n Mod 2 = 1 )
+‹ ±	(µm n∑ (m+1) ç Bits n § m ç Bits(n Div 2))
+∞
+(*
+repeat drop_main_goal;
+*)
+push_consistency_goal ¨BitsÆ ;
+a(lemma_tac¨∂B∑
+	(µn∑ B 0 n § n Mod 2 = 1)
+± 	(µm n∑ B (m+1) n § B m (n Div 2))
+Æ
+	THEN1 prove_∂_tac);
+a(∂_tac¨Ãn∑{m | B m n}Æ THEN asm_rewrite_tac[]);
+val _ = save_consistency_thm ¨BitsÆ (pop_thm());
+val €bits_def› = get_spec¨BitsÆ;
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µm n∑m ç Bits n ¥ 2^m º nÆ);
+a(µ_tac THEN induction_tac¨m:ÓÆ THEN rewrite_tac[bits_def, Ó_exp_def]);
+(* *** Goal "1" *** *)
+a(contr_tac THEN lemma_tac¨n = 0Æ THEN1 PC_T1"lin_arith" asm_prove_tac[]);
+a(DROP_NTH_ASM_T 3 ante_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(REPEAT strip_tac THEN all_asm_fc_tac[]);
+a(lemma_tac¨n = n Div 2 * 2 + n Mod 2Æ
+	THEN1 (bc_thm_tac div_mod_thm
+		THEN rewrite_tac[]));
+a(PC_T1"lin_arith" asm_prove_tac[]);
+val €bits_lemma1› = save_pop_thm "bits_lemma1";
+
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µm∑m º 2^mÆ);
+a(µ_tac THEN induction_tac¨m:ÓÆ THEN rewrite_tac[Ó_exp_def]);
+a(cases_tac¨m = 0Æ THEN1 asm_rewrite_tac[Ó_exp_def]);
+a(PC_T1"lin_arith" asm_prove_tac[]);
+val €bits_lemma2› = save_pop_thm "bits_lemma2";
+
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µn∑Bits n ç FiniteÆ);
+a(REPEAT strip_tac);
+a(bc_thm_tac Ä_finite_thm);
+a(∂_tac¨{i | i < n+1}Æ THEN PC_T1"sets_ext1" rewrite_tac[range_finite_size_thm]);
+a(REPEAT strip_tac THEN all_fc_tac[bits_lemma1]);
+a(strip_asm_tac(µ_elim¨xÆ bits_lemma2));
+a(PC_T1"lin_arith" asm_prove_tac[]);
+val €bits_finite_thm› = save_pop_thm "bits_finite_thm";
+
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µm∑ ≥m = 0 ¥ m Div 2 < mÆ);
+a(REPEAT strip_tac);
+a(lemma_tac¨m = m Div 2 * 2 + m Mod 2Æ
+	THEN1 (bc_thm_tac div_mod_thm
+		THEN rewrite_tac[]));
+a(PC_T1"lin_arith" asm_prove_tac[]);
+val €bits_lemma3› = save_pop_thm "bits_lemma3";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨
+	Bits 0 = {}
+Æ);
+a(PC_T1 "sets_ext1" rewrite_tac[] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(induction_tac ¨xÆ THEN asm_rewrite_tac[bits_def]);
+val €bits_0_thm› = save_pop_thm "bits_0_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µn∑
+	Bits n =
+	{k | ∂m∑m ç Bits (n Div 2) ± k = m+1} ¿
+	(if n Mod 2 = 0 then {} else {0})
+Æ);
+a(PC_T1 "sets_ext1" rewrite_tac[] THEN REPEAT_UNTIL is_§ strip_tac);
+a(strip_asm_tac(µ_elim¨nÆ Ó_cases_thm));
+(* *** Goal "1" *** *)
+a(asm_rewrite_tac[bits_0_thm]);
+(* *** Goal "2" *** *)
+a(strip_asm_tac(µ_elim¨xÆ Ó_cases_thm));
+(* *** Goal "2.1" *** *)
+a(asm_rewrite_tac[bits_def]);
+a(cases_tac¨(i+1) Mod 2 = 1Æ THEN asm_rewrite_tac[]);
+a(lemma_tac¨(i+1) Mod 2 < 2Æ
+	THEN1 (bc_thm_tac mod_less_thm
+		THEN rewrite_tac[]));
+a(LEMMA_T¨(i+1) Mod 2 = 0Æ rewrite_thm_tac
+	THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+(* *** Goal "2.2" *** *)
+a(asm_rewrite_tac[bits_def]);
+a(LEMMA_T¨≥i' + 1 ç if (i + 1) Mod 2 = 0 then {} else {0}Æ rewrite_thm_tac
+	THEN1 (cases_tac ¨(i + 1) Mod 2 = 0Æ THEN asm_rewrite_tac[]));
+a(REPEAT strip_tac THEN1 ∂_tac¨i'Æ THEN asm_rewrite_tac[]);
+val €bits_recur_thm1› = save_pop_thm "bits_recur_thm1";
+=TEX
+%%%%
+%%%%
+
+=SML
+(*
+set_goal([], ¨µn∑n = ì (Bits n) (Ãd∑2^d)Æ);
+a(REPEAT strip_tac);
+a(bc_thm_tac Ä_finite_thm);
+a(∂_tac¨{i | i < n+1}Æ THEN PC_T1"sets_ext1" rewrite_tac[range_finite_size_thm]);
+a(REPEAT strip_tac THEN all_fc_tac[bits_lemma1]);
+a(strip_asm_tac(µ_elim¨xÆ bits_lemma2));
+a(PC_T1"lin_arith" asm_prove_tac[]);
+val €bits_finite_thm› = save_pop_thm "bits_finite_thm";
+*)
+
+=TEX
+
+\end{document}
+
+
