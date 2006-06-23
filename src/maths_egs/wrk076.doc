@@ -16,11 +16,31 @@
 Ü	(µn·0  Bits n ¤ n Mod 2 = 1 )
 Ü ±	(µm n· (m+1)  Bits n ¤ m  Bits(n Div 2))
 °
+=SML
+declare_infix(250, "£");
+
+¹HOLCONST
+Ü $£ : 'a SET ­ 'a SET ­ 'a SET
+÷üüüüüü
+Ü µa b· a £ b = (a \ b) À (b \ a)
+°
+=SML
+(*
+¹HOLCONST
+Ü GAProduct : î SET ­ î SET ­ ¯ ¸ î SET
+÷üüüüüü
+Ü µa b· GAProduct a b =
+Ü	( {(i, j) | i  A ± j  B ± j < i} (Ìij· ~(î¯ 1)), a £ b)
+°
+=SML
+*)
 =TEX
 %%%%
 %%%%
 
 =SML
+val Û£_defÝ = get_spec¬$£®;
+
 (*
 repeat drop_main_goal;
 *)
@@ -292,6 +312,42 @@ val Ûbits_one_one_thmÝ = save_pop_thm "bits_one_one_thm";
 %%%%
 
 =SML
+set_goal([], ¬µm n:î·2^m < 2^n ¤ m < n®);
+a(lemma_tac¬µi j:î·2^i < 2^(i+j+1)®);
+(* *** Goal "1" *** *)
+a(REPEAT strip_tac THEN induction_tac¬j:î®);
+(* *** Goal "1.1" *** *)
+a(rewrite_tac[î_exp_def] THEN contr_tac);
+a(LEMMA_T¬2^i=0® ante_tac THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(rewrite_tac[î_exp_eq_0_thm]);
+(* *** Goal "1.2" *** *)
+a(rewrite_tac[plus_assoc_thm1]);
+a(once_rewrite_tac[î_exp_def]);
+a(rewrite_tac[plus_assoc_thm]);
+a(PC_T1 "lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(lemma_tac¬µi j:î·i < j ´ 2^i < 2^j®);
+(* *** Goal "2.1" *** *)
+a(REPEAT strip_tac THEN POP_ASM_T (
+	strip_asm_tac o rewrite_rule[
+		¼_def,
+		pc_rule1 "lin_arith" prove_rule[]
+		¬i < j ¤ i + 1 ¼ j®]));
+a(all_var_elim_asm_tac1);
+a(asm_rewrite_tac[pc_rule1 "lin_arith" prove_rule[]
+		¬(i+1)+i' = i + i'+ 1®]);
+(* *** Goal "2.2" *** *)
+a(REPEAT µ_tac);
+a(strip_asm_tac(list_µ_elim[¬m®, ¬n®] less_cases_thm)
+	THEN all_asm_fc_tac[]
+		THEN_TRY asm_rewrite_tac[]);
+a(PC_T1 "lin_arith" asm_prove_tac[]);
+val Ûî_exp_mono_thmÝ = save_pop_thm "î_exp_mono_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
 set_goal([], ¬OneOne (Ìd·2^d)®);
 a(rewrite_tac[one_one_def]);
 a(µ_tac THEN induction_tac¬x1:î®
@@ -325,7 +381,7 @@ val Ûî_exp_2_one_one_thm1Ý = save_thm(
 set_goal([], ¬µA x·
 	A  Finite
 ±	³x  A
-´	Bits (2^x + “ A (Ì d· 2 ^ d))) = {x} À A®);
+´	Bits (2^x + “ A (Ì d· 2 ^ d)) = {x} À A®);
 a(REPEAT strip_tac);
 a(finite_induction_tac¬A®);
 (* *** Goal "1" *** *)
@@ -355,6 +411,27 @@ a(ALL_FC_T rewrite_tac[ind_sum_î_def]);
 
 val Ûbits_one_one_thmÝ = save_pop_thm "bits_one_one_thm";
 *)
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µa b c·
+	a £ {} = a
+±	{} £ a = a
+±	a £ b = b £ a
+±	a £ b £ c = (a £ b) £ c®);
+a(rewrite_tac[£_def] THEN PC_T1 "sets_ext1" prove_tac[]);
+val Û£_group_thmÝ = save_pop_thm "£_group_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µa b·
+	a ¡ b = {} ¤ a £ b = a À b®);
+a(rewrite_tac[£_def] THEN PC_T1 "sets_ext1" prove_tac[]);
+val Û£_eq_À_thmÝ = save_pop_thm "£_eq_À_thm";
 =TEX
 
 \end{document}
