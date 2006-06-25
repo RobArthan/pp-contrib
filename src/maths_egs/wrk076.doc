@@ -8,8 +8,6 @@
 \begin{document}
 \vfill
 \maketitle
-=SML
-
 ¹HOLCONST
 Ü Bits : î ­ î SET
 ÷üüüüüü
@@ -24,23 +22,45 @@ declare_infix(250, "£");
 ÷üüüüüü
 Ü µa b· a £ b = (a \ b) À (b \ a)
 °
-=SML
-(*
+\subsection{Sums over Finite Indexed Sets}
+A useful application of the set fold operation is to define the following indexed sum operation. Given an index set, $a$, and a function, $f$, assigning a real number to each member of $a$,
+=INLINEFT
+IndSum a f
+=TEX
+\ is the indexed sum $\sum_{x\in a}f(x)$, and is defined for any set $a$ in which $f$ has finite support.
+
+
 ¹HOLCONST
-Ü GAProduct : î SET ­ î SET ­ ¯ ¸ î SET
+Ü ÛIndProdİ : 'a SET ­ ('a ­ ¯) ­ ¯
 ÷üüüüüü
-Ü µa b· GAProduct a b =
-Ü	( {(i, j) | i  A ± j  B ± j < i} (Ìij· ~(î¯ 1)), a £ b)
+Ü µf·	IndProd {} f = î¯ 1
+Ü ±	µx a·	a  Finite ± ³x  a
+Ü	´	IndProd ({x} À a) f = f x * IndProd a f
+°
+
+We will write $\prod\,a\,f$ as shorthand for
+=INLINEFT
+IndProd a f
+=TEX
+.
+=SML
+declare_alias("", ¬IndProd®);
+=TEX
+=SML
+¹HOLCONST
+Ü GATimes : (¯ ¸ î SET) ­ (¯ ¸ î SET) ­ ¯ ¸ î SET
+÷üüüüüü
+Ü µ (x, a) (y, b)· GATimes (x, a) (y, b) =
+Ü	(~(î¯ 1) ^ #{(i, j) | i  a ± j  b ± j < i}*x*y, a £ b)
 °
 =SML
-*)
 =TEX
 %%%%
 %%%%
 
 =SML
 val Û£_defİ = get_spec¬$£®;
-
+val Ûga_times_defİ = get_spec ¬GATimes®;
 (*
 repeat drop_main_goal;
 *)
@@ -53,6 +73,58 @@ a(lemma_tac¬¶B·
 a(¶_tac¬Ìn·{m | B m n}® THEN asm_rewrite_tac[]);
 val _ = save_consistency_thm ¬Bits® (pop_thm());
 val Ûbits_defİ = get_spec¬Bits®;
+(*
+repeat drop_main_goal;
+*)
+push_consistency_goal ¬IndProd®;
+a(¶_tac ¬Ìa f·SetFold (î¯ 1) ($ *) f a®);
+a(µ_tac THEN rewrite_tac[] THEN bc_thm_tac(set_fold_def));
+a(PC_T1 "¯_lin_arith" prove_tac[]);
+val _ = save_consistency_thm ¬IndProd® (pop_thm());
+val Ûind_prod_defİ = save_thm("ind_prod_def", get_spec ¬IndProd®);
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬µA; f g:'a ­ ¯·
+	A  Finite
+´	 A (Ìx·f x * g x) =  A f *  A g®);
+a(REPEAT strip_tac);
+a(finite_induction_tac¬A®
+	THEN1 rewrite_tac[ind_prod_def]);
+a(ALL_FC_T asm_rewrite_tac[ind_prod_def]);
+a(PC_T1 "¯_lin_arith" prove_tac[]);
+val Ûind_prod_times_thmİ = save_pop_thm "ind_prod_times_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬µA·
+	A  Finite
+´	 A (Ìx·î¯ 1) = î¯ 1®);
+a(REPEAT strip_tac);
+a(finite_induction_tac¬A®
+	THEN1 rewrite_tac[ind_prod_def]);
+a(ALL_FC_T asm_rewrite_tac[ind_prod_def]);
+val Ûind_prod_1_thmİ = save_pop_thm "ind_prod_1_thm";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¬µA; f g : 'a ­ ¯·
+	A  Finite
+± 	(µx·x  A ´ f x = g x)
+´	A f =  A g®);
+a(REPEAT strip_tac);
+a(POP_ASM_T ante_tac THEN intro_µ_tac(¬f®, ¬f®));
+a(finite_induction_tac¬A®
+	THEN1 rewrite_tac[ind_prod_def]);
+a(REPEAT strip_tac);
+a(lemma_tac¬µ x· x  A ´ f x = g x®
+	THEN1 (REPEAT strip_tac THEN all_asm_fc_tac[]));
+a(ALL_ASM_FC_T rewrite_tac[ind_prod_def]);
+a(spec_nth_asm_tac 2 ¬x® THEN asm_rewrite_tac[]);
+val Ûind_prod_local_thmİ = save_pop_thm "ind_prod_local_thm";
 =TEX
 %%%%
 %%%%
@@ -328,71 +400,6 @@ val Ûbits_one_one_thm1İ = save_pop_thm "bits_one_one_thm1";
 %%%%
 
 =SML
-set_goal([], ¬µm n:î·2^m < 2^n ¤ m < n®);
-a(lemma_tac¬µi j:î·2^i < 2^(i+j+1)®);
-(* *** Goal "1" *** *)
-a(REPEAT strip_tac THEN induction_tac¬j:î®);
-(* *** Goal "1.1" *** *)
-a(rewrite_tac[î_exp_def] THEN contr_tac);
-a(LEMMA_T¬2^i=0® ante_tac THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
-a(rewrite_tac[î_exp_eq_0_thm]);
-(* *** Goal "1.2" *** *)
-a(rewrite_tac[plus_assoc_thm1]);
-a(once_rewrite_tac[î_exp_def]);
-a(rewrite_tac[plus_assoc_thm]);
-a(PC_T1 "lin_arith" asm_prove_tac[]);
-(* *** Goal "2" *** *)
-a(lemma_tac¬µi j:î·i < j ´ 2^i < 2^j®);
-(* *** Goal "2.1" *** *)
-a(REPEAT strip_tac THEN POP_ASM_T (
-	strip_asm_tac o rewrite_rule[
-		¼_def,
-		pc_rule1 "lin_arith" prove_rule[]
-		¬i < j ¤ i + 1 ¼ j®]));
-a(all_var_elim_asm_tac1);
-a(asm_rewrite_tac[pc_rule1 "lin_arith" prove_rule[]
-		¬(i+1)+i' = i + i'+ 1®]);
-(* *** Goal "2.2" *** *)
-a(REPEAT µ_tac);
-a(strip_asm_tac(list_µ_elim[¬m®, ¬n®] less_cases_thm)
-	THEN all_asm_fc_tac[]
-		THEN_TRY asm_rewrite_tac[]);
-a(PC_T1 "lin_arith" asm_prove_tac[]);
-val Ûî_exp_mono_thmİ = save_pop_thm "î_exp_mono_thm";
-=TEX
-%%%%
-%%%%
-
-=SML
-set_goal([], ¬OneOne (Ìd·2^d)®);
-a(rewrite_tac[one_one_def]);
-a(µ_tac THEN induction_tac¬x1:î®
-	THEN rewrite_tac[î_exp_def]);
-(* *** Goal "1" *** *)
-a(conv_tac(ONCE_MAP_C eq_sym_conv)
-	THEN rewrite_tac[î_exp_eq_1_thm]);
-(* *** Goal "2" *** *)
-a(µ_tac THEN strip_asm_tac(µ_elim¬x2:î® î_cases_thm)
-	THEN all_var_elim_asm_tac1);
-(* *** Goal "2.1" *** *)
-a(asm_rewrite_tac[î_exp_def,
-	pc_rule1 "lin_arith" prove_rule[]
-	¬µm· 2 * m = 1 ¤ 0 < m ± m < 1®]);
-a(PC_T1 "lin_arith" prove_tac[]);
-(* *** Goal "2.2" *** *)
-a(asm_rewrite_tac[î_exp_def,
-	pc_rule1 "lin_arith" prove_rule[]
-	¬µm n· 2 * m = 2 * n ¤ m = n®]);
-val Ûî_exp_2_one_one_thmİ = save_pop_thm "î_exp_2_one_one_thm";
-val Ûî_exp_2_one_one_thm1İ = save_thm(
-	"î_exp_one_one_thm1",
-	rewrite_rule[one_one_def] î_exp_2_one_one_thm);
-
-=TEX
-%%%%
-%%%%
-
-=SML
 set_goal([], ¬µn·
 	Bits (2*n) = {k | ¶m·m  Bits n ± k = m + 1}®);
 a(µ_tac THEN conv_tac(LEFT_C (once_rewrite_conv[bits_recur_thm1])));
@@ -505,10 +512,55 @@ val Û£_group_thmİ = save_pop_thm "£_group_thm";
 %%%%
 
 =SML
+set_goal([], ¬µa b c·
+	a £ b £ c = (a £ b) £ c®);
+a(rewrite_tac[£_def] THEN PC_T1 "sets_ext1" prove_tac[]);
+val Û£_assoc_thmİ = save_pop_thm "£_assoc_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µa·
+	a £ {} = a
+±	{} £ a = a
+±	a £ a = {}®);
+a(rewrite_tac[£_def] THEN PC_T1 "sets_ext1" prove_tac[]);
+val Û£_clausesİ = save_pop_thm "£_clauses";
+=TEX
+%%%%
+%%%%
+
+=SML
 set_goal([], ¬µa b·
 	a ¡ b = {} ¤ a £ b = a À b®);
 a(rewrite_tac[£_def] THEN PC_T1 "sets_ext1" prove_tac[]);
 val Û£_eq_À_thmİ = save_pop_thm "£_eq_À_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µx a y·
+	GATimes (x, a) (y, {}) = (x*y, a)®);
+a(rewrite_tac[ga_times_def, £_clauses,
+	pc_rule1 "sets_ext1" prove_rule[]
+	¬{(x, y)|F}= {}®,
+	size_empty_thm]);
+val Ûga_times_unit_thmİ = save_pop_thm "ga_times_unit_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+(*
+set_goal([], ¬µx a y b z c·
+	GATimes (GATimes (x, a) (y, b)) (z, c) =
+	GATimes (x, a) (GATimes (y, b) (z, c))
+®);
+a(rewrite_tac[ga_times_def, £_assoc_thm]);
+val Ûga_times_unit_thmİ = save_pop_thm "ga_times_unit_thm";
+*)
 =TEX
 
 \end{document}
