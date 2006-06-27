@@ -4,46 +4,123 @@
 \usepackage{ProofPower}
 \usepackage{A4}
 \def\Hide#1{\relax}
-\title{Mathematical Case Studies: the Geometric Algebra}
+\title{Mathematical Case Studies: Real Vector Spaces and the Geometric Algebra}
 \author{Rob Arthan}
 \makeindex
 \begin{document}
 \vfill
 \maketitle
 \begin{abstract}
-This document develops the basic theory of the Geometric Algebra.
+This document develops the basic theory real vector spaces and of the Geometric Algebra.
 $GA(\infty)$.
 \end{abstract}
 \section{INTRODUCTION}
 This document is one of a set of documents containing mathematical case studies in  {\ProductHOL}.
-It deals with the Geometric Algebra.
+It deals with real vector spaces and the Geometric Algebra.
+\section{REAL VECTOR SPACES}
+=SML
+force_delete_theory"geomalg" handle Fail _ => ();
+open_theory"analysis";
+new_theory"geomalg";
+new_parent "groups";
+new_parent "numbers";
+set_merge_pcs["basic_hol1", "'sets_alg", "'ú", "'¯"];
+=TEX
+\subsection{Signature for Real Vector Spaces}
+
+A candidate for being a vector space is something with the signature of a group together with an ¯-action on the elements.
+
+¹HOLLABPROD ÛRVSİüüüüüüüüüüüüüüüüü
+Ü	Group‰RVS	:'a GROUP;
+Ü	Scale‰RVS	:¯ ­ 'a ­ 'a
+°üüüüüüüüüüüüüüüüüüüüüüüüü
+
+=SML
+declare_alias("Grp", ¬Group‰RVS®);
+declare_alias("Scale", ¬Scale‰RVS®);
+=TEX
+
+
+¹HOLCONST
+Ü ÛPlus‰Vİ :  'a ­ 'a ­ 'a RVS ­ 'a;
+Ü ÛMinus‰Vİ :  'a ­ 'a RVS ­ 'a;
+Ü ÛSubtract‰Vİ :  'a ­ 'a ­ 'a RVS ­ 'a;
+Ü Û0‰Vİ :  'a RVS ­ 'a;
+Ü ÛScale‰Vİ :  ¯ ­ 'a ­ 'a RVS ­ 'a
+÷üüüüüü
+Ü µ R·	  (µv w· Plus‰V v w R = (v.w)(Grp R))
+Ü 	± (µv· Minus‰V v R = (v ›~)(Grp R))
+Ü	± (µv w· Subtract‰V v w R = (v.(w ›~)(Grp R))(Grp R))
+Ü	± 0‰V R = Unit (Grp R)
+Ü	± (µx v· Scale‰V x v R = (Scale R) x v)
+°
+
+=SML
+declare_infix(310, "*‰s");
+declare_infix(300, "+‰V");
+declare_infix(305, "-‰V");
+declare_alias("+‰V", ¬Plus‰V®);
+declare_alias("~‰V", ¬Minus‰V®);
+declare_alias("-‰V", ¬Subtract‰V®);
+declare_alias("*‰s", ¬Scale‰V®);
+=TEX
+
+¹HOLCONST
+Ü ÛAbelianGroupİ : 'a GROUP SET
+÷üüüüüü
+Ü µ G· G  AbelianGroup ¤ G  Group
+Ü	± µ u v:'a· u  Car G ± v  Car G
+Ü	         ´ (u.v) G = (v.u) G
+°
+
+¹HOLCONST
+Ü ÛVS‰Rİ : 'a RVS SET
+÷üüüüüü
+Ü µ V·
+Ü	V  VS‰R
+Ü ¤	Grp V  AbelianGroup
+Ü ±	(µx v w·  ((x*‰s v)V +‰V (x*‰s w)V)V = (x*‰s(v +‰V w) V) V)
+Ü ±	(µx y v· ((x*‰s v)V +‰V (y*‰s v)V)V  = ((x + y) *‰s v) V)
+Ü ±	(µx y:¯; v· (x*‰s(y*‰s v)V)V = ((x*y)*‰s v)V)
+Ü ±	(µv· (î¯ 1*‰s v)V = v)
+°
+
+
+¹HOLCONST
+Ü ÛLinİ : 'a RVS ¸ 'b RVS­ ('a ­ 'b) SET
+÷üüüüüü
+Ü µ V W f·
+Ü	f  Lin(V, W)
+Ü ¤	f  Homomorphism(Grp V, Grp W)
+Ü ±	(µx v· f((x *‰s v) V) = (x *‰s f v)W)
+°
+
+
+¹HOLCONST
+Ü ÛSuppİ : ('a ­ ¯) ­ 'a SET
+÷üüüüüü
+Ü µ f· Supp f = {x | ³f x = î¯ 0}
+°
+
+¹HOLCONST
+Ü ÛFinSupp‰Gİ : ('a ­ ¯) GROUP
+÷üüüüüü
+Ü FinSupp‰G = MkGROUP {f | Supp f  Finite} (Ìf g a·f a + g a) (Ìa·î¯ 0) (Ìf a·~(f a))
+°
+
+
+¹HOLCONST
+Ü ÛFree‰RVSİ : ('a ­ ¯) RVS
+÷üüüüüü
+Ü Free‰RVS = MkRVS FinSupp‰G (Ìx:¯; f· Ìa:'a·x * f a)
+°
+
+
 
 \section{THE GEOMETRIC ALGEBRA}
 
-\subsection{Preliminaries}
 
-=SML
-force_delete_theory"geomalg" handle Fail _ => ();
-open_theory"numbers";
-new_theory"geomalg";
-set_merge_pcs["basic_hol1", "'sets_alg", "'ú", "'¯"];
-=TEX
-It is a technical convenience in setting up the algebra to have available the one-one correspondence between the natural numbers and the finite sets of natural numbers given by considering binary representations.
-We define this correspondence using the following functions.
-
-¹HOLCONST
-Ü Ûîæİ : î ­ î SET
-÷üüüüüü
-Ü	(µn·0  îæ n ¤ n Mod 2 = 1 )
-Ü ±	(µm n· (m+1)  îæ n ¤ m  îæ(n Div 2))
-°
-
-¹HOLCONST
-Ü Ûæîİ : î SET ­ î
-÷üüüüüü
-Ü µA· A  Finite ´ îæ(æî A) = A
-°
-It is also convenient to have available the symmetric difference operator for sets. Indeed, it would be nice for this to be moved into the basic HOL theory of sets.
+It is very convenient to have available the symmetric difference operator for sets. Indeed, it would be nice for this to be moved into the basic HOL theory of sets.
 We follow Z in writing the symmetric difference of $a$ and $b$ as
 =INLINEFT
 a £ b
@@ -59,13 +136,6 @@ declare_infix(250, "£");
 °
 
 \subsection{The Algebra Operations}
-
-¹HOLCONST
-Ü ÛSuppİ : ('a ­ ¯) ­ 'a SET
-÷üüüüüü
-Ü µ f· Supp f = {x | ³f x = î¯ 0}
-°
-
 ¹HOLCONST
 Ü ÛSign‰Gİ : î SET ­ î SET ­ ¯
 ÷üüüüüü
@@ -110,403 +180,53 @@ declare_type_abbrev("GA", [], ”î SET ­ ¯®);
 %%%%
 
 =SML
+val Ûgrp_defİ = get_spec¬Grp®;
+val Ûabelian_group_defİ = get_spec¬AbelianGroup®;
+val Ûvs_ops_defİ = get_spec¬Plus‰V®;
+val Ûvs_defİ = get_spec¬VS‰R®;
+val Ûrvs_defİ = get_spec¬MkRVS®;
+val Ûlin_defİ = get_spec¬Lin®;
+val Ûsupp_defİ = get_spec¬Supp®;
+val Ûfin_supp_defİ = get_spec¬FinSupp‰G®;
+val Ûfree_v_defİ = get_spec¬Free‰RVS®;
+=TEX
+
+=SML
 val Û£_defİ = get_spec¬$£®;
-(*
-repeat drop_main_goal;
-*)
-push_consistency_goal ¬îæ® ;
-a(lemma_tac¬¶B·
-	(µn· B 0 n ¤ n Mod 2 = 1)
-± 	(µm n· B (m+1) n ¤ B m (n Div 2))
-®
-	THEN1 prove_¶_tac);
-a(¶_tac¬Ìn·{m | B m n}® THEN asm_rewrite_tac[]);
-val _ = save_consistency_thm ¬îæ® (pop_thm());
-val Ûîæ_defİ = get_spec¬îæ®;
-=SML
-val Ûmod_2_clausesİ = rewrite_rule[](µ_elim¬2®mod_clauses);
+val Ûsign_g_defİ = get_spec¬Sign‰G®;
+val Ûtimes_g_defİ = get_spec¬$*‰G®;
 =TEX
-%%%%
-%%%%
-
 =SML
-set_goal([], ¬µm n·m  îæ n ´ 2^m ¼ n®);
-a(µ_tac THEN induction_tac¬m:î® THEN rewrite_tac[îæ_def, î_exp_def]);
-(* *** Goal "1" *** *)
-a(contr_tac THEN lemma_tac¬n = 0® THEN1 PC_T1"lin_arith" asm_prove_tac[]);
-a(DROP_NTH_ASM_T 3 ante_tac THEN asm_rewrite_tac[]);
-(* *** Goal "2" *** *)
-a(REPEAT strip_tac THEN all_asm_fc_tac[]);
-a(lemma_tac¬n = n Div 2 * 2 + n Mod 2®
-	THEN1 (bc_thm_tac div_mod_thm
-		THEN rewrite_tac[]));
-a(PC_T1"lin_arith" asm_prove_tac[]);
-val Ûîæ_lemma1İ = save_pop_thm "îæ_lemma1";
-
+val Ûmod_2_clausesİ = rewrite_rule[] (µ_elim¬2®mod_clauses);
 =TEX
-%%%%
-%%%%
-
 =SML
-set_goal([], ¬µm·m ¼ 2^m®);
-a(µ_tac THEN induction_tac¬m:î® THEN rewrite_tac[î_exp_def]);
-a(cases_tac¬m = 0® THEN1 asm_rewrite_tac[î_exp_def]);
-a(PC_T1"lin_arith" asm_prove_tac[]);
-val Ûîæ_lemma2İ = save_pop_thm "îæ_lemma2";
-
+set_goal([], ¬
+	Supp (Ìx:'a· î¯ 0) = {}
+±	(µf:'a ­ ¯· Supp (Ìx·~(f x)) = Supp f)
+±	(µf g:'a ­ ¯· Supp (Ìx· f x + g x) € Supp f À Supp g)
+±	(µc:¯; f:'a ­ ¯· Supp (Ìx· c*f x) € Supp f)
+®);
+a(PC_T1 "sets_ext1" rewrite_tac[supp_def] THEN REPEAT strip_tac
+	THEN_TRY PC_T1 "¯_lin_arith" asm_prove_tac[]);
+a(swap_nth_asm_concl_tac 1 THEN asm_rewrite_tac[]);
+val Ûsupp_clausesİ = save_pop_thm "supp_clauses";
 =TEX
-%%%%
-%%%%
-
 =SML
-set_goal([], ¬µn·îæ n  Finite®);
-a(REPEAT strip_tac);
+set_goal([], ¬FinSupp‰G  AbelianGroup®);
+a(rewrite_tac[fin_supp_def, abelian_group_def, group_def, group_ops_def, supp_clauses, empty_finite_thm] 
+	THEN REPEAT strip_tac
+	THEN_TRY PC_T1 "¯_lin_arith" prove_tac[]);
 a(bc_thm_tac €_finite_thm);
-a(¶_tac¬{i | i < n+1}® THEN PC_T1"sets_ext1" rewrite_tac[range_finite_size_thm]);
-a(REPEAT strip_tac THEN all_fc_tac[îæ_lemma1]);
-a(strip_asm_tac(µ_elim¬x® îæ_lemma2));
-a(PC_T1"lin_arith" asm_prove_tac[]);
-val Ûîæ_finite_thmİ = save_pop_thm "îæ_finite_thm";
-
-=TEX
-%%%%
-%%%%
-
+a(¶_tac¬Supp x À Supp y® THEN 
+	asm_rewrite_tac[supp_clauses, À_finite_thm]);
+val Ûfin_supp_abelian_group_thmİ = save_pop_thm "fin_supp_abelian_group_thm";
 =SML
-set_goal([], ¬µm· ³m = 0 ´ m Div 2 < m®);
-a(REPEAT strip_tac);
-a(lemma_tac¬m = m Div 2 * 2 + m Mod 2®
-	THEN1 (bc_thm_tac div_mod_thm
-		THEN rewrite_tac[]));
-a(PC_T1"lin_arith" asm_prove_tac[]);
-val Ûîæ_lemma3İ = save_pop_thm "îæ_lemma3";
-=TEX
-%%%%
-%%%%
-
-=SML
-set_goal([], ¬
-	îæ 0 = {}
-®);
-a(PC_T1 "sets_ext1" rewrite_tac[] THEN REPEAT strip_tac);
-(* *** Goal "1" *** *)
-a(induction_tac ¬x® THEN asm_rewrite_tac[îæ_def]);
-val Ûîæ_0_thmİ = save_pop_thm "îæ_0_thm";
-=TEX
-%%%%
-%%%%
-
-=SML
-set_goal([], ¬µn·
-	îæ n =
-	(if n Mod 2 = 0 then {} else {0}) À
-	{k | ¶m·m  îæ (n Div 2) ± k = m+1}
-®);
-a(PC_T1 "sets_ext1" rewrite_tac[] THEN REPEAT_UNTIL is_¤ strip_tac);
-a(strip_asm_tac(µ_elim¬n® î_cases_thm));
-(* *** Goal "1" *** *)
-a(asm_rewrite_tac[îæ_0_thm]);
-(* *** Goal "2" *** *)
-a(strip_asm_tac(µ_elim¬x® î_cases_thm));
-(* *** Goal "2.1" *** *)
-a(asm_rewrite_tac[îæ_def]);
-a(cases_tac¬(i+1) Mod 2 = 1® THEN asm_rewrite_tac[]);
-a(lemma_tac¬(i+1) Mod 2 < 2®
-	THEN1 (bc_thm_tac mod_less_thm
-		THEN rewrite_tac[]));
-a(LEMMA_T¬(i+1) Mod 2 = 0® rewrite_thm_tac
-	THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
-(* *** Goal "2.2" *** *)
-a(asm_rewrite_tac[îæ_def]);
-a(LEMMA_T¬³i' + 1  if (i + 1) Mod 2 = 0 then {} else {0}® rewrite_thm_tac
-	THEN1 (cases_tac ¬(i + 1) Mod 2 = 0® THEN asm_rewrite_tac[]));
-a(REPEAT strip_tac THEN1 ¶_tac¬i'® THEN asm_rewrite_tac[]);
-val Ûîæ_recur_thm1İ = save_pop_thm "îæ_recur_thm1";
-=TEX
-%%%%
-%%%%
-
-=SML
-set_goal([], ¬
-	îæ 0 = {}
-± µn·	îæ (n+1) =
-	(if (n+1) Mod 2 = 0 then {} else {0}) À
-	{k | ¶m·m  îæ ((n+1) Div 2) ± k = m+1}
-®);
-a(rewrite_tac[îæ_0_thm] THEN strip_tac);
-a(conv_tac (LEFT_C (once_rewrite_conv[îæ_recur_thm1]))THEN rewrite_tac[]);
-val Ûîæ_recur_thmİ = save_pop_thm "îæ_recur_thm";
-=TEX
-%%%%
-%%%%
-
-=SML
-set_goal([], ¬µA·
-	A  Finite
-´	{k | ¶m· m  A ± k = m + 1}  Finite
-±	#{k | ¶m· m  A ± k = m + 1} = #A
-®);
-a(REPEAT µ_tac THEN ´_tac);
-a(bc_thm_tac bijection_finite_size_thm);
-a(¶_tac¬Ìm·m + 1® THEN asm_rewrite_tac[]
-	THEN REPEAT strip_tac);
-val Ûîæ_lemma4İ = save_pop_thm "îæ_lemma4";
-=TEX
-%%%%
-%%%%
-
-=SML
-set_goal([], ¬µA·
-	A  Finite
-´	“ {k | ¶m· m  A ± k = m + 1} (Ì d· 2 ^ d) =
-	2 * “ A (Ì d· 2 ^ d)
-®);
-a(REPEAT strip_tac);
-a(finite_induction_tac¬A®);
-(* *** Goal "1" *** *)
-a(rewrite_tac[ind_sum_î_def,
-	pc_rule1"sets_ext1" prove_rule[]¬{x|F}={}®]);
-(* *** Goal "2" *** *)
-a(LEMMA_T¬{k|¶ m· m  {x} À A ± k = m + 1} =
-	{x+1} À {k|¶ m· m  A ± k = m + 1}®
-	rewrite_thm_tac
-	THEN1 PC_T1 "sets_ext1" asm_prove_tac[]);
-a(LEMMA_T¬³ x+1  {k|¶ m· m  A ± k = m + 1}®
-	asm_tac
-	THEN1 (MERGE_PCS_T1 ["'î", "sets_ext1"] REPEAT strip_tac
-		THEN all_var_elim_asm_tac));
-a(lemma_tac¬{k|¶ m· m  A ± k = m + 1}  Finite®
-	THEN1 ALL_FC_T rewrite_tac[îæ_lemma4]);
-a(ALL_FC_T asm_rewrite_tac[ind_sum_î_def]);
-a(rewrite_tac[î_exp_def] THEN PC_T1 "lin_arith" prove_tac[]);
-val Ûîæ_lemma5İ = save_pop_thm "îæ_lemma5";
-=TEX
-%%%%
-%%%%
-
-=SML
-set_goal([], ¬µA·
-	A  Finite
-´	{k | ¶m· m  A ± k = m + 1}  Finite
-±	³0  {k | ¶m· m  A ± k = m + 1}
-®);
-a(REPEAT µ_tac THEN ´_tac THEN rewrite_tac[]);
-a(all_fc_tac[îæ_lemma4]);
-val Ûîæ_lemma6İ = save_pop_thm "îæ_lemma6";
-=TEX
-%%%%
-%%%%
-
-=SML
-set_goal([], ¬µf : 'a ­ î; x·
-	“ {x} f = f x®);
-a(REPEAT strip_tac);
-a(pure_once_rewrite_tac[
-	pc_rule1"sets_ext" prove_rule[]
-	¬{x} = {x} À {}®]);
-a(LEMMA_T¬({}:'a SET)  Finite ± ³x  {}®
-	(±_THEN asm_tac)
-	THEN1 rewrite_tac[empty_finite_thm]);
-a(ALL_FC_T pure_rewrite_tac[ind_sum_î_def]);
-a(rewrite_tac[ind_sum_î_def]);
-val Ûind_sum_î_singleton_thmİ = save_pop_thm "ind_sum_î_singleton_thm";
-=TEX
-%%%%
-%%%%
-
-=SML
-set_goal([], ¬µn· n Div 2 = 0 ´ n = 0 ² n = 1
-®);
-a(REPEAT µ_tac THEN ´_tac);
-a(LEMMA_T¬n = n Div 2 * 2 + n Mod 2®
-	once_rewrite_thm_tac
-	THEN1 (bc_thm_tac div_mod_thm
-		THEN rewrite_tac[]));
-a(asm_rewrite_tac[]);
-a(lemma_tac¬n Mod 2 < 2®
-	THEN1 (bc_thm_tac mod_less_thm
-		THEN rewrite_tac[]));
-a(PC_T1 "lin_arith" asm_prove_tac[]);
-val Ûdiv_2_0_thmİ = save_pop_thm "div_2_0_thm";
-=TEX
-%%%%
-%%%%
-
-=SML
-set_goal([], ¬µn·“ (îæ n) (Ìd·2^d) = n®);
-a(REPEAT strip_tac);
-a(cases_tac¬n = 0®
-	THEN1 asm_rewrite_tac[îæ_recur_thm, ind_sum_î_def]);
-a(POP_ASM_T ante_tac THEN cov_induction_tac¬n® THEN REPEAT strip_tac);
-a(all_fc_tac[îæ_lemma3]);
-a(once_rewrite_tac[îæ_recur_thm1]);
-a(cases_tac¬n Div 2 = 0®);
-(* *** Goal "1" *** *)
-a(all_fc_tac[div_2_0_thm] THEN all_var_elim_asm_tac1);
-a(asm_rewrite_tac[îæ_0_thm,
-	pc_rule1 "sets_ext" prove_rule[]¬{x|F}={}®,
-	ind_sum_î_singleton_thm,
-	î_exp_def]);
-(* *** Goal "2" *** *)
-a(LIST_DROP_NTH_ASM_T [4] all_fc_tac);
-a(strip_asm_tac(µ_elim¬n Div 2® îæ_finite_thm));
-a(LEMMA_T¬n = n Div 2 * 2 + n Mod 2® ante_tac
-	THEN1 (bc_thm_tac div_mod_thm
-		THEN rewrite_tac[]));
-a(lemma_tac¬n Mod 2 < 2®
-	THEN1 (bc_thm_tac mod_less_thm
-		THEN rewrite_tac[]));
-a(lemma_tac¬n Mod 2 = 0 ² n Mod 2 = 1®
-	THEN1 PC_T1 "lin_arith" asm_prove_tac[]
-	THEN asm_rewrite_tac[]
-	THEN STRIP_T (fn th => conv_tac(RIGHT_C (eq_match_conv th))));
-(* *** Goal "2.1" *** *)
-a(ALL_FC_T asm_rewrite_tac[îæ_lemma5]);
-a(PC_T1"lin_arith" prove_tac[]);
-(* *** Goal "2.2" *** *)
-a(PC_T1 "predicates" all_fc_tac[îæ_lemma6]);
-a(ALL_FC_T asm_rewrite_tac[ind_sum_î_def, îæ_lemma5]);
-a(rewrite_tac[î_exp_def] THEN PC_T1"lin_arith" prove_tac[]);
-val Ûîæ_sum_thmİ = save_pop_thm "îæ_sum_thm";
-=TEX
-%%%%
-%%%%
-
-=SML
-set_goal([], ¬OneOne îæ®);
-a(rewrite_tac[one_one_def] THEN REPEAT strip_tac);
-a(LEMMA_T ¬ “ (îæ x1) (Ì d· 2 ^ d) =  “ (îæ x2) (Ì d· 2 ^ d) ® ante_tac
-	THEN1 asm_rewrite_tac[]);
-a(rewrite_tac[îæ_sum_thm]);
-val Ûîæ_one_one_thmİ = save_pop_thm "îæ_one_one_thm";
-=TEX
-%%%%
-%%%%
-
-=SML
-set_goal([], ¬ µ m n· îæ m = îæ n ¤ m = n®);
-a(REPEAT strip_tac 
-	THEN all_fc_tac[rewrite_rule[one_one_def] îæ_one_one_thm]
-	THEN asm_rewrite_tac[]);
-val Ûîæ_one_one_thm1İ = save_pop_thm "îæ_one_one_thm1";
-=TEX
-%%%%
-%%%%
-
-=SML
-set_goal([], ¬µn·
-	îæ (2*n) = {k | ¶m·m  îæ n ± k = m + 1}®);
-a(µ_tac THEN conv_tac(LEFT_C (once_rewrite_conv[îæ_recur_thm1])));
-a(rewrite_tac[rewrite_rule[µ_elim¬n® times_comm_thm](
-	list_µ_elim[¬2®, ¬n®, ¬0®] div_mod_times_cancel_thm),
-	mod_2_clauses]);
-val Ûîæ_lemma7İ = save_pop_thm "îæ_lemma7";
-=TEX
-%%%%
-%%%%
-
-=SML
-set_goal([], ¬µn A·
-	(µm·m  A ´ m < n)
-´	¶k· îæ k = A®);
-a(µ_tac THEN induction_tac¬n:î®);
-(* *** Goal "1" *** *)
-a(rewrite_tac[] THEN REPEAT strip_tac);
-a(¶_tac¬0® THEN rewrite_tac[îæ_0_thm]);
-a(PC_T1 "sets_ext1" asm_prove_tac[]);
-(* *** Goal "2" *** *)
-a(REPEAT strip_tac THEN cases_tac¬³n  A®);
-(* *** Goal "2.1" *** *)
-a(DROP_NTH_ASM_T 3 bc_thm_tac THEN REPEAT strip_tac);
-a(LIST_DROP_NTH_ASM_T [3] fc_tac);
-a(cases_tac¬m' = n® THEN1 all_var_elim_asm_tac1);
-a(PC_T1 "lin_arith" asm_prove_tac[]);
-(* *** Goal "2.2" *** *)
-a(lemma_tac¬¶j·îæ j = {k | k + 1  A}®
-	THEN1 DROP_NTH_ASM_T 3 bc_thm_tac
-		THEN REPEAT strip_tac
-		THEN all_asm_fc_tac[]);
-a(cases_tac¬³0  A®);
-(* *** Goal "2.2.1" *** *)
-a(¶_tac¬2*j® THEN1 asm_rewrite_tac[îæ_lemma7]);
-a(PC_T1 "sets_ext1" rewrite_tac[]);
-a(REPEAT strip_tac THEN1 asm_rewrite_tac[]);
-a(strip_asm_tac(µ_elim¬x® î_cases_thm) THEN all_var_elim_asm_tac1);
-a(¶_tac¬i® THEN REPEAT strip_tac);
-(* *** Goal "2.2.2" *** *)
-a(¶_tac¬2*j+1® THEN1 asm_rewrite_tac[îæ_recur_thm, îæ_lemma7,
-	mod_2_clauses,
-	rewrite_rule[µ_elim¬j® times_comm_thm](
-	list_µ_elim[¬2®, ¬j®, ¬1®] div_mod_times_cancel_thm)]);
-a(PC_T1 "sets_ext1" asm_rewrite_tac[]);
-a(REPEAT strip_tac THEN1 asm_rewrite_tac[]
-	THEN1 all_var_elim_asm_tac1);
-a(strip_asm_tac(µ_elim¬x® î_cases_thm));
-(* *** Goal "2.2.2.1" *** *)
-a(DROP_NTH_ASM_T 2 discard_tac THEN all_var_elim_asm_tac1);
-a(¶_tac¬i® THEN REPEAT strip_tac);
-val Ûîæ_lemma8İ = save_pop_thm "îæ_lemma8";
-=TEX
-%%%%
-%%%%
-
-=SML
-set_goal([], ¬µA : î SET·
-	A  Finite
-´	¶n· µm·m  A ´ m < n®);
-a(REPEAT strip_tac THEN finite_induction_tac¬A:î SET®);
-(* *** Goal "1" *** *)
-a(rewrite_tac[]);
-(* *** Goal "2" *** *)
-a(¶_tac¬n + x + 1® THEN REPEAT strip_tac
-	THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
-a(all_asm_fc_tac[] THEN PC_T1 "lin_arith" asm_prove_tac[]);
-val Ûî_finite_bounded_thmİ = save_pop_thm "î_finite_bounded_thm";
-=TEX
-%%%%
-%%%%
-
-=SML
-set_goal([], ¬µA·
-	A  Finite
-´	¶k· îæ k = A®);
-a(REPEAT strip_tac THEN bc_tac
-	[îæ_lemma8, î_finite_bounded_thm]
-	THEN strip_tac);
-val Ûîæ_onto_finite_thmİ = save_pop_thm "îæ_onto_finite_thm";
-=TEX
-%%%%
-%%%%
-
-=SML
-(*
-repeat drop_main_goal;
-*)
-push_consistency_goal ¬æî® ;
-a(prove_¶_tac THEN REPEAT strip_tac);
-a(cases_tac¬A'  Finite® THEN asm_rewrite_tac[]);
-a(all_fc_tac[îæ_onto_finite_thm]);
-a(¶_tac¬k® THEN asm_rewrite_tac[]);
-val _ = save_consistency_thm ¬æî® (pop_thm());
-val Ûæî_defİ = save_thm( "æî_def", get_spec¬æî®);
-=TEX
-%%%%
-%%%%
-
-=SML
-set_goal([], ¬µA·
-	A  Finite
-´	æî A = (“ A (Ìd·2^d))®);
-a(REPEAT strip_tac);
-a(LEMMA_T¬îæ(æî A) = îæ (“ A (Ìd·2^d))® (accept_tac o rewrite_rule[îæ_one_one_thm1]));
-a(ALL_FC_T rewrite_tac[æî_def]);
-a(all_fc_tac[îæ_onto_finite_thm]);
-a(LEMMA_T ¬îæ (“ A (Ì d· 2 ^ d)) = îæ k®
-	asm_rewrite_thm_tac);
-a(rewrite_tac[îæ_one_one_thm1]);
-a(POP_ASM_T (rewrite_thm_tac o eq_sym_rule));
-a(rewrite_tac[îæ_sum_thm]);
-val Ûæî_thmİ = save_pop_thm "æî_thm";
+set_goal([], ¬Free‰RVS  VS‰R®);
+a(rewrite_tac[free_v_def, vs_def, vs_ops_def, grp_def,
+	fin_supp_abelian_group_thm]);
+a(rewrite_tac[fin_supp_def, group_ops_def, vs_ops_def]
+	THEN (PC_T1 "¯_lin_arith" prove_tac[]));
+val Ûfree_v_vs_thmİ = save_pop_thm "free_v_vs_thm";
 =TEX
 %%%%
 %%%%
@@ -553,29 +273,195 @@ val Û£_eq_À_thmİ = save_pop_thm "£_eq_À_thm";
 %%%%
 
 =SML
-(*
-set_goal([], ¬µx a y·
-	GATimes (x, a) (y, {}) = (x*y, a)®);
-a(rewrite_tac[ga_times_def, £_clauses,
-	pc_rule1 "sets_ext1" prove_rule[]
-	¬{(x, y)|F}= {}®,
-	size_empty_thm]);
-val Ûga_times_unit_thmİ = save_pop_thm "ga_times_unit_thm";
+set_goal([], ¬µa b· a  Finite ± b  Finite ´ a £ b  Finite®);
+a(REPEAT strip_tac THEN bc_thm_tac €_finite_thm
+	THEN ¶_tac¬a À b®
+	THEN asm_rewrite_tac[£_def, À_finite_thm]
+	THEN PC_T1 "sets_ext1" prove_tac[]);
+val Û£_finite_thmİ = save_pop_thm "£_finite_thm";
 =TEX
 %%%%
 %%%%
 
 =SML
-
-set_goal([], ¬µx a y b z c·
-	GATimes (GATimes (x, a) (y, b)) (z, c) =
-	GATimes (x, a) (GATimes (y, b) (z, c))
+set_goal([], ¬µf a b·
+	f {} = 0
+±	(µa b· a  Finite ± b  Finite
+	´	f(a À b) + f(a ¡ b) = f a + f b)
+±	a  Finite
+±	b  Finite
+´	f(a £ b) + 2*f(a ¡ b) = f a + f b
 ®);
-a(rewrite_tac[ga_times_def, £_assoc_thm]);
-val Ûga_times_unit_thmİ = save_pop_thm "ga_times_unit_thm";
-*)
+a(REPEAT strip_tac);
+a(lemma_tac¬a À b  Finite® THEN1 asm_rewrite_tac[À_finite_thm]);
+a(lemma_tac¬a ¡ b  Finite® THEN1 ALL_FC_T rewrite_tac[¡_finite_thm]);
+a(lemma_tac¬a £ b  Finite® THEN1 all_fc_tac[£_finite_thm]);
+a(LIST_SPEC_NTH_ASM_T 6 [¬a £ b®, ¬a ¡ b®] ante_tac);
+a(LIST_SPEC_NTH_ASM_T 6 [¬a®, ¬b®] ante_tac);
+a(DROP_NTH_ASM_T 6 discard_tac);
+a(LEMMA_T ¬(a £ b) À a ¡ b = a À b ± (a £ b) ¡ a ¡ b = {}®
+	asm_rewrite_thm_tac
+	THEN1 (rewrite_tac[£_def] THEN PC_T1 "sets_ext1" prove_tac[]));
+a(PC_T1 "lin_arith" prove_tac[]);
+val Ûsize_£_lemmaİ = save_pop_thm "size_£_lemma";
 =TEX
+%%%%
+%%%%
 
+=SML
+set_goal([], ¬µa b·
+	a  Finite
+±	b  Finite
+´	#(a £ b) + 2 * #(a ¡ b) = #a + #b
+®);
+a(REPEAT strip_tac THEN bc_thm_tac size_£_lemma);
+a(asm_rewrite_tac[size_empty_thm, size_À_thm]);
+val Ûsize_£_thmİ = save_pop_thm "size_£_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µt a b c·
+	(µa·t a {} = 0)
+±	(µa b c·a  Finite ± b  Finite ± c  Finite
+	´	t a (b À c) + t a (b ¡ c) = t a b + t a c)
+±	a  Finite ± b  Finite ± c  Finite
+´	t a (b £ c) + 2 * t a (b ¡ c) = t a b + t a c
+®);
+a(REPEAT strip_tac);
+a(bc_thm_tac size_£_lemma THEN asm_rewrite_tac[]);
+a(REPEAT strip_tac THEN all_asm_fc_tac[]);
+val Ûsign_g_lemma1İ = save_pop_thm "sign_g_lemma1";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µt a b c·
+	(µa·t {} a = 0)
+±	(µa b c·a  Finite ± b  Finite ± c  Finite
+	´	t (a À b) c + t (a ¡ b) c = t a c + t b c)
+±	a  Finite ± b  Finite ± c  Finite
+´	t (a £ b) c + 2 * t (a ¡ b) c = t a c + t b c
+®);
+a(REPEAT strip_tac);
+a(bc_thm_tac(rewrite_rule[](µ_elim¬Ìx y· t y x® sign_g_lemma1)));
+a(asm_rewrite_tac[] THEN REPEAT strip_tac THEN all_asm_fc_tac[]);
+val Ûsign_g_lemma2İ = save_pop_thm "sign_g_lemma2";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µt a b c·
+	(µa·t a {} = 0)
+±	(µa b c·a  Finite ± b  Finite ± c  Finite
+	´	t a (b À c) + t a (b ¡ c) = t a b + t a c)
+±	(µa·t {} a = 0)
+±	(µa b c·a  Finite ± b  Finite ± c  Finite
+	´	t (a À b) c + t (a ¡ b) c = t a c + t b c)
+±	a  Finite ± b  Finite ± c  Finite
+´	(t a (b £ c) + t b c) Mod 2 = (t (a £ b) c + t a b) Mod 2
+®);
+a(REPEAT strip_tac);
+a(LEMMA_T ¬((t a (b £ c) + t b c) + 2 * t a (b ¡ c)) Mod 2 =
+	((t (a £ b) c + t a b) + 2 * t (a ¡ b) c) Mod 2®
+	(accept_tac o rewrite_rule[mod_2_clauses]));
+a(LEMMA_T ¬((t a (b £ c) + t b c) + 2 * t a (b ¡ c)) =
+	((t (a £ b) c + t a b) + 2 * t (a ¡ b) c)®
+	rewrite_thm_tac);
+a(rewrite_tac[pc_rule1"lin_arith" prove_rule[]
+	¬µi j k:î·(i + j) + k = j + i + k®]);
+a(ALL_FC_T rewrite_tac[sign_g_lemma1, sign_g_lemma2]);
+a(PC_T1 "lin_arith" prove_tac[]);
+val Ûsign_g_lemma4İ = save_pop_thm "sign_g_lemma4";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µm·
+	 ~(î¯ 1) ^ m = ~(î¯ 1) ^ (m Mod 2)
+®);
+a(REPEAT strip_tac);
+a(strip_asm_tac (µ_elim¬m® mod_2_cases_thm)
+	THEN ALL_FC_T asm_rewrite_tac[mod_2_0_¯_î_exp_thm, mod_2_1_¯_î_exp_thm]
+	THEN rewrite_tac[¯_î_exp_0_1_thm]);
+val Û¯_î_exp_mod_2_thmİ = save_pop_thm "¯_î_exp_mod_2_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µI J K:î SET·
+	{(i, j)|i  I À J ± j  K ± j < i} =
+	{(i, j)|i  I ± j  K ± j < i} À
+	{(i, j)|i  J ± j  K ± j < i}
+±	{(i, j)|i  I ± j  J À K ± j < i} =
+	{(i, j)|i  I ± j  J ± j < i} À
+	{(i, j)|i  I ± j  K ± j < i}
+±	{(i, j)|i  I ¡ J ± j  K ± j < i} =
+	{(i, j)|i  I ± j  K ± j < i} ¡
+	{(i, j)|i  J ± j  K ± j < i}
+±	{(i, j)|i  I ± j  J ¡ K ± j < i} =
+	{(i, j)|i  I ± j  J ± j < i} ¡
+	{(i, j)|i  I ± j  K ± j < i}
+®);
+a(PC_T1 "sets_ext1" prove_tac[]);
+val Ûsign_g_lemma5İ = save_pop_thm "sign_g_lemma5";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µI J:î SET·
+	I  Finite ± J  Finite
+´	{(i, j)|i  I ± j  J ± j < i}  Finite
+®);
+a(REPEAT strip_tac THEN bc_thm_tac €_finite_thm);
+a(¶_tac¬I ¸ J® THEN ALL_FC_T rewrite_tac[¸_finite_size_thm]);
+a(rewrite_tac[¸_def] THEN PC_T1 "sets_ext1" prove_tac[]);
+val Ûsign_g_lemma6İ = save_pop_thm "sign_g_lemma6";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µI J K·
+	I  Finite
+±	J  Finite
+±	K  Finite
+´	Sign‰G (I £ J) K * Sign‰G I J
+=	Sign‰G I (J £ K) * Sign‰G J K
+®);
+a(REPEAT strip_tac THEN rewrite_tac[sign_g_def,
+	conv_rule(ONCE_MAP_C eq_sym_conv) ¯_î_exp_plus_thm]);
+a(once_rewrite_tac[¯_î_exp_mod_2_thm]);
+a(bc_thm_tac(prove_rule[]¬µx:¯; i j :î· j = i ´ x^i = x^j®));
+a(bc_thm_tac(rewrite_rule[](µ_elim¬Ìa b:î SET·# {(i, j)|i  a ± j  b ± j < i}® sign_g_lemma4)));
+a(asm_rewrite_tac[pc_rule1"sets_ext1" prove_rule[]
+	¬{(i, j)|F} = {}®,
+	size_empty_thm]);
+a(DROP_ASMS_T discard_tac THEN rewrite_tac[sign_g_lemma5]);
+a(REPEAT strip_tac THEN bc_thm_tac size_À_thm
+	THEN ALL_FC_T rewrite_tac[sign_g_lemma6]);
+val Ûsign_g_thmİ = save_pop_thm "sign_g_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+(*
+set_goal([], ¬µV1 V2 V3·
+	Supp V1  Finite ± Supp V1 € Finite
+±	Supp V2  Finite ± Supp V2 € Finite
+±	Supp V3  Finite ± Supp V3 € Finite
+´	(V1 *‰G V2) *‰G V3 = V1 *‰G (V2 *‰G V3)
+®);
+a(REPEAT strip_tac THEN rewrite_tac[times_g_def]);
+val Ûtimes_g_assoc_thmİ = save_pop_thm "times_g_assoc_thm";
+*)
 =TEX
 \Hide{
 =SML
@@ -588,7 +474,7 @@ local
 		(ot output_banner par) handle ex => reraise ex "z_output_theory"
 	);
 in
-	val _ = output_theorems{out_file="geomalg.th.doc", theory="-"};
+	val _ = output_theorems{out_file="geomalg.th.doc", theory="geomalg"};
 end;
 =TEX
 } %\Hide
