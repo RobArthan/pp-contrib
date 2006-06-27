@@ -285,6 +285,13 @@ ind_sum_singleton_thm
 =TEX
 }
 
+Now we define the support of a real valued function.
+πHOLCONST
+‹ €Supp› : ('a ≠ Ø) ≠ 'a SET
+˜¸¸¸¸¸¸
+‹ µ f∑ Supp f = {x | ≥f x = ÓØ 0}
+∞
+
 Next comes an induction principle for functions of finite support, i.e., functions $f$ such that $f(x) \not= 0$ for at most finitely many $x$.
 If $p$ is any property of functions that is true for the characteristic function, $\chi_{\{x\}}$, of any singleton set, $\{x\}$, and that is preserved under addition and multiplication by a constant (for operands of finite support), then $p(f)$ holds for any function $f$ of finite support.
 
@@ -294,7 +301,11 @@ In working with an indexed sum $\sum_A f$, one can always assume that $f$ has fi
 =GFT
 fin_supp_induction_thm
 =TEX
-}{}
+}{
+=GFT
+fin_supp_induction_thm1
+=TEX
+}
 
 We will use the induction principle for functions of finite support to tackle the inclusion/exclusion principle.
 The inclusion/exclusion principle deals with a family $U_i$ of sets where $i$ range over a finite and non-empty index set $I$.
@@ -583,6 +594,7 @@ ballot_thm
 %%%%
 %%%%
 =SML
+val €supp_def› = get_spec ¨SuppÆ;
 val €binomial_def› = get_spec ¨BinomialÆ;
 val €distinct_samples_def› = get_spec ¨DistinctSamplesÆ;
 val €walk_def› = get_spec ¨WalkÆ;
@@ -1698,6 +1710,24 @@ a(LEMMA_T ¨{x'|≥ — {x} x' = ÓØ 0} = {x}Æ
 	(fn th => rewrite_tac[th, singleton_finite_thm]));
 a(PC_T1 "sets_ext" rewrite_tac[—_def] THEN µ_tac);
 a(cases_tac¨x' = xÆ THEN asm_rewrite_tac[]);
+val €fin_supp_induction_thm1› = save_pop_thm "fin_supp_induction_thm1";
+=TEX
+%%%%
+%%%%
+=SML
+set_goal([], ¨µp∑
+	(µx∑p(—{x}))
+±	(µf c∑	Supp f ç Finite
+	±	p f
+	¥	p (Ãx∑c*(f x)))
+±	(µf g∑	Supp f ç Finite
+	±	Supp g ç Finite
+	±	p f ± p g
+	¥	p (Ãx∑f x + g x))
+¥	(µf∑	Supp f ç Finite
+	¥	p f)
+Æ);
+a(rewrite_tac[supp_def, fin_supp_induction_thm1]);
 val €fin_supp_induction_thm› = save_pop_thm "fin_supp_induction_thm";
 =TEX
 %%%%
@@ -2001,7 +2031,7 @@ set_goal([], ¨µI U A f∑
 a(REPEAT strip_tac);
 a(ante_tac(µ_elim¨Ãf∑ì (I)
 	(ÃJ∑ ~(ÓØ 1) ^ #J * ì (A ° •{B | ∂j∑ j ç J ± B = U j}) f) = ÓØ 0Æ
-	fin_supp_induction_thm));
+	fin_supp_induction_thm1));
 a(rewrite_tac[] THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(swap_nth_asm_concl_tac 1);
