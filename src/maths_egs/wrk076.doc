@@ -545,6 +545,51 @@ val €ind_sum_transfer_thm› = save_pop_thm "ind_sum_transfer_thm";
 %%%%
 
 =SML
+set_goal([], ¨µx B; f:'a ∏ 'b ≠ Ø∑
+	B ç Finite
+¥	ì ({x} ∏ B) f = ì B (Ãy∑f(x, y))
+Æ);
+a(REPEAT strip_tac);
+a(finite_induction_tac¨BÆ THEN1 rewrite_tac[ind_sum_def, ∏_def,
+	pc_rule1 "sets_ext1" prove_rule[]¨{(x, y)|F} = {}Æ]);
+a(LEMMA_T¨({x} ∏ ({x'} ¿ B)) = {(x,  x')} ¿ ({x} ∏ B)Ærewrite_thm_tac
+	THEN1 MERGE_PCS_T1 ["'bin_rel", "'pair", "sets_ext1"] prove_tac[]);
+a(LEMMA_T¨≥(x,  x') ç ({x} ∏ B)Æ asm_tac
+	THEN1 MERGE_PCS_T1 ["'bin_rel", "sets_ext1"] prove_tac[]);
+a(strip_asm_tac (µ_elim¨xÆ singleton_finite_thm));
+a(lemma_tac¨({x} ∏ B) ç FiniteÆ
+	THEN1 all_fc_tac[∏_finite_size_thm]);
+a(ALL_FC_T asm_rewrite_tac[ind_sum_def]);
+val €ind_sum_singleton_∏_thm› = save_pop_thm "ind_sum_singleton_∏_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µf:'a ∏ 'b ≠ Ø; A B∑
+	A ç Finite ± B ç Finite
+¥	ì A (Ãx∑ì B (Ãy∑f(x, y))) = ì (A ∏ B) f
+Æ);
+a(REPEAT strip_tac);
+a(finite_induction_tac¨AÆ THEN1 rewrite_tac[ind_sum_def, ∏_def,
+	pc_rule1 "sets_ext1" prove_rule[]¨{(x, y)|F} = {}Æ]);
+a(ALL_FC_T asm_rewrite_tac[ind_sum_def]);
+a(LEMMA_T¨(({x} ¿ A) ∏ B) = ({x} ∏ B) ¿ (A ∏ B)Ærewrite_thm_tac
+	THEN1 MERGE_PCS_T1 ["'bin_rel", "'pair", "sets_ext1"] prove_tac[]);
+a(strip_asm_tac (µ_elim¨xÆ singleton_finite_thm));
+a(lemma_tac¨({x} ∏ B) ç Finite ± (A ∏ B) ç Finite Æ
+	THEN1 ALL_FC_T rewrite_tac[∏_finite_size_thm]);
+a(ALL_FC_T rewrite_tac[ind_sum_¿_thm, ind_sum_singleton_∏_thm]);
+a(LEMMA_T¨({x} ∏ B) ° (A ∏ B) = {}Ærewrite_thm_tac
+	THEN1 (MERGE_PCS_T1 ["'bin_rel", "'pair", "sets_ext1"] rewrite_tac[]
+		THEN contr_tac THEN all_var_elim_asm_tac1));
+a(rewrite_tac[ind_sum_def]);
+val €ind_sum_∏_thm› = save_pop_thm "ind_sum_∏_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
 set_goal([], ¨µA∑
 	Supp 0âG = {}
 ±	Supp 1âG = {{}}
@@ -588,6 +633,38 @@ val €times_g_def1› = save_pop_thm "times_g_def1";
 %%%%
 
 =SML
+set_goal([], ¨µv w∑
+	Supp w ç Finite
+¥	v *âG w =
+	ÃK∑ ì (Supp w) (Ã J∑ SignâG (K £ J) J * v (K £ J) * w J)
+Æ);
+a(REPEAT strip_tac THEN rewrite_tac[times_g_def]);
+a(lemma_tac¨{(I, J)|I ç Supp v ± J ç Supp w ± x = I £ J} ç FiniteÆ
+	THEN1 ALL_FC_T asm_rewrite_tac[times_g_finite_thm]);
+a(conv_tac eq_sym_conv);
+a(bc_thm_tac ind_sum_transfer_thm);
+a(rename_tac[(¨xÆ, "K")] THEN ∂_tac¨ÃJ∑ (K £ J, J)Æ
+	THEN PC_T1 "predicates" asm_rewrite_tac[]);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(POP_ASM_T ante_tac);
+a(rewrite_tac[Ø_times_eq_0_thm, supp_def]
+	THEN taut_tac);
+(* *** Goal "2" *** *)
+a(rewrite_tac[£_def] THEN PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "3" *** *)
+a(rewrite_tac[]);
+(* *** Goal "4" *** *)
+a(lemma_tac¨µa b c:Ó SET∑((b £ a) £ a) = bÆ
+	THEN1 (rewrite_tac[£_def] THEN PC_T1 "sets_ext1" prove_tac[]));
+a(∂â1_tac¨Snd yÆ THEN asm_rewrite_tac[]);
+a(REPEAT strip_tac);
+val €times_g_def2› = save_pop_thm "times_g_def2";
+=TEX
+%%%%
+%%%%
+
+=SML
 set_goal([], ¨µv∑
 	ÓØ 0 *âS v = 0âG
 Æ);
@@ -618,20 +695,19 @@ set_goal([], ¨µv w c∑
 ±	Supp w ç Finite
 ¥	(c *âS v) *âG w = c *âS (v *âG w)
 Æ);
+
 a(REPEAT µ_tac THEN ¥_tac);
 a(cases_tac¨c = ÓØ 0Æ THEN1 PC_T1 "predicates" asm_rewrite_tac[zero_times_s_thm, zero_times_g_thm]);
-(* *** Goal "" *** *)
-a(rewrite_tac[times_g_def] THEN µ_tac);
+a(lemma_tac¨Supp (c *âS v) ç FiniteÆ
+	THEN1 ALL_FC_T asm_rewrite_tac[supp_times_s_thm]);
+a(PC_T1 "predicates" (ALL_FC_T rewrite_tac)[times_g_def1]);
 a(ALL_FC_T rewrite_tac[supp_times_s_thm]);
-a(rewrite_tac[times_s_def]);
-a(lemma_tac¨{(I, J)|I ç Supp v ± J ç Supp w ± x = I £ J} ç FiniteÆ
-	THEN1 ALL_FC_T rewrite_tac[times_g_finite_thm]);
+a(µ_tac THEN rewrite_tac[times_s_def]);
 a(rewrite_tac[µ_elim¨cÆØ_times_order_thm]);
 a(pure_rewrite_tac[prove_rule[]
-	¨ (Ã (I, J)∑ c * SignâG I J * v I * w J) =
-	Ãx∑c * (Ã (I, J)∑ SignâG I J * v I * w J) x Æ]);
-a(ALL_FC_T pure_rewrite_tac[ind_sum_const_times_thm]);
-a(rewrite_tac[]);
+	¨ (Ã I∑ c * SignâG I (x £ I) * v I * w (x £ I)) =
+	ÃI∑c * (Ã I∑ SignâG I (x £ I) * v I * w (x £ I)) I Æ]);
+a(ALL_FC_T rewrite_tac[ind_sum_const_times_thm]);
 val €times_g_linear_thm1› = save_pop_thm "times_g_linear_thm1";
 =TEX
 %%%%
@@ -639,12 +715,46 @@ val €times_g_linear_thm1› = save_pop_thm "times_g_linear_thm1";
 
 =SML
 (*
-set_goal([], ¨µV1 V2 V3∑
-	Supp V1 ç Finite
-±	Supp V2 ç Finite
-±	Supp V3 ç Finite
-¥	(V1 *âG V2) *âG V3 = V1 *âG (V2 *âG V3)
+set_goal([], ¨µv w r∑
+	Supp v ç Finite
+±	Supp w ç Finite
+±	Supp r ç Finite
+¥	(v *âG w) *âG r = v *âG (w *âG r)
 Æ);
+a(REPEAT strip_tac);
+a(PC_T1 "predicates" (ALL_FC_T rewrite_tac)
+	[times_g_def1, times_g_def2]);
+a(LEMMA_T ¨µf; c:Ø∑ì (Supp w) f * c = ì (Supp w) (ÃI∑f I * c)Æ
+	rewrite_thm_tac
+	THEN1 (once_rewrite_tac[Ø_times_comm_thm]
+		THEN ALL_FC_T rewrite_tac[ind_sum_const_times_thm]));
+a(LEMMA_T ¨µf; c:Ø∑c * ì (Supp w) f = ì (Supp w) (ÃJ∑c * f J)Æ
+	rewrite_thm_tac
+	THEN1 ALL_FC_T rewrite_tac[ind_sum_const_times_thm]);
+a(LEMMA_T ¨µf; c:Ø∑c * ì (Supp r) f = ì (Supp r) (ÃJ∑c * f J)Æ
+	rewrite_thm_tac
+	THEN1 ALL_FC_T rewrite_tac[ind_sum_const_times_thm]
+	THEN rename_tac[(¨J':Ó SETÆ, "K")]);
+a(ALL_FC_T rewrite_tac[rewrite_rule[](µ_elim¨(Ã (J, K)∑ SignâG (x £ J) J * (SignâG ((x £ J) £ K) K * v ((x £ J) £ K) * w K) * r J)Æ
+ind_sum_∏_thm)]);
+a(ALL_FC_T rewrite_tac[rewrite_rule[](µ_elim¨Ã(I, J)∑SignâG I (x £ I) * v I * SignâG ((x £ I) £ J) J * w ((x £ I) £ J) * r JÆ
+ind_sum_∏_thm)]);
+
+val €times_g_assoc_thm› = save_pop_thm "times_g_assoc_thm";
+*)
+=TEX
+%%%%
+%%%%
+
+=SML
+(*
+set_goal([], ¨µv w∑
+	Supp v ç Finite ± Supp v Ä Finite
+±	Supp w ç Finite ± Supp v Ä Finite
+¥	Supp (v *âG w) ç Finite
+Æ);
+times_g_finite_thm;
+
 a(REPEAT strip_tac THEN rewrite_tac[times_g_def]);
 val €times_g_assoc_thm› = save_pop_thm "times_g_assoc_thm";
 *)
