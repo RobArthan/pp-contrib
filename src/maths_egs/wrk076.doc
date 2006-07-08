@@ -3,7 +3,31 @@
 \usepackage{latexsym}
 \usepackage{ProofPower}
 \usepackage{A4}
+%
+% Macro for cloak-and-dagger work:
+%
 \def\Hide#1{\relax}
+%
+% Macros for various mathematical odds and ends:
+%
+\def\Func#1{{\mathsf{#1}}}
+\def\GA{\Func{GA}}
+\def\Zero{\mathbf{0}}
+\def\One{\mathbf{1}}
+\def\x{\mathbf{x}}
+\def\y{\mathbf{y}}
+\def\z{\mathbf{z}}
+\def\N{\mathbb{N}}
+\def\D{\mathbb{D}}
+\def\B{\mathbb{B}}
+\def\R{\mathbb{R}}
+\def\Z{\mathbb{Z}}
+\def\Q{\mathbb{Q}}
+\def\E#1{\mathbf{e}_{#1}}
+\def\F#1{\mathbf{f}_{#1}}
+%
+%  article red tape:
+%
 \title{Mathematical Case Studies: the Geometric Algebra}
 \author{Rob Arthan}
 \makeindex
@@ -11,13 +35,53 @@
 \vfill
 \maketitle
 \begin{abstract}
-This document develops the basic theory of the Geometric Algebra.
-$GA(\infty)$.
+This document is one of a series of mathematical case studies in  {\ProductHOL}.
+It gives a construction of the Geometric Algebra $GA$.
 \end{abstract}
 \section{INTRODUCTION}
-This document is one of a set of documents containing mathematical case studies in  {\ProductHOL}.
-It deals with the Geometric Algebra.
-\section{REAL VECTOR SPACES}
+In \cite{Harrison05a}, Harrison advocates an approach to Euclidean geometry in HOL using a type constructor to model the individual Euclidean spaces $\R^{N}$.
+In this document, we set up the framework for an alternative approach where one works in a fixed type that contains all of the $\bbR^{N}$.
+In fact we do more than that: to quote Macdonald~\cite{Macdonald06}:
+
+\begin{quotation}
+\it
+Geometric algebra is nothing less than a new approach to geometry.
+Geometric objects (points, lines, planes, [\ldots]) are represented by members of an algebra, a {\em geometric algebra}, rather than by equations. Geometric operations (rotate, translate, intersect, [\ldots]) on the objects are represented by algebraic operations in the algebra, rather than by matrix operations.
+Geometric algebra is {\em coordinate-free:} coordinates are needed only when specific objects or operations are under consideration.
+\end{quotation}
+
+Let me now give a potted account of geometric algebra.
+
+
+The general finite-dimensional geometric algebra $\GA(p, q)$ is paremeterised by two natural numbers $p$ and $q$.
+$\GA(p, q)$ is an associative algebra over the real numbers with a two-sided unit $\One$.
+It is commutative iff. $p + q \le 1$.
+
+
+Real multiples $\lambda\One$ of the unit element in $\GA(p, q)$ are called {\em scalars} and are ordered by taking $\lambda\One < \mu\One$ iff.  $\lambda < \mu$.
+Under this ordering, the subalgebra of scalars is isomorphic as an ordered field with the real numbers.
+We write $\R_0$ for the set of scalars.
+
+$\GA(p, q)$ is generated as an algebra by a $p+q$-dimensional subspace called $\R^{p, q}$ whose members are called {\em vectors}.
+If $\x \in \R^{p, q}$, then $\x^2$ is a scalar.
+$\R^{p, q}$ contains subspaces $\R^{p, 0}$ and $\R^{0, q}$ of dimensions $p$ and $q$, respectively, such that for non-zero $\x \in \R^{p, 0}$, $\x^2 > 0$, while for non-zero $\x \in \R^{0, q}$
+$\x^2 < 0$.
+
+The {\em inner product} of vectors $\x$ and $\y$ is defined by $\x.\y = \frac{1}{2}(\x\y + \y\x)$ and is a scalar.
+The inner product is a bilinear form, i.e., it satisfies the conditions $(\lambda\x).(\mu\y) = \lambda\mu(\x.\y)$, $(\x + \y).\z = \x.\z + \y.\z$,
+$\x.(\y + \z) = \x.\y + \x.\z$.
+Vectors $\x$ and $\y$ are said to be {\em orthogonal} iff. $\x.\y = 0$.
+$\x$ and $\y$ are orthogonal iff. they anti-commute, i.e., iff. $\x\y = -\y\x$.
+
+The {\em outer product} of vectors $\x$ and $\y$ is defined by $\x\land\y=\frac{1}{2}(\x\y -\y\x)$, so that $\x\y = \x.\y + \x\land\y$, which is a scalar iff. it is 0.
+Vectors $\x$ and $\y$ are said to be {\em collinear} iff. $\x \land \y = 0$.
+Thus, when $\x$ and $\y$ are orthogonal, $\x\y = \x \land y$, while when they are collinear, $\x\y = \x . \y$.
+
+Simple explicit constructions of the geometric algebras have been given by Macdonald~\cite{Macdonald02}, and by the author~\cite{Arthan06b}.
+As noted in~\cite{Arthan06b} the union of all of the $\GA(p, q)$ can be constructed in one step giving what I will now refer to as {\em the} geometric algebra, $\GA = \GA(\infty, \infty)$.
+
+
+
 =SML
 force_delete_theory"geomalg" handle Fail _ => ();
 open_theory"fincomb";
@@ -29,6 +93,7 @@ set_merge_pcs["basic_hol1", "'sets_alg", "'˙", "'Ø"];
 
 \section{THE GEOMETRIC ALGEBRA}
 
+\subsection{Preliminaries}
 
 It is very convenient to have available the symmetric difference operator for sets. Indeed, it would be nice for this to be moved into the basic HOL theory of sets.
 We follow Z in writing the symmetric difference of $a$ and $b$ as
@@ -38,6 +103,7 @@ a £ b
 
 =SML
 declare_infix(250, "£");
+=TEX
 
 πHOLCONST
 ‹ $£ : 'a SET ≠ 'a SET ≠ 'a SET
@@ -45,62 +111,124 @@ declare_infix(250, "£");
 ‹ µa b∑ a £ b = (a \ b) ¿ (b \ a)
 ∞
 
-\subsection{The Algebra Operations}
+
+The following is the function $\sigma$ of~\cite{Arthan06b}.
+In addition to its use in defining the algebra, this may also find a use in decision procedures later on.
+
 πHOLCONST
 ‹ €SignâG› : ˙ SET ≠ ˙ SET ≠ Ø
 ˜¸¸¸¸¸¸
 ‹ µ I J∑	SignâG I J =
 ‹	~(ÓØ 1) ^ (#{(i, j) | i ç I ± j ç J ± j < i} + #{i | i ç I ± i ç J ± i < Ó˙ 0})
 ∞
+
+\subsection{The Representatives for the Algebra Operations}
+$\GA$ in HOL will be subtype of the type of all real-valued functions on sets of integers (specifically, it will comprise the functions whose support is a finite set of finite sets).
+The following (purely temporary) type abbreviation captures this.
 =SML
-declare_infix(300, "+âG");
 declare_type_abbrev("GA", [], î˙ SET ≠ ØÆ);
+=TEX
+We adopt the convention of using an initial `\_' to distinguish operations on the representation type from corresponding operations on the new type.
+=SML
+declare_infix(300, "_+âG");
+=TEX
 
 πHOLCONST
-‹ $+âG : GA ≠ GA ≠ GA
+‹ $€_+âG› : GA ≠ GA ≠ GA
 ˜¸¸¸¸¸¸
-‹ µ v w∑ v +âG w = ÃK∑ v K + w K
+‹ µ v w∑ v _+âG w = ÃK∑ v K + w K
 ∞
 πHOLCONST
-‹ ~âG : GA ≠ GA
+‹ €_~âG› : GA ≠ GA
 ˜¸¸¸¸¸¸
-‹ µ v∑ ~âG v = ÃK∑ ~(v K)
+‹ µ v∑ _~âG v = ÃK∑ ~(v K)
 ∞
 =SML
-declare_infix(310, "*âG");
+declare_infix(310, "_*âG");
+=TEX
 
 πHOLCONST
-‹ $*âG : GA ≠ GA ≠ GA
+‹ $€_*âG› : GA ≠ GA ≠ GA
 ˜¸¸¸¸¸¸
 ‹ µ v w∑
-‹	v *âG w = ÃK∑
+‹	v _*âG w = ÃK∑
 ‹	ì {(I, J) | I ç Supp v ± J ç Supp w ± K = I £ J}
 ‹	(Ã(I, J)∑ SignâG I J * v I * w J)
 ∞
 =SML
-declare_infix(310, "*âS");
+declare_infix(310, "_*âS");
+=TEX
 
 πHOLCONST
-‹ $*âS : Ø ≠ GA ≠ GA
+‹ $€_*âS› : Ø ≠ GA ≠ GA
 ˜¸¸¸¸¸¸
-‹ µ c v∑ c *âS v = ÃK∑c * v K
+‹ µ c v∑ c _*âS v = ÃK∑c * v K
 ∞
 
 πHOLCONST
-‹ 0âG : GA
+‹ €_0âG› : GA
 ˜¸¸¸¸¸¸
-‹ 0âG = ÃK∑ ÓØ 0
+‹ _0âG = ÃK∑ ÓØ 0
 ∞
 πHOLCONST
-‹ 1âG : GA
+‹ €_1âG› : GA
 ˜¸¸¸¸¸¸
-‹ 1âG = —{{}}
+‹ _1âG = —{{}}
 ∞
 
 =TEX
+\subsection{The Type Definition}
+πHOLCONST
+‹	IsGARep : GA ≠ BOOL
+˜
+‹	µu∑ IsGARep u § Supp u ç Finite ± Supp u Ä Finite
+∞
+We can now do away with the type abbreviation \ldots
+=SML
+undeclare_type_abbrev"GA";
+=TEX
+\ldots and introduce the new type instead:
+=SML
+val €ga_def› = new_type_defn(["GA", "ga_def"], "GA", [],
+	tac_proof(([], ¨∂u∑ IsGARep uÆ),
+		∂_tac¨(ÃI∑ÓØ 0)Æ
+	THEN	rewrite_tac[get_spec¨IsGARepÆ, get_spec¨SuppÆ,
+		pc_rule1"sets_ext" prove_rule[]¨{x|F} = {}Æ,
+		empty_finite_thm]));
+=SML
+declare_infix(300, "+âG");
+declare_infix(310, "*âG");
+declare_infix(310, "*âS");
+=TEX
 
-%\bibliographystyle{fmu}
-%\bibliography{fmu}
+πHOLCONST
+‹ $€+âG›	: GA ≠ GA ≠ GA;
+‹ €~âG›	: GA ≠ GA;
+‹ $€*âG›	: GA ≠ GA ≠ GA;
+‹ $€*âS›	: Ø ≠ GA ≠ GA;
+‹ €0âG›	: GA;
+‹ €1âG›	: GA
+˜¸¸¸¸¸¸
+‹	(µu v∑ 	u +âG v = v +âG u)
+‹ ±	(µ u v w∑ 	(u +âG v) +âG w = u +âG v +âG w)
+‹ ±	(µ u∑ 		u +âG 0âG = u)
+‹ ±	(µ u∑ 		u +âG ~âG u = 0âG)
+‹ ±	(µ u∑ 		ÓØ 1 *âS u = u)
+‹ ±	(µ a b u∑ 	a *âS (b *âS u) = (a * b) *âS u)
+‹ ±	(µ a u v∑ 	a *âS (u +âG v) = a *âS u +âG a *âS v)
+‹ ±	(µ a b u∑ 	(a + b) *âS u = a *âS u +âG b *âS u)
+‹ ±	(µ u v w∑ 	(u *âG v) *âG w = u *âG (v *âG w))
+‹ ±	(µ u v w∑	u *âG (v +âG w) = u *âG v +âG u *âG w)
+‹ ±	(µ u v w∑	(v +âG w) *âG u = v *âG u +âG w *âG u)
+‹ ±	(µ a u v∑	(a *âS u) *âG v = a *âS u *âG v)
+‹ ±	(µ u∑		1âG *âG u = u ± u *âG 1âG = u)
+∞
+
+
+
+{\raggedright
+\bibliographystyle{plain}
+\bibliography{bookspapers}}
 
 %\appendix
 {%\HOLindexOff
@@ -128,12 +256,12 @@ declare_infix(310, "*âS");
 =SML
 val €£_def› = get_spec¨$£Æ;
 val €sign_g_def› = get_spec¨SignâGÆ;
-val €plus_g_def› = get_spec¨$+âGÆ;
-val €minus_g_def› = get_spec¨~âGÆ;
-val €times_g_def› = get_spec¨$*âGÆ;
-val €times_s_def› = get_spec¨$*âSÆ;
-val €zero_g_def› = get_spec¨0âGÆ;
-val €one_g_def› = get_spec¨1âGÆ;
+val €plus_g_def› = get_spec¨$_+âGÆ;
+val €minus_g_def› = get_spec¨_~âGÆ;
+val €times_g_def› = get_spec¨$_*âGÆ;
+val €times_s_def› = get_spec¨$_*âSÆ;
+val €zero_g_def› = get_spec¨_0âGÆ;
+val €one_g_def› = get_spec¨_1âGÆ;
 =TEX
 =SML
 val €mod_2_clauses› = rewrite_rule[] (µ_elim¨2Æmod_clauses);
@@ -567,7 +695,7 @@ val €times_g_finite_thm› = save_pop_thm "times_g_finite_thm";
 
 =SML
 set_goal([], ¨µc v∑
-	≥c = ÓØ 0 ¥ Supp (c *âS v) = Supp v
+	≥c = ÓØ 0 ¥ Supp (c _*âS v) = Supp v
 Æ);
 a(REPEAT strip_tac THEN PC_T1 "sets_ext1" rewrite_tac[supp_def, times_s_def]
 	THEN µ_tac);
@@ -751,8 +879,8 @@ val €ind_sum_∏_thm› = save_pop_thm "ind_sum_∏_thm";
 
 =SML
 set_goal([], ¨µA∑
-	Supp 0âG = {}
-±	Supp 1âG = {{}}
+	Supp _0âG = {}
+±	Supp _1âG = {{}}
 Æ);
 a(rewrite_tac[zero_g_def, one_g_def, supp_—_thm, supp_clauses]);
 val €supp_zero_one_g_thm› = save_pop_thm "supp_zero_one_g_thm";
@@ -763,7 +891,7 @@ val €supp_zero_one_g_thm› = save_pop_thm "supp_zero_one_g_thm";
 =SML
 set_goal([], ¨µv w∑
 	Supp v ç Finite
-¥	v *âG w =
+¥	v _*âG w =
 	ÃK∑ ì (Supp v) (Ã I∑ SignâG I (K £ I) * v I * w (K £ I))
 Æ);
 a(REPEAT strip_tac THEN rewrite_tac[times_g_def]);
@@ -795,7 +923,7 @@ val €times_g_def1› = save_pop_thm "times_g_def1";
 =SML
 set_goal([], ¨µv w∑
 	Supp w ç Finite
-¥	v *âG w =
+¥	v _*âG w =
 	ÃK∑ ì (Supp w) (Ã J∑ SignâG (K £ J) J * v (K £ J) * w J)
 Æ);
 a(REPEAT strip_tac THEN rewrite_tac[times_g_def]);
@@ -826,7 +954,7 @@ val €times_g_def2› = save_pop_thm "times_g_def2";
 
 =SML
 set_goal([], ¨µv∑
-	ÓØ 0 *âS v = 0âG
+	ÓØ 0 _*âS v = _0âG
 Æ);
 a(REPEAT strip_tac THEN rewrite_tac[zero_g_def, times_s_def]);
 val €zero_times_s_thm› = save_pop_thm "zero_times_s_thm";
@@ -836,8 +964,8 @@ val €zero_times_s_thm› = save_pop_thm "zero_times_s_thm";
 
 =SML
 set_goal([], ¨µv∑
-	0âG *âG v = 0âG
-±	v *âG 0âG = 0âG
+	_0âG _*âG v = _0âG
+±	v _*âG _0âG = _0âG
 Æ);
 a(REPEAT µ_tac THEN rewrite_tac[times_g_def]);
 a(rewrite_tac[supp_zero_one_g_thm, pc_rule1 "sets_ext1" prove_rule[]
@@ -851,7 +979,7 @@ val €zero_times_g_thm› = save_pop_thm "zero_times_g_thm";
 
 =SML
 set_goal([], ¨µu v∑
-	u +âG v = v +âG u
+	u _+âG v = v _+âG u
 Æ);
 a(REPEAT µ_tac THEN rewrite_tac[plus_g_def]);
 val €plus_g_comm_thm› = save_pop_thm "plus_g_comm_thm";
@@ -861,7 +989,7 @@ val €plus_g_comm_thm› = save_pop_thm "plus_g_comm_thm";
 
 =SML
 set_goal([], ¨µu v w∑
-	(u +âG v) +âG w = u +âG (v +âG w)
+	(u _+âG v) _+âG w = u _+âG (v _+âG w)
 Æ);
 a(REPEAT µ_tac THEN rewrite_tac[plus_g_def, Ø_plus_assoc_thm]);
 val €plus_g_assoc_thm› = save_pop_thm "plus_g_assoc_thm";
@@ -871,7 +999,7 @@ val €plus_g_assoc_thm› = save_pop_thm "plus_g_assoc_thm";
 
 =SML
 set_goal([], ¨µu∑
-	u +âG 0âG = u
+	u _+âG _0âG = u
 Æ);
 a(REPEAT µ_tac THEN rewrite_tac[plus_g_def, zero_g_def]);
 val €plus_g_0_thm› = save_pop_thm "plus_g_0_thm";
@@ -881,7 +1009,7 @@ val €plus_g_0_thm› = save_pop_thm "plus_g_0_thm";
 
 =SML
 set_goal([], ¨µu∑
-	u +âG (~âG u) = 0âG
+	u _+âG (_~âG u) = _0âG
 Æ);
 a(REPEAT µ_tac THEN rewrite_tac[plus_g_def, minus_g_def, zero_g_def]);
 val €plus_g_minus_g_thm› = save_pop_thm "plus_g_minus_g_thm";
@@ -891,7 +1019,7 @@ val €plus_g_minus_g_thm› = save_pop_thm "plus_g_minus_g_thm";
 
 =SML
 set_goal([], ¨µu∑
-	ÓØ 1 *âS u = u
+	ÓØ 1 _*âS u = u
 Æ);
 a(REPEAT µ_tac THEN rewrite_tac[times_s_def]);
 val €one_times_s_thm› = save_pop_thm "one_times_s_thm";
@@ -901,7 +1029,7 @@ val €one_times_s_thm› = save_pop_thm "one_times_s_thm";
 
 =SML
 set_goal([], ¨µa b u∑
-	a *âS (b *âS u) = (a * b) *âS u
+	a _*âS (b _*âS u) = (a * b) _*âS u
 Æ);
 a(REPEAT µ_tac THEN rewrite_tac[times_s_def, Ø_times_assoc_thm]);
 val €times_s_times_s_thm› = save_pop_thm "times_s_times_s_thm";
@@ -911,7 +1039,7 @@ val €times_s_times_s_thm› = save_pop_thm "times_s_times_s_thm";
 
 =SML
 set_goal([], ¨µa u v∑
-	a *âS (u +âG v) = (a *âS u) +âG (a *âS v)
+	a _*âS (u _+âG v) = (a _*âS u) _+âG (a _*âS v)
 Æ);
 a(REPEAT µ_tac THEN rewrite_tac[times_s_def, plus_g_def, Ø_times_plus_distrib_thm]);
 val €times_s_plus_g_distrib_thm› = save_pop_thm "times_s_plus_g_distrib_thm";
@@ -921,7 +1049,7 @@ val €times_s_plus_g_distrib_thm› = save_pop_thm "times_s_plus_g_distrib_thm";
 
 =SML
 set_goal([], ¨µa b u∑
-	(a + b) *âS u = (a *âS u) +âG (b *âS u)
+	(a + b) _*âS u = (a _*âS u) _+âG (b _*âS u)
 Æ);
 a(REPEAT µ_tac THEN rewrite_tac[times_s_def, plus_g_def, Ø_times_plus_distrib_thm]);
 val €plus_times_s_distrib_thm› = save_pop_thm "plus_times_s_distrib_thm";
@@ -934,7 +1062,7 @@ set_goal([], ¨µu v w∑
 	Supp u ç Finite ± Supp u Ä Finite
 ±	Supp v ç Finite ± Supp v Ä Finite
 ±	Supp w ç Finite ± Supp w Ä Finite
-¥	(u *âG v) *âG w = u *âG (v *âG w)
+¥	(u _*âG v) _*âG w = u _*âG (v _*âG w)
 Æ);
 a(REPEAT strip_tac);
 a(PC_T1 "predicates" (ALL_FC_T rewrite_tac) [arb_gen times_g_def2]);
@@ -1043,8 +1171,8 @@ val €times_g_assoc_thm› = save_pop_thm "times_g_assoc_thm";
 =SML
 set_goal([], ¨µu v w∑
 	Supp u ç Finite
-¥	u *âG (v +âG w) = (u *âG v) +âG (u *âG w)
-±	(v +âG w) *âG u = (v *âG u) +âG (w *âG u)
+¥	u _*âG (v _+âG w) = (u _*âG v) _+âG (u _*âG w)
+±	(v _+âG w) _*âG u = (v _*âG u) _+âG (w _*âG u)
 Æ);
 a(REPEAT µ_tac THEN ¥_tac);
 a(PC_T1 "predicates" (ALL_FC_T rewrite_tac)[arb_gen times_g_def1, arb_gen times_g_def2]);
@@ -1062,22 +1190,22 @@ val €times_g_plus_g_distrib_thm› = save_pop_thm "times_g_plus_g_distrib";
 %%%%
 
 =SML
-set_goal([], ¨µv w a∑
-	Supp v ç Finite
-±	Supp w ç Finite
-¥	(a *âS v) *âG w = a *âS (v *âG w)
+set_goal([], ¨µu v a∑
+	Supp u ç Finite
+±	Supp v ç Finite
+¥	(a _*âS u) _*âG v = a _*âS (u _*âG v)
 Æ);
 a(REPEAT µ_tac THEN ¥_tac);
 a(cases_tac¨a = ÓØ 0Æ THEN1 PC_T1 "predicates" asm_rewrite_tac[zero_times_s_thm, zero_times_g_thm]);
-a(lemma_tac¨Supp (a *âS v) ç FiniteÆ
+a(lemma_tac¨Supp (a _*âS u) ç FiniteÆ
 	THEN1 ALL_FC_T asm_rewrite_tac[supp_times_s_thm]);
 a(PC_T1 "predicates" (ALL_FC_T rewrite_tac)[times_g_def1]);
 a(ALL_FC_T rewrite_tac[supp_times_s_thm]);
 a(µ_tac THEN rewrite_tac[times_s_def]);
 a(rewrite_tac[µ_elim¨aÆØ_times_order_thm]);
 a(pure_rewrite_tac[prove_rule[]
-	¨ (Ã I∑ a * SignâG I (x £ I) * v I * w (x £ I)) =
-	ÃI∑a * (Ã I∑ SignâG I (x £ I) * v I * w (x £ I)) I Æ]);
+	¨ (Ã I∑ a * SignâG I (x £ I) * u I * v (x £ I)) =
+	ÃI∑a * (Ã I∑ SignâG I (x £ I) * u I * v (x £ I)) I Æ]);
 a(ALL_FC_T rewrite_tac[ind_sum_const_times_thm]);
 val €times_s_times_g_assoc_thm› = save_pop_thm "times_s_times_g_assoc_thm";
 =TEX
@@ -1086,18 +1214,18 @@ val €times_s_times_g_assoc_thm› = save_pop_thm "times_s_times_g_assoc_thm";
 
 =SML
 set_goal([], ¨µu∑
-	1âG *âG u = u
-±	u *âG 1âG = u
+	_1âG _*âG u = u
+±	u _*âG _1âG = u
 Æ);
 a(REPEAT µ_tac);
-a(lemma_tac¨Supp 1âG ç FiniteÆ
+a(lemma_tac¨Supp _1âG ç FiniteÆ
 	THEN1 rewrite_tac[supp_zero_one_g_thm, singleton_finite_thm]);
 a(ALL_FC_T rewrite_tac[times_g_def1, times_g_def2]);
 a(rewrite_tac[supp_zero_one_g_thm, ind_sum_singleton_thm,
 	sign_g_def, £_clauses,
 	pc_rule1 "sets_ext1" prove_rule[] ¨{i|F} = {} ± {(i, j) | F} = {}Æ,
 	size_empty_thm, one_g_def, —_def]);
-val €one_g_times_g_assoc_thm› = save_pop_thm "one_g_times_g_assoc_thm";
+val €one_g_times_g_thm› = save_pop_thm "one_g_times_g_thm";
 =TEX
 %%%%
 %%%%
@@ -1197,14 +1325,14 @@ val €sign_singletons_thm› = save_pop_thm "sign_singletons_thm";
 
 =SML
 set_goal([], ¨µi j∑
-	—{{i}} *âG —{{j}} =
+	—{{i}} _*âG —{{j}} =
 	if	i < j
 	then	—{{i; j}}
 	else if	j < i
-	then	~(ÓØ 1) *âS —{{i; j}}
+	then	~(ÓØ 1) _*âS —{{i; j}}
 	else if	i < Ó˙ 0
-	then	~(ÓØ 1) *âS 1âG
-	else	 1âG
+	then	~(ÓØ 1) _*âS _1âG
+	else	 _1âG
 Æ);
 a(REPEAT strip_tac);
 a(lemma_tac¨Supp (—{{i}}) = {{i}}Æ
@@ -1247,7 +1375,7 @@ val €times_g_singleton_thm› = save_pop_thm "times_g_singleton_thm";
 set_goal([], ¨µu v∑
 	Supp u ç Finite ± Supp u Ä Finite
 ±	Supp v ç Finite ± Supp v Ä Finite
-¥	Supp (u +âG u) ç Finite ± Supp (u +âG) Ä Finite
+¥	Supp (u _+âG v) ç Finite ± Supp (u _+âG v) Ä Finite
 Æ);
 a(REPEAT µ_tac THEN ¥_tac);
 
@@ -1266,7 +1394,7 @@ val €plus_g_finitary_thm› = save_pop_thm "plus_g_finitary_thm";
 =SML
 set_goal([], ¨µa u∑
 	Supp u ç Finite ± Supp u Ä Finite
-¥	Supp (a *âS u) ç Finite ± Supp (a *âS u) Ä Finite
+¥	Supp (a _*âS u) ç Finite ± Supp (a _*âS u) Ä Finite
 Æ);
 a(REPEAT µ_tac THEN ¥_tac);
 a(cases_tac¨a = ÓØ 0Æ);
@@ -1286,7 +1414,7 @@ val €times_s_finitary_thm› = save_pop_thm "times_s_finitary_thm";
 set_goal([], ¨µv w∑
 	Supp v ç Finite ± Supp v Ä Finite
 ±	Supp w ç Finite ± Supp v Ä Finite
-¥	Supp (v *âG w) ç Finite
+¥	Supp (v _*âG w) ç Finite
 Æ);
 times_g_finite_thm;
 
