@@ -80,7 +80,6 @@ Simple explicit constructions of the geometric algebras have been given by Macdo
 As noted in~\cite{Arthan06b} the union of all of the $\GA(p, q)$ can be constructed in one step giving what I will now refer to as {\em the} geometric algebra, $\GA = \GA(\infty, \infty)$.
 
 
-
 =SML
 force_delete_theory"geomalg" handle Fail _ => ();
 open_theory"fincomb";
@@ -120,13 +119,92 @@ In addition to its use in defining the algebra, this may also find a use in deci
 ‹ µ I J∑	SignâG I J =
 ‹	~(ÓØ 1) ^ (#{(i, j) | i ç I ± j ç J ± j < i} + #{i | i ç I ± i ç J ± i < Ó˙ 0})
 ∞
-
-\subsection{The Representatives for the Algebra Operations}
+=TEX
+\subsection{The Type Definition}
 $\GA$ in HOL will be subtype of the type of all real-valued functions on sets of integers (specifically, it will comprise the functions whose support is a finite set of finite sets).
 The following type abbreviation captures this.
 =SML
 declare_type_abbrev("_GA", [], î˙ SET ≠ ØÆ);
 =TEX
+πHOLCONST
+‹	IsGARep : _GA ≠ BOOL
+˜
+‹	µu∑ IsGARep u § Supp u ç Finite ± Supp u Ä Finite
+∞
+We can now introduce the new type:
+=SML
+val €ga_def› = new_type_defn(["GA", "ga_def"], "GA", [],
+	tac_proof(([], ¨∂u∑ IsGARep uÆ),
+		∂_tac¨(ÃI∑ÓØ 0)Æ
+	THEN	rewrite_tac[get_spec¨IsGARepÆ, get_spec¨SuppÆ,
+		pc_rule1"sets_ext" prove_rule[]¨{x|F} = {}Æ,
+		empty_finite_thm]));
+=TEX
+\subsection{Specifying the Operations on the Type}
+We now introduce the operations on the type $\GA$.
+First of all, we define the fixity of the infix operators.
+=SML
+declare_infix(300, "+âG");
+declare_infix(310, "*âG");
+declare_infix(310, "*âS");
+=TEX
+Now we define the operators.
+The following is adapted from theorem 1 of~\cite{Arthan06b}
+(using the check-list in~\cite{Macdonald02} for the   equations which say that $\GA$ is an associative real algebra with a two-sided unit).
+The function
+=INLINEFT
+VecâG
+=TEX
+\ maps an integer $i$ to the generators $\E{i}$ of~\cite{Arthan06b}.
+In ~\cite{Arthan06b}, the $\E{i}$ are asserted to be linearly independent, but that is rather a cumbersome notion to express at this stage.
+In fact, all that is required is that the algebra is not the trivial algebra with $1 = 0$.
+So here we just assert that $\One \not= 0$.
+We use a typical higher-order idiom to express the fact that the 
+=INLINEFT
+VecâG i
+=TEX
+\ generate the algebra.
+
+πHOLCONST
+‹ $€+âG›	: GA ≠ GA ≠ GA;
+‹ €~âG›	: GA ≠ GA;
+‹ $€*âG›	: GA ≠ GA ≠ GA;
+‹ $€*âS›	: Ø ≠ GA ≠ GA;
+‹ €0âG›	: GA;
+‹ €1âG›	: GA;
+‹ €VecâG›	: ˙ ≠ GA
+˜¸¸¸¸¸¸
+‹ (µu v w a b i j∑
+‹	 	u +âG v = v +âG u
+‹ ±	 	(u +âG v) +âG w = u +âG v +âG w
+‹ ±	 	u +âG 0âG = u
+‹ ±	 	u +âG ~âG u = 0âG
+‹ ±	 	ÓØ 1 *âS u = u
+‹ ±	 	a *âS (b *âS u) = (a * b) *âS u
+‹ ±	 	a *âS (u +âG v) = a *âS u +âG a *âS v
+‹ ±	 	(a + b) *âS u = a *âS u +âG b *âS u
+‹ ±	 	(u *âG v) *âG w = u *âG (v *âG w)
+‹ ±		u *âG (v +âG w) = u *âG v +âG u *âG w
+‹ ±		(v +âG w) *âG u = v *âG u +âG w *âG u
+‹ ±		(a *âS u) *âG v = a *âS u *âG v
+‹ ±		1âG *âG u = u
+‹ ±		u *âG 1âG = u
+‹ ± 		≥1âG = 0âG
+‹ ±		VecâG i *âG VecâG i = (if i < Ó˙ 0 then ~âG 1âG else 1âG)
+‹ ±		(≥i = j ¥ VecâG i *âG VecâG j = ~âG(VecâG j *âG VecâG i)))
+‹ ± (µp∑
+‹		(µi∑ p(VecâG i))
+‹ ±		(µu a∑p u ¥ p(a *âS u))
+‹ ±		(µu v∑p u ± p v ¥ p(u +âG v))
+‹ ±		(µu v∑p u ± p v ¥ p(u *âG v) )
+‹ ¥		(µu∑ p u))
+∞
+
+\subsection{The Representatives for the Algebra Operations}
+=TEX
+The greater part of the proofs currently in this document fit together to prove the consistency of the specification of the operations as given above.
+To make this work tolerable, we need definitions of the constants that represent the operations on the representation type.
+
 We adopt the convention of using an initial `\_' to distinguish operations on the representation type from corresponding operations on the new type.
 =SML
 declare_infix(300, "_+âG");
@@ -175,70 +253,6 @@ declare_infix(310, "_*âS");
 ‹ _1âG = —{{}}
 ∞
 
-=TEX
-\subsection{The Type Definition}
-πHOLCONST
-‹	IsGARep : _GA ≠ BOOL
-˜
-‹	µu∑ IsGARep u § Supp u ç Finite ± Supp u Ä Finite
-∞
-We can now introduce the new type:
-=SML
-val €ga_def› = new_type_defn(["GA", "ga_def"], "GA", [],
-	tac_proof(([], ¨∂u∑ IsGARep uÆ),
-		∂_tac¨(ÃI∑ÓØ 0)Æ
-	THEN	rewrite_tac[get_spec¨IsGARepÆ, get_spec¨SuppÆ,
-		pc_rule1"sets_ext" prove_rule[]¨{x|F} = {}Æ,
-		empty_finite_thm]));
-=TEX
-\subsection{Defining the Operations on the Type}
-We now introduce the operations on the type $\GA$.
-First of all, we define the fixity of the infix operators.
-=SML
-declare_infix(300, "+âG");
-declare_infix(310, "*âG");
-declare_infix(310, "*âS");
-=TEX
-Now we define the operators.
-The following is adapted from theorem 1 of~\cite{Arthan06b}
-(using the check-list in~\cite{Macdonald02} for the   equations which say that $\GA$ is an associative real algebra with a two-sided unit).
-The function
-=INLINEFT
-VecâG
-=TEX
-\ maps an integer $i$ to the generators $\E{i}$ of~\cite{Arthan06}.
-In ~\cite{Arthan06b}, the $\E{i}$ are asserted to be linearly independent, but that is rather a cumbersome notion to express at this stage.
-In fact, all that is required is that the algebra is not the trivial algebra with $1 = 0$.
-So here we just assert that $\One \not= 0$.
-
-πHOLCONST
-‹ $€+âG›	: GA ≠ GA ≠ GA;
-‹ €~âG›	: GA ≠ GA;
-‹ $€*âG›	: GA ≠ GA ≠ GA;
-‹ $€*âS›	: Ø ≠ GA ≠ GA;
-‹ €0âG›	: GA;
-‹ €1âG›	: GA;
-‹ €VecâG›	: ˙ ≠ GA
-˜¸¸¸¸¸¸
-‹ µu v w a b i j∑
-‹	 	u +âG v = v +âG u
-‹ ±	 	(u +âG v) +âG w = u +âG v +âG w
-‹ ±	 	u +âG 0âG = u
-‹ ±	 	u +âG ~âG u = 0âG
-‹ ±	 	ÓØ 1 *âS u = u
-‹ ±	 	a *âS (b *âS u) = (a * b) *âS u
-‹ ±	 	a *âS (u +âG v) = a *âS u +âG a *âS v
-‹ ±	 	(a + b) *âS u = a *âS u +âG b *âS u
-‹ ±	 	(u *âG v) *âG w = u *âG (v *âG w)
-‹ ±		u *âG (v +âG w) = u *âG v +âG u *âG w
-‹ ±		(v +âG w) *âG u = v *âG u +âG w *âG u
-‹ ±		(a *âS u) *âG v = a *âS u *âG v
-‹ ±		1âG *âG u = u
-‹ ±		u *âG 1âG = u
-‹ ± 		≥1âG = 0âG
-‹ ±		VecâG i *âG VecâG i = (if i < Ó˙ 0 then ~âG 1âG else 1âG)
-‹ ±		(≥i = j ¥ VecâG i *âG VecâG j = ~âG(VecâG j *âG VecâG i))
-∞
 
 
 
@@ -669,6 +683,20 @@ val €sign_g_thm› = save_pop_thm "sign_g_thm";
 %%%%
 
 =SML
+set_goal([], ¨µI J∑
+	 SignâG I J = ÓØ 1 ≤ SignâG I J = ~(ÓØ 1)
+Æ);
+a(REPEAT µ_tac THEN rewrite_tac[sign_g_def]);
+a(strip_asm_tac (µ_elim¨# {(i, j)|i ç I ± j ç J ± j < i}
+             + # {i|i ç I ± i ç J ± i < Ó˙ 0}Æ mod_2_cases_thm)
+	THEN ALL_FC_T asm_rewrite_tac[mod_2_0_Ø_Ó_exp_thm, mod_2_1_Ø_Ó_exp_thm]
+	THEN rewrite_tac[Ø_Ó_exp_0_1_thm]);
+val €sign_g_cases_thm› = save_pop_thm "sign_g_cases_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
 set_goal([], ¨µv w K∑
 	Supp v ç Finite ≤ Supp w ç Finite
 ¥	 {(I, J)|I ç Supp v ± J ç Supp w ± K = I £ J} ç Finite
@@ -730,6 +758,18 @@ a(REPEAT strip_tac THEN PC_T1 "sets_ext1" rewrite_tac[supp_def, —_def]
 	THEN µ_tac);
 a(cases_tac¨x ç AÆ THEN asm_rewrite_tac[]);
 val €supp_—_thm› = save_pop_thm "supp_—_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µf g∑
+	Supp (Ãx∑f x + g x) =
+	(Supp f ¿ Supp g) \ {x | f x = ~(g x)}
+Æ);
+a(REPEAT strip_tac THEN PC_T1 "sets_ext1" rewrite_tac[supp_def]);
+a(PC_T1 "Ø_lin_arith" prove_tac[]);
+val €supp_plus_thm› = save_pop_thm "supp_plus_thm";
 =TEX
 %%%%
 %%%%
@@ -1552,13 +1592,171 @@ val €supp_minus_g_thm› = save_pop_thm "supp_minus_g_thm";
 =TEX
 %%%%
 %%%%
+
+=SML
+set_goal([], ¨µI J∑
+	—{I} _*âG —{J} = (ÃK∑ SignâG I J * —{I £ J} K)
+Æ);
+a(REPEAT strip_tac THEN rewrite_tac[times_g_def, supp_—_thm]);
+a(cases_tac¨x = I £ JÆ THEN1 all_var_elim_asm_tac1);
+(* *** Goal "1" *** *)
+a(LEMMA_T ¨ {(I', J')|I' = I ± J' = J ± I £ J = I' £ J'} = {(I, J)}Æ
+	rewrite_thm_tac
+	THEN1 (PC_T1 "sets_ext1" once_rewrite_tac[]
+		THEN prove_tac[]));
+a(rewrite_tac[ind_sum_singleton_thm, —_def]);
+(* *** Goal "2" *** *)
+a(LEMMA_T ¨ {(I', J')|I' = I ± J' = J ± x = I' £ J'} = {}Æ
+	rewrite_thm_tac
+	THEN1 (PC_T1 "sets_ext1" once_rewrite_tac[]
+		THEN REPEAT strip_tac
+		THEN all_var_elim_asm_tac1));
+a(asm_rewrite_tac[—_def, ind_sum_def]);
+val €—_times_g_—_thm› = save_pop_thm "—_times_g_—_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µp∑
+	(µi∑p(—{{i}}))
+±	(µu a∑ p u ¥ p(a _*âS u))
+±	(µu v∑ p u ± p v ¥ p(u _*âG v))
+¥	(µI a∑ I ç Finite ¥ p (a _*âS —{I}))
+Æ);
+a(rewrite_tac[times_s_def] THEN REPEAT strip_tac);
+a(GET_NTH_ASM_T 3 bc_thm_tac);
+a(lemma_tac¨p(Ãx∑ÓØ 0)Æ);
+(* *** Goal "1" *** *)
+a(LEMMA_T¨ p(Ãx∑ ÓØ 0) = p(Ã x∑ ÓØ 0 * —{{i}} x)Æ pure_rewrite_thm_tac
+	THEN1 rewrite_tac[]);
+a(DROP_NTH_ASM_T 3 bc_thm_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(LEMMA_T¨p(—{{Ó˙ 0}} _*âG —{{Ó˙ 0}})Æ ante_tac);
+(* *** Goal "2.1" *** *)
+a(DROP_NTH_ASM_T 3 bc_thm_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2.2" *** *)
+a(rewrite_tac[times_g_singleton_thm, one_g_def]
+	THEN strip_tac);
+a(finite_induction_tac ¨IÆ THEN1 asm_rewrite_tac[]);
+a(LEMMA_T ¨p (— {{x}} _*âG — {I})Æ ante_tac);
+(* *** Goal "2.2.1" *** *)
+a(DROP_NTH_ASM_T 6 bc_thm_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2.2.2" *** *)
+a(rewrite_tac[—_times_g_—_thm]);
+a(lemma_tac¨{x} ° I = {}Æ THEN1 
+	(POP_ASM_T ante_tac THEN PC_T1 "sets_ext1" rewrite_tac[]
+		THEN contr_tac THEN all_var_elim_asm_tac));
+a(ALL_FC_T rewrite_tac[pc_rule1"sets_ext1" prove_rule[£_def] 
+	¨µA∑A ° I = {} ¥ A ¿ I = A £ IÆ]);
+a(strip_asm_tac(list_µ_elim[¨{x}Æ, ¨IÆ] sign_g_cases_thm)
+	THEN asm_rewrite_tac[]
+	THEN1 conv_tac (ONCE_MAP_C »_conv)
+	THEN REPEAT strip_tac);
+a(LEMMA_T¨p(Ã K∑ ~(ÓØ 1) * (Ã K∑ ~ (ÓØ 1) * — {{x} £ I} K) K)Æ
+	ante_tac);
+(* *** Goal "2.2.2.1" *** *)
+a(DROP_NTH_ASM_T 10 bc_thm_tac THEN REPEAT strip_tac);
+(* *** Goal "2.2.2.2" *** *)
+a(rewrite_tac[Ø_times_assoc_thm1]);
+a(conv_tac (ONCE_MAP_C »_conv) THEN REPEAT strip_tac);
+val €ga_rep_induction_thm1› = save_pop_thm "ga_rep_induction_thm1";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µp∑
+	(µu v∑ p u ± p v ¥ p(u _+âG v))
+±	(µI a∑ I ç Finite ¥ p (a _*âS —{I}))
+¥	(µu∑ Supp u ç Finite ± Supp u Ä Finite ¥ p u)
+Æ);
+a(rewrite_tac[plus_g_def, times_s_def] THEN REPEAT strip_tac);
+a(LEMMA_T ¨µA v∑A Ä Supp u ± Supp v = A ¥ p vÆ
+	(fn th => bc_thm_tac th
+		THEN ∂_tac¨Supp uÆ THEN rewrite_tac[]));
+a(REPEAT strip_tac);
+a(lemma_tac¨A ç FiniteÆ
+	THEN1 (bc_thm_tac Ä_finite_thm
+		THEN ∂_tac ¨Supp uÆ THEN asm_rewrite_tac[]));
+a(LIST_DROP_NTH_ASM_T [2, 3] (MAP_EVERY ante_tac));
+a(intro_µ_tac(¨vÆ, ¨vÆ));
+a(finite_induction_tac¨AÆ);
+(* *** Goal "1" *** *)
+a(REPEAT strip_tac THEN POP_ASM_T ante_tac);
+a(PC_T1"sets_ext1" rewrite_tac[supp_def]);
+a(REPEAT strip_tac
+	THEN PC_T1 "predicates" lemma_tac¨v = ÃK∑ÓØ 0Æ
+	THEN1 asm_rewrite_tac[]
+	THEN all_var_elim_asm_tac1);
+a(DROP_NTH_ASM_T 4 (ante_tac o list_µ_elim[¨{}:˙ SETÆ, ¨ÓØ 0Æ]));
+a(rewrite_tac[empty_finite_thm]);
+(* *** Goal "2" *** *)
+a(REPEAT strip_tac);
+a(PC_T1 "predicates" lemma_tac
+	¨∂w a∑ v = (Ã K∑ w K + (Ã K∑ a * — {x} K) K)
+	± Supp w = AÆ);
+(* *** Goal "2.1" *** *)
+a(∂_tac¨ÃK∑if K = x then ÓØ 0 else v KÆ THEN ∂_tac¨v xÆ);
+a(rewrite_tac[—_def] THEN REPEAT strip_tac);
+(* *** Goal "2.1.1" *** *)
+a(cases_tac¨x' = xÆ THEN asm_rewrite_tac[]);
+(* *** Goal "2.1.2" *** *)
+a(POP_ASM_T ante_tac THEN rewrite_tac[supp_def]);
+a(PC_T1 "sets_ext1" once_rewrite_tac[] THEN REPEAT strip_tac);
+(* *** Goal "2.1.2.1" *** *)
+a(swap_nth_asm_concl_tac 1);
+a(cases_tac¨x' = xÆ THEN asm_rewrite_tac[]);
+a(DROP_NTH_ASM_T 3 (ante_tac o µ_elim¨x'Æ));
+a(asm_rewrite_tac[]);
+a(PC_T1 "sets_ext1" once_rewrite_tac[]);
+a(asm_rewrite_tac[]);
+(* *** Goal "2.1.2.2" *** *)
+a(cases_tac¨x' = xÆ THEN1 all_var_elim_asm_tac1);
+a(asm_rewrite_tac[]);
+a(DROP_NTH_ASM_T 3 (ante_tac o µ_elim¨x'Æ));
+a(asm_rewrite_tac[]);
+a(PC_T1 "sets_ext1" once_rewrite_tac[]);
+a(asm_rewrite_tac[]);
+(* *** Goal "2.2" *** *)
+a(PC_T "predicates" all_var_elim_asm_tac1);
+a(DROP_NTH_ASM_T 9 bc_thm_tac THEN REPEAT strip_tac);
+(* *** Goal "2.2.1" *** *)
+a(DROP_NTH_ASM_T 4 (ante_tac o µ_elim¨wÆ));
+a(asm_rewrite_tac[] THEN STRIP_T bc_thm_tac);
+a(all_fc_tac[pc_rule1 "sets_ext1" prove_rule[]
+	¨µa b c∑a ¿ b Ä c ¥ b Ä cÆ]);
+(* *** Goal "2.2.2" *** *)
+a(DROP_NTH_ASM_T 8 bc_thm_tac);
+a(all_fc_tac[pc_rule1 "sets_ext1" prove_rule[]
+	¨µx b c∑{x} ¿ b Ä c ¥ x ç cÆ]);
+a(all_fc_tac[pc_rule1 "sets_ext1" prove_rule[]
+	¨µx b c∑x ç b ± b Ä c ¥ x ç cÆ]);
+val €ga_rep_induction_thm2› = save_pop_thm "ga_rep_induction_thm2";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µp∑
+	(µi∑p(—{{i}}))
+±	(µu a∑ p u ¥ p(a _*âS u))
+±	(µu v∑ p u ± p v ¥ p(u _*âG v))
+±	(µu v∑ p u ± p v ¥ p(u _+âG v))
+¥	(µu∑ Supp u ç Finite ± Supp u Ä Finite ¥ p u)
+Æ);
+a(µ_tac THEN ¥_tac THEN bc_thm_tac ga_rep_induction_thm2);
+a(asm_rewrite_tac[] THEN bc_thm_tac ga_rep_induction_thm1);
+a(asm_rewrite_tac[]);
+val €ga_rep_induction_thm› = save_pop_thm "ga_rep_induction_thm";
+=TEX
+%%%%
+%%%%
 =SML
 (*
 drop_main_goal();
-pop_pc();
 
 *)
-push_pc"predicates";
 push_consistency_goal ¨$+âGÆ;
 a (strip_asm_tac (pure_rewrite_rule[is_ga_rep_def] (simple_¥_match_mp_rule type_lemmas_thm ga_def)));
 a(∂_tac¨(
@@ -1569,94 +1767,133 @@ a(∂_tac¨(
 	abs _0âG,
 	abs _1âG,
 	(Ãi∑abs(—{{i}})))Æ
-	THEN REPEAT µ_tac THEN asm_rewrite_tac[]);
+	THEN asm_rewrite_tac[]
+	THEN ±_tac THEN REPEAT µ_tac);
+(* *** Goal "1" *** *)
 a(conv_tac(LEFT_C (rewrite_conv[µ_elim¨rep uÆ plus_g_comm_thm])));
 a(asm_rewrite_tac[one_times_s_thm]);
 a(LEMMA_T¨µx y∑
 	rep(abs(rep x _+âG rep y)) = rep x _+âG rep y
 ±	rep(abs(rep x _*âG rep y)) = rep x _*âG rep yÆ
 	rewrite_thm_tac);
-(* *** Goal "1" *** *)
+(* *** Goal "1.1" *** *)
 a(REPEAT µ_tac);
 a(TOP_ASM_T(rewrite_thm_tac o conv_rule(ONCE_MAP_C eq_sym_conv)));
 a(±_tac THEN_LIST
 	[bc_thm_tac plus_g_finitary_thm,
 	bc_thm_tac times_g_finitary_thm]
 	THEN asm_rewrite_tac[]);
-(* *** Goal "2" *** *)
+(* *** Goal "1.2" *** *)
 a(LEMMA_T ¨
 	rep(abs _0âG) = _0âG
 ±	rep(abs _1âG) = _1âGÆ rewrite_thm_tac);
-(* *** Goal "2.1" *** *)
+(* *** Goal "1.2.1" *** *)
 a(TOP_ASM_T(rewrite_thm_tac o conv_rule(ONCE_MAP_C eq_sym_conv)));
 a(rewrite_tac[zero_one_finitary_thm]);
-(* *** Goal "2.2" *** *)
+(* *** Goal "1.2.2" *** *)
 a(rewrite_tac[plus_g_0_thm, plus_g_assoc_thm,
 	one_g_times_g_thm]);
 a(LEMMA_T¨µx∑
 	rep(abs(_~âG(rep x))) = _~âG (rep x)Æ
 	rewrite_thm_tac);
-(* *** Goal "2.2.1" *** *)
+(* *** Goal "1.2.2.1" *** *)
 a(REPEAT µ_tac);
 a(TOP_ASM_T(rewrite_thm_tac o conv_rule(ONCE_MAP_C eq_sym_conv)));
 a(rewrite_tac[supp_minus_g_thm]
 	THEN asm_rewrite_tac[]);
-(* *** Goal "2.2.2" *** *)
+(* *** Goal "1.2.2.2" *** *)
 a(asm_rewrite_tac[plus_g_minus_g_thm]);
 a(LEMMA_T¨µs x∑
 	rep(abs(s _*âS rep x)) = s _*âS rep xÆ
 	rewrite_thm_tac);
-(* *** Goal "2.2.2.1" *** *)
+(* *** Goal "1.2.2.2.1" *** *)
 a(REPEAT µ_tac);
 a(TOP_ASM_T(rewrite_thm_tac o conv_rule(ONCE_MAP_C eq_sym_conv)));
 a(bc_thm_tac times_s_finitary_thm
 	THEN asm_rewrite_tac[]);
-(* *** Goal "2.2.2.2" *** *)
+(* *** Goal "1.2.2.2.2" *** *)
 a(rewrite_tac[times_s_times_s_thm,
 	times_s_plus_g_distrib_thm,
 	plus_times_s_distrib_thm]);
 a(LEMMA_T¨µk∑
 	rep(abs(—{{k}})) = —{{k}}Æ
 	rewrite_thm_tac);
-(* *** Goal "2.2.2.2.1" *** *)
+(* *** Goal "1.2.2.2.2.1" *** *)
 a(REPEAT µ_tac);
 a(TOP_ASM_T(rewrite_thm_tac o conv_rule(ONCE_MAP_C eq_sym_conv)));
 a(rewrite_tac[generator_finitary_thm]);
-(* *** Goal "2.2.2.2.2" *** *)
+(* *** Goal "1.2.2.2.2.2" *** *)
 a(lemma_tac¨
 	(Supp (rep u) ç Finite ± Supp (rep u) Ä Finite)
 ±	(Supp (rep v) ç Finite ± Supp (rep v) Ä Finite)
 ±	(Supp (rep w) ç Finite ± Supp (rep w) Ä Finite)Æ
 	THEN1 asm_rewrite_tac[]);
-a(ALL_FC_T rewrite_tac[
+a(PC_T1 "predicates" (ALL_FC_T rewrite_tac)[
 	times_g_assoc_thm,
 	times_g_plus_g_distrib_thm,
 	times_s_times_g_assoc_thm]);
-a(REPEAT strip_tac);
-(* *** Goal "2.2.2.2.2.1" *** *)
+a(PC_T1 "predicates" REPEAT strip_tac);
+(* *** Goal "1.2.2.2.2.2.1" *** *)
 a(contr_tac THEN LEMMA_T¨rep(abs _1âG) = rep (abs _0âG)Æ ante_tac
 	THEN1 POP_ASM_T rewrite_thm_tac);
 a(LEMMA_T ¨
 	rep(abs _1âG) = _1âG
 ±	rep(abs _0âG) = _0âGÆ 
-	(fn th => rewrite_tac[th, not_one_eq_zero_g_thm]));
+	(fn th => PC_T1 "predicates" rewrite_tac[th, not_one_eq_zero_g_thm]));
 a(GET_NTH_ASM_T 8 (rewrite_thm_tac o conv_rule(ONCE_MAP_C eq_sym_conv)));
 a(rewrite_tac[zero_one_finitary_thm]);
-(* *** Goal "2.2.2.2.2.2" *** *)
-a(MERGE_PCS_T1["'Ø", "'˙", "basic_hol1"]rewrite_tac[times_g_singleton_thm]);
+(* *** Goal "1.2.2.2.2.2.2" *** *)
+a(rewrite_tac[times_g_singleton_thm]);
 a(CASES_T ¨i < Ó˙ 0Æ rewrite_thm_tac);
 a(rewrite_tac[minus_one_times_g_thm]);
-(* *** Goal "2.2.2.2.2.3" *** *)
-a(MERGE_PCS_T1["'Ø", "'˙", "basic_hol1"]rewrite_tac[times_g_singleton_thm]);
+(* *** Goal "1.2.2.2.2.2.3" *** *)
+a(rewrite_tac[times_g_singleton_thm]);
 a(LEMMA_T¨{j;i}={i;j}Æ rewrite_thm_tac
 	THEN1 PC_T1 "sets_ext1" REPEAT strip_tac);
-a(lemma_tac¨i < j ± ≥j < i ≤ j < i ± ≥i < jÆ
+a(PC_T1"predicates" lemma_tac¨i < j ± ≥j < i ≤ j < i ± ≥i < jÆ
 	THEN1 PC_T1 "˙_lin_arith" asm_prove_tac[]
-	THEN asm_rewrite_tac[minus_one_times_g_thm,
+	THEN  asm_rewrite_tac[minus_one_times_g_thm,
 		minus_g_minus_g_thm]);
+(* *** Goal "2" *** *)
+a(REPEAT strip_tac);
+a(LEMMA_T¨u = abs(rep u)Æ once_rewrite_thm_tac
+	THEN1 asm_rewrite_tac[]);
+a(lemma_tac¨Supp(rep u) ç Finite ± Supp(rep u) Ä Finite ± p(abs(rep u))Æ);
+a(LEMMA_T¨µx∑Supp x ç Finite ± Supp x Ä Finite ¥
+	Supp x ç Finite ± Supp x Ä Finite ± p(abs x)Æ
+	bc_thm_tac THEN_LIST [id_tac, asm_rewrite_tac[]]);
+a(bc_thm_tac(rewrite_rule[]
+	(µ_elim¨Ãx∑Supp x ç Finite ± Supp x Ä Finite ± p(abs x)Æ ga_rep_induction_thm)));
+a(REPEAT strip_tac
+	THEN_TRY asm_rewrite_tac[generator_finitary_thm]
+	THEN_TRY ALL_FC_T rewrite_tac[
+		times_s_finitary_thm,
+		plus_g_finitary_thm,
+		times_g_finitary_thm]);
+(* *** Goal "2.1" *** *)
+a(DROP_NTH_ASM_T 9 discard_tac);
+a(DROP_NTH_ASM_T 6 (ante_tac o list_µ_elim[¨abs uÆ, ¨aÆ]));
+a(DROP_NTH_ASM_T 7 (ante_tac o µ_elim¨uÆ));
+a(PC_T1 "predicates"asm_rewrite_tac[]);
+a(STRIP_T (PC_T1 "predicates" rewrite_thm_tac));
+(* *** Goal "2.2" *** *)
+a(DROP_NTH_ASM_T 12 discard_tac);
+a(DROP_NTH_ASM_T 7 (ante_tac o list_µ_elim[¨abs uÆ, ¨abs vÆ]));
+a(GET_NTH_ASM_T 10 (ante_tac o µ_elim¨uÆ));
+a(DROP_NTH_ASM_T 10 (ante_tac o µ_elim¨vÆ));
+a(PC_T1 "predicates"asm_rewrite_tac[]);
+a(STRIP_T (PC_T1 "predicates" rewrite_thm_tac));
+a(STRIP_T (PC_T1 "predicates" rewrite_thm_tac));
+(* *** Goal "2.3" *** *)
+a(DROP_NTH_ASM_T 12 discard_tac);
+a(DROP_NTH_ASM_T 8 (ante_tac o list_µ_elim[¨abs uÆ, ¨abs vÆ]));
+a(GET_NTH_ASM_T 10 (ante_tac o µ_elim¨uÆ));
+a(DROP_NTH_ASM_T 10 (ante_tac o µ_elim¨vÆ));
+a(PC_T1 "predicates"asm_rewrite_tac[]);
+a(STRIP_T (PC_T1 "predicates" rewrite_thm_tac));
+a(STRIP_T (PC_T1 "predicates" rewrite_thm_tac));
 val _ = save_consistency_thm ¨$+âGÆ (pop_thm());
 val €ga_ops_def› = save_thm("ga_ops_def", get_spec ¨$+âGÆ);
-pop_pc();
 =TEX
 \Hide{
 =SML
