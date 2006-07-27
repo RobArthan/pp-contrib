@@ -800,9 +800,9 @@ It shows that any point not in the domain of the relation $S$ satisfies any weak
 
 (Here
 =INLINEFT
-É ∏ É
+É \ X
 =TEX
-\ gives the total relation at the appropriate type).
+\ gives the complement of $X$).
 
 We now define the ``vertical'' composition of two arbitrary relations.
 
@@ -814,8 +814,39 @@ We now define the ``vertical'' composition of two arbitrary relations.
 ‹	{x : X; y : Y; v : V; w : W | (x, y) ç R ± (v, w) ç S ∑ ( (x, v), (y, w) )}
 à¸¸¸¸¸¸¸¸¸¸¸¸¸¸
 
+There does not seem to be a nice, symmetric, general formula
+for the weakest pre-condition through a vertical composition.
+We give an asymmetric formulae, which is based on the following lemma.
 
-The special case of a weakest pre-condition through a vertical composite, where the post-condition is given as the product of two sets is simple:
+πZ
+‹ wps_prod_lemma ?Ù µR:É ™ É; S : É ™ É; X: É; V: É; C : (É ∏ É)∑
+‹	(R ´âR S)®X ∏ V© Ä C § R®X© Ä {y : É | µw:S®V©∑ (y, w) ç C}
+∞
+
+This gives the following general formula for the weakest pre-condition through a vertical product:
+
+πZ
+‹wps_prod_thm ?Ù  µR:É ™ É; S : É ™ É; C : (É ∏ É)∑
+‹	WPS(R ´âR S, C) = ﬁ{V : É ∑ WPS(R, {y : É | µw:S®V©∑ (y, w) ç C}) ∏ V}
+∞
+(Note: using 
+=INLINEFT
+rel_image_wps_thm
+=TEX
+\ the expression
+=INLINEFT
+S®V©
+=TEX
+\ above could be rewritten in terms of weakest pre-conditions.
+It is not clear whether this would confer any advantage --- it would certainly make the expression more complicated.)
+
+Interchanging $R$ and $S$ gives the alternative formulation:
+πZ
+‹wps_prod_thm1 ?Ù  µR:É ™ É; S : É ™ É; C : (É ∏ É)∑
+‹	WPS(R ´âR S, C) = ﬁ{X : É ∑ X ∏ WPS(S, {w : É | µy:R®X©∑ (y, w) ç C})}
+∞
+
+The special case of a weakest pre-condition through a vertical composite, where the post-condition is given as the product of two sets is much simpler:
 πZ
 ‹ wps_simple_prod_thm ?Ù µR : É ™ É; S : É ™ É; B : É; C : É ∑
 ‹	WPS(R ´âR S, B ∏ C) =
@@ -1436,36 +1467,138 @@ a(PC_T1 "z_library_ext" rewrite_tac[
 a(PC_T1 "z_library_ext" prove_tac[]);
 a(z_∂_tacÒ(y, y')Æ THEN asm_rewrite_tac[]);
 val €dom_rel_prod_thm› = save_pop_thm "dom_rel_prod_thm";
+=SML
+set_goal([], ÒµR:É ™ É; X: É; V: É∑
+	(R ´âR S)®X ∏ V© = R®X© ∏ S®V© Æ);
+a(PC_T1 "z_library_ext" rewrite_tac[
+	rel_prod_rw_thm,
+	z_gen_pred_u_elim rel_prod_def]);
+a(PC_T1 "z_library_ext" prove_tac[]);
+a(z_∂_tacÒ(x, x')Æ THEN asm_rewrite_tac[]);
+val €rel_prod_∏_thm› = save_pop_thm "rel_prod_∏_thm";
 =TEX
 %%%%
 %%%%
 
 =SML
-set_goal([], ÒµX:É∑ first®X© = {x:É; y:É | (x, y) ç X ∑ x}Æ);
-a(PC_T1 "z_library_ext" rewrite_tac[z_ç_first_thm]
-	THEN REPEAT strip_tac);
-(* *** Goal "1" *** *)
-a(z_∂_tacÒ(x ¶ x.1, y ¶ x.2)Æ);
-a(conv_tac(ONCE_MAP_C z_tuple_intro_conv));
-a(asm_rewrite_tac[]);
-(* *** Goal "2" *** *)
-a(z_∂_tacÒ(x, y)Æ THEN asm_rewrite_tac[]);
-val €first_rel_image_thm› = save_pop_thm "first_rel_image_thm";
+set_goal([], get_conjecture "-" "wps_prod_lemma");
+a(rewrite_tac[rel_prod_∏_thm]);
+a(PC_T1 "z_library_ext" prove_tac[]);
+val €wps_prod_lemma› = save_pop_thm "wps_prod_lemma";
 =TEX
 %%%%
 %%%%
 
 =SML
-set_goal([], ÒµX:É∑ second®X© = {x:É; y:É | (x, y) ç X ∑ y}Æ);
-a(PC_T1 "z_library_ext" rewrite_tac[z_ç_second_thm]
+set_goal([], ÒµR:É ™ É; S : É ™ É; C : É∑
+	WPS(R ´âR S, C) = ﬁ{X : É; V : É | (R ´âR S)®X ∏ V© Ä C∑ X ∏ V}
+Æ);
+a(PC_T1 "z_library_ext" rewrite_tac[wps_rw_thm,
+	rel_prod_rw_thm,
+	z_gen_pred_u_elim rel_prod_def]);
+a(PC_T1 "z_library_ext" REPEAT strip_tac
+	THEN all_asm_ante_tac THEN rewrite_tac[]
 	THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
-a(z_∂_tacÒ(x ¶ x.1, y ¶ x.2)Æ);
-a(conv_tac(ONCE_MAP_C z_tuple_intro_conv));
-a(asm_rewrite_tac[]);
+a(z_∂_tacÒ{(x1, x2)}Æ THEN REPEAT strip_tac);
+a(z_∂_tacÒ(X ¶ {x1}, V ¶ {x2})Æ THEN REPEAT strip_tac
+	THEN all_var_elim_asm_tac1);
+a(DROP_NTH_ASM_T 3 (ante_tac o z_µ_elimÒ(x1', x2')Æ)
+	THEN asm_rewrite_tac[]);
 (* *** Goal "2" *** *)
-a(z_∂_tacÒ(x, y)Æ THEN asm_rewrite_tac[]);
-val €second_rel_image_thm› = save_pop_thm "second_rel_image_thm";
+a(DROP_NTH_ASM_T 5 (ante_tac o z_µ_elimÒ(x1 ¶ z.1, x2 ¶ z.2)Æ)
+	THEN asm_rewrite_tac[]);
+a(conv_tac (ONCE_MAP_C z_tuple_intro_conv) THEN REPEAT strip_tac);
+a(POP_ASM_T (ante_tac o z_µ_elimÒ(x1, x2)Æ)
+	THEN asm_rewrite_tac[]);
+val €wps_ﬁ_∏_thm› = save_pop_thm "wps_ﬁ_∏_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], get_conjecture "-" "wps_prod_thm");
+a(REPEAT strip_tac THEN rewrite_tac[wps_ﬁ_∏_thm, wps_prod_lemma]);
+a(PC_T1 "z_library_ext" once_rewrite_tac[]
+	THEN rewrite_tac[] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_var_elim_asm_tac1 THEN all_fc_tac[wps_correct_thm]);
+a(all_fc_tac[pc_rule1 "z_sets_ext" prove_rule[]
+	ÒµA, B:É; x:É∑x ç A ± A Ä B ¥ x ç BÆ]);
+a(z_∂_tacÒWPS (R, {y : É | µ w : S ® V © ∑ (y, w) ç C}) ∏ VÆ
+	THEN REPEAT strip_tac);
+a(z_∂_tacÒVÆ THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(z_∂_tacÒS'Æ THEN all_var_elim_asm_tac1 THEN REPEAT strip_tac);
+a(z_∂_tacÒ(X ¶ WPS (R, {y : É | µ w : S ® V © ∑ (y, w) ç C}), V' ¶  V)Æ
+	THEN REPEAT strip_tac);
+a(rewrite_tac[wps_correct_thm]);
+val €wps_prod_thm› = save_pop_thm "wps_prod_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ÒµR:É ™ É; S : É ™ É; C : É∑
+	WPS(R ´âR S, C) = WPS(S ´âR R, C Á~Í)Á~Í
+Æ);
+a(PC_T1 "z_library_ext" rewrite_tac[wps_rw_thm,
+	rel_prod_rw_thm,
+	z_gen_pred_u_elim rel_prod_def]);
+a(PC_T1 "z_library_ext" REPEAT strip_tac
+	THEN all_asm_ante_tac THEN rewrite_tac[]
+	THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(DROP_NTH_ASM_T 3 (ante_tac o z_µ_elimÒ(z.2, z.1)Æ)
+	THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(DROP_NTH_ASM_T 3 (ante_tac o z_µ_elimÒ(z.2, z.1)Æ)
+	THEN asm_rewrite_tac[]);
+a(conv_tac (ONCE_MAP_C z_tuple_intro_conv) THEN REPEAT strip_tac);
+val €wps_sym_thm› = save_pop_thm "wps_sym_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], Òµv:É∑
+	ﬁ v Á~Í = ﬁ {a:v ∑ a Á~Í}
+Æ);
+a(PC_T1 "z_library_ext" prove_tac[]);
+a(z_∂_tacÒS Á~ÍÆ THEN PC_T1 "z_library_ext" asm_rewrite_tac[]);
+a(z_∂_tacÒSÆ THEN PC_T1 "z_library_ext" prove_tac[]);
+val €ﬁ_rel_inv_thm› = save_pop_thm "ﬁ_rel_inv_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], Òµa:É; b : É∑
+	(a ∏ b) Á~Í = b ∏ a
+Æ);
+a(PC_T1 "z_library_ext" prove_tac[]);
+val €∏_rel_inv_thm› = save_pop_thm "∏_rel_inv_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], get_conjecture "-" "wps_prod_thm1");
+a(REPEAT strip_tac THEN once_rewrite_tac[wps_sym_thm]);
+a(rewrite_tac[wps_prod_thm, ﬁ_rel_inv_thm, 
+	pc_rule1 "z_library_ext" prove_rule[]
+	Òµx:É; y:É; a : É∑(x, y) ç a Á~Í § (y, x) ç aÆ]);
+a(bc_thm_tac(prove_rule[]¨µf x y∑Òx = y ¥ f x = f yÆ Æ));
+a(PC_T1 "z_library_ext" once_rewrite_tac[]
+	THEN rewrite_tac[] THEN REPEAT strip_tac
+	THEN all_var_elim_asm_tac1);
+(* *** Goal "1" *** *)
+a(z_∂_tacÒVÆ THEN rewrite_tac[∏_rel_inv_thm]);
+(* *** Goal "2" *** *)
+a(z_∂_tacÒWPS (S, {w : É | µ y : R ® X © ∑ (y, w) ç C}) ∏ XÆ
+	THEN rewrite_tac[∏_rel_inv_thm]);
+a(z_∂_tacÒXÆ THEN REPEAT strip_tac);
+val €wps_prod_thm1› = save_pop_thm "wps_prod_thm1";
 =TEX
 %%%%
 %%%%
@@ -1552,13 +1685,3 @@ z_output_theory{out_file="wrk069.th.doc", theory="-"};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PROOF SCRIPTS END HERE
 =TEX
 \end{document}
-=IGN
-set_goal([], ÒµR:É ™ É; x: É; v:É∑
-	(R ´âR S)®{(x, v)}© = R®{x}© ∏ S®{v}© Æ);
-a(PC_T1 "z_library_ext" rewrite_tac[
-	rel_prod_rw_thm,
-	z_gen_pred_u_elim rel_prod_def]);
-a(PC_T1 "z_library_ext" prove_tac[]);
-a(z_∂_tacÒ(x, v)Æ);
-a(asm_rewrite_tac[]);
-val €rel_prod_singleton_pair_thm› = save_pop_thm "rel_prod_singleton_pair_thm";
