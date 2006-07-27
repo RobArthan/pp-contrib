@@ -404,6 +404,28 @@ ind_sum_inc_exc_thm
 size_inc_exc_thm
 =TEX
 }
+
+A final block of theorems in this section are useful facts about supports and indexed sums of use elsewhere.
+
+
+
+\ThmsIII{%
+=GFT
+supp_—_thm
+supp_plus_thm
+=TEX
+}{%
+=GFT
+ind_sum_supp_thm
+ind_sum_transfer_thm
+=TEX
+}{%
+=GFT
+ind_sum_singleton_∏_thm
+ind_sum_∏_thm
+=TEX
+}
+
 \subsection{Binomial Coefficients}
 
 We define the binomial coefficient $\Binomial{n}{m}$ by recursion equations in the usual way.
@@ -2198,6 +2220,190 @@ a(lemma_tac ¨A ° • {B|∂ j∑ j ç x ± B = U j} ç FiniteÆ
 	THEN1 ALL_FC_T rewrite_tac[°_finite_thm]);
 a(ALL_FC_T rewrite_tac[ind_sum_size_thm]);
 val €size_inc_exc_thm› = save_pop_thm "size_inc_exc_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µA∑
+	Supp (— A) = A
+Æ);
+a(REPEAT strip_tac THEN PC_T1 "sets_ext1" rewrite_tac[supp_def, —_def]
+	THEN µ_tac);
+a(cases_tac¨x ç AÆ THEN asm_rewrite_tac[]);
+val €supp_—_thm› = save_pop_thm "supp_—_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µf g∑
+	Supp (Ãx∑f x + g x) =
+	(Supp f ¿ Supp g) \ {x | f x = ~(g x)}
+Æ);
+a(REPEAT strip_tac THEN PC_T1 "sets_ext1" rewrite_tac[supp_def]);
+a(PC_T1 "Ø_lin_arith" prove_tac[]);
+val €supp_plus_thm› = save_pop_thm "supp_plus_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µA f∑
+	A ç Finite
+¥	ì A f = ì (A ° Supp f) f
+Æ);
+a(REPEAT strip_tac);
+a(finite_induction_tac¨AÆ THEN1 rewrite_tac[ind_sum_def]);
+a(cases_tac¨x ç Supp fÆ);
+(* *** Goal "1" *** *)
+a(LEMMA_T ¨({x} ¿ A) ° Supp f = {x} ¿ (A ° Supp f)Æ
+	rewrite_thm_tac
+	THEN1 PC_T1 "sets_ext" asm_prove_tac[]);
+a(LEMMA_T ¨≥x ç (A ° Supp f)Æ asm_tac
+	THEN1 REPEAT strip_tac);
+a(LEMMA_T ¨A ° Supp f ç FiniteÆ asm_tac
+	THEN1 (bc_thm_tac Ä_finite_thm
+		THEN ∂_tac¨AÆ  THEN REPEAT strip_tac
+		THEN PC_T1 "sets_ext1" prove_tac[]));
+a(ALL_FC_T asm_rewrite_tac[ind_sum_def]);
+(* *** Goal "2" *** *)
+a(TOP_ASM_T (strip_asm_tac o rewrite_rule[supp_def]));
+a(ALL_FC_T asm_rewrite_tac[ind_sum_def]);
+a(LEMMA_T ¨({x} ¿ A) ° Supp f = (A ° Supp f)Æ
+	rewrite_thm_tac
+	THEN1 PC_T1 "sets_ext" asm_prove_tac[]);
+val €ind_sum_supp_thm› = save_pop_thm "ind_sum_supp_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µA B f g h∑
+	A ç Finite
+±	B ç Finite
+±	(µx∑ x ç A ± ≥f x = ÓØ 0 ¥ h x ç B ± f x = g(h x))
+±	(µy∑ y ç B ± ≥ g y = ÓØ 0 ¥ ∂â1x∑ x ç A ± h x = y ± f x = g y)
+¥	ì A f = ì B g
+Æ);
+a(REPEAT strip_tac);
+a(lemma_tac¨µC∑ C ç Finite ¥
+	ì {x | x ç A ± ≥f x = ÓØ 0 ± h x ç C} f =
+	ì (B ° C) gÆ);
+(* *** Goal "1" *** *)
+a(REPEAT strip_tac);
+a(finite_induction_tac¨CÆ);
+(* *** Goal "1" *** *)
+(* *** Goal "1.1" *** *)
+a(rewrite_tac[ind_sum_def, pc_rule1 "sets_ext1" prove_rule[]¨{x|F} = {}Æ]);
+(* *** Goal "1.2" *** *)
+a(cases_tac¨x ç BÆ);
+a(LEMMA_T¨B ° ({x} ¿ C) = {x} ¿ (B ° C)Æ rewrite_thm_tac
+	THEN1 PC_T1 "sets_ext1" asm_prove_tac[]);
+a(LEMMA_T¨≥x ç (B ° C)Æ asm_tac
+	THEN1 PC_T1 "sets_ext1" asm_prove_tac[]);
+a(lemma_tac¨B ° C ç FiniteÆ
+	THEN1 (bc_thm_tac °_finite_thm THEN REPEAT strip_tac));
+a(cases_tac¨g x = ÓØ 0Æ);
+(* *** Goal "1.2.1.1" *** *)
+a(LEMMA_T¨{x'|x' ç A ± ≥ f x' = ÓØ 0 ± h x' ç {x} ¿ C}
+	= {x|x ç A ± ≥ f x = ÓØ 0 ± h x ç C}Æ
+	asm_rewrite_thm_tac);
+(* *** Goal "1.2.1.1.1" *** *)
+a(PC_T1 "sets_ext1" REPEAT strip_tac);
+a(all_var_elim_asm_tac1);
+a(LIST_DROP_NTH_ASM_T [10] all_fc_tac);
+a(swap_nth_asm_concl_tac 2 THEN asm_rewrite_tac[]);
+(* *** Goal "1.2.1.1.2" *** *)
+a(ALL_FC_T asm_rewrite_tac[ind_sum_def]);
+(* *** Goal "1.2.1.2" *** *)
+a(spec_nth_asm_tac 8 ¨xÆ THEN 
+	PC_T "predicates" all_var_elim_asm_tac1);
+a(LEMMA_T¨{x''|x'' ç A ± ≥ f x'' = ÓØ 0 ± h x'' ç {h x'} ¿ C}
+	= {x'} ¿ {x|x ç A ± ≥ f x = ÓØ 0 ± h x ç C}Æ
+	asm_rewrite_thm_tac);
+(* *** Goal "1.2.1.2.1" *** *)
+a(PC_T1 "sets_ext1" REPEAT strip_tac THEN_TRY all_var_elim_asm_tac1);
+(* *** Goal "1.2.1.2.1.1" *** *)
+a(swap_nth_asm_concl_tac 1);
+a(spec_nth_asm_tac 16 ¨xÆ);
+a(DROP_NTH_ASM_T 7 bc_thm_tac THEN asm_rewrite_tac[]);
+(* *** Goal "1.2.1.2.1.2" *** *)
+a(asm_rewrite_tac[]);
+(* *** Goal "1.2.1.2.2" *** *)
+a(LEMMA_T¨≥x' ç {x|x ç A ± ≥ f x = ÓØ 0 ± h x ç C}Æ
+	asm_tac
+	THEN1 asm_rewrite_tac[]);
+a(lemma_tac¨{x|x ç A ± ≥ f x = ÓØ 0 ± h x ç C} ç FiniteÆ
+	THEN1 (bc_thm_tac Ä_finite_thm
+		THEN ∂_tac¨AÆ THEN REPEAT strip_tac
+		THEN PC_T1 "sets_ext1" prove_tac[]));
+a(ALL_FC_T asm_rewrite_tac[ind_sum_def]);
+(* *** Goal "1.2.2" *** *)
+a(LEMMA_T¨B ° ({x} ¿ C) = B ° CÆ rewrite_thm_tac
+	THEN1 (POP_ASM_T ante_tac THEN PC_T1 "sets_ext1" prove_tac[]));
+a(LEMMA_T¨{x'|x' ç A ± ≥ f x' = ÓØ 0 ± h x' ç {x} ¿ C}
+	= {x|x ç A ± ≥ f x = ÓØ 0 ± h x ç C}Æ
+	asm_rewrite_thm_tac);
+a(PC_T1 "sets_ext1" REPEAT strip_tac THEN all_var_elim_asm_tac1);
+a(spec_nth_asm_tac 8 ¨x'Æ);
+(* *** Goal "2" *** *)
+a(POP_ASM_T (ante_tac o µ_elim¨BÆ) THEN asm_rewrite_tac[]);
+a(STRIP_T (rewrite_thm_tac o eq_sym_rule));
+a(LEMMA_T ¨{x|x ç A ± ≥ f x = ÓØ 0 ± h x ç B} =
+	A ° Supp fÆ rewrite_thm_tac);
+(* *** Goal "2.1" *** *)
+a(rewrite_tac[supp_def]
+	THEN PC_T1 "sets_ext1" REPEAT strip_tac
+	THEN all_asm_fc_tac[]);
+(* *** Goal "2.2" *** *)
+a(ALL_FC_T rewrite_tac[ind_sum_supp_thm]);
+val €ind_sum_transfer_thm› = save_pop_thm "ind_sum_transfer_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µx B; f:'a ∏ 'b ≠ Ø∑
+	B ç Finite
+¥	ì ({x} ∏ B) f = ì B (Ãy∑f(x, y))
+Æ);
+a(REPEAT strip_tac);
+a(finite_induction_tac¨BÆ THEN1 rewrite_tac[ind_sum_def, ∏_def,
+	pc_rule1 "sets_ext1" prove_rule[]¨{(x, y)|F} = {}Æ]);
+a(LEMMA_T¨({x} ∏ ({x'} ¿ B)) = {(x,  x')} ¿ ({x} ∏ B)Ærewrite_thm_tac
+	THEN1 MERGE_PCS_T1 ["'bin_rel", "'pair", "sets_ext1"] prove_tac[]);
+a(LEMMA_T¨≥(x,  x') ç ({x} ∏ B)Æ asm_tac
+	THEN1 MERGE_PCS_T1 ["'bin_rel", "sets_ext1"] prove_tac[]);
+a(strip_asm_tac (µ_elim¨xÆ singleton_finite_thm));
+a(lemma_tac¨({x} ∏ B) ç FiniteÆ
+	THEN1 all_fc_tac[∏_finite_size_thm]);
+a(ALL_FC_T asm_rewrite_tac[ind_sum_def]);
+val €ind_sum_singleton_∏_thm› = save_pop_thm "ind_sum_singleton_∏_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µf:'a ∏ 'b ≠ Ø; A B∑
+	A ç Finite ± B ç Finite
+¥	ì A (Ãx∑ì B (Ãy∑f(x, y))) = ì (A ∏ B) f
+Æ);
+a(REPEAT strip_tac);
+a(finite_induction_tac¨AÆ THEN1 rewrite_tac[ind_sum_def, ∏_def,
+	pc_rule1 "sets_ext1" prove_rule[]¨{(x, y)|F} = {}Æ]);
+a(ALL_FC_T asm_rewrite_tac[ind_sum_def]);
+a(LEMMA_T¨(({x} ¿ A) ∏ B) = ({x} ∏ B) ¿ (A ∏ B)Ærewrite_thm_tac
+	THEN1 MERGE_PCS_T1 ["'bin_rel", "'pair", "sets_ext1"] prove_tac[]);
+a(strip_asm_tac (µ_elim¨xÆ singleton_finite_thm));
+a(lemma_tac¨({x} ∏ B) ç Finite ± (A ∏ B) ç Finite Æ
+	THEN1 ALL_FC_T rewrite_tac[∏_finite_size_thm]);
+a(ALL_FC_T rewrite_tac[ind_sum_¿_thm, ind_sum_singleton_∏_thm]);
+a(LEMMA_T¨({x} ∏ B) ° (A ∏ B) = {}Ærewrite_thm_tac
+	THEN1 (MERGE_PCS_T1 ["'bin_rel", "'pair", "sets_ext1"] rewrite_tac[]
+		THEN contr_tac THEN all_var_elim_asm_tac1));
+a(rewrite_tac[ind_sum_def]);
+val €ind_sum_∏_thm› = save_pop_thm "ind_sum_∏_thm";
 =TEX
 %%%%
 %%%%
