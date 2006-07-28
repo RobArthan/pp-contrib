@@ -79,9 +79,9 @@ This document is one of a series of mathematical case studies in  {\ProductHOL}.
 It gives a construction of the Geometric Algebra $GA$.
 \end{abstract}
 \section{INTRODUCTION}
-In \cite{Harrison05a}, Harrison advocates an approach to Euclidean geometry in HOL using a type constructor to model the individual Euclidean spaces $\R^{N}$.
-In this document, we set up the framework for an alternative approach where one works in a fixed type that contains all of the $\bbR^{N}$.
-In fact we do more than that and construct the {\em geometric algebra}. To quote Macdonald~\cite{Macdonald06}:
+In \cite{Harrison05a}, Harrison advocates an approach to Euclidean geometry in HOL using a type constructor to model the individual Euclidean spaces $\R^{N}$, for finite $N$.
+In this document, we set up the framework for an alternative approach where one works in a fixed type that contains all of the $\bbR^{n}$ for all $n \in \N$.
+In fact we do more than that: we construct the {\em geometric algebra}. To quote Macdonald~\cite{Macdonald06}:
 
 \begin{quotation}
 \it
@@ -239,7 +239,7 @@ MonâG
 =TEX
 \ maps a finite set of integers $I$ to the monomial basis element $\E{I}$ of~\cite{Arthan06b}.
 The definition has four conjuncts:
-the first conjunct says that $\GA$ is an associative real algebra with a two-sided unit (cf. the check-list in~\cite{Macdonald02};
+the first conjunct says that $\GA$ is an associative real algebra with a two-sided unit (cf. the check-list in~\cite{Macdonald02});
 the second conjunct gives the rule for multiplying monomials;
 the third conjunct says that the monomials
 =INLINEFT
@@ -263,7 +263,7 @@ MonâG J
 
 πHOLCONST
 ‹ $€+âG› : GA ≠ GA ≠ GA;	€~âG› : GA ≠ GA;	€0âG› : GA;
-‹ $€*âS› : Ø ≠ GA ≠ GA;
+‹				$€*âS› : Ø ≠ GA ≠ GA;
 ‹ $€*âG› : GA ≠ GA ≠ GA;	€1âG› : GA;		€MonâG› : ˙ SET ≠ GA
 ˜¸¸¸¸¸¸
 ‹ (µu v w a b∑
@@ -295,19 +295,23 @@ We now define the function
 =INLINEFT
 VecâG
 =TEX
-\ that maps an integer $i$ to the element $\E{i}$ of~\cite{Arthan06b} and the embedding of the naturals in $\GA$
+\ that maps an integer $i$ to the element $\E{i}$ of~\cite{Arthan06b}.
 
 πHOLCONST
 ‹ €VecâG› : ˙ ≠ GA
 ˜¸¸¸¸¸¸
 ‹ µ i∑ VecâG i = MonâG {i}
 ∞
+The following function gives the embedding of the naturals in $\GA$.
+(Since it is so widely used, we will usually use the alias $\Gamma$ for this function, see below).
 
 πHOLCONST
 ‹ €ÓâG› : Ó ≠ GA
 ˜¸¸¸¸¸¸
 ‹ ÓâG 0 = 0âG ± µ m∑ ÓâG (m+1) = ÓâG m +âG 1âG
 ∞
+
+We now define aliases for the embedding of the naturals and for the ring operations on $\GA$ (but not for the scalar multiplication since that does not work well with the current treatment of overloading in \ProductHOL).
 
 =SML
 declare_alias("á", ¨ÓâGÆ);
@@ -316,6 +320,7 @@ declare_alias("*", ¨$*âGÆ);
 declare_alias("~", ¨~âGÆ);
 =TEX
 
+Many of the theorems in the following block mimic ones provided in the developmet of the real numbers, up to the point where the non-commutativity of multiplication in $\GA$ begins to make a significant difference.
 
 \ThmsIII{%
 =GFT
@@ -326,33 +331,42 @@ ga_plus_zero_thm
 ga_plus_order_thm
 ga_plus_0_thm
 ga_0_1_thm
-=TEX
-}{%
-=GFT
 ga_plus_minus_thm
 ga_eq_thm
 á_plus_homomorphism_thm
+=TEX
+}{%
+=GFT
 ga_one_scale_thm
 ga_scale_scale_assoc_thm
 ga_scale_plus_distrib_thm
 ga_plus_scale_distrib_thm
-=TEX
-}{%
-=GFT
 ga_times_assoc_thm
 ga_times_plus_distrib_thm
 ga_plus_times_distrib_thm
 ga_scale_times_assoc_thm
 ga_one_times_thm
 ga_times_one_thm
+=TEX
+}{%
+=GFT
+ga_mon_times_mon_thm 
+ga_minus_clauses
+ga_minus_eq_thm
+ga_0_times_thm
+ga_0_scale_thm
+ga_scale_0_thm
+ga_minus_1_scale_thm
 ga_one_mon_thm
+ga_mon_span_thm
+ga_mon_indep_thm
 =TEX
 }
 
 \subsection{Some Linear Space Notions}
 (Note: we use the term {\em linear space} for the usual notion of a vector space to avoid confusion with the privileged role of the 1-vectors in $\GA$).
 
-We define the notion of a Linear subspace of $\GA$:
+We define the notion of a linear subspace of $\GA$:
 
 πHOLCONST
 ‹ €SubspaceâG› : GA SET SET
@@ -360,7 +374,7 @@ We define the notion of a Linear subspace of $\GA$:
 ‹ µV∑	V ç SubspaceâG §
 ‹		0âG ç V
 ‹	±	(µa u∑ u ç V ¥ a *âS u ç V)
-‹	±	(µu v∑ u ç V ± v ç V ¥ u +âG v ç V)
+‹	±	(µu v∑ u ç V ± v ç V ¥ u + v ç V)
 ∞
 The linear space spanned by a subset of $\GA$ is defined as follows:
 
@@ -377,33 +391,24 @@ A set $X$ is linearly independent iff. the spans of its proper subsets are prope
 ∞
 \ThmsIII{%
 =GFT
-ga_mon_span_thm
-ga_mon_indep_thm
-ga_mon_times_mon_thm 
-ga_minus_clauses
-ga_minus_eq_thm
-ga_0_times_thm
-ga_0_scale_thm
-ga_scale_0_thm
-ga_minus_1_scale_thm
-=TEX
-}{%
-=GFT
 finite_friend_thm
 ga_mon_not_0_thm
 ga_mon_1_thm
 ga_mon_subgroup_thm
 ga_vec_generators_thm
 ga_vec_relations_thm
-ga_vec_indep_thm
-ga_span_subspace_thm
 =TEX
 }{%
 =GFT
+ga_vec_indep_thm
+ga_span_subspace_thm
 ga_Ä_span_thm
 ga_span_Ä_thm
 ga_trivial_subspaces_thm
 ga_mon_span_bc_thm
+=TEX
+}{%
+=GFT
 ga_span_mon_thm
 ga_span_mono_thm
 ga_indep_thm
@@ -1973,20 +1978,6 @@ val _ = save_thm("ga_one_mon_thm", ga_one_mon_thm);
 %%%%
 
 =SML
-val [	€ga_mon_times_mon_thm›,
-	€ga_mon_span_thm›,
-	€ga_mon_indep_thm› ] =
-		strip_±_rule(
-			±_right_elim ga_ops_def);
-
-val _ = save_thm("ga_mon_span_thm", ga_mon_span_thm);
-val _ = save_thm("ga_mon_indep_thm", ga_mon_indep_thm);
-val _ = save_thm("ga_mon_times_mon_thm ", ga_mon_times_mon_thm );
-=TEX
-%%%%
-%%%%
-
-=SML
 val €ga_minus_clauses› = (
 set_goal([], ¨µx y : GA∑
 		~ (~ x) = x
@@ -2088,6 +2079,20 @@ a(rewrite_tac[µ_elim¨~ (ÓØ 1) *âS uÆ ga_plus_order_thm,
 	ga_minus_clauses, ga_plus_0_thm]);
 save_pop_thm"ga_minus_1_scale_thm"
 );
+=TEX
+%%%%
+%%%%
+
+=SML
+val [	€ga_mon_times_mon_thm›,
+	€ga_mon_span_thm›,
+	€ga_mon_indep_thm› ] =
+		strip_±_rule(
+			±_right_elim ga_ops_def);
+
+val _ = save_thm("ga_mon_span_thm", ga_mon_span_thm);
+val _ = save_thm("ga_mon_indep_thm", ga_mon_indep_thm);
+val _ = save_thm("ga_mon_times_mon_thm ", ga_mon_times_mon_thm );
 =TEX
 %%%%
 %%%%
