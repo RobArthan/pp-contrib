@@ -11,7 +11,7 @@ or visit the OpenSource web site at http://www.opensource.org/
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-$Id: wrk076.doc,v 1.28 2006/09/19 16:08:10 rda Exp rda $
+$Id: wrk076.doc,v 1.29 2006/10/29 21:27:31 rda Exp rda $
 ********************************************************************************
 =TEX
 \documentclass[11pt,a4paper]{article}
@@ -305,6 +305,7 @@ MonâG J
 ‹	±	u *âG (v +âG w) = u *âG v +âG u *âG w
 ‹	±	(v +âG w) *âG u = v *âG u +âG w *âG u
 ‹	±	(a *âS u) *âG v = a *âS u *âG v
+‹	±	u *âG (a *âS v) = a *âS u *âG v
 ‹	±	1âG *âG u = u ± u *âG 1âG = u ± 1âG = MonâG {})
 ‹ ± (µI J∑	I ç Finite ± J ç Finite
 ‹	¥	MonâG I *âG MonâG J = SignâG I J *âS MonâG(I £ J))
@@ -1276,6 +1277,29 @@ val €times_s_times_g_assoc_thm› = pop_thm(); (* "times_s_times_g_assoc_thm" *);
 %%%%
 
 =SML
+set_goal([], ¨µu v a∑
+	Supp u ç Finite
+±	Supp v ç Finite
+¥	u _*âG (a _*âS v) = a _*âS (u _*âG v)
+Æ);
+a(REPEAT µ_tac THEN ¥_tac);
+a(cases_tac¨a = ÓØ 0Æ THEN1 PC_T1 "predicates" asm_rewrite_tac[zero_times_s_thm, zero_times_g_thm]);
+a(lemma_tac¨Supp (a _*âS v) ç FiniteÆ
+	THEN1 ALL_FC_T asm_rewrite_tac[supp_times_s_thm]);
+a(PC_T1 "predicates" (ALL_FC_T rewrite_tac)[times_g_def1]);
+a(ALL_FC_T rewrite_tac[supp_times_s_thm]);
+a(µ_tac THEN rewrite_tac[times_s_def]);
+a(rewrite_tac[µ_elim¨aÆØ_times_order_thm]);
+a(pure_rewrite_tac[prove_rule[]
+	¨ (Ã I∑ a * SignâG I (x £ I) * u I * v (x £ I)) =
+	ÃI∑a * (Ã I∑ SignâG I (x £ I) * u I * v (x £ I)) I Æ]);
+a(ALL_FC_T rewrite_tac[ind_sum_const_times_thm]);
+val €times_g_times_s_assoc_thm› = pop_thm(); (* "times_g_times_s_assoc_thm" *);
+=TEX
+%%%%
+%%%%
+
+=SML
 set_goal([], ¨µu∑
 	_1âG _*âG u = u
 ±	u _*âG _1âG = u
@@ -1684,7 +1708,8 @@ a(lemma_tac¨
 a(PC_T1 "predicates" (ALL_FC_T rewrite_tac)[
 	times_g_assoc_thm,
 	times_g_plus_g_distrib_thm,
-	times_s_times_g_assoc_thm]);
+	times_s_times_g_assoc_thm,
+	times_g_times_s_assoc_thm]);
 (* *** Goal "2" *** *)
 a(REPEAT strip_tac);
 a(lemma_tac¨I £ J ç FiniteÆ THEN1 all_fc_tac[£_finite_thm]);
@@ -1875,6 +1900,7 @@ val [	€ga_one_scale_thm›,
 	€ga_times_plus_distrib_thm›,
 	€ga_plus_times_distrib_thm›,
 	€ga_scale_times_assoc_thm›,
+	€ga_times_scale_assoc_thm›,
 	€ga_one_times_thm›,
 	€ga_times_one_thm›,
 	€ga_one_mon_thm› ] =
@@ -1889,6 +1915,7 @@ val _ = save_thm("ga_times_assoc_thm", ga_times_assoc_thm);
 val _ = save_thm("ga_times_plus_distrib_thm", ga_times_plus_distrib_thm);
 val _ = save_thm("ga_plus_times_distrib_thm", ga_plus_times_distrib_thm);
 val _ = save_thm("ga_scale_times_assoc_thm", ga_scale_times_assoc_thm);
+val _ = save_thm("ga_times_scale_assoc_thm", ga_times_scale_assoc_thm);
 val _ = save_thm("ga_one_times_thm", ga_one_times_thm);
 val _ = save_thm("ga_times_one_thm", ga_times_one_thm);
 val _ = save_thm("ga_one_mon_thm", ga_one_mon_thm);
@@ -2347,6 +2374,40 @@ a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac
 a(cases_tac¨I' = IÆ THEN1 all_var_elim_asm_tac1);
 a(LIST_DROP_NTH_ASM_T [7] all_fc_tac);
 val €ga_mon_indep_thm1› = save_pop_thm "ga_mon_indep_thm1";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨
+µx : GA∑ ~u = ~(ÓØ 1) *âS u
+Æ);
+a(REPEAT strip_tac THEN conv_tac eq_sym_conv); a(once_rewrite_tac[ga_eq_thm]);
+a(LEMMA_T ¨~(~ u) = ÓØ 1 *âS uÆ rewrite_thm_tac
+	THEN1 rewrite_tac[ga_minus_clauses, ga_ops_def]);
+a(rewrite_tac[conv_rule (ONCE_MAP_C eq_sym_conv)
+	ga_plus_scale_distrib_thm,
+	ga_0_scale_thm]);
+val €ga_minus_scale_thm› = save_pop_thm "ga_minus_scale_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+(*
+set_goal([], ¨
+µu v : GA∑
+	u*v = ~v*u
+¥	(u +  ~v)*(u + ~v) = u*u + v*v
+Æ);
+a(REPEAT strip_tac THEN rewrite_tac[ga_times_plus_distrib_thm,
+	ga_plus_times_distrib_thm,
+	ga_plus_assoc_thm
+]
+THEN POP_ASM_T (rewrite_thm_tac o eq_sym_rule));
+
+val €ga_mon_indep_thm1› = save_pop_thm "ga_mon_indep_thm1";
+*)
 =TEX
 \Hide{
 =SML
