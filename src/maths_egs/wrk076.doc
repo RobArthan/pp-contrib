@@ -11,7 +11,7 @@ or visit the OpenSource web site at http://www.opensource.org/
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-$Id: wrk076.doc,v 1.29 2006/10/29 21:27:31 rda Exp rda $
+$Id: wrk076.doc,v 1.30 2006/11/01 17:08:25 rda Exp rda $
 ********************************************************************************
 =TEX
 \documentclass[11pt,a4paper]{article}
@@ -340,13 +340,32 @@ The following function gives the embedding of the naturals in $\GA$.
 ‹ ÓâG 0 = 0âG ± µ m∑ ÓâG (m+1) = ÓâG m +âG 1âG
 ∞
 
-We now define aliases for the embedding of the naturals and for the ring operations on $\GA$ (but not for the scalar multiplication since that does not work well with the current treatment of overloading in \ProductHOL).
+=SML
+declare_infix(305, "-âG");
+πHOLCONST
+‹ $€-âG› : GA ≠ GA ≠ GA
+˜¸¸¸¸¸¸
+‹ µu v∑ u -âG v = u +âG ~âG v
+∞
+=SML
+declare_infix(320, "^âG");
+πHOLCONST
+‹ $€^âG› : GA ≠ Ó ≠ GA
+˜¸¸¸¸¸¸
+‹	(µu∑ u ^âG 0 = 1âG)
+‹ ±	(µu m∑ u ^âG (m+1) = u *âG u ^âG m)
+∞
+
+
+We now define aliases for the embedding of the naturals and for the ring operations on $\GA$ etc., (but not for the scalar multiplication since that does not work well with the current treatment of overloading in \ProductHOL).
 
 =SML
 declare_alias("á", ¨ÓâGÆ);
 declare_alias("+", ¨$+âGÆ);
 declare_alias("*", ¨$*âGÆ);
 declare_alias("~", ¨~âGÆ);
+declare_alias("-", ¨$-âGÆ);
+declare_alias("^", ¨$^âGÆ);
 =TEX
 
 Many of the theorems in the following block mimic ones provided in the developmet of the real numbers, up to the point where the non-commutativity of multiplication in $\GA$ begins to make a significant difference.
@@ -391,7 +410,6 @@ ga_mon_span_thm
 ga_mon_indep_thm
 =TEX
 }
-
 \subsection{Some Linear Space Notions}
 (Note: we use the term {\em linear space} for the usual notion of a vector space to avoid confusion with the privileged role of the 1-vectors in $\GA$).
 
@@ -444,6 +462,23 @@ ga_indep_thm
 ga_mon_indep_thm1
 =TEX
 }
+\subsection{Some Simple Geometric Notions}
+In this section we define some simple geometric notions.
+We restrict some of these to vectors (the set of vectors being the span of the $\E{i}$.
+πHOLCONST
+‹ $€VectorâG› : GA SET
+˜¸¸¸¸¸¸
+‹ VectorâG = SpanâG {e | ∂m∑e = VecâG m}
+∞
+
+
+=SML
+declare_infix(200, "‚");
+πHOLCONST
+‹ $€‚› : GA ≠ GA ≠ BOOL
+˜¸¸¸¸¸¸
+‹ µu v∑ u ‚ v § u ç VectorâG ± v ç VectorâG ± u * v = ~ v * u
+∞
 
 =TEX
 \subsection{The Representatives for the Algebra Operations}\label{representatives}
@@ -1794,7 +1829,11 @@ val €ga_ops_def› = save_thm("ga_ops_def", get_spec ¨$+âGÆ);
 
 =SML
 val €ga_vec_def› = get_spec¨VecâGÆ;
+val €ga_subtract_def› = get_spec¨$-âGÆ;
+val €ga_Ó_exp_def› = get_spec¨$^âGÆ;
 val €á_def› = get_spec¨ÓâGÆ;
+val €ga_vector_def› = get_spec¨VectorâGÆ;
+val €‚_def› = get_spec¨$‚Æ;
 =TEX
 %%%%
 %%%%
@@ -1808,6 +1847,7 @@ val [	€ga_plus_comm_thm›,
 		strip_±_rule(
 			all_µ_elim(±_left_elim ga_ops_def))to 3);
 val _ = save_thm("ga_plus_assoc_thm", ga_plus_assoc_thm);
+val €ga_plus_assoc_thm1› = save_thm("ga_plus_assoc_thm1", conv_rule (ONCE_MAP_C eq_sym_conv) ga_plus_assoc_thm);
 val _ = save_thm("ga_plus_comm_thm", ga_plus_comm_thm);
 val _ = save_thm("ga_plus_zero_thm", ga_plus_zero_thm);
 =TEX
@@ -1876,7 +1916,6 @@ save_pop_thm"ga_eq_thm"
 =TEX
 %%%%
 %%%%
-
 =SML
 val €á_plus_homomorphism_thm› = (
 set_goal([], ¨µ m n : Ó ∑ á(m + n) = á m + á nÆ);
@@ -2044,6 +2083,20 @@ val [	€ga_mon_times_mon_thm›,
 val _ = save_thm("ga_mon_span_thm", ga_mon_span_thm);
 val _ = save_thm("ga_mon_indep_thm", ga_mon_indep_thm);
 val _ = save_thm("ga_mon_times_mon_thm ", ga_mon_times_mon_thm );
+=TEX
+%%%%
+%%%%
+
+=SML
+val €ga_Ó_exp_clauses› = (
+set_goal([], ¨µu:GA∑ u ^ 0 = á 1 ± u ^ 1 = u ± u ^ 2 = u*uÆ);
+a(rewrite_tac[ga_Ó_exp_def, ga_0_1_thm]);
+a(pure_rewrite_tac[prove_rule[]¨2 = 1 + 1Æ, ga_Ó_exp_def]);
+a(once_rewrite_tac[prove_rule[]¨1 = 0 + 1Æ]);
+a(pure_rewrite_tac[ga_Ó_exp_def, ga_0_1_thm, ga_times_one_thm]);
+a(REPEAT strip_tac);
+save_pop_thm"ga_Ó_exp_clauses"
+);
 =TEX
 %%%%
 %%%%
@@ -2380,7 +2433,7 @@ val €ga_mon_indep_thm1› = save_pop_thm "ga_mon_indep_thm1";
 
 =SML
 set_goal([], ¨
-µx : GA∑ ~u = ~(ÓØ 1) *âS u
+µu : GA∑ ~u = ~(ÓØ 1) *âS u
 Æ);
 a(REPEAT strip_tac THEN conv_tac eq_sym_conv); a(once_rewrite_tac[ga_eq_thm]);
 a(LEMMA_T ¨~(~ u) = ÓØ 1 *âS uÆ rewrite_thm_tac
@@ -2389,25 +2442,36 @@ a(rewrite_tac[conv_rule (ONCE_MAP_C eq_sym_conv)
 	ga_plus_scale_distrib_thm,
 	ga_0_scale_thm]);
 val €ga_minus_scale_thm› = save_pop_thm "ga_minus_scale_thm";
+val €ga_scale_minus_thm› = save_thm ("ga_scale_minus_thm",
+	conv_rule(ONCE_MAP_C eq_sym_conv) ga_minus_scale_thm);
 =TEX
 %%%%
 %%%%
 
 =SML
-(*
 set_goal([], ¨
 µu v : GA∑
-	u*v = ~v*u
-¥	(u +  ~v)*(u + ~v) = u*u + v*v
+	u ‚ v ¥ (u - v)^2 = u^2 + v^2
 Æ);
-a(REPEAT strip_tac THEN rewrite_tac[ga_times_plus_distrib_thm,
+a(rewrite_tac[ga_subtract_def]);
+a(REPEAT µ_tac THEN rewrite_tac[
+	‚_def, ga_Ó_exp_clauses, 
+	ga_times_plus_distrib_thm,
 	ga_plus_times_distrib_thm,
-	ga_plus_assoc_thm
-]
-THEN POP_ASM_T (rewrite_thm_tac o eq_sym_rule));
-
-val €ga_mon_indep_thm1› = save_pop_thm "ga_mon_indep_thm1";
-*)
+	ga_plus_assoc_thm, ga_minus_scale_thm,
+	ga_scale_scale_assoc_thm, ga_one_scale_thm,
+	ga_times_scale_assoc_thm, ga_scale_times_assoc_thm
+] THEN REPEAT strip_tac);
+a(POP_ASM_T(rewrite_thm_tac o eq_sym_rule));
+a(LEMMA_T ¨u * v + ~ (ÓØ 1) *âS u * v + v * v = v * vÆ rewrite_thm_tac);
+a(rewrite_tac[ga_plus_assoc_thm1]);
+a(LEMMA_T ¨u * v + ~ (ÓØ 1) *âS u * v = á 0Æ 
+	(fn th => rewrite_tac[th, ga_plus_0_thm]));
+a(rewrite_tac(map(conv_rule(ONCE_MAP_C eq_sym_conv)) [
+	ga_plus_times_distrib_thm,
+	ga_scale_times_assoc_thm]));
+a(rewrite_tac[ga_scale_minus_thm, ga_minus_clauses, ga_0_times_thm]);
+val €pythagoras_thm› = save_pop_thm "pythagoras_thm";
 =TEX
 \Hide{
 =SML
