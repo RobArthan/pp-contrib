@@ -11,7 +11,7 @@ or visit the OpenSource web site at http://www.opensource.org/
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-$Id$
+$Id: wrk074.doc,v 1.28 2006/07/31 15:14:32 rda Exp rda $
 ********************************************************************************
 =TEX
 \documentclass[11pt,a4paper]{article}
@@ -111,6 +111,8 @@ These are used to define the subring of integers and the subfield of rational nu
 \section{THE THEORY {\em numbers}}\label{theory}
 
 \subsection{Preliminaries}
+=IGN
+open_theory "numbers";
 =SML
 force_delete_theory "numbers" handle Fail _ => ();
 open_theory"fincomb";
@@ -948,6 +950,20 @@ val €mod_eq_0_thm› = save_pop_thm "mod_eq_0_thm";
 %%%%
 
 =SML
+set_goal([], ¨µm n∑
+	0 < n
+¥	(n Divides m § m Mod n = 0)
+Æ);
+a(REPEAT µ_tac THEN ¥_tac);
+(* *** Goal "1" *** *)
+a(ALL_FC_T1 fc_§_canon rewrite_tac[mod_eq_0_thm]);
+a(rewrite_tac[divides_def]);
+val €divides_mod_eq_0_thm› = save_pop_thm "divides_mod_eq_0_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
 set_goal([], ¨µm∑m Divides 0 ± (0 Divides m § m = 0)Æ);
 a(REPEAT µ_tac THEN rewrite_tac[divides_def]);
 a(∂_tac¨0Æ THEN rewrite_tac[]);
@@ -1486,6 +1502,57 @@ a(LEMMA_T ¨0 < i + 1Æ asm_tac THEN REPEAT strip_tac);
 a(rewrite_tac[]);
 a(ALL_FC_T rewrite_tac[arb_gen gcd_plus_thm]);
 val €euclid_algorithm_thm› = save_pop_thm "euclid_algorithm_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µm n∑
+	0 < m ± 0 < n ± m º n
+¥	∂a b∑ b*n º a*m ± Gcd m n = a*m - b*n 
+Æ);
+a(REPEAT strip_tac);
+a(CASES_T ¨n Divides mÆ ante_tac THEN1 strip_tac);
+(* *** Goal "1" *** *)
+a(all_fc_tac[divides_º_thm]);
+a(lemma_tac¨n = mÆ THEN_LIST
+	[PC_T1 "lin_arith" asm_prove_tac[], all_var_elim_asm_tac]);
+a(∂_tac¨1Æ THEN ∂_tac¨0Æ THEN rewrite_tac[]);
+a( ALL_FC_T rewrite_tac[gcd_idemp_thm]);
+(* *** Goal "2" *** *)
+a(ALL_FC_T1 fc_§_canon rewrite_tac[arb_gen divides_mod_eq_0_thm]);
+a(REPEAT strip_tac THEN lemma_tac¨0 < m Mod nÆ
+	THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(all_fc_tac[arb_gen gcd_eq_mod_thm]);
+a(rename_tac[] THEN POP_ASM_T rewrite_thm_tac);
+a(∂_tac¨aÆ THEN ∂_tac¨(a*m) Div nÆ);
+a(once_rewrite_tac[taut_rule¨µp1 p2∑p1 ± p2 § p1 ± (p1 ¥ p2)Æ]);
+a(ante_tac(list_µ_elim[¨(a*m)Æ, ¨nÆ] div_mod_thm)
+	THEN REPEAT strip_tac
+	THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(POP_ASM_T (strip_asm_tac o rewrite_rule[º_def]));
+a(TOP_ASM_T (fn th => conv_tac(RIGHT_C(LEFT_C(
+		once_rewrite_conv[eq_sym_rule th])))));
+a(rewrite_tac[] THEN PC_T1 "lin_arith" asm_prove_tac[]);
+val €bezout_thm1› = save_pop_thm "bezout_thm1";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¨µm n∑
+	0 < m ± 0 < n 
+¥	(∂a b∑ b*n º a*m ± Gcd m n = a*m - b*n)
+≤	(∂a b∑ a*m º b*n ± Gcd m n = b*n - a*m)
+Æ);
+a(REPEAT µ_tac THEN ¥_tac);
+a(strip_asm_tac (list_µ_elim[¨mÆ, ¨nÆ] º_cases_thm)
+	THEN_LIST [
+		≤_left_tac THEN bc_thm_tac bezout_thm1 THEN REPEAT strip_tac,
+		≤_right_tac THEN ALL_FC_T once_rewrite_tac[gcd_comm_thm]]);
+a(all_fc_tac[arb_gen bezout_thm1]);
+a(∂_tac¨bÆ THEN ∂_tac¨aÆ THEN asm_rewrite_tac[]);
+val €bezout_thm› = save_pop_thm "bezout_thm";
 =TEX
 %%%%
 %%%% PRIMES IN Ó
