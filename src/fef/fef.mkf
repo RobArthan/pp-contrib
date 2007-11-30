@@ -1,4 +1,4 @@
-# $Id: fef.mkf,v 1.3 2003/03/11 15:56:04 rda Exp rda $ %Z%
+# $Id: fef.mkf,v 1.4 2005/05/07 13:37:50 rda Exp rda $ %Z%
 # Adapted from fef037.doc
 #
 #	A makefile for fef
@@ -11,9 +11,9 @@ default:
 	@echo "make -f $(PRODNAME).mkf all         - everything"
 	@echo "make -f $(PRODNAME).mkf allth       - loads all the specification and proof scripts"
 	@echo "make -f $(PRODNAME).mkf alldvi      - typesets all the documents"
-
-FEFDOCS		= fef001.doc fef002.doc fef008.doc fef016.doc fef018.doc \
-				fef037.doc fef041.doc fef045.doc \
+#
+FEFDOCS		= fef001.doc fef002.doc fef008.doc fef016.doc \
+				fef041.doc fef045.doc \
 				fef046.doc fef047.doc fef048.doc
 # files which contain SML but do not create ProofPower theories	
 FEFSMLDOCS	= fef019.doc fef020.doc fef023.doc fef044.doc
@@ -28,31 +28,33 @@ FEFTHYDOCS	= fef003.doc fef004.doc fef005.doc fef014.doc fef006.doc \
 
 
 # work files which are not part of PP 0.4
-WRKDOCS		= wrk049.doc wrk057.doc
+# N.b. fef049.doc was formally known as wrk049.doc
+WRKDOCS		= fef049.doc wrk057.doc
 WRKTEXINPUTS	= $(WRKDOCS:.doc=th.tex)
 # other files to be obtained from SCCS
 OTHERSCCS		= pp load_fef_files.sml
 ALLFEFDOCS 	= $(FEFDOCS) $(FEFSMLDOCS) $(FEFTHYDOCS)
+#
+PACKINGLIST=ALLFEFDOCS
+PACKINGLIST+=fef.mk
 # all fef sml files 
 FEFSMLFILES 	= $(FEFTHYDOCS:.doc=.sml) $(FEFSMLDOCS:.doc=.sml)
-# all files which may be printed by this makefile
-PRTFILES 		= $(ALLFEFDOCS:.doc=.prt)   
 
-# Set the make variable PPINSTALLDIR to the environment variable $PPINSTALLDIR
+# Set the make variable PPHOME to the environment variable $PPHOME
 # which should be set to the pp installation directory before calling make.
-# alternatively, edit the makefile so that PPINSTALLDIR is set to the pp
+# alternatively, edit the makefile so that PPHOME is set to the pp
 # installation directory.
 
 	
 wrk044.doc : 
-	cp $(PPINSTALLDIR)/doc/wrk044.doc .
+	cp $(PPHOME)/doc/wrk044.doc .
 
 wrk046.doc : 
-	cp $(PPINSTALLDIR)/doc/wrk046.doc .
+	cp $(PPHOME)/doc/wrk046.doc .
 
-db_made: wrk044.sml wrk046.sml wrk049.sml
+db_made: wrk044.sml wrk046.sml fef049.sml
 	pp_make_database -f -p hol fef
-	pp -d fef -f wrk044.sml,wrk046.sml,wrk049.sml
+	pp -d fef -f wrk044.sml -f wrk046.sml -f fef049.sml
 	touch db_made
 
 fef003.th: fef003.sml db_made
@@ -269,3 +271,8 @@ fef043.dvi: fef043th.tex
 	- pptexenv bibtex $(@:.dvi=)
 	texdvi $(@:.dvi=)
 	texdvi $(@:.dvi=)
+
+clean:
+	rcsclean
+	rm -f db_made *.toc *.aux *.dvi *.sid *.log *.bbl *.blg *.idx *.th *.lot *.sml
+	rm -f fef???.tex fef???th.tex listall.doc listall.tex
