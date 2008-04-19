@@ -11,7 +11,7 @@ or visit the OpenSource web site at http://www.opensource.org/
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-$Id: wrk074.doc,v 1.28 2006/07/31 15:14:32 rda Exp rda $
+$Id: wrk074.doc,v 1.29 2007/09/11 10:08:55 rda Exp rda $
 ********************************************************************************
 =TEX
 \documentclass[11pt,a4paper]{article}
@@ -190,7 +190,7 @@ We now specify the greatest common divisor function by requiring it to produce g
 ¹HOLCONST
 Ü ÛGcdÝ : î ­ î ­ î
 ÷üüüüüü
-Ü µm n·	0 < m ± 0 < n
+Ü µm n·	0 < m ² 0 < n
 Ü ´	Gcd m n Divides m ± Gcd m n Divides n
 Ü ± 	(µd·	d Divides m ± d Divides n
 Ü	´	d Divides Gcd m n)
@@ -351,6 +351,20 @@ prime_divisors_unique_thm
 prime_divisors_finite_thm
 =TEX
 }
+Having proved the above, we have the consistency of the
+following function that maps a non-zero number $m$
+and a prime $p$ to the exponent of $p$ in the prime
+factorisation of $m$.
+¹HOLCONST
+Ü ÛExponentÝ : î ­ î ­ î
+÷üüüüüü
+Ü µm·	0 < m
+Ü ´	{p | ³Exponent m p = 0}  Finite
+Ü ±	{p | ³Exponent m p = 0} € Prime
+Ü ±	m =  {p | ³ Exponent m p = 0} (Ì p· p ^ Exponent m p)
+°
+
+
 \subsection{Divergence of the Series of Prime Reciprocals}
 The next block of theorems lead up to the proof that the sum $\sum_p 1/p$ taken over all primes p diverges.
 This is done using essentially the argument given in Hardy and Wright~\cite{Hardy78}.
@@ -443,6 +457,28 @@ ind_sum_¼_mono_thm
 î¯_div_¼_thm
 recip_primes_div_estimate_thm5
 recip_primes_div_thm
+=TEX
+}
+\subsection{Coprimality}
+=SML
+declare_infix(200, "Coprime");
+
+¹HOLCONST
+Ü $ÛCoprimeÝ : î ­ î ­ BOOL
+÷üüüüüü
+Ü µm n· m Coprime n ¤ µi· i Divides m ± i Divides n ´ i = 1
+°
+\ThmsIII{
+=GFT
+prime_divisor_thm1
+=TEX
+}{%
+=GFT
+coprime_gcd_thm
+=TEX
+}{%
+=GFT
+
 =TEX
 }
 \subsection{Real Integral Domains}
@@ -611,6 +647,7 @@ wilson_thm
 =SML
 val Ûdivides_defÝ = get_spec ¬$Divides®;
 val Ûprime_defÝ = get_spec ¬Prime®;
+val Ûcoprime_defÝ = get_spec ¬$Coprime®;
 val Ûsquare_free_defÝ = get_spec ¬SquareFree®;
 val Ûreal_i_d_defÝ = get_spec ¬RealID®;
 val Ûú_defÝ = get_spec ¬ú‰R®;
@@ -1338,23 +1375,25 @@ push_consistency_goal ¬Gcd®;
 a(prove_¶_tac THEN REPEAT strip_tac);
 a(cases_tac¬m' = 0® THEN1 all_var_elim_asm_tac1);
 (* *** Goal "1" *** *)
-a(¶_tac¬0® THEN REPEAT strip_tac THEN 
-	ALL_FC_T rewrite_tac[mod_clauses]);
+a(¶_tac¬n'® THEN REPEAT strip_tac THEN 
+	rewrite_tac[divides_0_thm, divides_refl_thm]);
 (* *** Goal "2" *** *)
 a(cases_tac¬n' = 0® THEN1 all_var_elim_asm_tac1);
 (* *** Goal "2.1" *** *)
-a(¶_tac¬0® THEN REPEAT strip_tac THEN 
-	ALL_FC_T rewrite_tac[mod_clauses]);
+a(¶_tac¬m'® THEN REPEAT strip_tac THEN 
+	rewrite_tac[divides_0_thm, divides_refl_thm]);
 (* *** Goal "2.2" *** *)
+a(lemma_tac¬0 < m' ± 0 < n'®
+	THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
 a(cases_tac¬m' Mod n' = 0®);
 (* *** Goal "2.2.1" *** *)
 a(¶_tac¬n'® THEN REPEAT strip_tac
 	THEN rewrite_tac[divides_mod_thm]
 	THEN ALL_FC_T asm_rewrite_tac[mod_clauses]);
 (* *** Goal "2.2.2" *** *)
-a(lemma_tac¬0 < m' ± 0 < n' ± 0 < m' Mod n'®
+a(lemma_tac¬0 < m' Mod n'®
 	THEN1 PC_T1 "lin_arith" asm_prove_tac[]
-	THEN LIST_DROP_NTH_ASM_T [4, 5, 6] discard_tac);
+	THEN LIST_DROP_NTH_ASM_T [5, 6] discard_tac);
 a(all_fc_tac [gcd_consistent_lemma1]);
 a(all_fc_tac [gcd_consistent_lemma5]);
 a(¶_tac¬(a*m') Mod n'® THEN asm_rewrite_tac[divides_mod_thm]);
@@ -1374,12 +1413,18 @@ val Ûgcd_defÝ = save_thm("gcd_def", get_spec¬Gcd®);
 %%%%
 
 =SML
-set_goal([], ¬µm n· 0 < m ± 0 < n ´ 0 < Gcd m n®);
+set_goal([], ¬µm n· 0 < m ² 0 < n ´ 0 < Gcd m n®);
 a(REPEAT strip_tac THEN all_fc_tac[gcd_def]);
-a(swap_nth_asm_concl_tac 5);
-a(DROP_NTH_ASM_T 3 ante_tac);
+(* *** Goal "1" *** *)
+a(swap_nth_asm_concl_tac 2 THEN REPEAT strip_tac
+	THEN ¶_tac ¬n®);
 a(LEMMA_T ¬Gcd m n = 0® rewrite_thm_tac THEN1 PC_T1"lin_arith" asm_prove_tac[]);
-a(rewrite_tac[divides_def] THEN PC_T1 "lin_arith" prove_tac[]);
+a(rewrite_tac[divides_0_thm] THEN PC_T1 "lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(swap_nth_asm_concl_tac 2 THEN REPEAT strip_tac
+	THEN ¶_tac ¬m®);
+a(LEMMA_T ¬Gcd m n = 0® rewrite_thm_tac THEN1 PC_T1"lin_arith" asm_prove_tac[]);
+a(rewrite_tac[divides_0_thm] THEN PC_T1 "lin_arith" asm_prove_tac[]);
 val Ûgcd_pos_thmÝ = save_pop_thm "gcd_pos_thm";
 =TEX
 %%%%
@@ -1387,7 +1432,7 @@ val Ûgcd_pos_thmÝ = save_pop_thm "gcd_pos_thm";
 
 =SML
 set_goal([], ¬µm n d·
-	0 < m ± 0 < n
+	(0 < m ² 0 < n)
 ±	d Divides m ± d Divides n ± Gcd m n Divides d
 ´	d = Gcd m n
 ®);
@@ -1411,12 +1456,15 @@ val Ûgcd_idemp_thmÝ = save_pop_thm "gcd_idemp_thm";
 
 =SML
 set_goal([], ¬µm n d·
-	0 < m ± 0 < n
+	0 < m ² 0 < n
 ´	Gcd m n = Gcd n m
 ®);
-a(REPEAT strip_tac THEN bc_thm_tac gcd_unique_thm);
-a(REPEAT strip_tac THEN all_fc_tac[arb_gen gcd_def]
-	THEN all_fc_tac[arb_gen gcd_def]);
+a(REPEAT strip_tac THEN1 conv_tac eq_sym_conv
+	THEN bc_thm_tac gcd_unique_thm);
+(* *** Goal "1" duplicates "2" *** *)
+a(fc_tac[arb_gen gcd_def] THEN asm_rewrite_tac[]);
+a(DROP_NTH_ASM_T 3 (ante_tac o list_µ_elim[¬Gcd m n®, ¬n®]));
+a(asm_rewrite_tac[]);
 val Ûgcd_comm_thmÝ = save_pop_thm "gcd_comm_thm";
 =TEX
 %%%%
@@ -1424,10 +1472,11 @@ val Ûgcd_comm_thmÝ = save_pop_thm "gcd_comm_thm";
 
 =SML
 set_goal([], ¬µm n d·
-	0 < m ± 0 < n
+	0 < m ² 0 < n
 ´	Gcd (m + n) n = Gcd m n
 ®);
-a(REPEAT strip_tac THEN bc_thm_tac gcd_unique_thm);
+a(REPEAT µ_tac THEN ´_T asm_tac);
+a(bc_thm_tac gcd_unique_thm THEN asm_rewrite_tac[]);
 a(lemma_tac¬0 < m + n® THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
 a(ALL_FC_T asm_rewrite_tac[gcd_def] THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
@@ -1436,8 +1485,8 @@ a(lemma_tac  ¬Gcd (m + n) n Divides m + n ± Gcd (m + n) n Divides n®
 a(DROP_NTH_ASM_T 2 ante_tac);
 a(ALL_FC_T1 fc_¤_canon rewrite_tac[arb_gen divides_plus_thm]);
 (* *** Goal "2" *** *)
-a(lemma_tac¬Gcd m n Divides m ± Gcd m n Divides n® 
-	THEN1 ALL_FC_T rewrite_tac[gcd_def]);
+a(ante_tac(list_µ_elim[¬m®, ¬n®] gcd_def)
+	THEN asm_rewrite_tac[] THEN strip_tac);
 a(lemma_tac¬Gcd m n Divides m + n® 
 	THEN1 ALL_FC_T1 fc_¤_canon asm_rewrite_tac[arb_gen divides_plus_thm]);
 a(all_fc_tac[gcd_def]);
@@ -1461,8 +1510,7 @@ a(asm_rewrite_tac[divides_mod_thm]);
 a(ALL_FC_T rewrite_tac[gcd_pos_thm, gcd_consistent_lemma5]);
 a(bc_thm_tac gcd_consistent_lemma2);
 a(ALL_FC_T asm_rewrite_tac[gcd_pos_thm]);
-a(LIST_DROP_NTH_ASM_T[1, 2, 3] discard_tac);
-a(ALL_FC_T (MAP_EVERY ante_tac) [all_µ_elim gcd_def]);
+a(ante_tac (all_µ_elim gcd_def) THEN asm_rewrite_tac[]);
 a(rewrite_tac[divides_mod_thm]);
 a(ALL_FC_T rewrite_tac[gcd_pos_thm] THEN taut_tac);
 val Ûgcd_eq_mod_thmÝ = save_pop_thm"gcd_eq_mod_thm";
@@ -1612,7 +1660,7 @@ a(REPEAT strip_tac
 	THEN all_fc_tac[prime_0_less_thm]
 		THEN all_asm_ante_tac);
 a(rewrite_tac[prime_divides_thm] THEN REPEAT strip_tac);
-a(lemma_tac¬Gcd m p Divides p® THEN1 all_fc_tac[gcd_def]);
+a(lemma_tac¬Gcd m p Divides p® THEN1 ALL_FC_T rewrite_tac[gcd_def]);
 a(LIST_DROP_NTH_ASM_T [4] all_fc_tac);
 val Ûgcd_prime_thmÝ = save_pop_thm "gcd_prime_thm";
 =TEX
@@ -1668,10 +1716,10 @@ a(cases_tac¬m = 0 ² n = 0® THEN_TRY
 a(lemma_tac¬0 < m ± 0 < n® THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
 a(cases_tac¬Gcd m p = p® THEN1
 	(POP_ASM_T (once_rewrite_thm_tac o eq_sym_rule) THEN
-		all_fc_tac[gcd_def] THEN REPEAT strip_tac));
+		ALL_FC_T rewrite_tac[gcd_def] THEN REPEAT strip_tac));
 a(cases_tac¬Gcd n p = p® THEN1
 	(POP_ASM_T (once_rewrite_thm_tac o eq_sym_rule) THEN
-		all_fc_tac[arb_gen gcd_def]
+		ALL_FC_T rewrite_tac[arb_gen gcd_def]
 			THEN REPEAT strip_tac));
 a(lemma_tac¬Gcd m p = 1 ± Gcd n p = 1® THEN1
 	(fc_tac[gcd_prime_thm]
@@ -2416,6 +2464,21 @@ a(ALL_FC_T once_rewrite_tac[exponent_thm]);
 a(POP_ASM_T (rewrite_thm_tac o eq_sym_rule));
 a(DROP_NTH_ASM_T  3 (rewrite_thm_tac o eq_sym_rule));
 val Ûunique_factorisation_thmÝ = save_pop_thm "unique_factorisation_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+(*
+drop_main_goal();
+*)
+push_consistency_goal¬Exponent®;
+a(prove_¶_tac THEN REPEAT strip_tac);
+a(cases_tac¬0 < m'® THEN asm_rewrite_tac[]);
+a(all_fc_tac[unique_factorisation_thm]);
+a(¶_tac¬e® THEN asm_rewrite_tac[]);
+save_consistency_thm ¬Exponent® (pop_thm());
+val Ûexponent_defÝ = get_spec¬Exponent®;
 =TEX
 %%%%
 %%%%
@@ -3232,6 +3295,70 @@ a(POP_ASM_T (ante_tac o µ_elim¬2 * m®));
 a(rewrite_tac[î¯_times_homomorphism_thm,
 	¯_times_assoc_thm1]);
 val Ûrecip_primes_div_thmÝ = save_pop_thm "recip_primes_div_thm";
+=TEX
+%%%%
+%%%%
+%%%% COPRIMALITY
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬ µm· 1 < m ´ ¶p· p  Prime ± p Divides m®);
+a(rewrite_tac[divides_def] THEN REPEAT strip_tac
+	THEN all_fc_tac[prime_divisor_thm]);
+a(¶_tac¬p® THEN REPEAT strip_tac THEN ¶_tac¬n®
+	THEN PC_T1 "lin_arith" asm_prove_tac[]);
+val Ûprime_divisor_thm1Ý = save_pop_thm"prime_divisor_thm1";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬ µm n·
+		m Coprime n
+	¤	µp· p  Prime ± p Divides m ´ ³p Divides n ®);
+a(rewrite_tac[coprime_def] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(swap_nth_asm_concl_tac 3 THEN REPEAT strip_tac THEN
+	¶_tac¬p® THEN swap_nth_asm_concl_tac 3
+	THEN asm_rewrite_tac[prime_def]);
+(* *** Goal "2" *** *)
+a(cases_tac¬i = 0® THEN1
+	(all_var_elim_asm_tac1
+		THEN all_asm_ante_tac
+		THEN rewrite_tac[divides_0_thm]
+		THEN contr_tac
+		THEN all_var_elim_asm_tac1
+		THEN swap_nth_asm_concl_tac 1
+		THEN REPEAT strip_tac
+		THEN ¶_tac¬2®
+		THEN rewrite_tac[divides_0_thm, prime_2_thm]));
+a(swap_nth_asm_concl_tac 4 THEN REPEAT strip_tac);
+a(lemma_tac¬1 < i® THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(all_fc_tac[prime_divisor_thm1]);
+a(¶_tac¬p® THEN ALL_FC_T asm_rewrite_tac[divides_trans_thm]);
+val Ûcoprime_prime_thmÝ = save_pop_thm "coprime_prime_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬ µm n·
+		m Coprime n
+	¤	(0 < m ² 0 < n) ± Gcd m n = 1  ®);
+a(REPEAT µ_tac THEN rewrite_tac[coprime_def]);
+a(CASES_T¬³(0 < m ² 0 < n)® asm_tac THEN asm_rewrite_tac[]);
+(* *** Goal "1" *** *)
+a(lemma_tac¬m = 0 ± n = 0® THEN1 PC_T1 "lin_arith" asm_prove_tac[]
+	THEN all_var_elim_asm_tac1);
+a(asm_rewrite_tac[divides_0_thm] THEN REPEAT strip_tac);
+a(¶_tac¬0® THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(ante_tac(all_µ_elim gcd_def) THEN asm_rewrite_tac[]
+	THEN REPEAT strip_tac
+	THEN all_asm_fc_tac[]);
+a(DROP_NTH_ASM_T 2 ante_tac THEN asm_rewrite_tac[divides_1_thm]);
+val Ûcoprime_gcd_thmÝ = save_pop_thm "coprime_gcd_thm";
 =TEX
 %%%%
 %%%% REAL INTEGRAL DOMAINS
