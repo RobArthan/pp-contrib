@@ -11,7 +11,7 @@ or visit the OpenSource web site at http://www.opensource.org/
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-$Id$
+$Id: wrk073.doc,v 1.31 2006/07/31 15:14:32 rda Exp rda $
 ********************************************************************************
 =TEX
 \documentclass[11pt,a4paper]{article}
@@ -110,6 +110,7 @@ The theory is a child of the theory ``analysis'' (defined in~\cite{LEMMA1/HOL/WR
 force_delete_theory"fincomb" handle Fail _ => ();
 open_theory"analysis";
 new_theory"fincomb";
+new_parent "set_thms";
 set_merge_pcs["basic_hol1", "'sets_alg", "'˙", "'Ø"];
 =TEX
 \subsection{Folding Binary Operators over Finite Sets}
@@ -601,6 +602,56 @@ ballot_thm
 =TEX
 }
 
+\subsection{Involutions}
+
+Involutions give some useful counting principles.
+
+πHOLCONST
+‹ €Involution› : 'a SET ≠ ('a ≠ 'a) SET
+˜¸¸¸¸¸¸
+‹ µf A∑ f ç Involution A § (µx∑ x ç A ¥ f x ç A ± f(f x) = x)
+∞
+Fixed points are important:
+
+πHOLCONST
+‹ €Fixed› : ('a ≠ 'a) ≠ 'a SET
+˜¸¸¸¸¸¸
+‹ µx f∑ x ç Fixed f § f x = x
+∞
+
+
+We prove that every involution $f$ on a set $X$ has a fundamental region:
+i.e., a subset $A$ such that $X$ decomposes as the disjoint
+union of $A$, $f(A)$ and the fixed point set of $f$.
+We use Zorn's lemma for this in the special case where the
+ordered set comprises sets and inclusion.
+The formulation of this case of Zorn's lemma in some versions
+of {\Product} is hard to use directly, so we provide a more
+convenient formulation.
+After a few convenience lemmas, we then give the main
+counting principles for involutions on finite sets:
+if a set admits an involution with no fixed points, its size is even;
+an involution on a set with an odd size has at least one fixed point;
+if a set admits an involution with a unique fixed point, its size is odd.
+
+\ThmsII{%
+=GFT
+zorn_thm2
+fund_region_thm
+involution_one_one_thm
+involution_def_thm1
+involution_def_thm2
+=TEX
+}{%
+=GFT
+involution_even_size_thm
+involution_odd_size_thm
+involution_set_dif_fixed_thm
+involution_fixed_singleton_thm
+=TEX
+}
+
+
 \bibliographystyle{fmu}
 \bibliography{fmu}
 
@@ -629,6 +680,8 @@ val €walk_def› = get_spec ¨WalkÆ;
 val €walk_to_def› = get_spec ¨WalkToÆ;
 val €ballot_counts_def› = get_spec ¨BallotCountsÆ;
 val €Ó_exp_def› = get_spec ¨1 ^ 2Æ;
+val €involution_def› = get_spec ¨InvolutionÆ;
+val €fixed_def› = get_spec ¨FixedÆ;
 =TEX
 %%%%
 %%%%
@@ -4360,6 +4413,305 @@ a(lemma_tac¨≥ÓØ(2 + M + N) = ÓØ 0Æ
 a(rewrite_tac[Ø_frac_def] THEN
 	ALL_FC_T rewrite_tac[Ø_over_times_recip_thm]);
 val €ballot_thm› = save_pop_thm "ballot_thm";
+=TEX
+=SML
+set_goal([], ¨µ u a b∑ Nest u ± a ç u ± b ç u ¥ a ¿ b ç uÆ);
+a(rewrite_tac[nest_def] THEN REPEAT strip_tac);
+a(lemma_tac¨a Ä b ≤ b Ä aÆ
+	THEN1 (DROP_NTH_ASM_T 3 bc_thm_tac THEN REPEAT strip_tac)
+	THEN ALL_FC_T asm_rewrite_tac[
+		pc_rule1 "sets_ext1" prove_rule[]
+			¨µA B∑A Ä B ¥ A ¿ B = B ± B ¿ A = BÆ]);
+val €ç_nest_¿_thm› = pop_thm () (* "ç_nest_¿_thm"; *);
+=TEX
+=SML
+set_goal([], ¨µ u∑
+	(µv∑ v ç u ¥ Nest v)
+±	Nest u
+¥	Nest(ﬁu)Æ);
+a(REPEAT strip_tac THEN
+	rewrite_tac[nest_def] THEN REPEAT_UNTIL is_≤ strip_tac);
+a(LEMMA_T¨Nest(s ¿ s')Æ(bc_thm_tac o rewrite_rule[nest_def])
+	THEN REPEAT strip_tac);
+a(DROP_NTH_ASM_T 6 bc_thm_tac);
+a(all_fc_tac[ç_nest_¿_thm]);
+val €nest_nest_ﬁ_thm› = pop_thm () (* "nest_nest_ﬁ_thm"; *);
+=TEX
+=SML
+set_goal([], ¨µ u a∑
+	Nest u
+±	ﬁu Ä a
+¥	Nest(u ¿ {a})Æ);
+a(rewrite_tac[nest_def] THEN REPEAT_UNTIL is_≤ strip_tac
+	THEN_TRY all_var_elim_asm_tac1);
+(* *** Goal "1" *** *)
+a(DROP_NTH_ASM_T 4 bc_thm_tac THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(DROP_NTH_ASM_T 3 discard_tac);
+a(≤_left_tac THEN PC_T1 "sets_ext1" asm_prove_tac[]);
+(* *** Goal "3" *** *)
+a(DROP_NTH_ASM_T 3 discard_tac);
+a(≤_right_tac THEN PC_T1 "sets_ext1" asm_prove_tac[]);
+(* *** Goal "4" *** *)
+a(REPEAT strip_tac);
+val €nest_¿_upb_thm› = pop_thm () (* "nest_¿_upb_thm"; *);
+=TEX
+=SML
+set_goal([], ¨µ u∑
+	≥ u = {}
+±	NestClosed u
+¥	(∂ a∑ MaximalâÄ u a)Æ);
+a(REPEAT strip_tac);
+a(lemma_tac¨∂N∑MaximalâÄ {n | n Ä u ± Nest n} NÆ);
+(* *** Goal "1" *** *)
+a(bc_thm_tac zorn_thm1 THEN all_asm_ante_tac);
+a(rewrite_tac[subset_closed_def, nest_closed_def]
+	THEN REPEAT strip_tac);
+(* *** Goal "1.1" *** *)
+a(PC_T1 "sets_ext1" REPEAT strip_tac);
+a(∂_tac¨{}Æ THEN rewrite_tac[nest_def]);
+(* *** Goal "1.2" *** *)
+a(PC_T1 "sets_ext1" asm_prove_tac[]);
+(* *** Goal "1.3" *** *)
+a(DROP_NTH_ASM_T 2 ante_tac THEN rewrite_tac[nest_def]
+	THEN REPEAT_UNTIL is_≤ strip_tac);
+a(DROP_NTH_ASM_T 3 bc_thm_tac
+	THEN PC_T1 "sets_ext1" asm_prove_tac[]);
+(* *** Goal "1.4" *** *)
+a(DROP_NTH_ASM_T 2 ante_tac THEN PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "1.5" *** *)
+a(bc_thm_tac nest_nest_ﬁ_thm THEN REPEAT strip_tac);
+a(PC_T1 "sets_ext1" all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(∂_tac¨ﬁNÆ THEN POP_ASM_T ante_tac
+	THEN rewrite_tac[maximalâÄ_def]
+	THEN REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(DROP_NTH_ASM_T 4 (bc_thm_tac o rewrite_rule[nest_closed_def])
+	THEN REPEAT strip_tac);
+(* *** Goal "2.2" *** *)
+a(bc_tac(map (pc_rule1 "sets_ext1" prove_rule[])
+	[¨µA B∑A Ä B ± B Ä A ¥ A = BÆ,
+	¨µA U∑ A ç U ¥ A Ä ﬁUÆ,
+	¨µx A∑ A ¿ {x} = A ¥ x ç AÆ])
+	THEN REPEAT strip_tac);
+a(DROP_NTH_ASM_T 3 bc_thm_tac);
+a(asm_rewrite_tac[pc_rule1 "sets_ext1" prove_rule[]
+	¨µA B C x∑ A Ä A ¿ B ±
+		(A ¿ B Ä C § A Ä C ± B Ä C) ±
+		({x} Ä A § x ç A)Æ]);
+a(bc_thm_tac nest_¿_upb_thm THEN REPEAT strip_tac);
+val €zorn_nearly_there_thm› = pop_thm ();
+=TEX
+=SML
+set_goal([], ¨µ u∑
+	≥ u = {}
+±	(µ v∑ ≥v = {} ± v Ä u ± Nest v ¥ ﬁ v ç u)
+¥	(∂ a∑ MaximalâÄ u a)Æ);
+a(REPEAT strip_tac);
+a(lemma_tac¨∂a∑MaximalâÄ (u ¿ {{}}) aÆ);
+a(bc_thm_tac zorn_nearly_there_thm THEN rewrite_tac[nest_closed_def]
+	THEN REPEAT strip_tac);
+(* *** Goal "1.1" *** *)
+a(bc_thm_tac (pc_rule1 "sets_ext1" prove_rule[]
+	¨µa b∑≥a = {} ¥ ≥a ¿ b = {}Æ)
+	THEN REPEAT strip_tac);
+(* *** Goal "1.2" *** *)
+a(swap_nth_asm_concl_tac 2);
+a(once_rewrite_tac[pc_rule1 "sets_ext1" prove_rule []
+	¨µU∑ﬁU = ﬁ(U \ {{}})Æ]
+	THEN DROP_NTH_ASM_T 4 bc_thm_tac
+	THEN REPEAT strip_tac);
+(* *** Goal "1.2.1" *** *)
+a(swap_nth_asm_concl_tac 1 THEN
+	once_rewrite_tac[pc_rule1 "sets_ext1" prove_rule []
+	¨µU∑ﬁU = ﬁ(U \ {{}})Æ]
+	THEN asm_rewrite_tac[]);
+(* *** Goal "1.2.2" *** *)
+a(DROP_NTH_ASM_T 3 ante_tac THEN PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "1.2.3" *** *)
+a(DROP_NTH_ASM_T 2 ante_tac THEN rewrite_tac[nest_def]
+	THEN REPEAT_UNTIL is_≤ strip_tac);
+a(DROP_NTH_ASM_T 5 bc_thm_tac THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(∂_tac¨aÆ THEN POP_ASM_T ante_tac 
+	THEN rewrite_tac[maximalâÄ_def]
+	THEN REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(DROP_NTH_ASM_T 3 bc_thm_tac THEN REPEAT strip_tac);
+(* *** Goal "2.2" *** *)
+a(DROP_NTH_ASM_T 4 (PC_T1 "sets_ext1" strip_asm_tac)
+	THEN all_var_elim_asm_tac1);
+a(DROP_NTH_ASM_T 2 (strip_asm_tac o µ_elim¨xÆ)
+	THEN all_var_elim_asm_tac1);
+(* *** Goal "2.3" *** *)
+a(DROP_NTH_ASM_T 3 bc_thm_tac THEN REPEAT strip_tac);
+val €zorn_thm2› = save_pop_thm "zorn_thm2";
+=TEX
+=SML
+set_goal([], ¨µf X∑
+	f ç Involution X
+¥	∂A∑ 	A Ä X
+	±	µx∑
+		(x ç A ¥ ≥f x ç A)
+	±	(x ç X ± ≥x ç A ± ≥f x ç A ¥ x ç Fixed f)
+Æ);
+a(rewrite_tac[involution_def, fixed_def] THEN REPEAT strip_tac);
+a(LEMMA_T¨∂A∑ MaximalâÄ {B | B Ä X ± µy∑ y ç B ¥ ≥f y ç B} AÆ
+	(strip_asm_tac o rewrite_rule[maximalâÄ_def]));
+a(bc_thm_tac zorn_thm2 THEN rewrite_tac[nest_def]
+	THEN REPEAT strip_tac);
+(* *** Goal "1.1" *** *)
+a(PC_T1 "sets_ext1" REPEAT strip_tac);
+a(∂_tac¨{}Æ THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "1.2" *** *)
+a(DROP_NTH_ASM_T 2 ante_tac THEN PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "1.3" *** *)
+a(lemma_tac¨s Ä s' ≤ s' Ä sÆ
+	THEN1 (DROP_NTH_ASM_T 4 bc_thm_tac
+		THEN REPEAT strip_tac));
+(* *** Goal "1.3.1" *** *)
+a(LIST_DROP_NTH_ASM_T [1] (PC_T1 "sets_ext1" all_fc_tac));
+a(LIST_DROP_NTH_ASM_T [6] (PC_T1 "sets_ext1" all_fc_tac));
+(* *** Goal "1.3.2" *** *)
+a(LIST_DROP_NTH_ASM_T [6] (PC_T1 "sets_ext1" all_fc_tac));
+a(PC_T1 "sets_ext1" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(∂_tac¨AÆ THEN contr_tac THEN1 all_asm_fc_tac[]);
+a(swap_nth_asm_concl_tac 3);
+a(LEMMA_T¨A ¿ {x} = AÆ (once_rewrite_thm_tac o eq_sym_rule)
+	THEN REPEAT strip_tac);
+a(DROP_NTH_ASM_T 4 bc_thm_tac);
+a(contr_tac THEN PC_T1 "sets_ext1" asm_prove_tac[]);
+a(var_elim_nth_asm_tac 1);
+a(swap_nth_asm_concl_tac 3);
+a(LIST_DROP_NTH_ASM_T [5] all_fc_tac);
+a(LIST_DROP_NTH_ASM_T [6] (ALL_FC_T asm_rewrite_tac));
+val €fund_region_thm› = save_pop_thm "fund_region_thm";
+=TEX
+=SML
+set_goal([], ¨µf X x y∑
+	f ç Involution X
+±	x ç X ± y ç X ± f x = f y
+¥	x = y
+Æ);
+a(rewrite_tac[involution_def] THEN REPEAT strip_tac);
+a(LEMMA_T¨f(f x) = f(f y)Æ ante_tac
+	THEN1 ALL_FC_T asm_rewrite_tac[]);
+a(POP_ASM_T discard_tac THEN ALL_ASM_FC_T rewrite_tac[]);
+val €involution_one_one_thm› = save_pop_thm "involution_one_one_thm";
+=TEX
+=SML
+set_goal([], ¨µf X x∑
+	f ç Involution X
+±	x ç X
+¥	f(f x) = x
+Æ);
+a(rewrite_tac[involution_def] THEN REPEAT strip_tac
+	THEN all_asm_fc_tac[]);
+val €involution_def_thm1› = save_pop_thm "involution_def_thm1";
+=TEX
+=SML
+set_goal([], ¨µf X x∑
+	f ç Involution X
+±	x ç X
+¥	f x ç X
+Æ);
+a(rewrite_tac[involution_def] THEN REPEAT strip_tac
+	THEN all_asm_fc_tac[]);
+val €involution_def_thm2› = save_pop_thm "involution_def_thm2";
+=TEX
+=SML
+set_goal([], ¨µf X∑
+	f ç Involution X
+±	X ç Finite
+±	X ° Fixed f = {}
+¥	∂k∑ #X = 2*k
+Æ);
+a(REPEAT strip_tac THEN all_fc_tac[fund_region_thm]);
+a(all_fc_tac[Ä_finite_thm]);
+a(lemma_tac¨X \ A Ä X ± A ° (X \ A) = {}Æ
+	THEN1 PC_T1 "sets_ext1" prove_tac[]);
+a(lemma_tac¨X \ A ç Finite ± #(X \ A) = #AÆ
+	THEN1 bc_thm_tac bijection_finite_size_thm);
+(* *** Goal "1" *** *)
+a(∂_tac¨fÆ THEN REPEAT strip_tac);
+(* *** Goal "1.1" *** *)
+a(LIST_DROP_NTH_ASM_T [8] (PC_T1 "sets_ext1" all_fc_tac));
+a(ALL_FC_T rewrite_tac[involution_one_one_thm]);
+(* *** Goal "1.2" *** *)
+a(PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "1.2.1" *** *)
+a(lemma_tac¨X ° Fixed f = {} ± x ç X ¥ ≥x ç Fixed fÆ
+	THEN1 PC_T1 "sets_ext1" prove_tac[]);
+a(spec_nth_asm_tac 7 ¨xÆ);
+a(∂_tac¨f xÆ THEN REPEAT strip_tac);
+a(ALL_FC_T rewrite_tac[involution_def_thm1]);
+(* *** Goal "1.2.2" *** *)
+a(all_var_elim_asm_tac1);
+a(LIST_DROP_NTH_ASM_T [6] (PC_T1 "sets_ext1" all_fc_tac));
+a(all_fc_tac[involution_def_thm2]);
+(* *** Goal "1.2.3" *** *)
+a(all_var_elim_asm_tac1);
+a(LIST_DROP_NTH_ASM_T [5] all_fc_tac);
+(* *** Goal "2" *** *)
+a(∂_tac¨#AÆ THEN LEMMA_T ¨X = A ¿ (X \ A)Æ once_rewrite_thm_tac
+	THEN1 PC_T1 "sets_ext1" asm_prove_tac[]);
+a(LEMMA_T ¨#(A ¿ (X \ A)) = #(A ¿ (X \ A)) + #(A ° (X \ A))Æ once_rewrite_thm_tac
+	THEN1 asm_rewrite_tac[size_empty_thm]);
+a(ALL_FC_T asm_rewrite_tac[size_¿_thm]
+	THEN PC_T1 "lin_arith" prove_tac[]);
+val €involution_even_size_thm› = save_pop_thm "involution_even_size_thm";
+=TEX
+=SML
+set_goal([], ¨µf X k∑
+	f ç Involution X
+±	X ç Finite
+±	#X = 2*k + 1
+¥	≥X ° Fixed f = {}
+Æ);
+a(contr_tac THEN all_fc_tac[involution_even_size_thm]);
+a(LEMMA_T¨(2*k + 1) Mod 2 = (2 * k') Mod 2Æ ante_tac
+	THEN1 (DROP_ASMS_T (rewrite_tac o mapfilter eq_sym_rule)));
+a(rewrite_tac[mod_2_div_2_thm]);
+val €involution_odd_size_thm› = save_pop_thm "involution_odd_size_thm";
+=TEX
+=SML
+set_goal([], ¨µf X k∑
+	f ç Involution X
+¥	f ç Involution (X \ Fixed f)
+Æ);
+a(PC_T1 "sets_ext1" rewrite_tac[involution_def, fixed_def]
+	THEN REPEAT strip_tac
+	THEN_TRY (ALL_ASM_FC_T rewrite_tac[]));
+a(conv_tac(RAND_C eq_sym_conv) THEN strip_tac);
+val €involution_set_dif_fixed_thm› = save_pop_thm "involution_set_dif_fixed_thm";
+=TEX
+=SML
+set_goal([], ¨µf X x∑
+	f ç Involution X
+±	X ç Finite
+±	X ° Fixed f = {x}
+¥	∂k∑#X = 2*k + 1
+Æ);
+a(REPEAT strip_tac THEN all_fc_tac[involution_set_dif_fixed_thm]);
+a(lemma_tac¨(X \ Fixed f) Ä X ±
+	(X ° Fixed f) Ä X ±
+	(X \ Fixed f) ° Fixed f = {} ±
+	(X \ Fixed f) ° (X ° Fixed f) = {}Æ
+	THEN1 PC_T1 "sets_ext1" prove_tac[]);
+a(all_fc_tac[Ä_finite_thm]);
+a(all_fc_tac[involution_even_size_thm]);
+a(∂_tac ¨kÆ);
+a(LEMMA_T¨X = (X \ Fixed f) ¿ (X ° Fixed f)Æ once_rewrite_thm_tac
+	THEN1 PC_T1 "sets_ext1" prove_tac[]);
+a(LEMMA_T ¨#((X \ Fixed f) ¿ (X ° Fixed f)) =
+	#((X \ Fixed f) ¿ (X ° Fixed f)) +
+		#((X \ Fixed f) ° (X ° Fixed f))Æ once_rewrite_thm_tac
+	THEN1 asm_rewrite_tac[size_empty_thm]);
+a(ALL_FC_T asm_rewrite_tac[size_¿_thm]);
+a(rewrite_tac[size_singleton_thm]);
+val €involution_fixed_singleton_thm› = save_pop_thm "involution_fixed_singleton_thm";
 =TEX
 \Hide{
 =SML
