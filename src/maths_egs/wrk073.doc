@@ -11,7 +11,7 @@ or visit the OpenSource web site at http://www.opensource.org/
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-$Id: wrk073.doc,v 1.32 2008/05/02 14:26:52 rda Exp rda $
+$Id: wrk073.doc,v 1.33 2008/05/02 16:48:16 rda Exp rda $
 ********************************************************************************
 =TEX
 \documentclass[11pt,a4paper]{article}
@@ -491,18 +491,15 @@ This is used to prove a theorem about ``coverings'': let us say a set $B$ {\em c
 
 These facts (together with earlier counting principles) are then used to prove the statements made above about sampling, in which we use lists to represent ordered samples. This representation fits in nicely with earlier results connecting lists and finite sets.
 
-\ThmsIII{%
+\ThmsII{%
 =GFT
 enumerate_thm
 covering_finite_size_thm
-=TEX
-}{%
-=GFT
 samples_finite_size_thm
-distinct_samples_rw_thm
 =TEX
 }{%
 =GFT
+distinct_samples_rw_thm
 distinct_samples_up_thm
 distinct_samples_finite_size_thm
 =TEX
@@ -637,17 +634,21 @@ if a set admits an involution with no fixed points, its size is even;
 an involution on a set with an odd size has at least one fixed point;
 if a set admits an involution with a unique fixed point, its size is odd.
 
-\ThmsII{%
+\ThmsIII{%
 =GFT
 zorn_thm2
 fund_region_thm
 involution_one_one_thm
 involution_def_thm1
-involution_def_thm2
 =TEX
 }{%
 =GFT
+involution_def_thm2
+involution_size_thm
 involution_even_size_thm
+=TEX
+}{%
+=GFT
 involution_odd_size_thm
 involution_set_dif_fixed_thm
 involution_fixed_singleton_thm
@@ -655,6 +656,40 @@ involution_fixed_singleton_thm
 }
 
 \subsection{Application: the Two Squares Theorem}
+We apply the theorems on involutions to do the combinatorial
+part of Heath-Brown's ingenious proof of the theorem that
+every prime congruent to 1 modulo 4 is the sum of two squares.
+This requires a few preliminary lemmas on integer arithmetic.
+Apart from variable names, the proof then follows closely the presentation of~\cite{Aigner00} (our sets $A$, $B$ and $C$ are Aigner \& G\"{u}nter's $S$, $T$ and $U$).
+At each stage, rather than assume primality, we make the exact assumptions the combinatorial arguments require.
+The proof is completed in ~\cite{LEMMA1/HOL/WRK074} where prime numbers are defined.
+
+\ThmsIII{%
+=GFT
+ú_interval_finite_thm
+ú_0_¼_square_thm
+ú_0_less_0_less_times_thm
+ú_0_less_times_thm
+ú_0_less_times_thm1
+ú_¼_square_thm
+=TEX
+}{%
+=GFT
+a_finite_thm
+f_involution_a_thm
+size_a_size_b_thm
+size_a_size_c_thm
+size_c_size_c_thm
+=TEX
+}{%
+=GFT
+g_involution_c_thm
+size_c_thm
+h_involution_b_thm
+h_fixed_in_b_thm
+two_squares_lemma
+=TEX
+}
 
 \bibliographystyle{fmu}
 \bibliography{fmu}
@@ -4811,6 +4846,22 @@ a(strip_asm_tac(µ_elim¬i®ú_0_¼_square_thm)
 a(bc_thm_tac ú_0_less_times_thm THEN REPEAT strip_tac);
 val Ûú_¼_square_thmÝ = save_pop_thm"ú_¼_square_thm";
 =TEX
+=SML
+set_goal([], ¬µm i·
+	³îú 4 * m + îú 1 = îú 4 * i
+®);
+a(once_rewrite_tac[ú_times_comm_thm] THEN contr_tac);
+a(lemma_tac¬îú 0 = îú 1®
+	THEN1 pure_once_rewrite_tac(map (rewrite_rule[]) [
+		list_µ_elim
+		[¬m * îú 4 + îú 1®, ¬îú 4®, ¬m®, ¬îú 1®]
+		ú_div_mod_unique_thm,
+		list_µ_elim
+		[¬i * îú 4®, ¬îú 4®, ¬i®, ¬îú 0®]
+		ú_div_mod_unique_thm]));
+a(asm_rewrite_tac[]);
+val Ûú_mod_4_lemmaÝ = pop_thm();
+=TEX
 %%%%
 %%%%
 =SML
@@ -4847,31 +4898,101 @@ a(REPEAT strip_tac THEN asm_rewrite_tac[involution_def]
 	THEN PC_T1 "ú_lin_arith" asm_prove_tac[]);
 val Ûf_involution_a_thmÝ = save_pop_thm "f_involution_a_thm";
 =TEX
+The following tactic is parameterised by a list of terms of
+the form $x = (a, b)$ where $x$, $a$ and $b$ are variables
+and each $x$ is expected to occur free in the goal.
+It replace each $x$ by the corresponding pair $(a, b)$.
+The tactic is useful in bridging the gap between the definitions
+in the theory (which tend to use the form $(a, b)$ for clarity when
+arithmetic needs to be done on the components of the pair)
+and the conjectures (which use the form $x$ wherever
+possible for brevity and generality).
 =SML
-(*
-set_goal([], ¬µp S B·
-	³Abs p = îú 1
-±	(µi j· p = i * j ´ Abs i = îú 1 ² Abs j = îú 1)
+local
+val fst_tm = ¬Fst : 'a ¸ 'b ­ 'a®;
+val snd_tm = ¬Snd : 'a ¸ 'b ­ 'b®;
+val a_ty = ”'a®;
+val b_ty = ”'b®;
+val def_thm = get_spec fst_tm;
+in
+fun Ûpair_tacÝ (tm : TERM) : TACTIC = (
+	let	val (x, ab) = dest_eq tm;
+		val (a, b) = dest_pair ab;
+		val lemma = list_mk_¶ ([a, b], tm);
+		val type_map = [(type_of a, a_ty), (type_of b, b_ty)];
+		val fst_witness = mk_app(inst [] type_map fst_tm, x);
+		val snd_witness = mk_app(inst [] type_map snd_tm, x);
+	in	PC_T1 "basic_hol" lemma_tac lemma THEN_LIST
+		[	¶_tac fst_witness THEN
+			¶_tac snd_witness THEN DROP_ASMS_T discard_tac THEN
+			pure_rewrite_tac[def_thm] THEN REPEAT strip_tac,
+			var_elim_asm_tac tm]
+	end
+);
+end;
+=TEX
+=SML
+set_goal([], ¬µp m A B·
+	p = îú 4 * m + îú 1
 ±	A = {(x, y, z) | îú 0 < x ± îú 0 < y ± îú 4*x*y + z*z = p}
 ±	B = {(x, y, z) | (x, y, z)  A ± z > îú 0}
 ´	#A = 2 * #B
 ®);
 a(REPEAT strip_tac THEN bc_thm_tac involution_size_thm);
-a(¶_tac¬Ì(x, y, z) : ú ¸ ú ¸ ú· (y, x, ~z)® THEN REPEAT strip_tac
-	THEN1 all_fc_tac[f_involution_a_thm]
-	THEN1 all_fc_tac[a_finite_thm]
+a(¶_tac¬Ì(x, y, z) : ú ¸ ú ¸ ú· (y, x, ~z)®);
+a(ALL_FC_T rewrite_tac[f_involution_a_thm, a_finite_thm]);
+a(REPEAT ±_tac THEN_TRY µ_tac
 	THEN all_var_elim_asm_tac1
 	THEN1 PC_T1 "sets_ext1" prove_tac[]
-	THEN rewrite_tac[]
+	THEN1 (REPEAT strip_tac
+		THEN PC_T1 "ú_lin_arith" asm_prove_tac[]));
+a(pair_tac¬x = (a, bc)® THEN rewrite_tac[]);
+a(pair_tac¬bc = (b, c)® THEN rewrite_tac[] THEN REPEAT strip_tac
 	THEN_TRY PC_T1 "ú_lin_arith" asm_prove_tac[]);
-a(lemma_tac¬³Snd(Snd x) = îú 0®
+a(lemma_tac¬³c = îú 0®
 	THEN_LIST [id_tac, PC_T1 "ú_lin_arith" asm_prove_tac[]]);
 a(swap_nth_asm_concl_tac 2 THEN asm_rewrite_tac[]);
-a(conv_tac(RAND_C eq_sym_conv) THEN swap_nth_asm_concl_tac 5
-	THEN REPEAT strip_tac);
-
-val Ûsize_s_size_t_thmÝ = save_pop_thm "h_involution_v_thm";
-*)
+a(conv_tac(RAND_C eq_sym_conv) THEN rewrite_tac[ú_mod_4_lemma]);
+val Ûsize_a_size_b_thmÝ = save_pop_thm "size_a_size_b_thm";
+=TEX
+=SML
+set_goal([], ¬µp A C·
+	(µi· ³p = i * i)
+±	A = {(x, y, z) | îú 0 < x ± îú 0 < y ± îú 4*x*y + z*z = p}
+±	C = {(x, y, z) | (x, y, z)  A ± (x - y) + z > îú 0}
+´	#A = 2 * #C
+®);
+a(REPEAT strip_tac THEN bc_thm_tac involution_size_thm);
+a(¶_tac¬Ì(x, y, z) : ú ¸ ú ¸ ú· (y, x, ~z)®);
+a(ALL_FC_T rewrite_tac[f_involution_a_thm, a_finite_thm]);
+a(REPEAT ±_tac THEN_TRY µ_tac
+	THEN all_var_elim_asm_tac1
+	THEN1 PC_T1 "sets_ext1" prove_tac[]
+	THEN1 (REPEAT strip_tac
+		THEN PC_T1 "ú_lin_arith" asm_prove_tac[]));
+a(pair_tac¬x = (a, bc)® THEN rewrite_tac[]);
+a(pair_tac¬bc = (b, c)® THEN rewrite_tac[] THEN REPEAT strip_tac
+	THEN_TRY PC_T1 "ú_lin_arith" asm_prove_tac[]);
+a(lemma_tac¬³c = b + ~a®
+	THEN_LIST [id_tac, PC_T1 "ú_lin_arith" asm_prove_tac[]]);
+a(contr_tac THEN all_var_elim_asm_tac1);
+a(swap_nth_asm_concl_tac 4 THEN strip_tac);
+a(¶_tac¬a + b® THEN PC_T1 "ú_lin_arith" asm_prove_tac[]);
+val Ûsize_a_size_c_thmÝ = save_pop_thm "size_a_size_c_thm";
+=TEX
+=SML
+set_goal([], ¬µp m A B C·
+	p = îú 4 * m + îú 1
+±	(µi· ³p = i * i)
+±	A = {(x, y, z) | îú 0 < x ± îú 0 < y ± îú 4*x*y + z*z = p}
+±	B = {(x, y, z) | (x, y, z)  A ± z > îú 0}
+±	C = {(x, y, z) | (x, y, z)  A ± (x - y) + z > îú 0}
+´	#B = #C
+®);
+a(REPEAT strip_tac
+	THEN all_fc_tac[size_a_size_b_thm, size_a_size_c_thm]
+	THEN PC_T1 "lin_arith" asm_prove_tac[]);
+val Ûsize_b_size_c_thmÝ = save_pop_thm "size_c_size_c_thm";
 =TEX
 =SML
 set_goal([], ¬µp A C·
@@ -4884,6 +5005,40 @@ a(REPEAT strip_tac THEN asm_rewrite_tac[involution_def]
 val Ûg_involution_c_thmÝ = save_pop_thm "g_involution_c_thm";
 =TEX
 =SML
+set_goal([], ¬µp m A C·
+	p = îú 4 * m + îú 1
+±	îú 1 < p
+±	(µa b· îú 0 < a ± îú 0 < b ± p = (îú 4 * a + b) * b ´ b = îú 1)
+±	A = {(x, y, z) | îú 0 < x ± îú 0 < y ± îú 4*x*y + z*z = p}
+±	C = {(x, y, z) | (x, y, z)  A ± (x - y) + z > îú 0}
+´	¶k· #C = 2*k + 1
+®);
+a(REPEAT strip_tac THEN bc_thm_tac involution_fixed_singleton_thm);
+a(lemma_tac¬C € A® THEN1 (asm_rewrite_tac[] THEN PC_T1 "sets_ext1" prove_tac[]));
+a(all_fc_tac[a_finite_thm]);
+a(¶_tac¬(m, îú 1, îú 1)®
+	THEN ¶_tac¬(Ì(x, y, z)· ((x - y) + z, y, îú 2*y - z))®
+	THEN1 ALL_FC_T rewrite_tac[g_involution_c_thm, €_finite_thm]);
+a(PC_T1 "sets_ext1" rewrite_tac[fixed_def]);
+a(LIST_DROP_NTH_ASM_T [1, 2] discard_tac
+	THEN all_var_elim_asm_tac1
+	THEN rewrite_tac[ú_plus_assoc_thm]
+	THEN REPEAT_UNTIL is_´ strip_tac
+	THEN strip_tac);
+(* *** Goal "1" *** *)
+a(lemma_tac¬x3 = x2® THEN1 PC_T1 "ú_lin_arith" asm_prove_tac[]
+	THEN all_var_elim_asm_tac);
+a(lemma_tac¬x2 = îú 1®
+	THEN1 (DROP_NTH_ASM_T 7 bc_thm_tac THEN ¶_tac¬x1®)
+	THEN1 PC_T1 "ú_lin_arith" asm_prove_tac[]);
+a(all_var_elim_asm_tac1 THEN REPEAT strip_tac);
+a(PC_T1 "ú_lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(all_var_elim_asm_tac1 THEN rewrite_tac[]
+	THEN PC_T1 "ú_lin_arith" asm_prove_tac[]);
+val Ûsize_c_thmÝ = save_pop_thm "size_c_thm";
+=TEX
+=SML
 set_goal([], ¬µp A B·
 	A = {(x, y, z) | îú 0 < x ± îú 0 < y ± îú 4*x*y + z*z = p}
 ±	B = {(x, y, z) | (x, y, z)  A ± z > îú 0}
@@ -4894,15 +5049,47 @@ a(REPEAT strip_tac THEN asm_rewrite_tac[involution_def]
 val Ûh_involution_b_thmÝ = save_pop_thm "h_involution_b_thm";
 =TEX
 =SML
-set_goal([], ¬µS B h·
+set_goal([], ¬µp m A B·
+	p = îú 4 * m + îú 1
+±	îú 1 < p
+±	(µi· ³p = i * i)
+±	(µa b· îú 0 < a ± îú 0 < b ± p = (îú 4 * a + b) * b ´ b = îú 1)
+±	A = {(x, y, z) | îú 0 < x ± îú 0 < y ± îú 4*x*y + z*z = p}
+±	B = {(x, y, z) | (x, y, z)  A ± z > îú 0}
+´	³B ¡ Fixed (Ì(x, y, z)· (y, x, z)) = {}
+®);
+a(REPEAT strip_tac THEN bc_thm_tac involution_odd_size_thm);
+a(lemma_tac¬¶C·
+	C = {(x, y, z) | (x, y, z)  A ± (x - y) + z > îú 0}®
+	THEN1 prove_¶_tac);
+a(lemma_tac¬B € A® THEN1 (asm_rewrite_tac[] THEN PC_T1 "sets_ext1" prove_tac[]));
+a(all_fc_tac[a_finite_thm]);
+a(all_fc_tac[size_c_thm]);
+a(¶_tac¬k® THEN ALL_FC_T rewrite_tac[h_involution_b_thm, €_finite_thm]);
+a(ALL_FC_T asm_rewrite_tac[size_b_size_c_thm]);
+val Ûh_fixed_in_b_thmÝ = save_pop_thm "h_fixed_in_b_thm";
+=TEX
+=SML
+set_goal([], ¬µp m·
+	p = îú 4 * m + îú 1
+±	îú 1 < p
+±	(µi· ³p = i * i)
+±	(µa b· îú 0 < a ± îú 0 < b ± p = (îú 4 * a + b) * b ´ b = îú 1)
+´	¶a b·p = a*a + b*b
+®);
+a(REPEAT strip_tac);
+a(lemma_tac¬¶A B C·
 	A = {(x, y, z) | îú 0 < x ± îú 0 < y ± îú 4*x*y + z*z = p}
 ±	B = {(x, y, z) | (x, y, z)  A ± z > îú 0}
-±	h = (Ì(x, y, z)· (y, x, z))
-´	h  Involution B
-®);
-a(REPEAT strip_tac THEN asm_rewrite_tac[involution_def]
-	THEN PC_T1 "ú_lin_arith" asm_prove_tac[]);
-val Ûh_involution_v_thmÝ = save_pop_thm "h_involution_v_thm";
+±	C = {(x, y, z) | (x, y, z)  A ± (x - y) + z > îú 0}®
+	THEN1 REPEAT (prove_¶_tac THEN strip_tac));
+a(ALL_FC_T (MAP_EVERY ante_tac) [h_fixed_in_b_thm]);
+a(all_var_elim_asm_tac1
+	THEN PC_T1 "sets_ext1" rewrite_tac[fixed_def]
+	THEN REPEAT strip_tac
+	THEN all_var_elim_asm_tac);
+a(¶_tac¬îú 2 * x1® THEN ¶_tac¬x3® THEN PC_T1 "ú_lin_arith" asm_prove_tac[]);
+val Ûtwo_squares_lemmaÝ = save_pop_thm "two_squares_lemma";
 =TEX
 \Hide{
 =SML

@@ -11,7 +11,7 @@ or visit the OpenSource web site at http://www.opensource.org/
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-$Id: wrk074.doc,v 1.30 2008/04/19 16:39:22 rda Exp rda $
+$Id: wrk074.doc,v 1.31 2008/04/20 11:51:34 rda Exp rda $
 ********************************************************************************
 =TEX
 \documentclass[11pt,a4paper]{article}
@@ -352,6 +352,7 @@ prime_divisors_unique_thm
 prime_divisors_finite_thm
 =TEX
 }
+
 Having proved the above, we have the consistency of the
 following function that maps a non-zero number $m$
 and a prime $p$ to the exponent of $p$ in the prime
@@ -608,20 +609,56 @@ The next block of results develop some basic facts about arithemetic {\it modulo
 The block concludes with Wilson's theorem: if $1 < p$, then $p$ is prime iff. $(p-1)!$ is congruent to $-1$ {\it modulo} $p$.
 We state this in term of the $\ModName$ operator on the natural numbers so that it becomes ``$p$ is prime iff. $\Mod{(p-1)!}{p} = p - 1$''.
 
-\ThmsIII{
+\ThmsII{
 =GFT
 plus_mod_thm
 times_mod_p_inverse_thm
-=TEX
-}{
-=GFT
 times_mod_p_inverse_thm1
-times_mod_p_inverse_unique_thm
 =TEX
 }{
 =GFT
+times_mod_p_inverse_unique_thm
 wilson_lemma1
 wilson_thm
+=TEX
+}
+\section{The Two Squares Theorem}
+The combinatorial part of the Heath-Brown proof of the two squares theorem is given in~\cite{LEMMA1/HOL/WRK073},
+with the various assumptions on the prime $p$ made explicit.
+We complete the proof using the concept of primes defined in this document.
+
+This involves transferring results from the type of integers to the type of natural numbers.
+The following function is convenient for doing the transfer.
+
+¹HOLCONST
+Ü ÛAbs‰îÝ : ú ­ î
+÷üüüüüü
+Ü µi· îú (Abs‰î i) = Abs i
+°
+With some basic properties of the function
+=INLINEFT
+Abs‰î
+=TEX
+\ and one or two little lemmas about squares, we derive
+the two squares theorem from the combinatorial result
+of~\cite{LEMMA1/HOL/WRK073},
+
+\ThmsIII{
+=GFT
+Abs‰î_consistent
+abs_î_thm
+abs_î_îú_thm
+=TEX
+}{
+=GFT
+abs_î_times_thm
+abs_î_cases_thm
+ú_abs_square_thm
+=TEX
+}{
+=GFT
+prime_³_square_thm
+two_squares_thm
 =TEX
 }
 
@@ -4296,6 +4333,160 @@ a(rewrite_tac[pc_rule1 "lin_arith" prove_rule[]
 	¬µk·1 ¼ k ¤ 0 < k®]);
 a(contr_tac THEN all_fc_tac[wilson_lemma2, wilson_lemma3]);
 val Ûwilson_thmÝ = save_pop_thm"wilson_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+(*
+drop_main_goal();
+*)
+push_consistency_goal¬Abs‰î®;
+a(prove_¶_tac THEN REPEAT strip_tac);
+a(strip_asm_tac(µ_elim¬i'® ú_cases_thm)
+	THEN all_var_elim_asm_tac1);
+(* *** Goal "1" *** *)
+a(¶_tac¬m® THEN rewrite_tac[ú_î_abs_thm]);
+(* *** Goal "2" *** *)
+a(¶_tac¬m® THEN rewrite_tac[ú_î_abs_thm]);
+save_consistency_thm ¬Abs‰î® (pop_thm());
+val Ûabs_î_defÝ = get_spec¬Abs‰î®;
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µi m· Abs‰î i = m ¤ Abs i = îú m®);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_var_elim_asm_tac1 THEN rewrite_tac[abs_î_def]);
+(* *** Goal "2" *** *)
+a(LEMMA_T ¬Abs i = îú(Abs‰î i)® ante_tac THEN1 rewrite_tac[abs_î_def]);
+a(asm_rewrite_tac[îú_one_one_thm]);
+a(STRIP_T rewrite_thm_tac);
+val Ûabs_î_thmÝ = save_pop_thm"abs_î_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µm· Abs‰î(îú m) = m ± Abs‰î(~(îú m)) = m®);
+a(rewrite_tac[abs_î_thm, ú_î_abs_thm]);
+val Ûabs_î_îú_thmÝ = save_pop_thm"abs_î_îú_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µi j· Abs‰î(i * j) = Abs‰î i * Abs‰î j®);
+a(rewrite_tac[abs_î_thm, îú_times_homomorphism_thm, abs_î_def,
+	ú_abs_times_thm]);
+val Ûabs_î_times_thmÝ = save_pop_thm"abs_î_times_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µi· 
+	(îú 0 ¼ i ´ i = îú(Abs‰î i))
+±	(³îú 0 ¼ i ´ i = ~(îú(Abs‰î i)))®);
+a(lemma_tac ¬µi· îú 0 ¼ i ´ i = îú(Abs‰î i)®);
+(* *** Goal "1" *** *)
+a(REPEAT strip_tac);
+a(LEMMA_T¬µx·i = x ¤ Abs i = x® rewrite_thm_tac
+	THEN1 ALL_FC_T rewrite_tac[ú_abs_thm]);
+a(bc_thm_tac abs_î_thm THEN strip_tac);
+(* *** Goal "2" *** *)
+a(asm_rewrite_tac[] THEN REPEAT strip_tac);
+a(lemma_tac ¬îú 0 ¼ ~i® THEN1 PC_T1 "ú_lin_arith" asm_prove_tac[]);
+a(LIST_DROP_NTH_ASM_T [3] all_fc_tac);
+a(POP_ASM_T ante_tac THEN pure_rewrite_tac[
+	pc_rule1 "ú_lin_arith" prove_rule[]¬~i = ~(îú 1) * i®,
+	abs_î_times_thm, abs_î_îú_thm]
+	THEN rewrite_tac[]);
+a(STRIP_T (rewrite_thm_tac o eq_sym_rule));
+a(PC_T1 "ú_lin_arith" prove_tac[]);
+val Ûabs_î_cases_thmÝ = save_pop_thm"abs_î_cases_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µi:ú· Abs i * Abs i = i * i®);
+a(REPEAT strip_tac
+	THEN PC_T1 "basic_hol" cases_tac¬îú 0 ¼ i®
+	THEN asm_rewrite_tac[ú_abs_def]
+	THEN PC_T1 "ú_lin_arith" prove_tac[]);
+val Ûú_abs_square_thmÝ = save_pop_thm"ú_abs_square_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µp m· p  Prime ´ ³p = m^2®);
+a(rewrite_tac[î_exp_clauses, prime_def] THEN contr_tac);
+a(DROP_NTH_ASM_T 2 (ante_tac o list_µ_elim [¬m®, ¬m®]));
+a(asm_rewrite_tac[] THEN swap_nth_asm_concl_tac 1
+	THEN asm_rewrite_tac[]);
+a(PC_T1 "lin_arith" asm_prove_tac[]);
+val Ûprime_³_square_thmÝ = save_pop_thm"prime_³_square_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+set_goal([], ¬µp m·
+	p  Prime
+±	p = 4*m + 1
+´	¶a b· p = a^2 + b^2
+®);
+a(REPEAT strip_tac);
+a(lemma_tac¬¶i j· îú p = i*i + j*j®
+	THEN1 bc_thm_tac two_squares_lemma);
+(* *** Goal "1" *** *)
+a(¶_tac¬îú m® THEN all_var_elim_asm_tac1);
+a(asm_rewrite_tac[îú_times_homomorphism_thm,
+	îú_plus_homomorphism_thm,
+	îú_less_thm]
+	THEN REPEAT strip_tac);
+(* *** Goal "1.1" *** *)
+a(swap_nth_asm_concl_tac 1 THEN asm_rewrite_tac[prime_def]);
+(* *** Goal "1.2" *** *)
+a(rewrite_tac[îú_plus_homomorphism_thm1, îú_times_homomorphism_thm1]);
+a(LEMMA_T¬i * i = Abs i * Abs i® rewrite_thm_tac
+	THEN1 rewrite_tac[ú_abs_square_thm]);
+a(LEMMA_T¬Abs i * Abs i = Abs (i*i)® rewrite_thm_tac
+	THEN1 rewrite_tac[ú_abs_times_thm]);
+a(contr_tac THEN LEMMA_T¬Abs‰î(i*i) = 4*m + 1® ante_tac
+	THEN1 asm_rewrite_tac[abs_î_thm]);
+a(rewrite_tac[abs_î_times_thm]);
+a(conv_tac(RAND_C eq_sym_conv) THEN ALL_FC_T rewrite_tac[
+	rewrite_rule[î_exp_clauses]
+		(arb_gen prime_³_square_thm)]);
+(* *** Goal "1.3" *** *)
+a(lemma_tac¬¶s·a = îú s® THEN1 ¶_tac¬Abs‰î a®
+	THEN1 (	lemma_tac¬îú 0 ¼ a®
+	THEN1	PC_T1 "ú_lin_arith" asm_prove_tac[]
+	THEN 	all_fc_tac[abs_î_cases_thm]));
+a(lemma_tac¬¶t·b = îú t® THEN1 ¶_tac¬Abs‰î b®
+	THEN1 (	lemma_tac¬îú 0 ¼ b®
+	THEN1	PC_T1 "ú_lin_arith" asm_prove_tac[]
+	THEN 	all_fc_tac[abs_î_cases_thm]));
+a(all_var_elim_asm_tac1 THEN all_asm_ante_tac);
+a(rewrite_tac[îú_plus_homomorphism_thm1,
+	îú_times_homomorphism_thm1,
+	prime_def, îú_one_one_thm, îú_less_thm]);
+a(contr_tac THEN asm_fc_tac[]);
+a(PC_T1 "lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(¶_tac¬Abs‰î i® THEN ¶_tac¬Abs‰î j®
+	THEN POP_ASM_T ante_tac);
+a(LEMMA_T¬i*i + j*j = îú(Abs‰î i ^ 2 + Abs‰î j ^ 2)®
+	(fn th => rewrite_tac[th, îú_one_one_thm]));
+a(rewrite_tac[îú_plus_homomorphism_thm, î_exp_clauses,
+	conv_rule(ONCE_MAP_C eq_sym_conv) abs_î_times_thm,
+	abs_î_def, ú_abs_times_thm, ú_abs_square_thm]);
+val Ûtwo_squares_thmÝ = save_pop_thm"two_squares_thm";
 =TEX
 \Hide{
 =SML
