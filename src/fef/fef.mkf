@@ -1,181 +1,193 @@
-# $Id: fef.mkf,v 1.5 2007/11/30 16:46:38 rda Exp rda $ %Z%
+# $Id: fef.mkf,v 1.6 2009/11/20 16:30:33 rda Exp rda $ %Z%
 # Adapted from fef037.doc
 #
 #	A makefile for fef
 #
 # files for which no theory or SML will be created
-PRODNAME		= fef
 default:
 	@echo "The following are some of the more useful make commands:"
 	@echo " "
-	@echo "make -f $(PRODNAME).mkf all         - everything"
-	@echo "make -f $(PRODNAME).mkf allth       - loads all the specification and proof scripts"
-	@echo "make -f $(PRODNAME).mkf alldvi      - typesets all the documentsas DVI files"
-	@echo "make -f $(PRODNAME).mkf allpdf      - typesets all the documents as PDF files"
+	@echo "make -f $(PRODNAME).mkf dvi      - build db; typeset all documents as DVI files"
+	@echo "make -f $(PRODNAME).mkf pdf      - buidl db; typeset all documents as PDF files"
+
+######################################################################
 #
-FEFDOCS		= fef001.doc fef002.doc fef008.doc fef016.doc \
-				fef041.doc fef045.doc \
-				fef046.doc fef047.doc fef048.doc
+#	Makefile Definitions
+#
+######################################################################
+
+PPHOME=$(shell echo $${PPHOME:-/usr/local/pp})
+PRODNAME=fef
+SHORTNAME=fef
+PRODUCT=$(PRODNAME)
+CWD=$(shell pwd)
+
+RELDIR=release
+# files which don't contain SML
+FEFDOCS		= \
+	fef001.doc fef002.doc fef008.doc fef016.doc \
+	fef017.doc fef018.doc fef030.doc fef039.doc \
+	fef041.doc fef045.doc fef046.doc fef047.doc fef048.doc
 # files which contain SML but do not create ProofPower theories	
 FEFSMLDOCS	= fef019.doc fef020.doc fef023.doc fef044.doc
-# files which produce ProofPower theories	
+# files which produce ProofPower theories; need to ensure that
+# each has a dependency fefNNN.dvi: fefNNNth.tex below
 FEFTHYDOCS	= fef003.doc fef004.doc fef005.doc fef014.doc fef006.doc \
-				fef007.doc fef009.doc fef010.doc fef011.doc fef012.doc \
-				fef013.doc fef015.doc fef022.doc fef024.doc fef021.doc \
-				fef025.doc fef028.doc fef029.doc fef026.doc fef032.doc \
-				fef034.doc fef031.doc fef033.doc fef035.doc fef036.doc \
-				fef040.doc fef042.doc fef043.doc
-
-
-
-# work files which are not part of PP 0.4
-# N.b. fef049.doc was formally known as wrk049.doc
-WRKDOCS		= fef049.doc wrk057.doc
-WRKTEXINPUTS	= $(WRKDOCS:.doc=th.tex)
-# other files to be obtained from SCCS
-OTHERSCCS		= pp load_fef_files.sml
+			fef007.doc fef009.doc fef010.doc fef011.doc fef012.doc \
+			fef013.doc fef015.doc fef022.doc fef024.doc fef021.doc \
+			fef025.doc fef028.doc fef029.doc fef026.doc fef032.doc \
+			fef034.doc fef031.doc fef033.doc fef035.doc fef036.doc \
+			fef040.doc fef042.doc fef043.doc
+# The following is the complete list of documents intended to be typeset
 ALLFEFDOCS 	= $(FEFDOCS) $(FEFSMLDOCS) $(FEFTHYDOCS)
+ALLFEFPDFS	= $(ALLFEFDOCS:.doc=.pdf)
 #
-PACKINGLIST=ALLFEFDOCS
-PACKINGLIST+=fef.mk
+PACKINGLIST=$(ALLFEFDOCS)
+PACKINGLIST+=fef030_slides.doc
+PACKINGLIST+=fef037.doc
+PACKINGLIST+=fef049.doc
+PACKINGLIST+=wrk044.doc
+PACKINGLIST+=wrk046.doc
+PACKINGLIST+=wrk057.doc
+PACKINGLIST+=fef.mkf
+PACKINGLIST+=fef.html
+PACKINGLIST+=fef.bib
+PACKINGLIST+=lemma1.gif
+PACKINGLIST+=newpplogo.gif
+DISTPACKINGLIST=$(PACKINGLIST) README.txt
 # all fef sml files 
 FEFSMLFILES 	= $(FEFTHYDOCS:.doc=.sml) $(FEFSMLDOCS:.doc=.sml)
-
-# Set the make variable PPHOME to the environment variable $PPHOME
-# which should be set to the pp installation directory before calling make.
-# alternatively, edit the makefile so that PPHOME is set to the pp
-# installation directory.
-
-	
-wrk044.doc : 
-	cp $(PPHOME)/doc/wrk044.doc .
-
-wrk046.doc : 
-	cp $(PPHOME)/doc/wrk046.doc .
+# all theory flag files
+FEFTHFILES= $(FEFTHYDOCS:.doc=.th) fef044.th
+######################################################################
+#
+#	Loading the specification and proof scripts
+#
+######################################################################
 
 db_made: wrk044.sml wrk046.sml fef049.sml
 	pp_make_database -f -p hol fef
-	pp -d fef -f wrk044.sml -f wrk046.sml -f fef049.sml
+	pp -d fef -f wrk044.sml -f wrk046.sml -f fef049.sml >db_made.lst
 	touch db_made
 
 fef003.th: fef003.sml db_made
-	pp -d fef -f fef003.sml
+	pp -d fef -f fef003.sml >fef003.lst
 	touch fef003.th
 
 fef004.th: fef004.sml fef003.th  db_made
-	pp -d fef -f fef004.sml
+	pp -d fef -f fef004.sml >fef004.lst
 	touch fef004.th
 
 fef005.th: fef005.sml fef004.th  db_made
-	pp -d fef -f fef005.sml
+	pp -d fef -f fef005.sml > fef005.lst
 	touch fef005.th
 
 fef014.th: fef014.sml fef005.th  db_made
-	pp -d fef -f fef014.sml
+	pp -d fef -f fef014.sml >fef014.lst
 	touch fef014.th
 
 fef006.th: fef006.sml fef014.th  db_made
-	pp -d fef -f fef006.sml
+	pp -d fef -f fef006.sml >fef006.lst
 	touch fef006.th
 
 fef007.th: fef007.sml fef006.th  db_made
-	pp -d fef -f fef007.sml
+	pp -d fef -f fef007.sml >fef007.lst
 	touch fef007.th
 
 fef009.th: fef009.sml fef007.th  db_made
-	pp -d fef -f fef009.sml
+	pp -d fef -f fef009.sml >fef009.lst
 	touch fef009.th
 
 fef010.th: fef010.sml fef009.th  db_made
-	pp -d fef -f fef010.sml
+	pp -d fef -f fef010.sml >fef010.lst
 	touch fef010.th
 
 fef011.th: fef011.sml fef010.th  db_made
-	pp -d fef -f fef011.sml
+	pp -d fef -f fef011.sml >fef011.lst
 	touch fef011.th
 
 fef012.th: fef012.sml fef011.th  db_made
-	pp -d fef -f fef012.sml
+	pp -d fef -f fef012.sml >fef012.lst
 	touch fef012.th
 
 fef013.th: fef013.sml fef012.th db_made
-	pp -d fef -f fef013.sml
+	pp -d fef -f fef013.sml >fef013.lst
 	touch fef013.th
 
 fef015.th: fef015.sml fef013.th db_made
-	pp -d fef -f fef015.sml
+	pp -d fef -f fef015.sml >fef015.lst
 	touch fef015.th
 
 fef022.th: fef022.sml fef006.th db_made
-	pp -d fef -f fef022.sml
+	pp -d fef -f fef022.sml >fef022.lst
 	touch fef022.th
 
 fef024.th: fef024.sml fef022.th db_made
-	pp -d fef -f fef024.sml
+	pp -d fef -f fef024.sml >fef024.lst
 	touch fef024.th
 
 fef021.th: fef021.sml fef024.th db_made
-	pp -d fef -f fef021.sml
+	pp -d fef -f fef021.sml >fef021.lst
 	touch fef021.th
 
 fef025.th: fef025.sml fef021.th db_made
-	pp -d fef -f fef025.sml
+	pp -d fef -f fef025.sml >fef025.lst
 	touch fef025.th
 
 fef028.th: fef028.sml fef025.th db_made
-	pp -d fef -f fef028.sml
+	pp -d fef -f fef028.sml >fef028.lst
 	touch fef028.th
 
 fef029.th: fef029.sml fef028.th db_made
-	pp -d fef -f fef029.sml
+	pp -d fef -f fef029.sml >fef029.lst
 	touch fef029.th
 
 fef026.th: fef026.sml fef029.th db_made
-	pp -d fef -f fef026.sml
+	pp -d fef -f fef026.sml >fef026.lst
 	touch fef026.th
 
 fef032.th: fef032.sml fef026.th db_made
-	pp -d fef -f fef032.sml
+	pp -d fef -f fef032.sml >fef032.lst
 	touch fef032.th
 
 fef034.th: fef034.sml fef032.th db_made
-	pp -d fef -f fef034.sml
+	pp -d fef -f fef034.sml >fef034.lst
 	touch fef034.th
 
 fef031.th: fef031.sml fef026.th fef034.th db_made
-	pp -d fef -f fef031.sml
+	pp -d fef -f fef031.sml >fef031.lst
 	touch fef031.th
 
 fef033.th: fef033.sml fef032.th fef031.th db_made
-	pp -d fef -f fef033.sml
+	pp -d fef -f fef033.sml >fef033.lst
 	touch fef033.th
 
 fef035.th: fef035.sml fef033.th db_made
-	pp -d fef -f fef035.sml
+	pp -d fef -f fef035.sml >fef035.lst
 	touch fef035.th
 
 fef036.th: fef036.sml fef035.th db_made
-	pp -d fef -f fef036.sml
+	pp -d fef -f fef036.sml >fef036.lst
 	touch fef036.th
 
 fef040.th: fef040.sml fef003.th fef010.th db_made
-	pp -d fef -f fef040.sml
+	pp -d fef -f fef040.sml >fef040.lst
 	touch fef040.th
 
 fef042.th: fef042.sml fef040.th fef036.th wrk057.th db_made
-	pp -d fef -f fef042.sml
+	pp -d fef -f fef042.sml >fef042.lst
 	touch fef042.th
 
 fef043.th: fef043.sml fef042.th db_made
-	pp -d fef -f fef043.sml
+	pp -d fef -f fef043.sml >fef043.lst
 	touch fef043.th
 
 fef044.th: fef044.sml fef043.th db_made
-	pp -d fef -f fef044.sml
+	pp -d fef -f fef044.sml >fef044.lst
 	touch fef044.th
 
 wrk057.th: wrk057.sml db_made
-	pp -d fef -f wrk057.sml
+	pp -d fef -f wrk057.sml >wrk057.lst
 	touch wrk057.th
 
 
@@ -188,38 +200,32 @@ fef042th.doc: fef044.th
 fef043th.doc: fef044.th
 	pp_list -d fef fef043 > fef043th.doc
 
-
-fef045.dvi:	fef045.tex wrk057th.tex fef040th.tex fef042th.tex fef043th.tex fef.bib
-	doctex $(@:.dvi=)
-	texdvi $(@:.dvi=)
-	- pptexenv bibtex $(@:.dvi=)
-	texdvi $(@:.dvi=)
-	texdvi $(@:.dvi=)
+######################################################################
+#
+#	Useful pseudo-targets
+#
+######################################################################
 
 allth	: $(FEFTHYDOCS:.doc=.th)
 allsml	: $(ALLSML)
 alldoc	: $(ALLFEFDOCS)
 alltex	: $(FEFTEX) $(THYTEX)
-alldvi	: $(ALLFEFDOCS:.doc=.dvi) 
-allpdf	: $(ALLFEFDOCS:.doc=.pdf) 
+dvi	: $(ALLFEFDOCS:.doc=.dvi) 
+pdf	: $(ALLFEFDOCS:.doc=.pdf) 
 
-all	: allth  alldvi
+packinglist:
+	@echo $(PACKINGLIST)
 
 
+######################################################################
+#
+#	Documents that need special processing
+#
+######################################################################
 
 fef030.dvi : fef030.doc fef030_slides.doc fef.bib
 	doctex fef030 fef030_slides
-	latex fef030; latex fef030
-fef017.dvi : fef017.doc fef044.th fef.bib
-	pp_list -d fef -a > all_theories.doc
-	doctex all_theories
-	doctex fef017
-	texdvi fef017
-	texdvi fef017
-	texdvi fef017
-
-listall.doc : fef008.doc fef043.th xref.sml
-	- pp -d fef -i xref.sml < /dev/null
+	texdvi fef030; texdvi fef030
 
 fef008.dvi : fef008.tex listall.doc listall.tex fef.bib
 	doctex $(@:.dvi=)
@@ -228,7 +234,36 @@ fef008.dvi : fef008.tex listall.doc listall.tex fef.bib
 	texdvi $(@:.dvi=)
 	texdvi $(@:.dvi=)
 
+all_theories.doc: $(FEFTHFILES)
+	pp_list -d fef -a > all_theories.doc
+
+fef017.dvi : fef017.doc fef.bib $(FEFTHFILES) all_theories.tex
+	doctex fef017
+	texdvi fef017
+	texdvi fef017
+	texdvi fef017
+
+fef045.dvi:	fef045.tex wrk057th.tex fef040th.tex fef042th.tex fef043th.tex fef.bib
+	doctex $(@:.dvi=)
+	texdvi $(@:.dvi=)
+	- pptexenv bibtex $(@:.dvi=)
+	texdvi $(@:.dvi=)
+	texdvi $(@:.dvi=)
+
 xref.sml: fef037.sml
+
+listall.doc : fef008.doc fef043.th xref.sml
+	- pp -d fef -i xref.sml < /dev/null
+
+
+######################################################################
+#
+#	Theory listing dependencies
+#
+# Note the list below must contain all of the FEFTHYDOCS to make sure
+# that the dvi and pdf targets load all the spec and proof scripts.
+#
+######################################################################
 
 fef003.dvi: fef003th.tex
 fef004.dvi: fef004th.tex
@@ -258,6 +293,110 @@ fef036.dvi: fef036th.tex
 fef040.dvi: fef040th.tex
 fef042.dvi: fef042th.tex
 fef043.dvi: fef043th.tex
+fef049.dvi: fef049th.tex
+
+######################################################################
+#
+#	Constructing source release directories for distribution
+#
+######################################################################
+
+README: README.txt
+
+README.txt:
+	cat /dev/null >README.txt
+	for line in \
+	'################################################################################' \
+	'#' \
+	'# fef: a security application using ProofPower-HOL' \
+	'#' \
+	'# Use the make file fef.mkf  to process the document files.' \
+	'# For instructions on how to do this type:' \
+	'#' \
+	'# 	make -f fef.mkf' \
+	'#' \
+	'# and you will be given some basic help on using the make file.' \
+	'#' \
+	'# Copyright (c) 2009 Lemma 1 Ltd.' \
+	'#' \
+	'# This file is supplied under the GNU General Public Licence (GPL) version 2.' \
+	'#' \
+	'# See the file LICENSE supplied with the ProofPower source for the terms of the GPL' \
+	'# or visit the OpenSource web site at http://www.opensource.org/' \
+	'#' \
+	'# Contact: Rob Arthan < rda@lemma-one.com >' \
+	'#' \
+	'################################################################################' ;\
+	do echo $$line >>README.txt; done
+
+
+reldir:
+	if [ "$${PPTARGETDIR:-}" = "" ]; \
+	then \
+		rm -rf $(RELDIR); \
+	fi
+	[ -d   $(RELDIR) ] || mkdir $(RELDIR)
+	
+
+srcdir:	reldir
+	[ -d   $(RELDIR)/src ] || mkdir $(RELDIR)/src
+
+docdir:	reldir
+	[ -d   $(RELDIR)/doc ] || mkdir $(RELDIR)/doc
+
+
+rcsrel:	srcdir
+	[ -d   $(RELDIR)/src/RCS ] || mkdir $(RELDIR)/src/RCS
+	@for f in $(PACKINGLIST); \
+	do \
+		cp RCS/$$f,v $(RELDIR)/src/RCS/$$f,v; \
+	done
+	chmod -R a-w $(RELDIR)
+	chmod -R g-w $(RELDIR)
+	chmod -R u+w $(RELDIR)
+
+rcs:	rcsrel
+	cd $(RELDIR) && tar cvf $(CWD)/$(PRODUCT).rcs.tar ./*
+	cd $(CWD) && gzip $(PRODUCT).rcs.tar && \
+	mv $(PRODUCT).rcs.tar.gz $(PRODUCT).rcs.tgz
+
+srcrel: srcdir $(DISTPACKINGLIST) README
+	rm -rf $(RELDIR)/src/*
+	@for f in $(DISTPACKINGLIST); \
+	do \
+		cp $$f $(RELDIR)/src/$$f; \
+	done
+	chmod -R a-w $(RELDIR)
+	chmod -R g-w $(RELDIR)
+	chmod -R u+w $(RELDIR)
+
+docrel: docdir $(DVIFILES)
+	@for f in $(DVIFILES); \
+	do \
+		cp $$f $(RELDIR)/doc/$$f; \
+	done
+	chmod -R a-w $(RELDIR)
+	chmod -R g-w $(RELDIR)
+	chmod -R u+w $(RELDIR)
+
+src:	srcrel
+	cd $(RELDIR) && tar cvf $(CWD)/$(PRODUCT).tar ./*
+	cd $(CWD) && gzip $(PRODUCT).tar && \
+	mv $(PRODUCT).tar.gz $(PRODUCT).tgz
+
+dist:	src
+
+doc:	docrel srcrel
+	cd $(RELDIR) && tar cvf $(CWD)/$(PRODUCT).doc.tar ./*
+	cd $(CWD) && gzip $(PRODUCT).doc.tar && \
+	mv $(PRODUCT).doc.tar.gz $(PRODUCT).doc.tgz
+
+
+######################################################################
+#
+#	Generic rules
+#
+######################################################################
 
 %th.doc: %.th
 	pp_list -d fef $* > $*th.doc
@@ -275,9 +414,25 @@ fef043.dvi: fef043th.tex
 	texdvi $(@:.dvi=)
 
 %.pdf: %.dvi
-	dvipdf $(@:.pdf=)
+	dvipdf -sPAPERSIZE=a4 $(@:.pdf=)
+
+######################################################################
+#
+#	Web page
+#
+######################################################################
+www: $(ALLFEFPDFS) fef.html src
+	tar cvfz fef-www.tgz $(ALLFEFPDFS) fef.html $(PRODNAME).tgz
+
+######################################################################
+#
+#	Tidying up
+#
+######################################################################
+
 
 clean:
 	rcsclean
-	rm -f db_made *.toc *.aux *.dvi *.sid *.log *.bbl *.blg *.idx *.th *.lot *.sml
+	rm -f db_made *.lst *.toc *.aux *.dvi *.sid *.log \
+		*.bbl *.blg *.idx *.th *.lot *.sml
 	rm -f fef???.tex fef???th.tex listall.doc listall.tex
