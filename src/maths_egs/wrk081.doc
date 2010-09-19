@@ -1,0 +1,749 @@
+=IGN
+********************************************************************************
+wrk080.doc: this file is supplementary material for the ProofPower system
+
+Copyright (c) 2004 Lemma 1 Ltd.
+
+This file is supplied under the GNU General Public Licence (GPL) version 2.
+
+See the file LICENSE supplied with ProofPower source for the terms of the GPL
+or visit the OpenSource web site at http:/www.opensource.org/
+
+Contact: Rob Arthan < rda@lemma-one.com >
+********************************************************************************
+wrk080.doc,v 1.29 2010/03/03 11:35:32 rda Exp
+********************************************************************************
+=IGN
+pp_make_database -f -p hol maths_egs
+docsml wrk080
+xpp wrk080.doc -d maths_egs -i wrk080 &
+doctex wrk080 wrk080.th; texdvi -b wrk080; texdvi wrk080; texdvi wrk080
+=TEX
+\documentclass[11pt,a4paper,leqno]{article}
+\usepackage{latexsym}
+\usepackage{ProofPower}
+\ftlinepenalty=9999
+\usepackage{A4}
+\def\N{\mathbb{N}}
+\def\D{\mathbb{D}}
+\def\B{\mathbb{B}}
+\def\R{\mathbb{R}}
+\def\Z{\mathbb{Z}}
+\def\Q{\mathbb{Q}}
+\def\Lim{\mbox{{\sf lim}}}
+\def\LimInf{\mbox{{\sf lim inf}}}
+\def\LimSup{\mbox{{\sf lim sup}}}
+
+\def\ExpName{\mbox{{\sf exp}}}
+\def\Exp#1{\ExpName(#1)}
+
+\def\LogName{\mbox{{\sf log}}}
+\def\Log#1{\LogName(#1)}
+
+\def\SinName{\mbox{{\sf sin}}}
+\def\Sin#1{\SinName(#1)}
+
+\def\CosName{\mbox{{\sf cos}}}
+\def\Cos#1{\CosName(#1)}
+
+\def\Abs#1{|#1|}
+
+\def\SizeName{\#}
+\def\Size#1{\#\left(#1\right)}
+
+\tabstop=0.4in
+\def\ThmsI#1{%
+{\vertbarfalse#1}}
+
+\def\ThmsII#1#2{%
+{\vertbarfalse
+\begin{minipage}[t]{0.48\hsize}
+#1
+\end{minipage}
+\begin{minipage}[t]{0.48\hsize}
+#2
+\end{minipage}}}
+
+\def\ThmsIII#1#2#3{%
+{\vertbarfalse
+\begin{minipage}[t]{0.32\hsize}
+#1
+\end{minipage}
+\begin{minipage}[t]{0.32\hsize}
+#2
+\end{minipage}
+\begin{minipage}[t]{0.32\hsize}
+#3
+\end{minipage}}}
+
+\def\Hide#1{\relax}
+
+\makeindex
+\title{Mathematical Case Studies: \\ --- \\ Semigroups and Groups}
+\author{Rob Arthan}
+\makeindex
+\author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
+\date{\FormatDate{2010/03/03 11:35:32%
+}}
+
+\begin{document}
+\begin{titlepage}
+\maketitle
+\begin{abstract}
+This {\ProductHOL} script contains definitions and proofs concerning
+semigroups and groups demonstrating the universal algebra framework.
+
+\end{abstract}
+\vfill
+\begin{centering}
+
+\bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
+Reference: LEMMA1/HOL/WRK080; issue $Revision: 1.29$%
+% Don't forget to restore the above to dollar Revision: dollar when editing, if necessary.
+% (The makefile uses -kv when it checks documents out). 
+
+
+\end{centering}
+\thispagestyle{empty}
+\end{titlepage}
+\newpage
+\addtocounter{page}{1}
+%\section{DOCUMENT CONTROL}
+%\subsection{Contents list}
+\tableofcontents
+%\newpage
+%\subsection{Document cross references}
+
+\newpage
+\subsection*{To Do}
+A great deal of work remains.
+
+
+
+{\raggedright
+\bibliographystyle{fmu}
+\bibliography{fmu}
+} %\raggedright
+%%%%
+%%%%
+%%%%
+%%%%
+\newpage
+\section{INTRODUCTION}
+%%%%
+%%%%
+%%%%
+%%%%
+This document gives specifications and proofs exemplifying the use of a framework for universal algebra.
+This is part of a series of case studies in formalising some basic pure  mathematics in {\ProductHOL}.
+Other parts of the case study deal with real analysis \cite{LEMMA1/HOL/WRK066} and with topology \cite{LEMMA1/HOL/WRK067}.
+
+
+This document is a {\Product} literate script. It contains all the metalanguage (ML) commands required to create several theories, populate them with the formal definitions and prove and record all the theorems.
+The descriptions include all the formal definitions in the Z-like concrete syntax for specification in {\ProductHOL}.
+and a discussion of the theorems that have been proved about the objects specified.
+There is an index to the formal definitions and the theory listings in section~\ref{index}.
+
+%%%%
+%%%%
+%%%%
+%%%%
+\section{SEMIGROUPS}
+\subsection{Technical Prelude}
+
+First of all, we must give the the ML commands to  introduce the new theory ``semigroups'' as a child of the theory ``algebras'' of universal algebras.
+
+=TEX
+%%%%
+%%%%
+%%%%
+%%%%
+=SML
+force_delete_theory"semigroups" handle Fail _ => ();
+open_theory"algebras";
+new_theory"semigroups";
+set_merge_pcs["basic_hol1", "'sets_alg"];
+=TEX
+
+%%%%
+%%%%
+
+\subsection{Semigroups}
+The following function gives the representation of the equation that
+the $p$-th binary operator $\mu_{p2}$ in an algebra is associative (see universal algebra document and note that at the leaves of an expression
+tree the odd-numbered nodes are the variables and the even-numbered nodes are the constant symbols).
+
+=SML
+declare_infix(310, "oo");
+=TEX
+
+πHOLCONST
+‹ €AssocEq› : Ó ≠ EQUATION
+˜¸¸¸¸¸¸
+‹ µp∑	AssocEq p =
+‹	let	v i = MkTree(2*i + 1, [])
+‹	and	x oo y = MkTree(p, [x; y])
+‹	in	((v 0 oo v 1) oo v 2, v 0 oo (v 1 oo v 2))
+∞
+
+A semigroup is an algebra in which the 0-th binary operator is required to be associative.
+
+
+πHOLCONST
+‹ €SemigroupAxioms› : EQUATION SET
+˜¸¸¸¸¸¸
+‹ SemigroupAxioms = {AssocEq 0}
+∞
+
+
+We define the type of semigroups and the abstraction and representation functions for it as a subtype of the type of algebras.
+
+=SML
+new_type_defn(["SEMIGROUP", "semigroup_def"], "SEMIGROUP", ["'a"], (
+set_goal([], ¨∂sg∑ (ÃA∑ A ç Variety SemigroupAxioms) sg
+Æ);
+a(rewrite_tac[variety_type_lemmas]);
+pop_thm()));
+=TEX
+
+
+πHOLCONST
+‹ €Repâsg›	: 'a SEMIGROUP ≠ 'a ALGEBRA;
+‹ €Absâsg› 	: 'a ALGEBRA ≠ 'a SEMIGROUP
+˜¸¸¸¸¸¸
+‹(µS∑	Absâsg(Repâsg S) = S) ±
+‹(µK∑	K ç Variety SemigroupAxioms § Repâsg(Absâsg K) = K)
+∞
+
+
+The elements of the universal semigroup will have the following type:
+
+=SML
+new_type_defn(["UNIV_SEMIGROUP_ELEMENT"], "UNIV_SEMIGROUP_ELEMENT", ["'a"], (
+set_goal([], ¨∂f∑ (Ãg∑ g ç Safe SemigroupAxioms) f
+Æ);
+a(rewrite_tac[variety_type_lemmas]);
+pop_thm()));
+=TEX
+
+The following are the abstraction and representation functions for the elements of the universal semigroup as a subtype of the carrier type of the universal algebra for the semigroup axioms.
+
+πHOLCONST
+‹ €Repâuse›	: 'a UNIV_SEMIGROUP_ELEMENT ≠ ('a ALGEBRA ≠ 'a);
+‹ €Absâuse› 	: ('a ALGEBRA ≠ 'a) ≠ 'a UNIV_SEMIGROUP_ELEMENT
+˜¸¸¸¸¸¸
+‹(µx∑	Absâuse(Repâuse x) = x) ±
+‹(µf∑	f ç Safe SemigroupAxioms § Repâuse(Absâuse f) = f)
+∞
+
+Now we can define the universal semigroup:
+
+πHOLCONST
+‹ €UnivSemigroup› : 'a UNIV_SEMIGROUP_ELEMENT SEMIGROUP
+˜¸¸¸¸¸¸
+‹ UnivSemigroup =
+‹ Absâsg (MkAlgebra
+‹	Universe
+‹	(Ãp a∑ Absâuse(Op(UnivAlgebra SemigroupAxioms) p (Map Repâuse a)))
+‹	Arbitrary)
+∞
+=IGN
+type_of ¨AbsâsgÆ;
+type_of ¨AbsâuseÆ;
+
+=TEX
+
+Now we can define the universal semigroup operation:
+=SML
+declare_infix(310, ".");
+=TEX
+
+πHOLCONST
+‹ €$.› :
+‹	'a UNIV_SEMIGROUP_ELEMENT
+‹ ≠	'a UNIV_SEMIGROUP_ELEMENT
+‹ ≠	'a UNIV_SEMIGROUP_ELEMENT
+˜¸¸¸¸¸¸
+‹ µ x y∑ x . y = Op (Repâsg UnivSemigroup) 0 [x; y]
+∞
+
+
+%%%%
+%%%%
+%%%%
+%%%%
+\section{MONOIDS}
+\subsection{Prelude}
+
+We must give the the ML commands to  introduce the new theory ``monoids'' as a child of the theory ``semigroups''.
+
+=TEX
+%%%%
+%%%%
+%%%%
+%%%%
+=SML
+force_delete_theory"monoids" handle Fail _ => ();
+open_theory"semigroups";
+new_theory"monoids";
+set_merge_pcs["basic_hol1", "'sets_alg"];
+=TEX
+
+%%%%
+%%%%
+
+The following function gives the representation of the equations asserting that
+the $p$-th nullary operator $\mu_{p0}$ in an algebra is
+a two-sided unit for the $q$-th binary operator.
+
+=SML
+declare_infix(310, "oo");
+=TEX
+
+πHOLCONST
+‹ €UnitEq› : Ó ≠ Ó ≠ EQUATION SET
+˜¸¸¸¸¸¸
+‹ µp q∑	UnitEq p q =
+‹	let	v i = MkTree(2*i + 1, [])
+‹	and	e = MkTree(p, [])
+‹	and	x oo y = MkTree(q, [x; y])
+‹	in	{(e oo v 0, v 0); (v 0 oo e, v 0)}
+∞
+
+A monoid satisfies the semigroup axioms and and has the nullary operator $\mu_{p0}$ as two-sided unit:
+
+
+πHOLCONST
+‹ €MonoidAxioms› : EQUATION SET
+˜¸¸¸¸¸¸
+‹ MonoidAxioms = SemigroupAxioms ¿ UnitEq 0 0
+∞
+
+
+We define the type of monoids and the abstraction and representation functions for it as a subtype of the type of algebras.
+
+=SML
+new_type_defn(["MONOID", "monoid_def"], "MONOID", ["'a"], (
+set_goal([], ¨∂mnd∑ (ÃA∑ A ç Variety MonoidAxioms) mnd
+Æ);
+a(rewrite_tac[variety_type_lemmas]);
+pop_thm()));
+=TEX
+
+
+πHOLCONST
+‹ €Repâmnd›	: 'a MONOID ≠ 'a ALGEBRA;
+‹ €Absâmnd› 	: 'a ALGEBRA ≠ 'a MONOID
+˜¸¸¸¸¸¸
+‹(µS∑	Absâmnd(Repâmnd S) = S) ±
+‹(µK∑	K ç Variety MonoidAxioms § Repâmnd(Absâmnd K) = K)
+∞
+
+
+The elements of the universal monoio will have the following type:
+
+=SML
+new_type_defn(["UNIV_MONOID_ELEMENT"], "UNIV_MONOID_ELEMENT", ["'a"], (
+set_goal([], ¨∂f∑ (Ãg∑ g ç Safe MonoidAxioms) f
+Æ);
+a(rewrite_tac[variety_type_lemmas]);
+pop_thm()));
+=TEX
+
+The following are the abstraction and representation functions for the elements of the universal monoid as a subtype of the carrier type of the universal algebra for the monoid axioms.
+
+πHOLCONST
+‹ €Repâume›	: 'a UNIV_MONOID_ELEMENT ≠ ('a ALGEBRA ≠ 'a);
+‹ €Absâume› 	: ('a ALGEBRA ≠ 'a) ≠ 'a UNIV_MONOID_ELEMENT
+˜¸¸¸¸¸¸
+‹(µx∑	Absâume(Repâume x) = x) ±
+‹(µf∑	f ç Safe MonoidAxioms § Repâume(Absâume f) = f)
+∞
+
+Now we can define the universal monoid:
+
+πHOLCONST
+‹ €UnivMonoid› : 'a UNIV_MONOID_ELEMENT MONOID
+˜¸¸¸¸¸¸
+‹ UnivMonoid =
+‹ Absâmnd (MkAlgebra
+‹	Universe
+‹	(Ãp a∑ Absâume(Op(UnivAlgebra MonoidAxioms) p (Map Repâume a)))
+‹	Arbitrary)
+∞
+
+=TEX
+
+Now we can define the universal monoid operation:
+=SML
+declare_infix(310, ".âmnd");
+=TEX
+
+πHOLCONST
+‹ €$.âmnd› :
+‹	'a UNIV_MONOID_ELEMENT
+‹ ≠	'a UNIV_MONOID_ELEMENT
+‹ ≠	'a UNIV_MONOID_ELEMENT
+˜¸¸¸¸¸¸
+‹ µ x y∑ x .âmnd y = Op (Repâmnd UnivMonoid) 0 [x; y]
+∞
+
+and the unit element for the universal monoid:
+
+πHOLCONST
+‹ €$Oneâmnd› :
+‹	'a UNIV_MONOID_ELEMENT
+˜¸¸¸¸¸¸
+‹ Oneâmnd = Op (Repâmnd UnivMonoid) 0 []
+∞
+
+=TEX
+\ThmsII{
+=GFT
+TBD
+=TEX
+}{%
+=GFT
+TBD
+=TEX
+}
+%%%%
+%%%%
+%%%%
+%%%%
+{\let\Section\section
+\newcounter{ThyNum}
+\def\section#1{\Section{#1}
+\addtocounter{ThyNum}{1}\label{Theory\arabic{ThyNum}}}
+{\makeatletter
+\def\UP@char#1{{{}\sp{#1}}}
+\makeatother
+\include{algebras.th}}
+}  %\let
+
+\twocolumn[\section{INDEX}\label{index}]
+{\small\printindex}
+
+\end{document}
+
+{\HOLindexOff
+%%%%
+%%%%
+%%%%
+%%%%
+\onecolumn
+\section{THEOREMS}\label{THEOREMS}
+=SML
+fun arb_gen (thm : THM) : THM = (
+	let	val ty_map = map
+			(fn tv => (mk_vartype("@_" ^ tv), mk_vartype tv))
+			(term_tyvars(concl thm));
+		val thm1 = asm_inst_type_rule ty_map thm;
+	in	all_µ_intro (all_µ_arb_elim thm1)
+	end
+);
+=TEX
+
+%%%%
+%%%%
+\subsection{Semigroups}
+=TEX
+We begin by working through the definitions proving
+consistency as necessary.
+%%%%
+%%%%
+%%%%
+%%%%
+=SML
+=TEX
+=SML
+val _ = open_theory "semigroups";
+val _ = set_merge_pcs["basic_hol1", "'sets_alg"];
+val €assoc_eq_def› = get_spec¨AssocEqÆ;
+val €semigroup_axioms_def› = get_spec¨SemigroupAxiomsÆ;
+val €semigroup_def› = get_defn "-" "SEMIGROUP";
+=TEX
+=SML
+save_consistency_thm ¨AbsâsgÆ (
+push_consistency_goal ¨AbsâsgÆ;
+a (strip_asm_tac (rewrite_rule[](simple_¥_match_mp_rule type_lemmas_thm semigroup_def)));
+a (∂_tac ¨(rep, abs)Æ
+	THEN asm_rewrite_tac[]
+	THEN REPEAT strip_tac);
+pop_thm());
+val €abs_sg_def› = get_spec¨AbsâsgÆ;
+val €rep_sg_def› = get_spec¨RepâsgÆ;
+val €univ_semigroup_element_def› = get_defn "-" "UNIV_SEMIGROUP_ELEMENT";
+=TEX
+=SML
+save_consistency_thm ¨AbsâuseÆ (
+push_consistency_goal ¨AbsâuseÆ;
+a (strip_asm_tac (rewrite_rule[let_def](simple_¥_match_mp_rule type_lemmas_thm univ_semigroup_element_def)));
+a (∂_tac ¨(rep, abs)Æ
+	THEN asm_rewrite_tac[]
+	THEN REPEAT strip_tac);
+pop_thm());
+val €abs_use_def› = get_spec¨AbsâuseÆ;
+val €rep_use_def› = get_spec¨RepâuseÆ;
+val €univ_semigroup_def› = get_spec¨UnivSemigroupÆ;
+val €univ_semigroup_op_def› = get_spec¨$.Æ;
+=TEX
+%%%%
+%%%%
+=SML
+
+val €rep_sg_one_one_thm› = save_thm( "rep_sg_one_one_thm", (
+set_goal([], ¨µx y∑
+	Repâsg x = Repâsg y § x = y
+Æ);
+a(REPEAT strip_tac THEN_TRY asm_rewrite_tac[]);
+a(LEMMA_T ¨Absâsg(Repâsg x) = Absâsg(Repâsg y)Æ ante_tac
+	THEN1 asm_rewrite_tac[]);
+a(rewrite_tac[abs_sg_def]);
+pop_thm()));
+
+=TEX
+%%%%
+%%%%
+=SML
+
+val sg_thm1 = rewrite_rule[]
+	(conv_rule
+	(LEFT_C (rewrite_conv[abs_sg_def, rep_sg_def, abs_use_def, rep_use_def]))
+	(list_µ_elim[
+		¨Absâsg : 'a UNIV_SEMIGROUP_ELEMENT ALGEBRA ≠ 'a UNIV_SEMIGROUP_ELEMENT SEMIGROUPÆ,
+		¨Repâsg : 'a UNIV_SEMIGROUP_ELEMENT SEMIGROUP ≠ 'a UNIV_SEMIGROUP_ELEMENT ALGEBRAÆ] 	(list_µ_elim[
+			¨SemigroupAxiomsÆ,
+			¨AbsâuseÆ,
+			¨RepâuseÆ]variety_laws_lemma)));
+
+val sg_thm2 = rewrite_rule[eq_sym_rule univ_semigroup_def]
+	(once_rewrite_rule[eq_sym_rule (rewrite_rule[abs_sg_def] sg_thm1)] sg_thm1);
+
+val sg_thm3 = rewrite_rule[sg_thm1]
+	let	val t = hd(snd(strip_app(concl sg_thm1)));
+	in	µ_elim t(±_right_elim rep_sg_def)
+	end;
+
+val sg_thm4 =
+	rewrite_conv[
+		car_universe_thm,
+		sg_thm3,
+		univ_semigroup_def
+	] ¨Car (Repâsg UnivSemigroup)Æ;
+
+=TEX
+%%%%
+%%%%
+Note the following needs the proof contexts $basic\_hol1" and $'sets\_alg$.
+
+=SML
+val sg_thm5 =
+	(rewrite_rule [
+		semigroup_axioms_def,
+		assoc_eq_def,
+		prove_rule[] ¨µf s t∑
+			(µx y∑ x = s ± y = t ¥ (µ I
+         ∑ f I x = f I y)) § (µ I
+         ∑ f I s = f I t)Æ,
+		sg_thm4,
+		let_def,
+		variety_def,
+		derived_op_def,
+		map_def] sg_thm2);
+
+val sg_thm6 = all_µ_intro(rewrite_rule[]
+	(µ_elim¨Ãv∑
+		if	v = 0
+		then	x : 'a UNIV_SEMIGROUP_ELEMENT
+		else if	v = 1
+		then	y
+		else	zÆ sg_thm5));
+
+
+val €univ_semigroup_assoc_thm› = save_thm( "univ_semigroup_assoc_thm", (
+set_goal([], ¨µx y z∑
+	(x . y) . z = x . (y . z)
+Æ);
+a(REPEAT strip_tac);
+a(rewrite_tac[univ_semigroup_op_def, sg_thm6]);
+pop_thm()));
+
+
+=TEX
+
+%%%%
+%%%%
+\subsection{Monoids}
+=TEX
+We begin by working through the definitions proving
+consistency as necessary.
+%%%%
+%%%%
+%%%%
+%%%%
+=SML
+=TEX
+=SML
+val _ = open_theory "monoids";
+val _ = set_merge_pcs["basic_hol1", "'sets_alg"];
+val €unit_eq_def› = get_spec¨UnitEqÆ;
+val €monoid_axioms_def› = get_spec¨MonoidAxiomsÆ;
+val €monoid_def› = get_defn "-" "MONOID";
+=TEX
+=SML
+save_consistency_thm ¨AbsâmndÆ (
+push_consistency_goal ¨AbsâmndÆ;
+a (strip_asm_tac (rewrite_rule[](simple_¥_match_mp_rule type_lemmas_thm monoid_def)));
+a (∂_tac ¨(rep, abs)Æ
+	THEN asm_rewrite_tac[]
+	THEN REPEAT strip_tac);
+pop_thm());
+val €abs_mnd_def› = get_spec¨AbsâmndÆ;
+val €rep_mnd_def› = get_spec¨RepâmndÆ;
+val €univ_monoid_element_def› = get_defn "-" "UNIV_MONOID_ELEMENT";
+=TEX
+=SML
+save_consistency_thm ¨AbsâumeÆ (
+push_consistency_goal ¨AbsâumeÆ;
+a (strip_asm_tac (rewrite_rule[let_def](simple_¥_match_mp_rule type_lemmas_thm univ_monoid_element_def)));
+a (∂_tac ¨(rep, abs)Æ
+	THEN asm_rewrite_tac[]
+	THEN REPEAT strip_tac);
+pop_thm());
+val €abs_ume_def› = get_spec¨AbsâumeÆ;
+val €rep_ume_def› = get_spec¨RepâumeÆ;
+val €univ_monoid_def› = get_spec¨UnivMonoidÆ;
+val €univ_monoid_op_def› = get_spec¨$.âmndÆ;
+val €univ_monoid_unit_def› = get_spec¨OneâmndÆ;
+=TEX
+%%%%
+%%%%
+=SML
+
+val €rep_mnd_one_one_thm› = save_thm( "rep_mnd_one_one_thm", (
+set_goal([], ¨µx y∑
+	Repâmnd x = Repâmnd y § x = y
+Æ);
+a(REPEAT strip_tac THEN_TRY asm_rewrite_tac[]);
+a(LEMMA_T ¨Absâmnd(Repâmnd x) = Absâmnd(Repâmnd y)Æ ante_tac
+	THEN1 asm_rewrite_tac[]);
+a(rewrite_tac[abs_mnd_def]);
+pop_thm()));
+
+=TEX
+%%%%
+%%%%
+=SML
+
+val mnd_thm1 = rewrite_rule[]
+	(conv_rule
+	(LEFT_C (rewrite_conv[abs_mnd_def, rep_mnd_def, abs_ume_def, rep_ume_def]))
+	(list_µ_elim[
+		¨Absâmnd : 'a UNIV_MONOID_ELEMENT ALGEBRA ≠ 'a UNIV_MONOID_ELEMENT MONOIDÆ,
+		¨Repâmnd : 'a UNIV_MONOID_ELEMENT MONOID ≠ 'a UNIV_MONOID_ELEMENT ALGEBRAÆ] 	(list_µ_elim[
+			¨MonoidAxiomsÆ,
+			¨AbsâumeÆ,
+			¨RepâumeÆ]variety_laws_lemma)));
+
+val mnd_thm2 = rewrite_rule(map eq_sym_rule [
+	rewrite_rule[abs_mnd_def] mnd_thm1,
+	univ_monoid_def]) mnd_thm1;
+
+val mnd_thm2 = rewrite_rule[eq_sym_rule univ_monoid_def]
+	(once_rewrite_rule[eq_sym_rule (rewrite_rule[abs_mnd_def] mnd_thm1)] mnd_thm1);
+
+val mnd_thm3 = rewrite_rule[mnd_thm1]
+	let	val t = hd(snd(strip_app(concl mnd_thm1)));
+	in	µ_elim t(±_right_elim rep_mnd_def)
+	end;
+
+val mnd_thm4 =
+	rewrite_conv[
+		car_universe_thm,
+		mnd_thm3,
+		univ_monoid_def
+	] ¨Car (Repâmnd UnivMonoid)Æ;
+
+val mnd_thm5 =
+	(pc_rule1 "sets_ext1" rewrite_rule [
+		semigroup_axioms_def,
+		monoid_axioms_def,
+		assoc_eq_def,
+		unit_eq_def,
+		mnd_thm4,
+		let_def,
+		variety_def] mnd_thm2);
+
+
+fun €get_laws› (thm : THM) : (TERM * TERM) list = (
+	let	val b = snd(strip_µ(concl thm));
+		val ant = fst(dest_¥ b);
+		val eqs = strip_≤ ant;
+		val rhses = map (snd o dest_eq) eqs;
+		val res = map dest_pair rhses;
+	in	res
+	end
+);
+
+val mnd_thms6 =
+	let	val pairs = get_laws mnd_thm5;
+	in	map (fn (t1, t2) => rewrite_rule[] (list_µ_elim [t1, t2] mnd_thm5)) pairs
+	end;
+
+
+val mnd_thms7 = map 
+	(fn thm => all_µ_intro(rewrite_rule[
+		let_def,
+		derived_op_def,
+		map_def]
+		(µ_elim¨Ãv∑
+			if	v = 0
+			then	x : 'a UNIV_MONOID_ELEMENT
+			else if	v = 1
+			then	y
+			else	zÆ thm))) mnd_thms6;
+
+
+val €univ_monoid_assoc_thm› = save_thm( "univ_monoid_assoc_thm", (
+set_goal([], ¨µx y z∑
+	(x .âmnd y) .âmnd z = x .âmnd (y .âmnd z)
+Æ);
+a(REPEAT strip_tac);
+a(rewrite_tac(univ_monoid_op_def :: mnd_thms7));
+pop_thm()));
+
+
+val €univ_monoid_unit_thm› = save_thm( "univ_monoid_unit_thm", (
+set_goal([], ¨µx∑
+	Oneâmnd .âmnd x = x
+±	x .âmnd Oneâmnd = x
+Æ);
+a(REPEAT strip_tac THEN
+	rewrite_tac(univ_monoid_op_def :: univ_monoid_unit_def :: mnd_thms7));
+pop_thm()));
+
+=TEX
+%%%%
+%%%%
+%%%%
+=SML
+=TEX
+%%%%
+=TEX
+%%%%
+%%%%
+%%%%
+%%%%
+=TEX
+\subsection{Epilogue}\label{END}
+} % matches turning off of HOL index entries.
+=TEX
+%%%%
+%%%%
+=SML
+open_theory"semigroups";
+output_theory{out_file="wrk081.th.doc", theory="semigroups"};
+=TEX
+\end{document}
+=SML
