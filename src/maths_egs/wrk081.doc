@@ -100,7 +100,7 @@ semigroups and groups demonstrating the universal algebra framework.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK080; issue $Revision: 1.2 $%
+Reference: LEMMA1/HOL/WRK080; issue $Revision: 1.3 $%
 % Don't forget to restore the above to dollar Revision: dollar when editing, if necessary.
 % (The makefile uses -kv when it checks documents out). 
 
@@ -189,14 +189,14 @@ J	&			& \\\hline
 K	&			& \\\hline
 L	& lattices		& \\\hline
 M	& monoids		& \\\hline
-N	&			& {\ProductHOL} uses no subscript for operations on Ó\\\hline
+N	& natural numbers	& no subscript in {\ProductHOL} \\\hline
 O	&			& \\\hline
 P	& polynomial rings	& \\\hline
 Q	& rationals		& \\\hline
 R	& reals	& (Already extant in {\ProductHOL}) \\\hline
 S	& semigroup		& \\\hline
 T	&			& \\\hline
-U	&			& \\\hline
+U	&			& The algebras of \cite{LEMMA1/HOL/WRK080} \\\hline
 V	& real vector spaces	& use VS for abstract vector spaces \\\hline
 W	&			& \\\hline
 X	&			& \\\hline
@@ -227,7 +227,6 @@ set_merge_pcs["basic_hol1", "'sets_alg"];
 %%%%
 %%%%
 
-\subsection{Semigroups}
 The following function gives the representation of the equation that
 the $p$-th binary operator $\mu_{p2}$ in an algebra is associative (see universal algebra document and note that at the leaves of an expression
 tree the odd-numbered nodes are the variables and the even-numbered nodes are the constant symbols).
@@ -474,7 +473,50 @@ open_theory"monoids";
 new_theory"alg-egs";
 set_merge_pcs["basic_hol1", "'sets_alg"];
 =TEX
+The additive semigroup of positive natural numbers (represented as natural numbers via
+$n \mapsto n - 1$).
 
+πHOLCONST
+‹ €PosNat› : Ó SEMIGROUP
+˜¸¸¸¸¸¸
+‹ PosNat = AbsâS (DefAlgebra Universe 1 [] [] [(0, (Ãm n∑m + n + 1))])
+∞
+
+The monoid of polymorphic lists under concatenation.
+
+πHOLCONST
+‹ €ListMonoid› : 'a LIST MONOID
+˜¸¸¸¸¸¸
+‹ ListMonoid = AbsâM (DefAlgebra Universe [] [(0, [])] [] [(0, $Î)])
+∞
+
+The multiplicative monoid of natural numbers:
+
+
+πHOLCONST
+‹ €NatMult› : Ó MONOID
+˜¸¸¸¸¸¸
+‹ NatMult = AbsâM (DefAlgebra Universe 1 [(0, 1)] [] [(0, $*)])
+∞
+
+A generic distributed product operation using the $p$-th binary operation
+to combine elements with the $q$-th constant as the unit:
+
+πHOLCONST
+‹ €êâU› : Ó ≠ Ó ≠ 'a ALGEBRA ≠ 'a LIST ≠ 'a
+˜¸¸¸¸¸¸
+‹ µp q K x xs∑
+‹	êâU p q K [] = Op K q []
+‹ ±	êâU p q K (Cons x xs) = Op K p [x; êâU p q K xs]
+∞
+
+Instantiating the generic product to multiplication of natural numbers:
+
+πHOLCONST
+‹ €êâN› : Ó LIST ≠ Ó
+˜¸¸¸¸¸¸
+‹ êâN = êâU 0 0 (RepâM NatMult)
+∞
 
 %%%%
 %%%%
@@ -487,8 +529,10 @@ set_merge_pcs["basic_hol1", "'sets_alg"];
 {\makeatletter
 \def\UP@char#1{{{}\sp{#1}}}
 \makeatother
-\HOLindexOff\include{wrk0811.th}
-\include{wrk0812.th}}
+\HOLindexOff
+\include{wrk0811.th}
+\include{wrk0812.th}
+\include{wrk0813.th}}
 }  %\let
 
 \twocolumn[\section{INDEX}\label{index}]
@@ -577,7 +621,7 @@ pop_thm()));
 %%%%
 =SML
 
-val sg_thm1 = rewrite_rule[]
+val semigroup_thm1 = rewrite_rule[]
 	(conv_rule
 	(LEFT_C (rewrite_conv[abs_s_def, rep_s_def, abs_use_def, rep_use_def]))
 	(list_µ_elim[
@@ -587,18 +631,18 @@ val sg_thm1 = rewrite_rule[]
 			¨AbsâUSEÆ,
 			¨RepâUSEÆ]variety_laws_lemma)));
 
-val sg_thm2 = rewrite_rule[eq_sym_rule univ_semigroup_def]
-	(once_rewrite_rule[eq_sym_rule (rewrite_rule[abs_s_def] sg_thm1)] sg_thm1);
+val semigroup_thm2 = rewrite_rule[eq_sym_rule univ_semigroup_def]
+	(once_rewrite_rule[eq_sym_rule (rewrite_rule[abs_s_def] semigroup_thm1)] semigroup_thm1);
 
-val sg_thm3 = rewrite_rule[sg_thm1]
-	let	val t = hd(snd(strip_app(concl sg_thm1)));
+val semigroup_thm3 = rewrite_rule[semigroup_thm1]
+	let	val t = hd(snd(strip_app(concl semigroup_thm1)));
 	in	µ_elim t(±_right_elim rep_s_def)
 	end;
 
-val sg_thm4 =
+val semigroup_thm4 =
 	rewrite_conv[
 		car_universe_thm,
-		sg_thm3,
+		semigroup_thm3,
 		univ_semigroup_def
 	] ¨Car (RepâS UnivSemigroup)Æ;
 
@@ -608,7 +652,7 @@ val sg_thm4 =
 Note the following needs the proof contexts $basic\_hol1" and $'sets\_alg$.
 
 =SML
-val sg_thm5 =
+val semigroup_thm5 =
 	(rewrite_rule [
 		semigroup_axioms_def,
 		assoc_eq_def,
@@ -616,19 +660,19 @@ val sg_thm5 =
 			(µx y∑ x = s ± y = t ¥ (µ I
          ∑ f I x = f I y)) § (µ I
          ∑ f I s = f I t)Æ,
-		sg_thm4,
+		semigroup_thm4,
 		let_def,
 		variety_def,
 		derived_op_def,
-		map_def] sg_thm2);
+		map_def] semigroup_thm2);
 
-val sg_thm6 = all_µ_intro(rewrite_rule[]
+val semigroup_thm6 = all_µ_intro(rewrite_rule[]
 	(µ_elim¨Ãv∑
 		if	v = 0
 		then	x : 'a UNIV_SEMIGROUP_ELEMENT
 		else if	v = 1
 		then	y
-		else	zÆ sg_thm5));
+		else	zÆ semigroup_thm5));
 
 
 val €univ_semigroup_assoc_thm› = save_thm( "univ_semigroup_assoc_thm", (
@@ -636,7 +680,7 @@ set_goal([], ¨µx y z∑
 	(x .âS y) .âS z = x .âS (y .âS z)
 Æ);
 a(REPEAT strip_tac);
-a(rewrite_tac[univ_semigroup_op_def, sg_thm6]);
+a(rewrite_tac[univ_semigroup_op_def, semigroup_thm6]);
 pop_thm()));
 
 
@@ -706,7 +750,7 @@ pop_thm()));
 %%%%
 =SML
 
-val mnd_thm1 = rewrite_rule[]
+val monoid_thm1 = rewrite_rule[]
 	(conv_rule
 	(LEFT_C (rewrite_conv[abs_m_def, rep_m_def, abs_ume_def, rep_ume_def]))
 	(list_µ_elim[
@@ -716,34 +760,34 @@ val mnd_thm1 = rewrite_rule[]
 			¨AbsâUMEÆ,
 			¨RepâUMEÆ]variety_laws_lemma)));
 
-val mnd_thm2 = rewrite_rule(map eq_sym_rule [
-	rewrite_rule[abs_m_def] mnd_thm1,
-	univ_monoid_def]) mnd_thm1;
+val monoid_thm2 = rewrite_rule(map eq_sym_rule [
+	rewrite_rule[abs_m_def] monoid_thm1,
+	univ_monoid_def]) monoid_thm1;
 
-val mnd_thm2 = rewrite_rule[eq_sym_rule univ_monoid_def]
-	(once_rewrite_rule[eq_sym_rule (rewrite_rule[abs_m_def] mnd_thm1)] mnd_thm1);
+val monoid_thm2 = rewrite_rule[eq_sym_rule univ_monoid_def]
+	(once_rewrite_rule[eq_sym_rule (rewrite_rule[abs_m_def] monoid_thm1)] monoid_thm1);
 
-val mnd_thm3 = rewrite_rule[mnd_thm1]
-	let	val t = hd(snd(strip_app(concl mnd_thm1)));
+val monoid_thm3 = rewrite_rule[monoid_thm1]
+	let	val t = hd(snd(strip_app(concl monoid_thm1)));
 	in	µ_elim t(±_right_elim rep_m_def)
 	end;
 
-val mnd_thm4 =
+val monoid_thm4 =
 	rewrite_conv[
 		car_universe_thm,
-		mnd_thm3,
+		monoid_thm3,
 		univ_monoid_def
 	] ¨Car (RepâM UnivMonoid)Æ;
 
-val mnd_thm5 =
+val monoid_thm5 =
 	(pc_rule1 "sets_ext1" rewrite_rule [
 		semigroup_axioms_def,
 		monoid_axioms_def,
 		assoc_eq_def,
 		unit_eq_def,
-		mnd_thm4,
+		monoid_thm4,
 		let_def,
-		variety_def] mnd_thm2);
+		variety_def] monoid_thm2);
 
 
 fun €get_laws› (thm : THM) : (TERM * TERM) list = (
@@ -756,13 +800,13 @@ fun €get_laws› (thm : THM) : (TERM * TERM) list = (
 	end
 );
 
-val mnd_thms6 =
-	let	val pairs = get_laws mnd_thm5;
-	in	map (fn (t1, t2) => rewrite_rule[] (list_µ_elim [t1, t2] mnd_thm5)) pairs
+val monoid_thms6 =
+	let	val pairs = get_laws monoid_thm5;
+	in	map (fn (t1, t2) => rewrite_rule[] (list_µ_elim [t1, t2] monoid_thm5)) pairs
 	end;
 
 
-val mnd_thms7 = map 
+val monoid_thms7 = map 
 	(fn thm => all_µ_intro(rewrite_rule[
 		let_def,
 		derived_op_def,
@@ -772,17 +816,26 @@ val mnd_thms7 = map
 			then	x : 'a UNIV_MONOID_ELEMENT
 			else if	v = 1
 			then	y
-			else	zÆ thm))) mnd_thms6;
+			else	zÆ thm))) monoid_thms6;
 
+
+=TEX
+%%%%
+%%%%
+=SML
 
 val €univ_monoid_assoc_thm› = save_thm( "univ_monoid_assoc_thm", (
 set_goal([], ¨µx y z∑
 	(x .âM y) .âM z = x .âM (y .âM z)
 Æ);
 a(REPEAT strip_tac);
-a(rewrite_tac(univ_monoid_op_def :: mnd_thms7));
+a(rewrite_tac(univ_monoid_op_def :: monoid_thms7));
 pop_thm()));
 
+=TEX
+%%%%
+%%%%
+=SML
 
 val €univ_monoid_unit_thm› = save_thm( "univ_monoid_unit_thm", (
 set_goal([], ¨µx∑
@@ -790,8 +843,168 @@ set_goal([], ¨µx∑
 ±	x .âM 1âM = x
 Æ);
 a(REPEAT strip_tac THEN
-	rewrite_tac(univ_monoid_op_def :: univ_monoid_unit_def :: mnd_thms7));
+	rewrite_tac(univ_monoid_op_def :: univ_monoid_unit_def :: monoid_thms7));
 pop_thm()));
+
+=TEX
+%%%%
+%%%%
+=SML
+
+val _ = open_theory "alg-egs";
+val _ = set_merge_pcs["basic_hol1", "'sets_alg"];
+val €pos_nat_def› = get_spec¨PosNatÆ;
+val €list_monoid_def› = get_spec¨ListMonoidÆ;
+val €nat_mult_def› = get_spec¨NatMultÆ;
+val €–_u_def› = get_spec ¨êâUÆ;
+val €–_n_def› = get_spec ¨êâNÆ;
+=TEX
+%%%%
+%%%%
+=SML
+
+val €rep_s_pos_nat_def_algebra_thm› = save_thm( "rep_s_pos_nat_def_algebra_thm", (
+set_goal([], ¨RepâS PosNat = DefAlgebra Universe 1 [] [] [(0, (Ã m n∑ m + n + 1))]Æ);
+a(rewrite_tac [pos_nat_def, conv_rule (ONCE_MAP_C eq_sym_conv) (±_right_elim rep_s_def)]);
+a(rewrite_tac[def_algebra_def, def_bin_ops_def, def_un_ops_def, def_cons_def,
+	let_def, variety_def, car_universe_thm,
+	semigroup_axioms_def, assoc_eq_def]);
+a(REPEAT strip_tac THEN all_var_elim_asm_tac1 THEN
+	rewrite_tac[derived_op_def, let_def, map_def, length_def]
+		THEN PC_T1 "lin_arith" prove_tac[]);
+pop_thm()));
+
+=TEX
+%%%%
+%%%%
+=SML
+
+val €pos_nat_variety_thm› = save_thm( "pos_nat_variety_thm", (
+set_goal([], ¨DefAlgebra Universe 1 [] [] [(0, (Ã m n∑ m + n + 1))] ç Variety SemigroupAxiomsÆ);
+a(rewrite_tac [conv_rule (ONCE_MAP_C eq_sym_conv) rep_s_pos_nat_def_algebra_thm]);
+a(rewrite_tac[rep_s_def, pos_nat_def]);
+pop_thm()));
+
+
+=TEX
+%%%%
+%%%%
+=SML
+
+val €rep_m_list_monoid_def_algebra_thm› = save_thm( "rep_m_list_monoid_def_algebra_thm", (
+set_goal([], ¨RepâM ListMonoid = DefAlgebra Universe [] [(0, [])] [] [(0, $@)]Æ);
+a(rewrite_tac [list_monoid_def, conv_rule (ONCE_MAP_C eq_sym_conv) (±_right_elim rep_m_def)]);
+a(rewrite_tac[def_algebra_def, def_bin_ops_def, def_un_ops_def, def_cons_def,
+	let_def, variety_def, car_universe_thm,
+	monoid_axioms_def, semigroup_axioms_def, assoc_eq_def, unit_eq_def]);
+a(REPEAT strip_tac THEN all_var_elim_asm_tac1 THEN
+	rewrite_tac[derived_op_def, let_def, map_def, length_def]
+	THEN rewrite_tac[ append_assoc_thm, append_empty_thm, append_def]);
+pop_thm()));
+
+=TEX
+%%%%
+%%%%
+=SML
+
+val €list_monoid_variety_thm› = save_thm( "list_monoid_variety_thm", (
+set_goal([], ¨DefAlgebra Universe [] [(0, [])] [] [(0, $@)]ç Variety MonoidAxiomsÆ);
+a(rewrite_tac [conv_rule (ONCE_MAP_C eq_sym_conv) rep_m_list_monoid_def_algebra_thm]);
+a(rewrite_tac[rep_m_def, list_monoid_def]);
+pop_thm()));
+
+
+=TEX
+%%%%
+%%%%
+=SML
+
+val €rep_m_nat_mult_def_algebra_thm› = save_thm( "rep_m_nat_mult_def_algebra_thm", (
+set_goal([], ¨RepâM NatMult = DefAlgebra Universe 1 [(0, 1)] [] [(0, $*)]Æ);
+a(rewrite_tac [nat_mult_def, conv_rule (ONCE_MAP_C eq_sym_conv) (±_right_elim rep_m_def)]);
+a(rewrite_tac[def_algebra_def, def_bin_ops_def, def_un_ops_def, def_cons_def,
+	let_def, variety_def, car_universe_thm,
+	monoid_axioms_def, semigroup_axioms_def, assoc_eq_def, unit_eq_def]);
+a(REPEAT strip_tac THEN all_var_elim_asm_tac1 THEN
+	rewrite_tac[derived_op_def, let_def, map_def, length_def]
+	THEN PC_T1 "lin_arith" prove_tac[]);
+pop_thm()));
+
+=TEX
+%%%%
+%%%%
+=SML
+
+val €nat_mult_variety_thm› = save_thm( "nat_mult_variety_thm", (
+set_goal([], ¨DefAlgebra Universe 1 [(0, 1)] [] [(0, $*)]ç Variety MonoidAxiomsÆ);
+a(rewrite_tac [conv_rule (ONCE_MAP_C eq_sym_conv) rep_m_nat_mult_def_algebra_thm]);
+a(rewrite_tac[rep_m_def, nat_mult_def]);
+pop_thm()));
+
+=TEX
+%%%%
+%%%%
+=SML
+
+val monoid_laws_thm1 =
+	pc_rule1 "sets_ext" rewrite_rule[asm_rule ¨Car K = UniverseÆ]
+	(undisch_rule(fst(§_elim(MERGE_PCS_C1 ["sets_ext"]
+	rewrite_conv[monoid_axioms_def, unit_eq_def, assoc_eq_def,
+		variety_def, monoid_axioms_def, semigroup_axioms_def, let_def]
+			¨K ç Variety MonoidAxiomsÆ))));
+
+val monoid_laws_thms2 =
+	let	val pairs = get_laws monoid_laws_thm1;
+	in	map (fn (t1, t2) => rewrite_rule[] (list_µ_elim [t1, t2] monoid_laws_thm1)) pairs
+	end;
+
+
+fun €all_disch_rule› (thm : THM) : THM = (
+	fold (uncurry disch_rule) (asms thm) thm
+);
+
+val monoid_laws_bc_thms = map (fn thm => 
+	rewrite_rule[taut_rule¨µp q r∑ (p ¥ q ¥ r) § (p ± q ¥ r)Æ]
+	(all_µ_intro (all_disch_rule(rewrite_rule[
+		let_def,
+		derived_op_def,
+		map_def]
+		(µ_elim¨Ãv∑
+			if	v = 0
+			then	x : 'a
+			else if	v = 1
+			then	y
+			else	zÆ thm))))) monoid_laws_thms2;
+
+val €–_u_homomorphism_thm› = save_thm( "–_u_homomorphism_thm", (
+set_goal([], ¨µK xs ys∑
+	Car K = Universe
+±	K ç Variety MonoidAxioms
+¥	êâU 0 0 K (xs Î ys) = Op K 0 [êâU 0 0 K xs; êâU 0 0 K ys]
+Æ);
+a(REPEAT strip_tac);
+a(intro_µ_tac1¨ysÆ);
+a(list_induction_tac¨xsÆ THEN rewrite_tac[–_u_def, append_def]
+	THEN REPEAT strip_tac
+	THEN ALL_FC_T asm_rewrite_tac monoid_laws_bc_thms);
+pop_thm()));
+
+=TEX
+%%%%
+%%%%
+
+Instantiating the above to a specific instance is most naturally
+done as a forward proof (and that saves you having to write down the statement!) 
+=SML
+val  €–_n_homomorphism_thm› = save_thm( "–_n_homomorphism_thm", (
+	all_µ_intro
+	(rewrite_rule[rep_m_nat_mult_def_algebra_thm,
+		car_op_def_def_algebra_universe_thm, let_def, def_bin_ops_def,
+		length_def]
+	(rewrite_rule[conv_rule(ONCE_MAP_C eq_sym_conv) –_n_def]
+	(conv_rule (LEFT_C (rewrite_conv[rep_m_nat_mult_def_algebra_thm,
+		nat_mult_variety_thm, car_op_def_def_algebra_universe_thm]))
+	(all_µ_elim (µ_elim¨RepâM NatMultÆ –_u_homomorphism_thm)))))));
 
 =TEX
 %%%%
@@ -816,6 +1029,8 @@ open_theory"semigroups";
 output_theory{out_file="wrk0811.th.doc", theory="semigroups"};
 open_theory"monoids";
 output_theory{out_file="wrk0812.th.doc", theory="monoids"};
+open_theory"alg-egs";
+output_theory{out_file="wrk0813.th.doc", theory="alg-egs"};
 =TEX
 \end{document}
 =SML

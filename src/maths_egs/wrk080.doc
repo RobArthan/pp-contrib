@@ -102,7 +102,7 @@ and classes of algebras, e.g., abelian groups.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK080; issue $Revision: 1.1 $%
+Reference: LEMMA1/HOL/WRK080; issue $Revision: 1.2 $%
 % Don't forget to restore the above to dollar Revision: dollar when editing, if necessary.
 % (The makefile uses -kv when it checks documents out). 
 
@@ -374,7 +374,9 @@ Very many interesting algebras have finite
 signatures with operators of arity 0, 1 or 2.
 We define some functions that are convenient for
 constructing such algebras.
-
+First of all we define functions that redefine a general operator
+with lists of specific operators of low arity.
+First $DefCons$ to deal with constants:
 πHOLCONST
 ‹ €DefCons› : (Ó ∏ 'a) LIST ≠ (Ó ≠ 'a LIST ≠ 'a) ≠ (Ó ≠ 'a LIST ≠ 'a)
 ˜¸¸¸¸¸¸
@@ -389,20 +391,58 @@ constructing such algebras.
 ‹		else	DefCons l op n a)
 ∞
 
+Next,$DefUnOps$ to deal with unary operators:
+
 πHOLCONST
-‹ €DefMonops› : (Ó ∏ ('a ≠ 'a)) LIST ≠ (Ó ≠ 'a LIST ≠ 'a) ≠ (Ó ≠ 'a LIST ≠ 'a)
+‹ €DefUnOps› : (Ó ∏ ('a ≠ 'a)) LIST ≠ (Ó ≠ 'a LIST ≠ 'a) ≠ (Ó ≠ 'a LIST ≠ 'a)
 ˜¸¸¸¸¸¸
 ‹ (µop∑
-‹	DefMonops [] op = op)
+‹	DefUnOps [] op = op)
 ‹ ± (µop pf l∑
-‹	DefMonops (Cons pf l) op =
+‹	DefUnOps (Cons pf l) op =
 ‹	let	(p, f) = pf
 ‹	in	Ãn a∑
 ‹		if	n = p ± #a = 1
 ‹		then	f (Hd a)
-‹		else	DefMonops l op n a)
+‹		else	DefUnOps l op n a)
 ∞
 
+
+An finally $DefBinOps$ to deal binary operators.
+
+πHOLCONST
+‹ €DefBinOps› : (Ó ∏ ('a ≠ 'a ≠ 'a)) LIST ≠ (Ó ≠ 'a LIST ≠ 'a) ≠ (Ó ≠ 'a LIST ≠ 'a)
+˜¸¸¸¸¸¸
+‹ (µop∑
+‹	DefBinOps [] op = op)
+‹ ± (µop pf l∑
+‹	DefBinOps (Cons pf l) op =
+‹	let	(p, f) = pf
+‹	in	Ãn a∑
+‹		if	n = p ± #a = 2
+‹		then	f (Hd a) (Hd(Tl a))
+‹		else	DefBinOps l op n a)
+∞
+$DefAlgebra$ now lets us construct an algebra by giving the carrier set and
+the default element and listing the constants, unary operators and
+binary operators.
+πHOLCONST
+‹ €DefAlgebra› :
+‹	'a SET ≠ 'a ≠ 
+‹	(Ó ∏ 'a) LIST ≠
+‹	(Ó ∏ ('a ≠ 'a)) LIST  ≠
+‹	(Ó ∏ ('a ≠ 'a ≠ 'a)) LIST ≠
+‹	'a ALGEBRA
+˜¸¸¸¸¸¸
+‹ µcar def cons uns bins∑
+‹	DefAlgebra car def cons uns bins =
+‹	let	op0 = DefCons cons (Ãn a∑ def)
+‹	in let	op1 = DefUnOps uns op0
+‹	in let	op2 = DefBinOps bins op1
+‹	in	MkAlgebra car op2 def
+∞
+
+=TEX
 
 %%%%
 %%%%
@@ -518,6 +558,12 @@ val €derived_op_def› = get_spec ¨DerivedOpÆ;
 val €variety_def› = get_spec¨VarietyÆ;
 val €safe_def› = get_spec¨SafeÆ;
 val €univ_algebra_def› = get_spec¨UnivAlgebraÆ;
+
+val €def_cons_def› = get_spec¨DefConsÆ;
+val €def_un_ops_def› = get_spec¨DefUnOpsÆ;
+val €def_bin_ops_def› = get_spec¨DefBinOpsÆ;
+val €def_algebra_def› = get_spec¨DefAlgebraÆ;
+
 =TEX
 %%%%
 %%%%
@@ -891,7 +937,8 @@ pop_thm()));
 =SML
 
 val €car_universe_thm› = save_thm( "car_universe_thm",
-	rewrite_rule[](µ_elim¨UniverseÆ (±_right_elim car_def)));
+	pc_rule1 "hol" rewrite_rule[]
+		(µ_elim¨UniverseÆ (±_right_elim car_def)));
 
 =TEX
 %%%%
@@ -940,7 +987,9 @@ set_goal([], ¨µeqs;
 		Universe
 		(Ãp a∑ abs_e(Op(UnivAlgebra eqs) p (Map rep_e a)))
 		Arbitrary ç Variety eqsÆ);
-a(pure_rewrite_tac[variety_def, car_universe_thm] THEN REPEAT strip_tac);
+a(pure_rewrite_tac[variety_def,
+	pc_rule1 "basic_hol1" rewrite_rule[]car_universe_thm]
+		THEN REPEAT strip_tac);
 a(LEMMA_T¨µex∑
 	DerivedOp(Op (MkAlgebra
 		Universe
@@ -957,7 +1006,7 @@ a(cases_tac¨exs = []Æ THEN asm_rewrite_tac[]);
 a(cases_tac¨l Mod 2 = 0Æ THEN asm_rewrite_tac[]);
 a(rewrite_tac[car_op_def_univ_algebra_thm, safe_def,
 	univ_op_def, let_def, map_def,
-	car_universe_thm]);
+	pc_rule1 "basic_hol1" rewrite_rule[]car_universe_thm]);
 (* *** Goal "1.2" *** *)
 a(rewrite_tac[car_universe_thm]);
 a(bc_thm_tac (prove_rule[] ¨µf x y∑ x = y ¥ f x = f yÆ));
@@ -980,6 +1029,25 @@ a(ante_tac(list_µ_elim[¨eqsÆ, ¨lhsÆ, ¨rhsÆ]
 	THEN asm_rewrite_tac[]);
 a(STRIP_T bc_thm_tac);
 a(asm_rewrite_tac[car_op_def_univ_algebra_thm]);
+pop_thm()));
+
+=TEX
+%%%%
+%%%%
+=SML
+
+val €car_op_def_def_algebra_universe_thm› = save_thm( "car_op_def_def_algebra_universe_thm", (
+set_goal([], ¨µdef cons uns bins∑
+	Car(DefAlgebra Universe def cons uns bins) = Universe
+±	Op(DefAlgebra Universe def cons uns bins) =
+	(let	op0 = DefCons cons (Ãn a∑ def)
+	in let	op1 = DefUnOps uns op0
+	in let	op2 = DefBinOps bins op1
+	in	op2)
+±	Def(DefAlgebra Universe def cons uns bins) = def
+Æ);
+a(REPEAT µ_tac THEN PC_T1 "hol" rewrite_tac[def_algebra_def, let_def,
+	car_universe_thm]);
 pop_thm()));
 
 =TEX
