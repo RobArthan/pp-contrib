@@ -102,7 +102,7 @@ and classes of algebras, e.g., abelian groups.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK080; issue $Revision: 1.29$%
+Reference: LEMMA1/HOL/WRK080; issue $Revision: 1.1 $%
 % Don't forget to restore the above to dollar Revision: dollar when editing, if necessary.
 % (The makefile uses -kv when it checks documents out). 
 
@@ -193,7 +193,7 @@ set_merge_pcs["'trees", "basic_hol1", "'sets_alg"];
 %%%%
 \newpage
 \section{ALGEBRAS}
-
+\subsection{Basic Definitions}
 We now define a type of algebras, comprising a carrier
 set and an indexed set of operators and a default element of the carrier set.
 Our algebras have a countably infinite set of operators
@@ -262,6 +262,15 @@ of axioms, e.g., equational laws.
 ∞
 
 The universal operation on a class of algebras.
+Note that for any $C$,
+=INLINEFT
+UnivOp C
+=TEX
+\ has the type of the set of operators of an algebra
+whose carrier type comprises functions from algebras to their elements, which we will think of as members of the
+product $\prod K$ of all algebras.
+The universal operation then works pointwise on the product
+but acts as the trivial algebra for factors $K$ that do not belong to $C$.
 
 πHOLCONST
 ‹ €UnivOp› : 'a ALGEBRA SET ≠ Ó ≠ ('a ALGEBRA ≠ 'a) LIST ≠ 'a ALGEBRA ≠ 'a
@@ -270,10 +279,9 @@ The universal operation on a class of algebras.
 ‹ UnivOp C p a = ÃK∑ let L = MkModel C K in Op L p (Map (Ãf∑ f K) a)
 ∞
 
-We can now define the derived operator corresponding to an expression
-tree. Here we are thinking of expressions formed from variables $v_1, v_2\ldots$ over the signature with functions symbols $\mu_{pq}$ of arity $q$ for all
+We can now define the derived operator corresponding to a term. Here we are thinking of terms formed from variables $v_1, v_2\ldots$ over the signature with functions symbols $\mu_{pq}$ of arity $q$ for all
 $(p, q) \in Ó \times Ó$.
-The expression tree is represented by a tree with arbitrary finite
+The term is represented by a tree with arbitrary finite
 branching and with natural number labels on the nodes.
 A node with label $p$ and with $q$ children where $p > 0$ corresponds to
 an application of $\mu_{pq}$ to operands corresponding to the children.
@@ -281,9 +289,11 @@ A node with no children and label $2p$ corresponds to the constant $\mu_{p0}$
 while a node with no children and label $2p+1$ corresponds to the variable $v_p$.
 Variables are represented by natural numbers, and the function $I$ interprets
 them in as elements of the carrier type of the algebra.
-
+=SML
+declare_type_abbrev("TM", [], îÓ TREEÆ);
+=TEX
 πHOLCONST
-‹ €DerivedOp› : (Ó ≠ 'a LIST ≠ 'a) ≠ (Ó ≠ 'a) ≠ Ó TREE ≠ 'a
+‹ €DerivedOp› : (Ó ≠ 'a LIST ≠ 'a) ≠ (Ó ≠ 'a) ≠ TM ≠ 'a
 ˜¸¸¸¸¸¸
 ‹ µop I p cs∑
 ‹	DerivedOp op I (MkTree (p, cs)) =
@@ -300,7 +310,7 @@ We can now define the variety determined by a set of equational laws.
 Each law is represented by the pair of expression trees that the law
 equates.
 =SML
-declare_type_abbrev("EQUATION", [], îÓ TREE ∏ Ó TREEÆ);
+declare_type_abbrev("EQUATION", [], îTM ∏ TMÆ);
 =TEX
 
 πHOLCONST
@@ -334,7 +344,7 @@ that are not in the variety defined by the equations to their default elements:
 ∞
 
 πHOLCONST
-‹ €UnivAlgebra› : (Ó TREE ∏ Ó TREE) SET ≠ ('a ALGEBRA ≠ 'a) ALGEBRA
+‹ €UnivAlgebra› : (TM ∏ TM) SET ≠ ('a ALGEBRA ≠ 'a) ALGEBRA
 ˜¸¸¸¸¸¸
 ‹µeqs∑
 ‹	UnivAlgebra eqs =
@@ -359,17 +369,41 @@ new_conjecture(["univ_algebra_thm"],
 		(UnivAlgebra eqs : ('a ALGEBRA ≠ 'a) ALGEBRA) ç Variety eq
 	§	(µK : 'a ALGEBRA ∑ K ç Variety eqs ¥ K ç Variety eq)Æ);
 =TEX
+\subsection{Some Utility Functions}
+Very many interesting algebras have finite
+signatures with operators of arity 0, 1 or 2.
+We define some functions that are convenient for
+constructing such algebras.
 
-=TEX
-\ThmsII{
-=GFT
-TBD
-=TEX
-}{%
-=GFT
-TBD
-=TEX
-}
+πHOLCONST
+‹ €DefCons› : (Ó ∏ 'a) LIST ≠ (Ó ≠ 'a LIST ≠ 'a) ≠ (Ó ≠ 'a LIST ≠ 'a)
+˜¸¸¸¸¸¸
+‹ (µop∑
+‹	DefCons [] op = op)
+‹ ± (µop pc l∑
+‹	DefCons (Cons pc l) op =
+‹	let	(p, c) = pc
+‹	in	Ãn a∑
+‹		if	n = p ± a = []
+‹		then	c
+‹		else	DefCons l op n a)
+∞
+
+πHOLCONST
+‹ €DefMonops› : (Ó ∏ ('a ≠ 'a)) LIST ≠ (Ó ≠ 'a LIST ≠ 'a) ≠ (Ó ≠ 'a LIST ≠ 'a)
+˜¸¸¸¸¸¸
+‹ (µop∑
+‹	DefMonops [] op = op)
+‹ ± (µop pf l∑
+‹	DefMonops (Cons pf l) op =
+‹	let	(p, f) = pf
+‹	in	Ãn a∑
+‹		if	n = p ± #a = 1
+‹		then	f (Hd a)
+‹		else	DefMonops l op n a)
+∞
+
+
 %%%%
 %%%%
 %%%%
