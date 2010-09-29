@@ -100,7 +100,7 @@ semigroups and groups demonstrating the universal algebra framework.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK080; issue $Revision: 1.5 $%
+Reference: LEMMA1/HOL/WRK080; issue $Revision: 1.6 $%
 % Don't forget to restore the above to dollar Revision: dollar when editing, if necessary.
 % (The makefile uses -kv when it checks documents out). 
 
@@ -378,6 +378,28 @@ declare_infix(310, ".‰S");
 °
 
 
+The following is general material on semigroups that is under development.
+The analogous material will be added to the sections on other kinds of variety presently.
+The $V$ function evaluates an element of the universal semigroup
+in a specific semigroup. I.e., viewing the universal semigroup as the product
+$\prod S$ of all semigroups, $V_S\,S$ is projection onto the factor $S$.
+
+¹HOLCONST
+Ü ÛV‰Sİ : 'a SEMIGROUP ­ 'a UNIV_SEMIGROUP_ELEMENT ­ 'a
+÷üüüüüü
+Ü µS x· V‰S S x = Rep‰USE x (Rep‰S S)
+°
+
+The $K$ function is reminiscent of the $K$ combinator and is used in
+connection with the theorem $k\_lemma$ of \cite{LEMMA1/HOL/WRK080}.
+
+¹HOLCONST
+Ü ÛK‰Sİ : 'a SEMIGROUP ­ 'a UNIV_SEMIGROUP_ELEMENT ­ 'a ALGEBRA ­ 'a
+÷üüüüüü
+Ü µS x· K‰S S x = ÌL· if L = Rep‰S S then V‰S S x else Def L
+°
+
+
 %%%%
 %%%%
 %%%%
@@ -449,7 +471,7 @@ pop_thm()));
 °
 
 
-The elements of the universal monoio will have the following type:
+The elements of the universal monoid will have the following type:
 
 =SML
 new_type_defn(["UNIV_MONOID_ELEMENT"], "UNIV_MONOID_ELEMENT", ["'a"], (
@@ -773,6 +795,8 @@ val Ûabs_use_defİ = get_spec¬Abs‰USE®;
 val Ûrep_use_defİ = get_spec¬Rep‰USE®;
 val Ûuniv_semigroup_defİ = get_spec¬UnivSemigroup®;
 val Ûuniv_semigroup_op_defİ = get_spec¬$.‰S®;
+val Ûv_s_defİ = get_spec¬V‰S®;
+val Ûk_s_defİ = get_spec¬K‰S®;
 =TEX
 
 What follows is ripe for automation. It is a forward proof from
@@ -1361,34 +1385,56 @@ val Ûrep_use_thm1İ = all_µ_intro(
 
 =SML
 
-
-(*
-val Ûsemigroup_k_lemmaİ = save_thm( "semigroup_k_lemma", (
-set_goal([], ¬µS x y· 
-	Rep‰USE (x .‰S y) (Rep‰S S) =
-	Rep‰USE (Abs‰USE (ÌL· if L = Rep‰S S then Rep‰USE x (Rep‰S S) else Def L) .‰S
-			Abs‰USE (ÌL· if L = Rep‰S S then Rep‰USE y (Rep‰S S) else Def L)) (Rep‰S S)
-®);
+val Ûk_s_safe_thmİ = save_thm( "k_s_safe_thm", (
+set_goal([], ¬µS x· K‰S S x  Safe SemigroupLaws®);
 a(REPEAT strip_tac);
-a(rewrite_tac[univ_semigroup_op_def, univ_semigroup_def, semigroup_thm3,
-	car_universe_thm, map_def, rep_use_thm1]);
-a(conv_tac(LEFT_C (once_rewrite_conv[k_lemma])));
-a(rewrite_tac[map_def]);
-a(LEMMA_T¬µz· Rep‰USE (Abs‰USE (Ì L· if L = Rep‰S S then Rep‰USE z (Rep‰S S) else Def L)) = (ÌL· if L = Rep‰S S then Rep‰USE z (Rep‰S S) else Def L)® rewrite_thm_tac);
-a(REPEAT strip_tac THEN rewrite_tac[]);
-a(LEMMA_T ¬(ÌL·if L = Rep‰S S then Rep‰USE z (Rep‰S S) else Def L)  Safe SemigroupLaws®
-	(fn th => rewrite_tac[pure_rewrite_rule[rep_use_def] th]));
-a(rewrite_tac[safe_def] THEN strip_tac);
+a(rewrite_tac[safe_def, k_s_def] THEN strip_tac);
 a(cases_tac ¬K = Rep‰S S® THEN asm_rewrite_tac[car_def, rep_s_def]
 	THEN REPEAT strip_tac);
-a(LEMMA_T ¬Rep‰USE z  Safe SemigroupLaws® ante_tac
+a(rewrite_tac[v_s_def]);
+a(LEMMA_T ¬Rep‰USE x  Safe SemigroupLaws® ante_tac
 	THEN1 rewrite_tac[rep_use_def]);
 a(rewrite_tac[safe_def]);
 a(STRIP_T (ante_tac o µ_elim¬Rep‰S S®));
 a(rewrite_tac[rep_s_def]);
+pop_thm()));
 
-rep_s_def;pop_thm()));
-*)
+val Ûrep_use_abs_use_k_s_thmİ = save_thm ("rep_use_abs_use_k_s_thm",
+	pure_rewrite_rule[rep_use_def] k_s_safe_thm);
+=TEX
+%%%%
+%%%%
+
+=SML
+
+val Ûsemigroup_k_lemmaİ = save_thm( "semigroup_k_lemma", (
+set_goal([], ¬µS x y· 
+	V‰S S (x .‰S y) =
+	V‰S S (Abs‰USE (K‰S S x) .‰S Abs‰USE (K‰S S y))
+®);
+a(REPEAT strip_tac);
+a(rewrite_tac[univ_semigroup_op_def, univ_semigroup_def, semigroup_thm3,
+	v_s_def, car_universe_thm, map_def, rep_use_thm1]);
+a(conv_tac(LEFT_C (once_rewrite_conv[k_lemma])));
+a(rewrite_tac[map_def, rep_use_abs_use_k_s_thm]);
+a(rewrite_tac[k_s_def, v_s_def, car_op_def_univ_algebra_thm, univ_op_def, let_def, map_def]);
+pop_thm()));
+
+
+=TEX
+%%%%
+%%%%
+
+=SML
+
+val Ûabs_use_k_s_v_s_thmİ = save_thm( "abs_use_k_s_v_s_thm", (
+set_goal([], ¬µS x y· 
+	V‰S S (Abs‰USE (K‰S S (x .‰S y))) = V‰S S (x .‰S y)
+®);
+a(REPEAT strip_tac);
+a(rewrite_tac[v_s_def, rep_use_abs_use_k_s_thm]);
+a(rewrite_tac[k_s_def, v_s_def]);
+pop_thm()));
 
 =TEX
 %%%%
@@ -1396,14 +1442,14 @@ rep_s_def;pop_thm()));
 TBD: a conditional derived law about semigroups.
 =SML
 (*
-val Ûdual_monoid_derived_law_eg_thmİ = save_thm( "dual_monoid_derived_law_eg_thm", (
+val Ûabelian_semigroup_derived_law_eg_thmİ = save_thm( "abelian_semigroup_derived_law_eg_thm", (
 set_goal([], ¬µS x y z· 
-	(µx y· Rep‰USE (x .‰S y) (Rep‰S S) = Rep‰USE (y .‰S x) (Rep‰S S))
-´	Rep‰USE (x .‰S y .‰S z) (Rep‰S S) = Rep‰USE (z .‰S y .‰S z) (Rep‰S S)
+	(µx y· V‰S S (x .‰S y) = V‰S S (y .‰S x))
+´	V‰S S (x .‰S y .‰S z) = V‰S S (z .‰S y .‰S z)
 ®);
 a(REPEAT strip_tac);
-rewrite_conv[univ_semigroup_op_def, univ_semigroup_def]¬Rep‰USE (x .‰S y) S = Rep‰USE (Abs‰USE (ÌL·  Rep‰USE x S) .‰S Abs‰USE (ÌL·  Rep‰USE y S)) S®;
-type_of ¬Rep‰USE x®;
+a(once_rewrite_tac[
+
 pop_thm()));
 *)
 =TEX
