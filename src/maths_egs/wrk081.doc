@@ -100,7 +100,7 @@ semigroups and groups demonstrating the universal algebra framework.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK080; issue $Revision: 1.4 $%
+Reference: LEMMA1/HOL/WRK080; issue $Revision: 1.5 $%
 % Don't forget to restore the above to dollar Revision: dollar when editing, if necessary.
 % (The makefile uses -kv when it checks documents out). 
 
@@ -208,6 +208,58 @@ Z	& integers		& German: {\it zahlen} (Already extant in {\ProductHOL}) \\\hline
 \label{tags}
 \end{table}
 
+The plan is to have a systematic way of defining a type representing
+any variety of interest. Each variety is defined by a set of equational
+laws, which will typically be finite. So let {\em widget} name the members
+of a variety defined by a finite set of laws.
+(so widget is ``group'' or ``ring'' etc.).
+The specific
+lists, trees and $\lambda$-abstractions that are involved in defining
+widgets using the framework of \cite{LEMMA1/HOL/WRK080} are all
+trivially simplified by rewriting. We can specialise
+the so-called universal algebra of \cite{LEMMA1/HOL/WRK080} to produce
+what we call {\em the universal widget}, which is the polymorphic
+object that can be viewed as the product of all widgets.
+In this universal widgets we can reason about equational facts that
+are true in all widgets. By defining nice syntax for the operators (specifically
+infix syntax for binary operators), we can work fairly naturally in the universal widget.
+
+Thus, having defined
+=INLINEFT
+.‰S
+=TEX
+\ as the multiplication in the universal semigroup, we can state and
+prove facts such as the following:
+=GFT
+µa b c d· (a .‰S b) .‰S (c .‰S d) = a.‰S b .‰S c .‰S d
+=TEX
+.
+Reasoning that is conditional on special properties,
+e.g., commutativity, can also be formulated. For example, we may write:
+=GFT
+µS x y z· 
+	(µx y· Rep‰USE (x .‰S y) S = Rep‰USE (y .‰S x) S)
+´	Rep‰USE (x .‰S y .‰S z) S = Rep‰USE (z .‰S y .‰S z) S
+=TEX
+.
+
+We can also define what the Coq community call ``big operators'': generalised
+sum operators. Our curent approach to this is to define the operators
+at the general level and then to specialise them to particular instances.
+(See the definition of the operators
+=INLINEFT
+‰U
+=TEX
+\ and
+=INLINEFT
+‰N
+=TEX
+\ below and the theorems about them in the theory listings.
+
+In the present document we present this approach in action to three
+varieties: semigroups, monoids, and what we call double monoids, i.e., sets
+like rings or lattices equipped with two monoid operations.
+ 
 \section{SEMIGROUPS}
 
 First of all, we must give the the ML commands to  introduce the new theory ``semigroups'' as a child of the theory ``algebras'' of universal algebras.
@@ -1258,6 +1310,7 @@ a(list_induction_tac¬xs® THEN rewrite_tac[Ğ_u_def, append_def]
 	THEN ALL_FC_T asm_rewrite_tac monoid_laws_bc_thms);
 pop_thm()));
 
+
 =TEX
 %%%%
 %%%%
@@ -1290,15 +1343,67 @@ pop_thm()));
 =TEX
 %%%%
 %%%%
+
+=SML
+
+val Ûrep_use_thm1İ = all_µ_intro(
+	pc_rule1 "predicates" rewrite_rule[rep_use_def]
+		(rewrite_rule[let_def, derived_op_def, map_def]
+		(list_µ_elim[¬SemigroupLaws®,
+		¬Ìv·  Rep‰USE (if v = 0 then x else y)®,
+		¬let	v i = MkTree(2*i + 1, [])
+		 and	x oo y = MkTree(p, [x; y])
+		 in	(v 0 oo v 1)®] derived_op_safe_thm)));
+
+=TEX
+%%%%
+%%%%
+
+=SML
+
+
+(*
+val Ûsemigroup_k_lemmaİ = save_thm( "semigroup_k_lemma", (
+set_goal([], ¬µS x y· 
+	Rep‰USE (x .‰S y) (Rep‰S S) =
+	Rep‰USE (Abs‰USE (ÌL· if L = Rep‰S S then Rep‰USE x (Rep‰S S) else Def L) .‰S
+			Abs‰USE (ÌL· if L = Rep‰S S then Rep‰USE y (Rep‰S S) else Def L)) (Rep‰S S)
+®);
+a(REPEAT strip_tac);
+a(rewrite_tac[univ_semigroup_op_def, univ_semigroup_def, semigroup_thm3,
+	car_universe_thm, map_def, rep_use_thm1]);
+a(conv_tac(LEFT_C (once_rewrite_conv[k_lemma])));
+a(rewrite_tac[map_def]);
+a(LEMMA_T¬µz· Rep‰USE (Abs‰USE (Ì L· if L = Rep‰S S then Rep‰USE z (Rep‰S S) else Def L)) = (ÌL· if L = Rep‰S S then Rep‰USE z (Rep‰S S) else Def L)® rewrite_thm_tac);
+a(REPEAT strip_tac THEN rewrite_tac[]);
+a(LEMMA_T ¬(ÌL·if L = Rep‰S S then Rep‰USE z (Rep‰S S) else Def L)  Safe SemigroupLaws®
+	(fn th => rewrite_tac[pure_rewrite_rule[rep_use_def] th]));
+a(rewrite_tac[safe_def] THEN strip_tac);
+a(cases_tac ¬K = Rep‰S S® THEN asm_rewrite_tac[car_def, rep_s_def]
+	THEN REPEAT strip_tac);
+a(LEMMA_T ¬Rep‰USE z  Safe SemigroupLaws® ante_tac
+	THEN1 rewrite_tac[rep_use_def]);
+a(rewrite_tac[safe_def]);
+a(STRIP_T (ante_tac o µ_elim¬Rep‰S S®));
+a(rewrite_tac[rep_s_def]);
+
+rep_s_def;pop_thm()));
+*)
+
+=TEX
+%%%%
+%%%%
 TBD: a conditional derived law about semigroups.
 =SML
 (*
 val Ûdual_monoid_derived_law_eg_thmİ = save_thm( "dual_monoid_derived_law_eg_thm", (
 set_goal([], ¬µS x y z· 
-	(µx y· Rep‰USE (x .‰S y) S = Rep‰USE (y .‰S x) S)
-´	Rep‰USE (x .‰S y .‰S z) S = Rep‰USE (z .‰S y .‰S z) S
+	(µx y· Rep‰USE (x .‰S y) (Rep‰S S) = Rep‰USE (y .‰S x) (Rep‰S S))
+´	Rep‰USE (x .‰S y .‰S z) (Rep‰S S) = Rep‰USE (z .‰S y .‰S z) (Rep‰S S)
 ®);
-
+a(REPEAT strip_tac);
+rewrite_conv[univ_semigroup_op_def, univ_semigroup_def]¬Rep‰USE (x .‰S y) S = Rep‰USE (Abs‰USE (ÌL·  Rep‰USE x S) .‰S Abs‰USE (ÌL·  Rep‰USE y S)) S®;
+type_of ¬Rep‰USE x®;
 pop_thm()));
 *)
 =TEX
