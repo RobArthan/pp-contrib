@@ -100,7 +100,7 @@ semigroups and groups demonstrating the universal algebra framework.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK080; issue $Revision: 1.6 $%
+Reference: LEMMA1/HOL/WRK080; issue $Revision: 1.7 $%
 % Don't forget to restore the above to dollar Revision: dollar when editing, if necessary.
 % (The makefile uses -kv when it checks documents out). 
 
@@ -168,7 +168,7 @@ that can be viewed  as the product of all the varieties in
 the class.
 Since it is pleasant to reuse operator symbols in different
 contexts (e.g., $+$ in rings, fields and polynomial rings), we adopt the conventions of table \ref{tags} for single letter tags for some well-known varieties.
-So addition in the universal ring will be $+âA$ while addition in the universal field will $+âF$.
+So addition in the universal ring will be $+âA$ while addition in the universal field will be $+âF$.
 The tags are also used to distinguish the representation and abstraction functions for the subtypes.
 This will probably be extended later to allocate two letter tags for other varieties.
 
@@ -211,10 +211,8 @@ Z	& integers		& German: {\it zahlen} (Already extant in {\ProductHOL}) \\\hline
 The plan is to have a systematic way of defining a type representing
 any variety of interest. Each variety is defined by a set of equational
 laws, which will typically be finite. So let {\em widget} name the members
-of a variety defined by a finite set of laws.
-(so widget is ``group'' or ``ring'' etc.).
-The specific
-lists, trees and $\lambda$-abstractions that are involved in defining
+of a variety defined by a finite set of laws (so widget is ``group'' or ``ring'' etc.).
+The specific lists, trees and $\lambda$-abstractions that are involved in defining
 widgets using the framework of \cite{LEMMA1/HOL/WRK080} are all
 trivially simplified by rewriting. We can specialise
 the so-called universal algebra of \cite{LEMMA1/HOL/WRK080} to produce
@@ -241,10 +239,17 @@ e.g., commutativity, can also be formulated. For example, we may write:
 	(µx y∑ RepâUSE (x .âS y) S = RepâUSE (y .âS x) S)
 ¥	RepâUSE (x .âS y .âS z) S = RepâUSE (z .âS y .âS z) S
 =TEX
-.
+. In fact we introduce an operator $V_S$ which gives the value at a given
+semigroup of an element of the universal semigroup. So the above may be written:
+=GFT
+µS x y z∑ 
+	(µx y∑ VâS S (x .âS y) = VâS S (y .âS x))
+¥	VâS S (x .âS y .âS z) = VâS S (z .âS y .âS x)
+=TEX
 
+=TEX
 We can also define what the Coq community call ``big operators'': generalised
-sum operators. Our curent approach to this is to define the operators
+sum operators. Our current approach to this is to define the operators
 at the general level and then to specialise them to particular instances.
 (See the definition of the operators
 =INLINEFT
@@ -280,7 +285,8 @@ set_merge_pcs["basic_hol1", "'sets_alg"];
 %%%%
 
 The following function gives the representation of the equation that
-the $p$-th binary operator $\mu_{p2}$ in an algebra is associative (see universal algebra document and note that at the leaves of an expression
+the $p$-th binary operator $\mu_{p2}$ in an algebra is associative (see \cite{LEMMA1/HOL/WRK080}
+and note that at the leaves of an expression
 tree the odd-numbered nodes are the variables and the even-numbered nodes are the constant symbols).
 
 =SML
@@ -329,7 +335,7 @@ pop_thm()));
 The elements of the universal semigroup will have the following type:
 
 =SML
-new_type_defn(["UNIV_SEMIGROUP_ELEMENT"], "UNIV_SEMIGROUP_ELEMENT", ["'a"], (
+new_type_defn(["USE"], "USE", ["'a"], (
 set_goal([], ¨∂f∑ (Ãg∑ g ç Safe SemigroupLaws) f
 Æ);
 a(rewrite_tac[variety_type_lemmas]);
@@ -339,8 +345,8 @@ pop_thm()));
 The following are the abstraction and representation functions for the elements of the universal semigroup as a subtype of the carrier type of the universal algebra for the semigroup laws.
 
 πHOLCONST
-‹ €RepâUSE›	: 'a UNIV_SEMIGROUP_ELEMENT ≠ ('a ALGEBRA ≠ 'a);
-‹ €AbsâUSE› 	: ('a ALGEBRA ≠ 'a) ≠ 'a UNIV_SEMIGROUP_ELEMENT
+‹ €RepâUSE›	: 'a USE ≠ ('a ALGEBRA ≠ 'a);
+‹ €AbsâUSE› 	: ('a ALGEBRA ≠ 'a) ≠ 'a USE
 ˜¸¸¸¸¸¸
 ‹(µx∑	AbsâUSE(RepâUSE x) = x) ±
 ‹(µf∑	f ç Safe SemigroupLaws § RepâUSE(AbsâUSE f) = f)
@@ -349,7 +355,7 @@ The following are the abstraction and representation functions for the elements 
 Now we can define the universal semigroup:
 
 πHOLCONST
-‹ €UnivSemigroup› : 'a UNIV_SEMIGROUP_ELEMENT SEMIGROUP
+‹ €UnivSemigroup› : 'a USE SEMIGROUP
 ˜¸¸¸¸¸¸
 ‹ UnivSemigroup =
 ‹ AbsâS (MkAlgebra
@@ -369,10 +375,7 @@ declare_infix(310, ".âS");
 =TEX
 
 πHOLCONST
-‹ €$.âS› :
-‹	'a UNIV_SEMIGROUP_ELEMENT
-‹ ≠	'a UNIV_SEMIGROUP_ELEMENT
-‹ ≠	'a UNIV_SEMIGROUP_ELEMENT
+‹ €$.âS› : 'a USE ≠ 'a USE ≠ 'a USE
 ˜¸¸¸¸¸¸
 ‹ µ x y∑ x .âS y = Op (RepâS UnivSemigroup) 0 [x; y]
 ∞
@@ -385,7 +388,7 @@ in a specific semigroup. I.e., viewing the universal semigroup as the product
 $\prod S$ of all semigroups, $V_S\,S$ is projection onto the factor $S$.
 
 πHOLCONST
-‹ €VâS› : 'a SEMIGROUP ≠ 'a UNIV_SEMIGROUP_ELEMENT ≠ 'a
+‹ €VâS› : 'a SEMIGROUP ≠ 'a USE ≠ 'a
 ˜¸¸¸¸¸¸
 ‹ µS x∑ VâS S x = RepâUSE x (RepâS S)
 ∞
@@ -394,7 +397,7 @@ The $K$ function is reminiscent of the $K$ combinator and is used in
 connection with the theorem $k\_lemma$ of \cite{LEMMA1/HOL/WRK080}.
 
 πHOLCONST
-‹ €KâS› : 'a SEMIGROUP ≠ 'a UNIV_SEMIGROUP_ELEMENT ≠ 'a ALGEBRA ≠ 'a
+‹ €KâS› : 'a SEMIGROUP ≠ 'a USE ≠ 'a ALGEBRA ≠ 'a
 ˜¸¸¸¸¸¸
 ‹ µS x∑ KâS S x = ÃL∑ if L = RepâS S then VâS S x else Def L
 ∞
@@ -474,7 +477,7 @@ pop_thm()));
 The elements of the universal monoid will have the following type:
 
 =SML
-new_type_defn(["UNIV_MONOID_ELEMENT"], "UNIV_MONOID_ELEMENT", ["'a"], (
+new_type_defn(["UME"], "UME", ["'a"], (
 set_goal([], ¨∂f∑ (Ãg∑ g ç Safe MonoidLaws) f
 Æ);
 a(rewrite_tac[variety_type_lemmas]);
@@ -484,8 +487,8 @@ pop_thm()));
 The following are the abstraction and representation functions for the elements of the universal monoid as a subtype of the carrier type of the universal algebra for the monoid laws.
 
 πHOLCONST
-‹ €RepâUME›	: 'a UNIV_MONOID_ELEMENT ≠ ('a ALGEBRA ≠ 'a);
-‹ €AbsâUME› 	: ('a ALGEBRA ≠ 'a) ≠ 'a UNIV_MONOID_ELEMENT
+‹ €RepâUME›	: 'a UME ≠ ('a ALGEBRA ≠ 'a);
+‹ €AbsâUME› 	: ('a ALGEBRA ≠ 'a) ≠ 'a UME
 ˜¸¸¸¸¸¸
 ‹(µx∑	AbsâUME(RepâUME x) = x) ±
 ‹(µf∑	f ç Safe MonoidLaws § RepâUME(AbsâUME f) = f)
@@ -494,7 +497,7 @@ The following are the abstraction and representation functions for the elements 
 Now we can define the universal monoid:
 
 πHOLCONST
-‹ €UnivMonoid› : 'a UNIV_MONOID_ELEMENT MONOID
+‹ €UnivMonoid› : 'a UME MONOID
 ˜¸¸¸¸¸¸
 ‹ UnivMonoid =
 ‹ AbsâM (MkAlgebra
@@ -511,10 +514,7 @@ declare_infix(310, ".âM");
 =TEX
 
 πHOLCONST
-‹ €$.âM› :
-‹	'a UNIV_MONOID_ELEMENT
-‹ ≠	'a UNIV_MONOID_ELEMENT
-‹ ≠	'a UNIV_MONOID_ELEMENT
+‹ €$.âM› : 'a UME‹ ≠ 'a UME ≠ 'a UME
 ˜¸¸¸¸¸¸
 ‹ µ x y∑ x .âM y = Op (RepâM UnivMonoid) 0 [x; y]
 ∞
@@ -522,8 +522,7 @@ declare_infix(310, ".âM");
 and the unit element for the universal monoid:
 
 πHOLCONST
-‹ €$1âM› :
-‹	'a UNIV_MONOID_ELEMENT
+‹ €$1âM› : 'a UME
 ˜¸¸¸¸¸¸
 ‹ 1âM = Op (RepâM UnivMonoid) 0 []
 ∞
@@ -588,7 +587,7 @@ pop_thm()));
 The elements of the universal monoio will have the following type:
 
 =SML
-new_type_defn(["UNIV_DOUBLE_MONOID_ELEMENT"], "UNIV_DOUBLE_MONOID_ELEMENT", ["'a"], (
+new_type_defn(["UDME"], "UDME", ["'a"], (
 set_goal([], ¨∂f∑ (Ãg∑ g ç Safe DoubleMonoidLaws) f
 Æ);
 a(rewrite_tac[variety_type_lemmas]);
@@ -598,8 +597,8 @@ pop_thm()));
 The following are the abstraction and representation functions for the elements of the universal monoid as a subtype of the carrier type of the universal algebra for the monoid laws.
 
 πHOLCONST
-‹ €RepâUDME›	: 'a UNIV_DOUBLE_MONOID_ELEMENT ≠ ('a ALGEBRA ≠ 'a);
-‹ €AbsâUDME› 	: ('a ALGEBRA ≠ 'a) ≠ 'a UNIV_DOUBLE_MONOID_ELEMENT
+‹ €RepâUDME›	: 'a UDME ≠ ('a ALGEBRA ≠ 'a);
+‹ €AbsâUDME› 	: ('a ALGEBRA ≠ 'a) ≠ 'a UDME
 ˜¸¸¸¸¸¸
 ‹(µx∑	AbsâUDME(RepâUDME x) = x) ±
 ‹(µf∑	f ç Safe DoubleMonoidLaws § RepâUDME(AbsâUDME f) = f)
@@ -608,7 +607,7 @@ The following are the abstraction and representation functions for the elements 
 Now we can define the universal monoid:
 
 πHOLCONST
-‹ €UnivDoubleMonoid› : 'a UNIV_DOUBLE_MONOID_ELEMENT DOUBLE_MONOID
+‹ €UnivDoubleMonoid› : 'a UDME DOUBLE_MONOID
 ˜¸¸¸¸¸¸
 ‹ UnivDoubleMonoid =
 ‹ AbsâDM (MkAlgebra
@@ -626,10 +625,7 @@ declare_infix(310, ".âDM1");
 =TEX
 
 πHOLCONST
-‹ €$.âDM0› €$.âDM1› :
-‹	'a UNIV_DOUBLE_MONOID_ELEMENT
-‹ ≠	'a UNIV_DOUBLE_MONOID_ELEMENT
-‹ ≠	'a UNIV_DOUBLE_MONOID_ELEMENT
+‹ €$.âDM0› €$.âDM1› : 'a UDME ≠ 'a UDME ≠ 'a UDME
 ˜¸¸¸¸¸¸
 ‹ µ x y∑
 ‹	x .âDM0 y = Op (RepâDM UnivDoubleMonoid) 0 [x; y]
@@ -639,8 +635,7 @@ declare_infix(310, ".âDM1");
 and the unit elements for the universal double monoid:
 
 πHOLCONST
-‹ €$1âDM0› €1âDM1›:
-‹	'a UNIV_DOUBLE_MONOID_ELEMENT
+‹ €$1âDM0› €1âDM1›: 'a UDME
 ˜¸¸¸¸¸¸
 ‹	1âDM0 = Op (RepâDM UnivDoubleMonoid) 0 []
 ‹ ±	1âDM1 = Op (RepâDM UnivDoubleMonoid) 1 []
@@ -710,6 +705,11 @@ Instantiating the generic product to multiplication of natural numbers:
 ˜¸¸¸¸¸¸
 ‹ êâN = êâU 0 0 (RepâM NatMult)
 ∞
+
+See the theory listing for theorems, including a fact about natural number products derived from a general fact
+about the generic product, a general property of semigroups and a property of semigroups conditional on commutativity.
+(The approach of the last theorem, in particular,
+is somewhat ad hoc and more support could perhaps be given for this kind of work.)
 
 %%%%
 %%%%
@@ -781,12 +781,12 @@ a (∂_tac ¨(rep, abs)Æ
 pop_thm());
 val €abs_s_def› = get_spec¨AbsâSÆ;
 val €rep_s_def› = get_spec¨RepâSÆ;
-val €univ_semigroup_element_def› = get_defn "-" "UNIV_SEMIGROUP_ELEMENT";
+val €use_def› = get_defn "-" "USE";
 =TEX
 =SML
 save_consistency_thm ¨AbsâUSEÆ (
 push_consistency_goal ¨AbsâUSEÆ;
-a (strip_asm_tac (rewrite_rule[let_def](simple_¥_match_mp_rule type_lemmas_thm univ_semigroup_element_def)));
+a (strip_asm_tac (rewrite_rule[let_def](simple_¥_match_mp_rule type_lemmas_thm use_def)));
 a (∂_tac ¨(rep, abs)Æ
 	THEN asm_rewrite_tac[]
 	THEN REPEAT strip_tac);
@@ -811,8 +811,8 @@ val semigroup_thm1 = rewrite_rule[]
 	(conv_rule
 	(LEFT_C (rewrite_conv[abs_s_def, rep_s_def, abs_use_def, rep_use_def]))
 	(list_µ_elim[
-		¨AbsâS : 'a UNIV_SEMIGROUP_ELEMENT ALGEBRA ≠ 'a UNIV_SEMIGROUP_ELEMENT SEMIGROUPÆ,
-		¨RepâS : 'a UNIV_SEMIGROUP_ELEMENT SEMIGROUP ≠ 'a UNIV_SEMIGROUP_ELEMENT ALGEBRAÆ] 	(list_µ_elim[
+		¨AbsâS : 'a USE ALGEBRA ≠ 'a USE SEMIGROUPÆ,
+		¨RepâS : 'a USE SEMIGROUP ≠ 'a USE ALGEBRAÆ] 	(list_µ_elim[
 			¨SemigroupLawsÆ,
 			¨AbsâUSEÆ,
 			¨RepâUSEÆ]variety_laws_lemma)));
@@ -858,7 +858,7 @@ the $v_n$ for small $n$ as distinct variables.
 val semigroup_thm6 = all_µ_intro(rewrite_rule[]
 	(µ_elim¨Ãv∑
 		if	v = 0
-		then	x : 'a UNIV_SEMIGROUP_ELEMENT
+		then	x : 'a USE
 		else if	v = 1
 		then	y
 		else	zÆ semigroup_thm5));
@@ -907,12 +907,12 @@ a (∂_tac ¨(rep, abs)Æ
 pop_thm());
 val €abs_m_def› = get_spec¨AbsâMÆ;
 val €rep_m_def› = get_spec¨RepâMÆ;
-val €univ_monoid_element_def› = get_defn "-" "UNIV_MONOID_ELEMENT";
+val €ume_def› = get_defn "-" "UME";
 =TEX
 =SML
 save_consistency_thm ¨AbsâUMEÆ (
 push_consistency_goal ¨AbsâUMEÆ;
-a (strip_asm_tac (rewrite_rule[let_def](simple_¥_match_mp_rule type_lemmas_thm univ_monoid_element_def)));
+a (strip_asm_tac (rewrite_rule[let_def](simple_¥_match_mp_rule type_lemmas_thm ume_def)));
 a (∂_tac ¨(rep, abs)Æ
 	THEN asm_rewrite_tac[]
 	THEN REPEAT strip_tac);
@@ -933,8 +933,8 @@ val monoid_thm1 = rewrite_rule[]
 	(conv_rule
 	(LEFT_C (rewrite_conv[abs_m_def, rep_m_def, abs_ume_def, rep_ume_def]))
 	(list_µ_elim[
-		¨AbsâM : 'a UNIV_MONOID_ELEMENT ALGEBRA ≠ 'a UNIV_MONOID_ELEMENT MONOIDÆ,
-		¨RepâM : 'a UNIV_MONOID_ELEMENT MONOID ≠ 'a UNIV_MONOID_ELEMENT ALGEBRAÆ] 	(list_µ_elim[
+		¨AbsâM : 'a UME ALGEBRA ≠ 'a UME MONOIDÆ,
+		¨RepâM : 'a UME MONOID ≠ 'a UME ALGEBRAÆ] 	(list_µ_elim[
 			¨MonoidLawsÆ,
 			¨AbsâUMEÆ,
 			¨RepâUMEÆ]variety_laws_lemma)));
@@ -1009,7 +1009,7 @@ val monoid_thms7 = map
 		map_def]
 		(µ_elim¨Ãv∑
 			if	v = 0
-			then	x : 'a UNIV_MONOID_ELEMENT
+			then	x : 'a UME
 			else if	v = 1
 			then	y
 			else	zÆ thm))) monoid_thms6;
@@ -1069,12 +1069,12 @@ a (∂_tac ¨(rep, abs)Æ
 pop_thm());
 val €abs_dm_def› = get_spec¨AbsâDMÆ;
 val €rep_dm_def› = get_spec¨RepâDMÆ;
-val €univ_double_monoid_element_def› = get_defn "-" "UNIV_DOUBLE_MONOID_ELEMENT";
+val €udme_def› = get_defn "-" "UDME";
 =TEX
 =SML
 save_consistency_thm ¨AbsâUDMEÆ (
 push_consistency_goal ¨AbsâUDMEÆ;
-a (strip_asm_tac (rewrite_rule[let_def](simple_¥_match_mp_rule type_lemmas_thm univ_double_monoid_element_def)));
+a (strip_asm_tac (rewrite_rule[let_def](simple_¥_match_mp_rule type_lemmas_thm udme_def)));
 a (∂_tac ¨(rep, abs)Æ
 	THEN asm_rewrite_tac[]
 	THEN REPEAT strip_tac);
@@ -1096,8 +1096,8 @@ val double_monoid_thm1 = rewrite_rule[]
 	(conv_rule
 	(LEFT_C (rewrite_conv[abs_dm_def, rep_dm_def, abs_udme_def, rep_udme_def]))
 	(list_µ_elim[
-		¨AbsâDM : 'a UNIV_DOUBLE_MONOID_ELEMENT ALGEBRA ≠ 'a UNIV_DOUBLE_MONOID_ELEMENT DOUBLE_MONOIDÆ,
-		¨RepâDM : 'a UNIV_DOUBLE_MONOID_ELEMENT DOUBLE_MONOID ≠ 'a UNIV_DOUBLE_MONOID_ELEMENT ALGEBRAÆ] 	(list_µ_elim[
+		¨AbsâDM : 'a UDME ALGEBRA ≠ 'a UDME DOUBLE_MONOIDÆ,
+		¨RepâDM : 'a UDME DOUBLE_MONOID ≠ 'a UDME ALGEBRAÆ] 	(list_µ_elim[
 			¨DoubleMonoidLawsÆ,
 			¨AbsâUDMEÆ,
 			¨RepâUDMEÆ]variety_laws_lemma)));
@@ -1153,7 +1153,7 @@ val double_monoid_thms7 = map
 		map_def]
 		(µ_elim¨Ãv∑
 			if	v = 0
-			then	x : 'a UNIV_DOUBLE_MONOID_ELEMENT
+			then	x : 'a UDME
 			else if	v = 1
 			then	y
 			else	zÆ thm))) double_monoid_thms6;
@@ -1420,38 +1420,25 @@ a(rewrite_tac[map_def, rep_use_abs_use_k_s_thm]);
 a(rewrite_tac[k_s_def, v_s_def, car_op_def_univ_algebra_thm, univ_op_def, let_def, map_def]);
 pop_thm()));
 
-
-=TEX
-%%%%
-%%%%
-
-=SML
-
-val €abs_use_k_s_v_s_thm› = save_thm( "abs_use_k_s_v_s_thm", (
-set_goal([], ¨µS x y∑ 
-	VâS S (AbsâUSE (KâS S (x .âS y))) = VâS S (x .âS y)
-Æ);
-a(REPEAT strip_tac);
-a(rewrite_tac[v_s_def, rep_use_abs_use_k_s_thm]);
-a(rewrite_tac[k_s_def, v_s_def]);
-pop_thm()));
-
 =TEX
 %%%%
 %%%%
 TBD: a conditional derived law about semigroups.
 =SML
-(*
+
 val €abelian_semigroup_derived_law_eg_thm› = save_thm( "abelian_semigroup_derived_law_eg_thm", (
 set_goal([], ¨µS x y z∑ 
 	(µx y∑ VâS S (x .âS y) = VâS S (y .âS x))
-¥	VâS S (x .âS y .âS z) = VâS S (z .âS y .âS z)
+¥	VâS S (x .âS y .âS z) = VâS S (z .âS y .âS x)
 Æ);
 a(REPEAT strip_tac);
-a(once_rewrite_tac[
-
+a(TOP_ASM_T (rewrite_thm_tac o µ_elim¨xÆ));
+a(rewrite_tac[conv_rule (ONCE_MAP_C eq_sym_conv) univ_semigroup_assoc_thm]);
+a(once_rewrite_tac[semigroup_k_lemma]);
+a(rewrite_tac[k_s_def]);
+a(TOP_ASM_T (rewrite_thm_tac o µ_elim¨yÆ));
 pop_thm()));
-*)
+
 =TEX
 %%%%
 =TEX

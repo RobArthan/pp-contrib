@@ -102,7 +102,7 @@ and classes of algebras, e.g., abelian groups.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK080; issue $Revision: 1.5 $%
+Reference: LEMMA1/HOL/WRK080; issue $Revision: 1.6 $%
 % Don't forget to restore the above to dollar Revision: dollar when editing, if necessary.
 % (The makefile uses -kv when it checks documents out). 
 
@@ -162,7 +162,12 @@ Perhaps the most striking feature of all these approaches is that none of them b
 to anything that is used by practicing pure mathematicians.
 
 It should be noted that while computation and reasoning often go hand-in-hand, in the present
-context they impose different requirements.
+context they impose different requirements. Specifically, computationally it is not unnatural
+to take an object-oriented view of algebraic varieties, so that a ring, for example, is an
+abelian group with additional computational methods. However, in doing reasoning, actually removing
+the unwanted structure is often not necessary and would impose a burden, we therefore take the view
+that a group can have arbitrary additional finitary algebraic structure.
+
 
 
 This document is a {\Product} literate script. It contains all the metalanguage (ML) commands required to create several theories, populate them with the formal definitions and prove and record all the theorems.
@@ -195,13 +200,13 @@ set_merge_pcs["'trees", "basic_hol1", "'sets_alg"];
 \section{ALGEBRAS}
 \subsection{Basic Definitions}
 We now define a type of algebras, comprising a carrier
-set and an indexed set of operators and a default element of the carrier set.
+set, an indexed set of operators and a default element of the carrier set.
 Our algebras have a countably infinite set of operators
-of every arity. Say $\mu_{pq}$ for $p, q = 0, 1, \ldots$,
+of every arity, say $\mu_{pq}$ for all $(p, q) \in Ó \times Ó$,
 with $\mu_{pq}$ having arity $q$.
-So, for example, the $\mu_{p0}$ will, by this convention, be constant functions.
+So, for example, the $\mu_{p0}$ will, by this convention, be constants.
 We collect the $\mu_{pq}$ for fixed $p$ into a single operation on lists, $q$ being determined from the length of the supplied operand.
-The default element is needed when we come to define the notion of a universal variety.
+The default element is needed when we come to define a notion of universal algebra.
 
 We form the type of such algebras, using the trivial
 algebra whose carrier set is a singleton as a witness to prove that
@@ -267,8 +272,8 @@ UnivOp C
 \ has the type of the set of operators of an algebra
 whose carrier type comprises functions from algebras to their elements, which we will think of as members of the
 product $\prod K$ of all algebras.
-The universal operation then works pointwise on the product
-but acts as the trivial algebra for factors $K$ that do not belong to $C$.
+The universal operation then acts pointwise on the product
+with the action for factors $K$ that do not belong to $C$ made trivial.
 
 πHOLCONST
 ‹ €UnivOp› : 'a ALGEBRA SET ≠ Ó ≠ ('a ALGEBRA ≠ 'a) LIST ≠ 'a ALGEBRA ≠ 'a
@@ -276,7 +281,7 @@ but acts as the trivial algebra for factors $K$ that do not belong to $C$.
 ‹ µC p a∑ UnivOp C p a = ÃK∑ let L = MkModel C K in Op L p (Map (Ãf∑ f K) a)
 ∞
 
-We can now define the derived operator corresponding to a term. Here we are thinking of terms formed from variables $v_1, v_2\ldots$ over the signature with functions symbols $\mu_{pq}$ of arity $q$ for all
+We can now define the derived operator corresponding to a term. Here we are thinking of terms formed from variables $v_1, v_2\ldots$ over the signature with function symbols $\mu_{pq}$ of arity $q$ for all
 $(p, q) \in Ó \times Ó$.
 The term is represented by a tree with arbitrary finite
 branching and with natural number labels on the nodes.
@@ -365,6 +370,11 @@ new_conjecture(["univ_algebra_thm"],
 		(UnivAlgebra eqs : ('a ALGEBRA ≠ 'a) ALGEBRA) ç Variety eq
 	§	(µK : 'a ALGEBRA ∑ K ç Variety eqs ¥ K ç Variety eq)Æ);
 =TEX
+Note that it would be rather unnatural to work with what we call the universal algebra in set theory.
+To do it all would require universes {\'{a} la} Grothendieck. Instead, if one needed an algebra with the
+above properties one would construct a free algebra on a countably infinite set. Polymorphism is giving
+us what feels a little like impredicativity here, and saving us having to construct free algebras at this stage.
+
 \subsection{Some Utility Functions}
 Very many interesting algebras have finite
 signatures with operators of arity 0, 1 or 2.
@@ -459,7 +469,8 @@ a function for renaming the operators in a term:
 
 Using $RenameTerm$ we define $RenameLaws$. This deals with the general
 case, but typically the laws will be given as an explicit finite set.
-We provide theorems to make rewriting work well in that case.
+See the theory listing for the theorem {\em rename\_laws\_clauses} that makes
+rewriting work well in that case.
 πHOLCONST
 ‹ €RenameLaws› : (Ó ∏ Ó ≠ Ó) ≠ EQUATION SET ≠ EQUATION SET
 ˜¸¸¸¸¸¸
