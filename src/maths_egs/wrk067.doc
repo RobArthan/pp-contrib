@@ -11,7 +11,7 @@ or visit the OpenSource web site at http://www.opensource.org/
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-$Id: wrk067.doc,v 1.41 2010/03/03 11:35:32 rda Exp rda $
+$Id: wrk067.doc,v 1.42 2010/10/09 16:40:07 rda Exp rda $
 ********************************************************************************
 pp_make_database -f -p hol topology
 docsml wrk066 wrk067
@@ -58,7 +58,7 @@ doctex wrk067.doc  wrk067[1234].th.doc ; docdvi wrk067
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2010/03/03 11:35:32 $%
+\date{\FormatDate{$Date: 2010/10/09 16:40:07 $%
 }}
 \begin{document}
 \begin{titlepage}
@@ -99,7 +99,7 @@ give a groupoid modulo homotopy equivalence.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK067; issue $Revision: 1.41 $%
+Reference: LEMMA1/HOL/WRK067; issue $Revision: 1.42 $%
 
 
 \end{centering}
@@ -699,16 +699,26 @@ lebesgue_number_thm
 collar_thm
 =TEX
 }
-We also define an induced metric on the set of lists of elements of a metric space which we will use to define $n$-dimensional euclidean space. As we are primarily interested in topological properties, it is simple and convenient to use the $L_1$-norm.
+We also define an induced metric on the set of lists of elements of a metric space. We use this, for example, to define $n$-dimensional euclidean space. Getting a good definition
+is a little delicate: given a (non-empty) metric space
+$A$ with metric $d$, fix an arbitrary element $a \in A$ and let
+$A^*$ be the set of countably infinite sequences in $A$ that
+take the constant value $a$ for all but finitely many
+indices. $A^*$ becomes a metric space under the metric
+$d^*$ defined by $d^*(s, t) = \sum_{i}d(s_i, t_i)$.
+If we map lists to infinite sequences by padding with $a$,
+this induces a pseudo-metric on the space $A^L$ of lists
+of elements of $A$.
+To get a metric, we take $d^L(v, w) = |\#v - \#w| + d^*(vaaa\ldots, waaa\ldots)$, where $\#v$ is the length of the list $v$.
 
 πHOLCONST
 ‹ €ListMetric› : ('a ∏ 'a ≠ Ø) ≠ ('a LIST ∏ 'a LIST) ≠ Ø
 ˜¸¸¸¸¸¸
-‹ µD v w∑
-‹		ListMetric D (v, w) =
-‹		if	Length v = Length w
-‹		then	Fold ($+) (Map D (Combine v w)) 0.
-‹		else	1.
+‹ µD x v y w∑
+‹		ListMetric D ([], []) = 0.
+‹ ±		ListMetric D (Cons x v, []) = 1. + D(x, Arbitrary) + ListMetric D (v, [])
+‹ ±		ListMetric D ([], Cons y w) = 1. + D(Arbitrary, y) + ListMetric D ([], w)
+‹ ±		ListMetric D (Cons x v, Cons y w) = D(x, y) + ListMetric D (v, w)
 ∞
 
 %%%%
@@ -4188,106 +4198,277 @@ val €collar_thm› = save_pop_thm "collar_thm";
 =TEX
 %%%%
 %%%%
-
+The proof that the list metric function actually maps metrics to metrics is a little
+tricky.
+Naive nested inductions work for the properties involving just two
+variables, but the triangle inequality is not tractable to the naive approach.
+For the triangle inequality, we first show decompose the list metric
+function into a sum of two simpler functions. $P\;D$ here is the pseudo-metric mentioned in the discussion of the definition.
 =SML
-(*
-set_goal([], ¨µD∑
-	D ç Metric
-¥	ListMetric D ç Metric
+
+
+
+set_goal([], ¨∂P∑
+	(µD x v y w∑
+	P D ([], []) = 0.
+±	P D (Cons x v, []) = D(x, Arbitrary) + P D (v, [])
+±	P D ([], Cons y w) = D(Arbitrary, y) + P D ([], w)
+±	P D (Cons x v, Cons y w) = D (x, y) + P D (v, w))
+±	µD v w∑
+	ListMetric D (v, w) =
+	Abs(ÓØ(#v) - ÓØ (#w)) + P D (v, w)
 Æ);
-a(rewrite_tac[metric_def] THEN µ_tac THEN ¥_tac);
-a(lemma_tac ¨µ x y∑ 0. º ListMetric D (x, y)Æ THEN REPEAT strip_tac);
+a(strip_asm_tac (prove_∂_rule
+ ¨∂P∑
+	µD: 'a ∏ 'a ≠ Ø; x v y w∑
+	P D ([], []) = 0.
+±	P D (Cons x v, []) = D(x, Arbitrary) + P D (v, [])
+±	P D ([], Cons y w) = D(Arbitrary, y) + P D ([], w)
+±	P D (Cons x v, Cons y w) = D (x, y) + P D (v, w)
+Æ));
+a(∂_tac¨PÆ THEN asm_rewrite_tac[] THEN REPEAT_N 2 strip_tac);
+a(list_induction_tac¨vÆ THEN REPEAT strip_tac
+	THEN list_induction_tac¨w:'a LISTÆ
+	THEN REPEAT strip_tac
+	THEN asm_rewrite_tac[list_metric_def, length_def,
+		ÓØ_plus_homomorphism_thm]);
 (* *** Goal "1" *** *)
-a(intro_µ_tac1¨yÆ THEN list_induction_tac¨xÆ THEN REPEAT strip_tac);
-(* *** Goal "1.1" *** *)
-a(list_induction_tac ¨yÆ THEN asm_rewrite_tac[list_metric_def]);
-(* *** Goal "1.2" *** *)
-a(list_induction_tac ¨yÆ THEN rewrite_tac[list_metric_def] THEN strip_tac);
-a(bc_thm_tac (pc_rule1 "Ø_lin_arith" prove_rule[]¨µx y∑0. º x ± 0. º y ¥ 0. º x + yÆ));
-a(asm_rewrite_tac[]);
+a(lemma_tac¨0. º ÓØ(#w)Æ THEN1 rewrite_tac[ÓØ_º_thm]);
+a(LEMMA_T¨µx∑0. º x ¥ ≥0. º ~x + ~1.Æ
+	(fn th => all_fc_tac[th])
+	THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(asm_rewrite_tac[Ø_abs_def] THEN1 PC_T1 "Ø_lin_arith" prove_tac[]);
 (* *** Goal "2" *** *)
-a(asm_rewrite_tac[]);
+a(lemma_tac¨0. º ÓØ(#v)Æ THEN1 rewrite_tac[ÓØ_º_thm]);
+a(LEMMA_T¨µx∑0. º x ¥ 0. º x + 1.Æ
+	(fn th => all_fc_tac[th])
+	THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(asm_rewrite_tac[Ø_abs_def] THEN1 PC_T1 "Ø_lin_arith" prove_tac[]);
 (* *** Goal "3" *** *)
-a(POP_ASM_T ante_tac THEN lemma_tac¨∂m∑ Length x = mÆ THEN1 prove_∂_tac);
-a(POP_ASM_T ante_tac THEN intro_µ_tac1¨yÆ THEN intro_µ_tac1¨xÆ);
-a(induction_tac¨mÆ THEN REPEAT strip_tac);
-a(POP_ASM_T ante_tac THEN POP_ASM_T ante_tac
-	THEN rewrite_tac[length_0_thm]
-	THEN REPEAT strip_tac THEN all_var_elim_asm_tac1);
-a(POP_ASM_T ante_tac THEN strip_asm_tac(µ_elim¨yÆ list_cases_thm)
-	THEN asm_rewrite_tac[list_metric_def]);
-(* *** Goal "3.2" *** *)
-a(lemma_tac¨≥x = []Æ THEN1 (contr_tac THEN all_var_elim_asm_tac1
-	THEN all_asm_ante_tac THEN rewrite_tac[length_def]));
-a(DROP_NTH_ASM_T 2 ante_tac THEN strip_asm_tac(µ_elim¨xÆ list_cases_thm));
-a(strip_asm_tac(µ_elim¨yÆ list_cases_thm)
-	THEN all_var_elim_asm_tac1 THEN1 asm_rewrite_tac[list_metric_def]);
-a(DROP_NTH_ASM_T 2 ante_tac THEN rewrite_tac[list_metric_def, length_def]);
-a(REPEAT_UNTIL is_± strip_tac);
-a(FC_T (MAP_EVERY ante_tac) [pc_rule1 "Ø_lin_arith" prove_rule[]
-	¨µx y∑ x + y = 0. ± 0. º x ± 0. º y ¥ x = 0. ± y = 0.Æ]);
-a(asm_rewrite_tac[] THEN REPEAT strip_tac);
-a(all_asm_fc_tac[]);
-(* *** Goal "4" *** *)
-a(all_var_elim_asm_tac);
-a(list_induction_tac¨yÆ THEN asm_rewrite_tac[list_metric_def]);
-(* *** Goal "5" *** *)
-a(intro_µ_tac1¨yÆ THEN list_induction_tac¨xÆ THEN REPEAT strip_tac);
-(* *** Goal "5.1" *** *)
-a(strip_asm_tac(µ_elim¨yÆ list_cases_thm)
-	THEN all_var_elim_asm_tac1 THEN asm_rewrite_tac[list_metric_def]);
-(* *** Goal "5.2" *** *)
-a(strip_asm_tac(µ_elim¨yÆ list_cases_thm)
-	THEN all_var_elim_asm_tac1 THEN rewrite_tac[list_metric_def]);
-a(DROP_NTH_ASM_T 4 (once_asm_rewrite_thm_tac o µ_elim¨x'Æ));
-a(strip_tac);
-(* *** Goal "6" *** *)
-a(intro_µ_tac1¨zÆ THEN intro_µ_tac1¨yÆ THEN list_induction_tac¨xÆ
+a(conv_tac(ONCE_MAP_C Ø_anf_conv));
+a(cases_tac¨0. º ÓØ (# v) + ~ (ÓØ (# w))Æ
+	THEN asm_rewrite_tac[Ø_abs_def]
+	THEN PC_T1 "Ø_lin_arith" prove_tac[]);
+val €list_pseudo_metric_lemma1› = save_pop_thm "list_pseudo_metric_lemma1";
+
+=TEX
+%%%%
+%%%%
+Now we show that if $P$ is as in the preceding lemma and $D$ satisfies
+the triangle inequality and the rule $D(x, x) = 0$, then $P\;D$ satisfies
+the triangle inequality. To reduce the number of case splits and inductions,
+we prove that $P\;D$ is invariant under padding
+on the right with the arbitrary element. This means that we can pad
+the three vectors and so reduce to the case when the lengths of the vectors are equal. This then admits to an induction on the common length.
+=SML
+
+set_goal([], ¨µP; D : 'a ∏ 'a ≠ Ø∑
+	(µx v y w∑
+	P D ([], []) = 0.
+±	P D (Cons x v, []) = D(x, Arbitrary) + P D (v, [])
+±	P D ([], Cons y w) = D(Arbitrary, y) + P D ([], w)
+±	P D (Cons x v, Cons y w) = D (x, y) + P D (v, w))
+±	(µx∑ D (x, x) = 0.)
+±	(µx y z∑ D (x, z) º D (x, y) + D(y, z))
+¥	P D (u, w) º P D (u, v) + P D (v, w)
+Æ);
+a(REPEAT strip_tac);
+a(lemma_tac¨
+	(µv w∑ P D (v @ [Arbitrary], w) = P D (v, w))
+±	(µw v∑ P D (v, w @ [Arbitrary]) = P D (v, w))Æ
+	THEN1 ±_tac);
+(* *** Goal "1" *** *)
+a(µ_tac THEN list_induction_tac ¨v:'a LISTÆ THEN asm_rewrite_tac[append_def]
 	THEN REPEAT strip_tac);
-a(strip_asm_tac(µ_elim¨zÆ list_cases_thm)
-	THEN strip_asm_tac(µ_elim¨yÆ list_cases_thm)
-	THEN all_var_elim_asm_tac1 THEN rewrite_tac[list_metric_def]);
-a(bc_thm_tac (pc_rule1 "Ø_lin_arith" prove_rule[]¨µx y∑0. º x ± 0. º y ¥ 0. º x + yÆ));
-a(asm_rewrite_tac[]);
-(* *** Goal "6.2" *** *)
-a(strip_asm_tac(µ_elim¨zÆ list_cases_thm)
-	THEN strip_asm_tac(µ_elim¨yÆ list_cases_thm)
-	THEN_TRY SOLVED_T (all_var_elim_asm_tac1 THEN rewrite_tac[list_metric_def]));
+(* *** Goal "1.1" *** *)
+a(list_induction_tac ¨wÆ THEN asm_rewrite_tac[]);
+(* *** Goal "1.2" *** *)
+a(list_induction_tac ¨wÆ THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(µ_tac THEN list_induction_tac ¨w:'a LISTÆ THEN asm_rewrite_tac[append_def]
+	THEN REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(list_induction_tac ¨vÆ THEN asm_rewrite_tac[]);
+(* *** Goal "1.2" *** *)
+a(list_induction_tac ¨vÆ THEN asm_rewrite_tac[]);
+(* *** Goal "3" *** *)
+a(lemma_tac¨∂pad∑µj v∑ pad v 0 = v ± pad v (j+1) = pad v j @ [Arbitrary]Æ
+	THEN1 prove_∂_tac);
+a(lemma_tac¨µj v∑#(pad v j) = #v + jÆ
+	THEN1 (µ_tac THEN induction_tac¨j:ÓÆ
+	THEN asm_rewrite_tac[length_append_thm, length_def, plus_assoc_thm]));
+a(lemma_tac¨µj v w∑P D (pad v j, w) = P D (v, w)Æ
+	THEN1 (µ_tac THEN induction_tac¨j:ÓÆ
+	THEN asm_rewrite_tac[]));
+a(lemma_tac¨µj v w∑P D (v, pad w j) = P D (v, w)Æ
+	THEN1 (µ_tac THEN induction_tac¨j:ÓÆ
+	THEN asm_rewrite_tac[]));
+a(lemma_tac¨∂i j k∑ #u + i = #v + j ± #v + j = #w + kÆ
+	THEN1 (MAP_EVERY ∂_tac [¨#v + #wÆ, ¨#u + #wÆ, ¨#u + #vÆ]
+		THEN1 PC_T1 "lin_arith" prove_tac[]));
+a(lemma_tac¨#(pad u i) = #(pad v j) ± #(pad v j) = #(pad w k)Æ
+	THEN1 asm_rewrite_tac[]);
+a(LEMMA_T¨
+	P D (u, w) = P D (pad u i, pad w k)
+±	P D (u, v) = P D (pad u i, pad v j)
+±	P D (v, w) = P D (pad v j, pad w k)Æ rewrite_thm_tac
+	THEN1 asm_rewrite_tac[]);
+a(LEMMA_T¨µu v w∑#u = #v ± #v =#w ¥ P D (u, w) º P D (u, v) + P D (v, w)Æ
+	(fn th => bc_thm_tac th THEN REPEAT strip_tac));
+a(LIST_DROP_NTH_ASM_T [1, 2, 3, 4] discard_tac THEN REPEAT strip_tac);
+a(lemma_tac¨∂m∑ #u = mÆ THEN1 prove_∂_tac);
+a(LIST_DROP_NTH_ASM_T [2, 3, 1] (MAP_EVERY ante_tac));
+a(MAP_EVERY intro_µ_tac1 [¨wÆ, ¨vÆ, ¨uÆ]);
+a(induction_tac¨mÆ);
+(* *** Goal "3.1" *** *)
+a(REPEAT µ_tac THEN strip_tac THEN asm_rewrite_tac[]);
+a(STRIP_T (strip_asm_tac o eq_sym_rule) THEN asm_rewrite_tac[]);
+a(STRIP_T (ante_tac o eq_sym_rule)
+	THEN POP_ASM_T ante_tac THEN POP_ASM_T ante_tac);
+a(rewrite_tac[length_0_thm]);
+a(REPEAT strip_tac THEN asm_rewrite_tac[]);
+(* *** Goal "3.2" *** *)
+a(REPEAT µ_tac THEN strip_tac THEN asm_rewrite_tac[]);
+a(STRIP_T (strip_asm_tac o eq_sym_rule) THEN asm_rewrite_tac[]);
+a(STRIP_T (strip_asm_tac o eq_sym_rule));
+a(MAP_EVERY (fn t => strip_asm_tac(µ_elim t list_cases_thm)
+	THEN all_var_elim_asm_tac1 THEN1
+		(all_asm_ante_tac THEN rewrite_tac[length_def]))
+	[¨uÆ, ¨vÆ, ¨wÆ]);
+a(LIST_DROP_NTH_ASM_T [1, 2, 3] (MAP_EVERY (strip_asm_tac o rewrite_rule[length_def])));
+a(asm_rewrite_tac[Ø_plus_assoc_thm]);
+a(bc_thm_tac (pc_rule1 "Ø_lin_arith" prove_rule[]
+	¨µa b c x y z:Ø∑a º b + c ± x º y + z ¥
+		a + x º b + y + c + zÆ)
+	THEN asm_rewrite_tac[]);
+a(DROP_NTH_ASM_T 4 (bc_thm_tac o rewrite_rule[taut_rule¨
+	µp q r∑p ¥ q ¥ r § p ± q ¥ rÆ])
+	THEN PC_T1 "lin_arith" asm_prove_tac[]);
+val €list_pseudo_metric_lemma2› = save_pop_thm "list_pseudo_metric_lemma2";
 
+=TEX
+%%%%
+%%%%
+Now we can do the remaining properties by naive inductions.
+We separate out non-negativity and symmetry for convenience.
+=SML
 
-val €list_metric_metric_thm› = save_pop_thm "list_metric_metric_thm";
-*)
+set_goal([], ¨µD x∑
+	D ç Metric
+¥	0. º ListMetric D (x, y)
+Æ);
+a(rewrite_tac[metric_def] THEN REPEAT strip_tac);
+a(LIST_DROP_NTH_ASM_T [1, 2, 3] discard_tac);
+a(intro_µ_tac1¨yÆ THEN list_induction_tac¨xÆ THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(list_induction_tac ¨yÆ THEN asm_rewrite_tac[list_metric_def] THEN REPEAT strip_tac);
+a(bc_thm_tac (pc_rule1 "Ø_lin_arith" prove_rule[]¨µx y∑0. º x ± 0. º y ¥ 0. º 1. + x + yÆ)
+	THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(list_induction_tac ¨yÆ THEN rewrite_tac[list_metric_def] THEN REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(bc_thm_tac (pc_rule1 "Ø_lin_arith" prove_rule[]¨µx y∑0. º x ± 0. º y ¥ 0. º 1. + x + yÆ)
+	THEN asm_rewrite_tac[]);
+(* *** Goal "2.2" *** *)
+a(bc_thm_tac (pc_rule1 "Ø_lin_arith" prove_rule[]¨µx y∑0. º x ± 0. º y ¥ 0. º x + yÆ)
+	THEN asm_rewrite_tac[]);
+val €list_metric_nonneg_thm› = save_pop_thm "list_metric_nonneg_thm";
+
 =TEX
 %%%%
 %%%%
 
 =SML
 
+
+set_goal([], ¨µD x y∑
+	D ç Metric
+¥	ListMetric D (x, y) = ListMetric D (y, x)
+Æ);
+a(rewrite_tac[metric_def] THEN REPEAT strip_tac);
+a(intro_µ_tac1¨yÆ THEN list_induction_tac¨xÆ THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(list_induction_tac¨yÆ THEN REPEAT strip_tac
+	THEN rewrite_tac[list_metric_def]);
+a(DROP_NTH_ASM_T 3 (once_asm_rewrite_thm_tac o µ_elim¨xÆ)
+	THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(strip_asm_tac(µ_elim¨yÆ list_cases_thm)
+	THEN all_var_elim_asm_tac1 THEN rewrite_tac[list_metric_def]);
+(* *** Goal "2.1" *** *)
+a(POP_ASM_T rewrite_thm_tac);
+a(DROP_NTH_ASM_T 2 (once_asm_rewrite_thm_tac o µ_elim¨x'Æ)
+	THEN REPEAT strip_tac);
+(* *** Goal "2.2" *** *)
+a(DROP_NTH_ASM_T 3 (once_asm_rewrite_thm_tac o µ_elim¨x'Æ)
+	THEN strip_tac);
+val €list_metric_sym_thm› = save_pop_thm "list_metric_sym_thm";
+
+=TEX
+%%%%
+%%%%
+
+=SML
+
+
 set_goal([], ¨µD∑
 	D ç Metric
 ¥	ListMetric D ç Metric
 Æ);
-a(rewrite_tac[metric_def] THEN REPEAT strip_tac);
+a(REPEAT strip_tac THEN TOP_ASM_T ante_tac);
+a(rewrite_tac[metric_def] THEN ¥_tac);
+a(all_fc_tac[list_metric_nonneg_thm] THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
-a(intro_µ_tac1¨yÆ THEN list_induction_tac¨xÆ THEN REPEAT strip_tac);
-(* *** Goal "1.1" *** *)
-a(list_induction_tac ¨yÆ THEN asm_rewrite_tac[list_metric_def]);
-(* *** Goal "1.2" *** *)
-a(list_induction_tac ¨yÆ THEN rewrite_tac[list_metric_def] THEN strip_tac);
-a(bc_thm_tac (pc_rule1 "Ø_lin_arith" prove_rule[]¨µx y∑0. º x ± 0. º y ¥ 0. º x + yÆ));
 a(asm_rewrite_tac[]);
 (* *** Goal "2" *** *)
-a(POP_ASM_T ante_tac THEN
-	intro_µ_tac1¨yÆ THEN list_induction_tac¨xÆ THEN REPEAT strip_tac);
+a(DROP_NTH_ASM_T 4 discard_tac);
+a(POP_ASM_T ante_tac THEN lemma_tac¨∂m∑ Length x = mÆ THEN1 prove_∂_tac);
+a(POP_ASM_T ante_tac THEN intro_µ_tac1¨yÆ THEN intro_µ_tac1¨xÆ);
+a(induction_tac¨mÆ THEN REPEAT strip_tac);
 (* *** Goal "2.1" *** *)
-a(POP_ASM_T ante_tac THEN list_induction_tac ¨yÆ
-	THEN rewrite_tac[list_metric_def]);
+a(POP_ASM_T ante_tac THEN POP_ASM_T ante_tac
+	THEN rewrite_tac[length_0_thm]
+	THEN REPEAT strip_tac THEN all_var_elim_asm_tac1);
+a(POP_ASM_T ante_tac THEN strip_asm_tac(µ_elim¨yÆ list_cases_thm)
+	THEN asm_rewrite_tac[list_metric_def]);
+a(bc_thm_tac (pc_rule1 "Ø_lin_arith" prove_rule[]¨µx y∑0. º x ± 0. º y ¥ ≥1. + x + y = 0.Æ)
+	THEN asm_rewrite_tac[]);
 (* *** Goal "2.2" *** *)
-a(POP_ASM_T ante_tac THEN list_induction_tac ¨yÆ
-	THEN rewrite_tac[list_metric_def]);
-
-
+a(lemma_tac¨≥x = []Æ THEN1 (contr_tac THEN all_var_elim_asm_tac1
+	THEN all_asm_ante_tac THEN rewrite_tac[length_def]));
+a(DROP_NTH_ASM_T 2 ante_tac THEN strip_asm_tac(µ_elim¨xÆ list_cases_thm));
+a(strip_asm_tac(µ_elim¨yÆ list_cases_thm)
+	THEN all_var_elim_asm_tac1 THEN1 asm_rewrite_tac[list_metric_def]);
+(* *** Goal "2.2.1" *** *)
+a(bc_thm_tac (pc_rule1 "Ø_lin_arith" prove_rule[]¨µx y∑0. º x ± 0. º y ¥ ≥1. + x + y = 0.Æ)
+	THEN asm_rewrite_tac[]);
+(* *** Goal "2.2.2" *** *)
+a(DROP_NTH_ASM_T 2 ante_tac THEN rewrite_tac[list_metric_def, length_def]);
+a(REPEAT_UNTIL is_± strip_tac);
+a(FC_T (MAP_EVERY ante_tac) [pc_rule1 "Ø_lin_arith" prove_rule[]
+	¨µx y∑ x + y = 0. ± 0. º x ± 0. º y ¥ x = 0. ± y = 0.Æ]);
+a(asm_rewrite_tac[] THEN REPEAT strip_tac);
+a(all_asm_fc_tac[]);
+(* *** Goal "3" *** *)
+a(all_var_elim_asm_tac);
+a(list_induction_tac¨yÆ THEN asm_rewrite_tac[list_metric_def]);
+(* *** Goal "4" *** *)
+a(bc_thm_tac list_metric_sym_thm THEN REPEAT strip_tac);
+(* *** Goal "5" *** *)
+a(strip_asm_tac list_pseudo_metric_lemma1 THEN asm_rewrite_tac[Ø_plus_assoc_thm]);
+a(bc_thm_tac (pc_rule1 "Ø_lin_arith" prove_rule[]
+	¨µa b c x y z:Ø∑a º b + c ± x º y + z ¥
+		a + x º b + y + c + zÆ)
+	THEN REPEAT strip_tac);
+(* *** Goal "5.1" *** *)
+a(rewrite_tac[pc_rule1 "Ø_lin_arith" prove_rule[]
+	¨ÓØ (# x) + ~ (ÓØ (# z)) =
+	(ÓØ (# x) + ~ (ÓØ (# y))) + (ÓØ (# y) + ~ (ÓØ (# z)))Æ, Ø_abs_plus_thm]);
+(* *** Goal "5.1" *** *)
+a(bc_thm_tac list_pseudo_metric_lemma2);
+a(DROP_NTH_ASM_T 5 discard_tac THEN asm_rewrite_tac[]);
 val €list_metric_metric_thm› = save_pop_thm "list_metric_metric_thm";
+
 
 =TEX
 %%%%
