@@ -11,7 +11,7 @@ or visit the OpenSource web site at http://www.opensource.org/
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-$Id: wrk067.doc,v 1.42 2010/10/09 16:40:07 rda Exp rda $
+$Id: wrk067.doc,v 1.43 2010/10/11 16:44:23 rda Exp rda $
 ********************************************************************************
 pp_make_database -f -p hol topology
 docsml wrk066 wrk067
@@ -58,7 +58,7 @@ doctex wrk067.doc  wrk067[1234].th.doc ; docdvi wrk067
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2010/10/09 16:40:07 $%
+\date{\FormatDate{$Date: 2010/10/11 16:44:23 $%
 }}
 \begin{document}
 \begin{titlepage}
@@ -99,7 +99,7 @@ give a groupoid modulo homotopy equivalence.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK067; issue $Revision: 1.42 $%
+Reference: LEMMA1/HOL/WRK067; issue $Revision: 1.43 $%
 
 
 \end{centering}
@@ -619,20 +619,24 @@ homeomorphism_onto_thm
 homeomorphism_one_one_open_mapping_thm
 =TEX
 }
-\subsection{Interior and Boundary Operators}
-Our definitions of the interior and boundary operators are standard, but
+\subsection{Interior, Boundary and Closure Operators}
+Our definitions of the interior, boundary and Closure operators are standard, but
 as we have to be explicit about the ambient topology, we take them to be
 infix operators, reflecting usages like ``the $\tau$-interior of $A$'' that one might use when working with several different topologies on the same set.
 =SML
 declare_infix(300, "Interior");
 declare_infix(300, "Boundary");
+declare_infix(300, "Closure");
 =TEX
-The $\tau$-interior of $A$ comprises the points that lie in $\tau$-open subsets of $A$, while the $\tau$-boundary comprises the points (of the spacew) all of whose open neighbourhoods meet both $A$ and its complement.
+The $\tau$-interior of $A$ comprises the points that lie in $\tau$-open subsets of $A$; the $\tau$-boundary comprises the points (of the space) all of whose open neighbourhoods meet both $A$ and its complement; the $\tau$-closure of $A$ is the smallest $\tau$-closed set containing (the points of the space belonging to) $A$.
 πHOLCONST
-‹ €$Interior› €$Boundary›: 'a SET SET ≠ 'a SET ≠ 'a SET
+‹ €$Interior› €$Boundary› €$Closure›: 'a SET SET ≠ 'a SET ≠ 'a SET
 ˜¸¸¸¸¸¸
-‹ 	(µ‘ A∑	‘ Interior A = {x | ∂B∑ B ç ‘ ± x ç B ± B Ä A})
-‹ ± 	(µ‘ A∑	‘ Boundary A = {x | x ç Space ‘ ± µB∑ B ç ‘ ± x ç B ¥ ≥B ° A = {} ± ≥B \ A = {}})
+‹ µ‘ A∑
+‹	‘ Interior A = {x | ∂B∑ B ç ‘ ± x ç B ± B Ä A}
+‹ ± 	‘ Boundary A =
+‹	{x | x ç Space ‘ ± µB∑ B ç ‘ ± x ç B ¥ ≥B ° A = {} ± ≥B \ A = {}}
+‹ ± 	‘ Closure A = •{B | B ç ‘ Closed ± A ° Space ‘ Ä B}
 ∞
 The interior and boundary of a set are subsets of the ambient space and the interior is a subset of the set; the boundary of a set is the complement of the union of its interior and the complement of its interior; the interior of the
 product of two sets is the product of their interiors; a set is open iff
@@ -1220,8 +1224,14 @@ val €subspace_topology_def› = get_spec¨$ÚâTÆ;
 val €product_topology_def› = get_spec¨$∏âTÆ;
 val €hausdorff_def› = get_spec¨HausdorffÆ;
 val €homeomorphism_def› = get_spec¨$HomeomorphismÆ;
-val €interior_def› = ±_left_elim(get_spec¨$InteriorÆ);
-val €boundary_def› = ±_right_elim(get_spec¨$BoundaryÆ);
+local
+	val thm1 = all_µ_elim (get_spec¨$InteriorÆ);
+	val [i_def, b_def, c_def] = strip_±_rule thm1;
+in
+	val €interior_def› = all_µ_intro i_def;
+	val €boundary_def› = all_µ_intro b_def;
+	val €closure_def› = all_µ_intro c_def;
+end;
 =TEX
 \subsection{ProofPower Generalisation and Instantiation}
 =SML
@@ -3814,7 +3824,7 @@ a(conv_tac eq_sym_conv THEN REPEAT strip_tac);
 val €homeomorphism_one_one_open_mapping_thm› = save_pop_thm "homeomorphism_one_one_open_mapping_thm";
 
 =TEX
-\subsection{Interior and Boundary Operators}
+\subsection{Interior, Boundary and Closure Operators}
 =TEX
 %%%%
 %%%%
@@ -3949,6 +3959,57 @@ a(all_asm_ante_tac THEN PC_T1 "sets_ext1" rewrite_tac[]
 	THEN contr_tac
 	THEN(asm_fc_tac[] THEN asm_fc_tac[]));
 val €closed_§_boundary_Ä_thm› = save_pop_thm "closed_§_boundary_Ä_thm";
+
+
+=TEX
+%%%%
+%%%%
+The closure of a set is the complement of the interior of its complement.
+=SML
+
+(*
+TBC 
+
+set_goal([], ¨µ‘ A ∑
+	‘ ç Topology
+¥	‘ Closure A = Space ‘ \ ‘ Interior (Space ‘ \ A)
+Æ);
+a(REPEAT strip_tac THEN rewrite_tac[closure_def, interior_def]);
+a(ALL_FC_T1 fc_§_canon rewrite_tac[closed_open_complement_thm]);
+a(PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(POP_ASM_T bc_thm_tac THEN rewrite_tac[]);
+a(ALL_FC_T rewrite_tac[empty_open_thm]);
+a(PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "2" *** *)
+a(SPEC_NTH_ASM_T 3 ¨Space ‘ \ BÆ ante_tac);
+a(rewrite_tac[]);
+
+
+val €closed_§_boundary_Ä_thm› = save_pop_thm "closed_§_boundary_Ä_thm";
+
+*)
+
+=TEX
+%%%%
+%%%%
+The closure of a set is its union with its boundary (with points outside the ambient space removed).
+=SML
+
+(*
+TBC 
+
+set_goal([], ¨µ‘ A ∑
+	‘ ç Topology
+¥	‘ Closure A = (A ° Space ‘) ¿ ‘ Boundary A
+Æ);
+a(REPEAT strip_tac THEN rewrite_tac[closure_def, boundary_def, closed_def]);
+a(PC_T1 "sets_ext1" REPEAT strip_tac);
+
+
+val €closed_§_boundary_Ä_thm› = save_pop_thm "closed_§_boundary_Ä_thm";
+
+*)
 
 =TEX
 \section{METRIC SPACES --- THEOREMS}
