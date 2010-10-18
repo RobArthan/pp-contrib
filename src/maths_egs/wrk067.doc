@@ -631,6 +631,7 @@ A homeomorphism is a continuous mapping with a continuous two-sided inverse:
 
 =SML
 declare_postfix(400, "Homeomorphism");
+=TEX
 πHOLCONST
 ‹ €$Homeomorphism› : ('a SET SET ∏ 'b SET SET) ≠ ('a ≠ 'b) SET
 ˜¸¸¸¸¸¸
@@ -644,6 +645,7 @@ declare_postfix(400, "Homeomorphism");
 
 The identity function is a homeomorphism as is the composite of two homeomorphisms and the product of a pair of homeomorphisms;\
 a homeomorphism is an open mapping (i.e., it sends open sets to open sets) and is also one-to-one; and a function is a homeomorphism iff it is a one-to-one, onto, continuous open mapping.
+Finally, a useful principle for recognising homeomorphisms obtained by restricting continuous functions defined on compact Hausdorff spaces.
 
 \ThmsII{%
 =GFT
@@ -657,8 +659,23 @@ homeomorphism_open_mapping_thm
 homeomorphism_one_one_thm
 homeomorphism_onto_thm
 homeomorphism_one_one_open_mapping_thm
+Ä_compact_homeomorphism_thm
 =TEX
 }
+
+The useful principle is this:
+{\em Let $C$ and $X$ be Hausdorff spaces with $C$ compact and
+let $f$ be a continuous function from $C$ to $X$.
+If $B \subseteq C$
+is such that for every $y \in f(B)$ there is a unique $x$ in $C$ such that $f(x) = y$, then $f$ restricts to a homeomorphism between $B$ and $f(B)$.}
+To see this, note that it is enough to prove that the restriction of $f$ to $B$ is a closed mapping, since evidently $f$ is one-one and continuous on $B$.
+Given a closed subset $A$ of $B$, we have $A = B \cap D$ where $D$ is some closed and hence compact subset of $C$.
+By assumption $f(D \backslash B)$ is disjoint from $f(B)$, which implies that
+$f(D \cap B) = f(D) \cap f(B)$.
+Since $D$ is compact, so also is $f(D)$, whence $f(D)$ is closed.
+Thus $f(A) = f(D) \cap f(B)$ is a closed subset of $f(B)$.
+
+
 \subsection{Interior, Boundary and Closure Operators}
 Our definitions of the interior, boundary and Closure operators are standard, but
 as we have to be explicit about the ambient topology, we take them to be
@@ -699,6 +716,27 @@ interior_ﬁ_thm
 closure_interior_complement_thm
 =TEX
 }
+
+\subsection{Covering Projections}
+
+Our definition of covering projection is completely standard: a continuous function is a covering projection if every point in its range has a neighbourhood $C$ whose inverse image is a disjoint union of open sets each of which is mapped homeomorphically onto $C$.
+
+=SML
+declare_postfix(400, "CoveringProjection");
+=TEX
+πHOLCONST
+‹ €$CoveringProjection› : ('a SET SET ∏ 'b SET SET) ≠ ('a ≠ 'b) SET
+˜¸¸¸¸¸¸
+‹ µ” ‘∑	(”, ‘) CoveringProjection =
+‹	{p
+‹	|	p ç (”, ‘) Continuous
+‹	±	µy∑ 	y ç SpaceâT ‘
+‹		¥	∂C U∑	y ç C ± C ç ‘ ± U Ä ”
+‹			±	(µx∑ p x = y ¥ ∂A∑ x ç A ± A ç U)
+‹			±	(µA B∑ A ç U ± B ç U ± ≥A ° B = {} ¥ A = B)
+‹			±	(µA∑ A ç U ¥ p ç (A ÚâT ”, C ÚâT ‘) Homeomorphism)}
+∞
+
 
 \subsection{Protocomplexes}
 
@@ -749,7 +787,6 @@ and {\em(iv)} each $m$-cell meets only finitely many cells of lower dimension.
 ‹ ±	(µA∑ A Ä SpaceâK C ± (µc m∑ (c, m) ç C ¥ A ° c ç ‘ Closed) ¥ A ç ‘ Closed)
 ‹ ±	(µc m∑ (c, m) ç C ¥ {(d, n) | (d, n) ç C ± n < m ± ≥c ° d = {}} ç Finite)
 ∞
-
 
 =TEX
 \section{METRIC SPACES --- DEFINITIONS}
@@ -1377,7 +1414,8 @@ in
 	val €boundary_def› = all_µ_intro b_def;
 	val €closure_def› = all_µ_intro c_def;
 end;
-val €space_t_k_def› = get_spec¨SpaceâKÆ;
+val €covering_projection_def› = get_spec¨$CoveringProjectionÆ;
+val €space_k_def› = get_spec¨SpaceâKÆ;
 val €skeleton_def› = get_spec¨$SkeletonÆ;
 val €protocomplex_def› = get_spec¨ProtocomplexÆ;
 =TEX
@@ -1585,6 +1623,77 @@ set_goal([], ¨µ‘ A B ∑
 a(rewrite_tac[topology_def] THEN PC_T1 "sets_ext1" prove_tac[]);
 val €°_open_thm› = save_pop_thm "°_open_thm";
 
+
+=TEX
+%%%%
+%%%%
+
+=SML
+
+set_goal([], ¨µ‘ A B ∑
+	‘ ç Topology ± A ç ‘ Closed ± B ç ‘ Closed ¥ A ° B ç ‘ Closed
+Æ);
+a(REPEAT strip_tac THEN REPEAT_N 2 (POP_ASM_T ante_tac));
+a(ALL_FC_T1 fc_§_canon rewrite_tac[closed_open_complement_thm]
+	THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_fc_tac[pc_rule1"sets_ext1" prove_rule[]¨µa b s∑a Ä s ± b Ä s ¥ a ° b Ä sÆ]);
+(* *** Goal "2" *** *)
+a(rewrite_tac[pc_rule1"sets_ext1" prove_rule[]¨µs a b∑ s \ a ° b = (s \ a) ¿ (s \ b)Æ]);
+a(all_fc_tac [¿_open_thm]);
+val €°_closed_thm› = save_pop_thm "°_closed_thm";
+
+=TEX
+%%%%
+%%%%
+
+=SML
+
+set_goal([], ¨µ ‘ V∑
+	‘ ç Topology
+±	≥V = {}
+±	V Ä ‘ Closed
+¥	•V ç ‘ Closed
+Æ);
+a(REPEAT strip_tac THEN POP_ASM_T (ante_tac o pc_rule1"sets_ext1"rewrite_rule[]));
+a(PC_T1 "sets_ext1" POP_ASM_T strip_asm_tac);
+a(ALL_FC_T1 fc_§_canon rewrite_tac[closed_open_complement_thm]
+	THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(PC_T1 "sets_ext1" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(LEMMA_T¨µt v∑ t \ •v  = ﬁ{a|∂b∑b ç v ± a = t \ b}Æ rewrite_thm_tac);
+(* *** Goal "2.1" *** *)
+a(DROP_ASMS_T discard_tac);
+a(PC_T "sets_ext1" contr_tac THEN_TRY all_asm_fc_tac[]);
+a(spec_nth_asm_tac 1 ¨t \ sÆ);
+a(spec_nth_asm_tac 1 ¨sÆ);
+(* *** Goal "2.2" *** *)
+a(bc_thm_tac ﬁ_open_thm THEN REPEAT strip_tac);
+a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac THEN all_var_elim_asm_tac1);
+a(all_asm_fc_tac[]);
+val €•_closed_thm› = save_pop_thm "•_closed_thm";
+
+=TEX
+%%%%
+%%%%
+
+=SML
+
+set_goal([], ¨µ‘ A B ∑
+	‘ ç Topology ± A ç ‘ Closed ± B ç ‘ Closed ¥ A ¿ B ç ‘ Closed
+Æ);
+a(REPEAT strip_tac THEN REPEAT_N 2 (POP_ASM_T ante_tac));
+a(ALL_FC_T1 fc_§_canon rewrite_tac[closed_open_complement_thm]
+	THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_fc_tac[pc_rule1"sets_ext1" prove_rule[]¨µa b s∑a Ä s ± b Ä s ¥ a ¿ b Ä sÆ]);
+(* *** Goal "2" *** *)
+a(rewrite_tac[pc_rule1"sets_ext1" prove_rule[]¨µs a b∑ s \ (a ¿ b) = (s \ a) ° (s \ b)Æ]);
+a(all_fc_tac [°_open_thm]);
+val €¿_closed_thm› = save_pop_thm "¿_closed_thm";
+
+
 =TEX
 %%%%
 %%%%
@@ -1686,32 +1795,39 @@ val €subspace_topology_space_t_thm1› = save_pop_thm "subspace_topology_space_t_t
 %%%%
 
 =SML
-(*
-
-TBC
 
 set_goal([], ¨µX ‘∑
 	‘ ç Topology
 ¥	(X ÚâT ‘) Closed = {A | ∂B∑ B ç ‘ Closed ± A = B ° X}
 Æ);
-a(REPEAT strip_tac THEN rewrite_tac[subspace_topology_def, closed_def]);
-a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac
-	THEN all_var_elim_asm_tac1);
+a(REPEAT strip_tac THEN PC_T "sets_ext1" strip_tac);
+a(lemma_tac¨X ÚâT ‘ ç TopologyÆ THEN1 ALL_FC_T rewrite_tac [subspace_topology_thm]);
+a(ALL_FC_T1 fc_§_canon rewrite_tac[arb_gen closed_open_complement_thm,
+	subspace_topology_space_t_thm]
+	THEN rewrite_tac[subspace_topology_def]
+	THEN REPEAT strip_tac
+	THEN_TRY all_var_elim_asm_tac1);
 (* *** Goal "1" *** *)
-a(∂_tac¨SpaceâT ‘ \ B'Æ THEN REPEAT strip_tac);
-(* *** Goal "1.1" *** *)
-a(∂_tac¨B'Æ THEN REPEAT strip_tac);
-(* *** Goal "1.2" *** *)
-a(rewrite_tac[space_t_def]);
-a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac THEN_TRY all_var_elim_asm_tac1);
-(* *** Goal "1.2.1" *** *)
-a(contr_tac THEN all_asm_fc_tac[]);
-(* *** Goal "1.2.2" *** *)
-a(∂_tac¨sÆ THEN REPEAT strip_tac);
-
+a(∂_tac¨ SpaceâT ‘ \ B Æ);
+a(lemma_tac¨B Ä SpaceâT ‘Æ THEN1
+	(PC_T1 "sets_ext1" REPEAT strip_tac THEN all_fc_tac[ç_space_t_thm]));
+a(ALL_FC_T asm_rewrite_tac[pc_rule1"sets_ext1"prove_rule[]
+	¨µb s∑b Ä s ¥ s \ b Ä s ± s \ (s \ b) = bÆ]);
+a(asm_rewrite_tac[pc_rule1"sets_ext1"prove_rule[]
+	¨µb s x∑ (s \ b) ° x = (x ° s) \ (b ° x)Æ]);
+a(lemma_tac¨B ° X Ä X ° SpaceâT ‘Æ THEN1
+	(POP_ASM_T ante_tac THEN PC_T1 "sets_ext1" prove_tac[]));
+a(all_fc_tac[pc_rule1"sets_ext1"prove_rule[]
+	¨µa b c∑ a Ä c ± b Ä c ± c \ a = b ¥ a = c \ bÆ]);
+(* *** Goal "2" *** *)
+a(ALL_FC_T rewrite_tac[pc_rule1"sets_ext1"prove_rule[]
+	¨µb s x∑ b Ä s ¥ b ° x Ä x ° sÆ]);
+(* *** Goal "3" *** *)
+a(∂_tac¨ SpaceâT ‘ \ B Æ THEN REPEAT strip_tac);
+a(rewrite_tac[pc_rule1"sets_ext1"prove_rule[]
+	¨µb s x∑ (s \ b) ° x = (x ° s) \ (b ° x)Æ]);
 val €subspace_topology_closed_thm› = save_pop_thm "subspace_topology_closed_thm";
 
-*)
 =TEX
 %%%%
 %%%%
@@ -4291,16 +4407,11 @@ val €homeomorphism_one_one_closed_mapping_thm› = save_pop_thm "homeomorphism_one
 =TEX
 %%%%
 %%%%
-The following principle that applies to functions between
-Hausdorff spaces is very useful.
-Let $B$ be a subset of a compact set $C$ and $f$ be a continuous function defined on $C$.
-If for every $z \in f(B)$ there is a unique $x$ in $C$ such that $f(x) = z$, 
-then $f$ restricts to a homeomorphism between $B$ and $f(B)$.
+The useful principle about functions between Hausdorff spaces.
+
 =SML
 
-(*
-
-set_goal([], ¨µf ” ‘ B C D∑
+set_goal([], ¨µf ” ‘ B C∑
 	” ç Topology
 ±	” ç Hausdorff
 ±	‘ ç Topology
@@ -4309,16 +4420,16 @@ set_goal([], ¨µf ” ‘ B C D∑
 ±	B Ä C
 ±	f ç (”, ‘) Continuous
 ±	(µx y∑ x ç B ± y ç C ± f x = f y ¥ x = y)
-¥	f ç (B ÚâT ”, {z | ∂x∑ x ç B ± f x = z} ÚâT ‘) Homeomorphism
+¥	f ç (B ÚâT ”, {y | ∂x∑ x ç B ± y = f x} ÚâT ‘) Homeomorphism
 Æ);
 a(REPEAT strip_tac);
-a(lemma_tac¨B ÚâT ” ç Topology ± {z | ∂x∑ x ç B ± f x = z} ÚâT ‘ ç TopologyÆ
+a(lemma_tac¨B ÚâT ” ç Topology ± {y | ∂x∑ x ç B ± y = f x} ÚâT ‘ ç TopologyÆ
 	THEN1 ALL_FC_T rewrite_tac[subspace_topology_thm]);
 a(ALL_FC_T1 fc_§_canon rewrite_tac[arb_gen homeomorphism_one_one_closed_mapping_thm]);
 a(all_fc_tac[compact_closed_thm]);
 a(lemma_tac¨C Ä SpaceâT ”Æ THEN1 all_fc_tac[closed_open_neighbourhood_thm]);
 a(all_fc_tac[pc_rule1"sets_ext1" prove_rule[]¨µb c s∑b Ä c ± c Ä s ¥ b Ä sÆ]);
-a(lemma_tac¨{z|∂ x∑ x ç B ± f x = z} Ä SpaceâT ‘Æ);
+a(lemma_tac¨{y|∂ x∑ x ç B ± y = f x} Ä SpaceâT ‘Æ);
 (* *** Goal "1" *** *)
 a(PC_T1 "sets_ext1" REPEAT strip_tac THEN all_var_elim_asm_tac1);
 a(DROP_NTH_ASM_T 8 (bc_thm_tac o ±_left_elim o rewrite_rule[continuous_def]));
@@ -4330,15 +4441,32 @@ a(REPEAT strip_tac);
 a(DROP_NTH_ASM_T 10 bc_thm_tac THEN REPEAT strip_tac);
 a(LIST_DROP_NTH_ASM_T [11] (PC_T1"sets_ext1" all_fc_tac));
 (* *** Goal "2.2" *** *)
-a(all_var_elim_asm_tac1 THEN ∂_tac¨xÆ THEN REPEAT strip_tac);
-(* *** Goal "2.3" *** *)
 a(bc_thm_tac subspace_continuous_thm THEN asm_rewrite_tac[]);
 a(prove_tac[]);
-(* *** Goal "2.4" *** *)
- 
+(* *** Goal "2.3" *** *)
+a(POP_ASM_T ante_tac);
+a(ALL_FC_T rewrite_tac[subspace_topology_closed_thm] THEN strip_tac);
+a(rename_tac[(¨B'Æ, "D")] THEN all_var_elim_asm_tac1);
+a(lemma_tac¨D ° C ç ” ClosedÆ THEN1 all_fc_tac[°_closed_thm]);
+a(lemma_tac¨D ° C Ä CÆ THEN1 PC_T1 "sets_ext1" prove_tac[]);
+a(all_fc_tac[closed_Ä_compact_thm]);
+a(DROP_NTH_ASM_T 14 discard_tac THEN all_fc_tac[image_compact_thm]);
+a(DROP_NTH_ASM_T 2 discard_tac THEN all_fc_tac[compact_closed_thm]);
+a(∂_tac¨{y|∂ x∑ x ç D ° C ± y = f x}Æ THEN REPEAT strip_tac);
+a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac
+	THEN all_var_elim_asm_tac1);
+(* *** Goal "2.3.1" *** *)
+a(∂_tac¨x'Æ THEN REPEAT strip_tac);
+a(LIST_DROP_NTH_ASM_T [1, 16] (MAP_EVERY ante_tac)
+	THEN PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "2.3.2" *** *)
+a(∂_tac¨x'Æ THEN REPEAT strip_tac);
+(* *** Goal "2.3.3" *** *)
+a(POP_ASM_T (strip_asm_tac o eq_sym_rule));
+a(LIST_DROP_NTH_ASM_T [16] all_fc_tac THEN all_var_elim_asm_tac);
+a(∂_tac¨x'Æ THEN REPEAT strip_tac);
+val €Ä_compact_homeomorphism_thm› = save_pop_thm "Ä_compact_homeomorphism_thm";
 
-val €homeomorphism_one_one_closed_mapping_thm› = save_pop_thm "homeomorphism_one_one_closed_mapping_thm";
-*)
 =TEX
 \subsection{Interior, Boundary and Closure Operators}
 =TEX
