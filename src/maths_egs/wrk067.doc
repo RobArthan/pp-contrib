@@ -11,7 +11,7 @@ or visit the OpenSource web site at http://www.opensource.org/
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-$Id: wrk067.doc,v 1.47 2010/10/18 16:25:57 rda Exp rda $
+$Id: wrk067.doc,v 1.48 2010/10/22 16:06:07 rda Exp rda $
 ********************************************************************************
 pp_make_database -f -p hol topology
 docsml wrk066 wrk067
@@ -58,7 +58,7 @@ doctex wrk067.doc  wrk067[1234].th.doc ; docdvi wrk067
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2010/10/18 16:25:57 $%
+\date{\FormatDate{$Date: 2010/10/22 16:06:07 $%
 }}
 \begin{document}
 \begin{titlepage}
@@ -101,7 +101,7 @@ give a groupoid modulo homotopy equivalence.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK067; issue $Revision: 1.47 $%
+Reference: LEMMA1/HOL/WRK067; issue $Revision: 1.48 $%
 
 
 \end{centering}
@@ -156,7 +156,7 @@ force_delete_theory"topology" handle Fail _ => ();
 open_theory"bin_rel";
 set_merge_pcs["basic_hol1", "'sets_alg"];
 new_theory"topology";
-new_parent"fin_set";
+new_parent"fincomb";
 
 =TEX
 %%%%
@@ -5666,72 +5666,6 @@ a(PC_T1 "sets_ext1" rewrite_tac[closed_interval_def]);
 a(REPEAT strip_tac THEN rename_tac[] THEN all_asm_fc_tac[] THEN asm_rewrite_tac[Ø_º_def]);
 val €connected_Ø_thm› = save_pop_thm "connected_Ø_thm";
 
-=TEX
-We now give a result that is used in proving that covering projections
-are fibrations. Let $X$ is any space and $x \in X$. Assume $U$ is a
-set of open sets in $X \times [0, 1]$ that cover $\{x\} \times [0, 1]$.
-Then there is an open subset $A$ of $X$ and a finite sequence of
-numbers $0 = t_0 < t_1 < t_2 < \ldots < t_n = 1$ such that for each $i$
-there is a $B_i \in U$ such that $A \times [t_i, t_{i+1}] \subseteq B_i$.
-%%%%
-%%%%
-
-=SML
-
-(*
-
-set_goal([], ¨µ‘ U x∑
-	U Ä (‘ ∏âT OpenâR)
-±	x ç SpaceâT ‘
-±	(µs∑ s ç ClosedInterval 0. 1. ¥ ∂B∑ (x, s) ç B ± B ç (‘ ∏âT OpenâR)) 
-¥	∂n t A∑ t 0 = 0. ± t n = 1. ± (µi∑t i < t (i + 1))
-	±	A ç ‘
-	±	µi∑ i < n ¥ ∂B∑ B ç U ± (A ∏ ClosedInterval (t i) (t (i+1))) Ä B
-Æ);
-a(REPEAT_N 3 strip_tac);
-(* *** Goal "1" *** *)
-a(rewrite_tac[connected_def, space_t_Ø_thm, Ø_º_def] THEN REPEAT strip_tac
-	THEN_TRY all_var_elim_asm_tac THEN contr_tac);
-a(strip_asm_tac (µ_elim¨zÆ half_infinite_intervals_open_thm));
-a(lemma_tac¨X Ä {t|t < z} ¿ {t | z < t}Æ THEN PC_T1 "sets_ext1" REPEAT strip_tac);
-(* *** Goal "1.1" *** *)
-a((cases_tac¨x' = zÆ THEN1 all_var_elim_asm_tac) THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-(* *** Goal "1.2" *** *)
-a(lemma_tac¨X ° {t|t < z} ° {t | z < t} = {}Æ THEN PC_T1 "sets_ext1" REPEAT strip_tac);
-(* *** Goal "1.2.1" *** *)
-a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-(* *** Goal "1.2.2" *** *)
-a(lemma_tac¨≥X Ä {t|t < z}Æ THEN PC_T "sets_ext1" contr_tac);
-(* *** Goal "1.2.2.1" *** *)
-a(spec_nth_asm_tac 1 ¨yÆ THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-(* *** Goal "1.2.2.2" *** *)
-a(lemma_tac¨≥X Ä {t|z < t}Æ THEN PC_T "sets_ext1" contr_tac);
-(* *** Goal "1.2.2.2.1" *** *)
-a(spec_nth_asm_tac 1 ¨xÆ THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-(* *** Goal "1.2.2.2.2" *** *)
-a(all_asm_fc_tac[]);
-(* *** Goal "2" *** *)
-a(REPEAT strip_tac THEN strip_asm_tac open_Ø_topology_thm);
-a(bc_thm_tac connected_pointwise_bc_thm);
-a(REPEAT strip_tac);
-a(strip_asm_tac (list_µ_elim[¨xÆ, ¨yÆ] Ø_less_cases_thm));
-(* *** Goal "2.1" *** *)
-a(∂_tac¨ClosedInterval x yÆ);
-a(ALL_FC_T rewrite_tac[closed_interval_connected_thm]);
-a(PC_T1 "sets_ext1" rewrite_tac[closed_interval_def]);
-a(REPEAT strip_tac THEN all_asm_fc_tac[] THEN asm_rewrite_tac[Ø_º_def]);
-(* *** Goal "2.2" *** *)
-a(∂_tac¨{x}Æ THEN asm_rewrite_tac[enum_set_clauses]);
-a(lemma_tac¨y ç SpaceâT OpenâRÆ THEN1 rewrite_tac[space_t_Ø_thm]);
-a(ALL_FC_T rewrite_tac[singleton_connected_thm]);
-(* *** Goal "2.3" *** *)
-a(∂_tac¨ClosedInterval y xÆ);
-a(ALL_FC_T rewrite_tac[closed_interval_connected_thm]);
-a(PC_T1 "sets_ext1" rewrite_tac[closed_interval_def]);
-a(REPEAT strip_tac THEN rename_tac[] THEN all_asm_fc_tac[] THEN asm_rewrite_tac[Ø_º_def]);
-val €connected_Ø_thm› = save_pop_thm "connected_Ø_thm";
-
-*)
 
 =TEX
 Note there is essentially no arithmetic involved in the following. The only fact being
@@ -6068,8 +6002,184 @@ a(strip_asm_tac d_Ø_metric_thm);
 a(ALL_FC_T rewrite_tac[product_metric_topology_thm]);
 a(rewrite_tac[d_Ø_open_Ø_thm]);
 val €d_Ø_2_open_Ø_∏_open_Ø_thm› = save_pop_thm "d_Ø_2_open_Ø_∏_open_Ø_thm";
+=TEX
+We specialise the theorem on Lebesgue numbers to the real line.
+%%%%
+%%%%
+
+=SML
+val €Ø_lebesgue_number_thm› = save_thm (
+	"Ø_lebesgue_number_thm",
+	pc_rule1 "predicates"
+	rewrite_rule[d_Ø_def, d_Ø_metric_thm, d_Ø_open_Ø_thm, compact_compact_Ø_thm]
+	(µ_elim¨DâRÆlebesgue_number_thm));
+
+val €closed_interval_lebesgue_number_thm› = save_thm (
+	"closed_interval_lebesgue_number_thm",
+	all_µ_intro(
+	pc_rule1 "predicates"
+	rewrite_rule[closed_interval_compact_thm]
+	(µ_elim¨ClosedInterval y zÆ Ø_lebesgue_number_thm)));
+=TEX
+
+The following lemma allows us to dissect the unit interval into a list of subintervals of bounded width for any given bound on the width.
+%%%%
+%%%%
+=SML
+
+set_goal([], ¨µx∑
+	0. < x
+¥	∂n t∑ 0 < n ± t 0 = 0. ± t n = 1.
+±	(µi j∑ i < j ¥ t i < t j)
+±	(µi∑t (i + 1) - t i < x)
+Æ);
+a(REPEAT strip_tac);
+a(lemma_tac¨∂n t∑ t 0 = 0. ± t n = 1.
+±	(µi∑t i < t (i + 1) ± t (i + 1) < t i + x)Æ);
+(* *** Goal "1" *** *)
+a(lemma_tac¨∂n y∑ 0. < y ± y < x ± ÓØ n * y = 1.Æ);
+(* *** Goal "1.1" *** *)
+a(strip_asm_tac (µ_elim¨xÆ Ø_archimedean_recip_thm));
+a(lemma_tac¨0. < ÓØ(m + 1)Æ THEN1 rewrite_tac[ÓØ_less_thm]);
+a(lemma_tac¨≥ÓØ(m + 1) = 0.Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(∂_tac¨m+1Æ THEN ∂_tac¨ÓØ(m+1) õ-õ1Æ THEN
+	ALL_FC_T asm_rewrite_tac[Ø_0_less_0_less_recip_thm,
+		Ø_recip_clauses]);
+(* *** Goal "1.2" *** *)
+a(∂_tac¨nÆ THEN ∂_tac¨Ãi∑ ÓØ i * yÆ THEN asm_rewrite_tac[
+		ÓØ_plus_homomorphism_thm,
+		Ø_times_plus_distrib_thm]);
+(* *** Goal "2" *** *)
+a(∂_tac¨nÆ THEN ∂_tac¨tÆ THEN asm_rewrite_tac[] THEN REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(swap_nth_asm_concl_tac 2 THEN LEMMA_T¨n = 0Æ asm_rewrite_thm_tac);
+a(PC_T1 "lin_arith" asm_prove_tac[]);
+(* *** Goal "2.2" *** *)
+a(LEMMA_T ¨i + 1 º jÆ (strip_asm_tac o rewrite_rule[º_def])
+	THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(all_var_elim_asm_tac1);
+a(POP_ASM_T discard_tac THEN induction_tac¨i'Æ THEN asm_rewrite_tac[plus_assoc_thm1]);
+a(bc_thm_tac Ø_less_trans_thm THEN ∂_tac¨t ((i + 1) + i')Æ THEN
+	asm_rewrite_tac[]);
+(* *** Goal "2.3" *** *)
+a(lemma_tac¨t (i + 1) < t i + xÆ THEN1 asm_rewrite_tac[]);
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+val €dissect_unit_interval_thm› = save_pop_thm "dissect_unit_interval_thm";
 
 =TEX
+We now give a result that is used in proving that covering projections
+are fibrations. Let $T$ be any space and $x \in T$. Assume $U$ is a
+set of open sets in $T \times [0, 1]$ that cover $\{x\} \times [0, 1]$.
+Then there is an open subset $A$ of $T$ and a finite sequence of
+numbers $t_0 = 0 < t_1 < t_2 < \ldots < t_n = 1$ such that for each $i$
+there is a $B_i \in U$ such that $A \times [t_i, t_{i+1}] \subseteq B_i$.
+%%%%
+%%%%
+
+=SML
+
+set_goal([], ¨µ‘ U x∑
+	‘ ç Topology
+±	U Ä (‘ ∏âT OpenâR)
+±	x ç SpaceâT ‘
+±	(µs∑ s ç ClosedInterval 0. 1. ¥ ∂B∑ (x, s) ç B ± B ç U) 
+¥	∂n t A∑ t 0 = 0. ± t n = 1. ± (µi∑t i < t (i + 1))
+	±	x ç A
+	±	A ç ‘
+	±	µi∑ i < n ¥ ∂B∑ B ç U ± (A ∏ ClosedInterval (t i) (t (i+1))) Ä B
+Æ);
+a(strip_asm_tac open_Ø_topology_thm);
+a(REPEAT strip_tac);
+a(lemma_tac¨(‘ ∏âT OpenâR) ç TopologyÆ THEN1 all_fc_tac[product_topology_thm]);
+a(lemma_tac¨
+	{I | I ç OpenâR ±
+	∂X B∑ x ç X ± X ç ‘ ± B ç U ± (X ∏ I) Ä B} Ä OpenâRÆ
+	THEN1 PC_T1 "sets_ext1" prove_tac[]);
+a(lemma_tac¨
+	ClosedInterval 0. 1. Ä
+	ﬁ {I | I ç OpenâR ± ∂X B∑ x ç X ± X ç ‘ ± B ç U ± (X ∏ I) Ä B}
+Æ);
+(* *** Goal "1" *** *)
+a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac);
+a(LIST_DROP_NTH_ASM_T [4] all_fc_tac);
+a(all_fc_tac[pc_rule1 "sets_ext1" prove_rule[]
+	¨µb u t∑ b ç u ± u Ä t ¥ b ç tÆ]
+	THEN swap_nth_asm_concl_tac 1);
+a(ALL_FC_T1 fc_§_canon once_rewrite_tac[open_open_neighbourhood_thm]);
+a(rewrite_tac[product_topology_def] THEN swap_nth_asm_concl_tac 1
+	THEN strip_tac THEN rewrite_tac[]);
+a(LIST_DROP_NTH_ASM_T [1] all_fc_tac);
+a(LIST_DROP_NTH_ASM_T [3] all_fc_tac);
+a(∂_tac¨B''Æ THEN REPEAT strip_tac);
+a(∂_tac¨AÆ THEN ∂_tac¨BÆ THEN REPEAT strip_tac);
+a(all_fc_tac[pc_rule1 "sets_ext1" prove_rule[]
+	¨µa b c∑ a Ä b ± b Ä c ¥ a Ä cÆ]);
+(* *** Goal "2" *** *)
+a(all_fc_tac[closed_interval_lebesgue_number_thm]);
+a(all_fc_tac[dissect_unit_interval_thm]);
+a(∂_tac¨nÆ THEN ∂_tac ¨tÆ THEN asm_rewrite_tac[]);
+a(lemma_tac¨∂Q∑µi∑ i < n ¥
+	x ç Q i ± Q i ç ‘ ±
+	∂B∑B ç U ± (Q i ∏ ClosedInterval (t i) (t(i + 1))) Ä BÆ
+	THEN prove_∂_tac THEN strip_tac);
+(* *** Goal "2.1" *** *)
+a(cases_tac¨i' < nÆ THEN asm_rewrite_tac[]);
+a(lemma_tac¨t i' ç ClosedInterval 0. 1.Æ);
+(* *** Goal "2.1.1" *** *)
+a(rewrite_tac[closed_interval_def]);
+a(cases_tac¨i' = 0Æ THEN1 asm_rewrite_tac[]);
+a(lemma_tac¨0 < i'Æ THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(rewrite_tac[Ø_º_def] THEN LIST_DROP_NTH_ASM_T [5] (ALL_FC_T (MAP_EVERY ante_tac)));
+a(asm_rewrite_tac[] THEN taut_tac);
+(* *** Goal "2.1.2" *** *)
+a(LIST_DROP_NTH_ASM_T [8] all_fc_tac);
+a(∂_tac¨XÆ THEN REPEAT strip_tac THEN ∂_tac¨BÆ THEN REPEAT strip_tac);
+a(bc_thm_tac(pc_rule1 "sets_ext1" prove_rule[]
+		¨µa b c∑ a Ä b ± b Ä c ¥ a Ä cÆ)
+	THEN ∂_tac¨X ∏ AÆ THEN REPEAT strip_tac);
+a(bc_thm_tac(pc_rule1 "sets_ext1" prove_rule[∏_def]
+		¨µx i a∑ i Ä a ¥ (x ∏ i) Ä (x ∏ a)Æ));
+a(rewrite_tac[closed_interval_def] THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+a(lemma_tac¨Abs(x' - t i') < eÆ);
+(* *** Goal "2.1.2.1" *** *)
+a(rewrite_tac[Ø_abs_def]);
+a(LEMMA_T ¨0. º x' + ~ (t i')Æ rewrite_thm_tac
+	THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(lemma_tac¨t(i' + 1) - t i' < eÆ THEN1 asm_rewrite_tac[]);
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "2.1.2.2" *** *)
+a(LIST_DROP_NTH_ASM_T [4] all_fc_tac);
+(* *** Goal "2.2" *** *)
+a(strip_asm_tac(rewrite_rule[range_finite_size_thm]
+	(list_µ_elim[¨QÆ, ¨{i | i < n}Æ]finite_image_thm)));
+a(∂_tac¨•{y|∂ x∑ x < n ± y = Q x}Æ THEN REPEAT strip_tac);
+(* *** Goal "2.2.1" *** *)
+a(all_var_elim_asm_tac1 THEN LIST_DROP_NTH_ASM_T [3] all_fc_tac);
+(* *** Goal "2.2.2" *** *)
+a(bc_thm_tac (•_open_thm) THEN asm_rewrite_tac[]);
+a(strip_tac THEN1 PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "2.2.2.1" *** *)
+a(∂_tac¨Q 0Æ THEN asm_rewrite_tac[]);
+a(∂_tac¨0Æ THEN REPEAT strip_tac);
+(* *** Goal "2.2.2.2" *** *)
+a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac);
+a(all_var_elim_asm_tac1 THEN LIST_DROP_NTH_ASM_T [3] all_fc_tac);
+(* *** Goal "2.2.3" *** *)
+a(DROP_NTH_ASM_T 3 (strip_asm_tac o µ_elim¨iÆ));
+a(∂_tac¨BÆ THEN REPEAT strip_tac);
+a(bc_thm_tac(pc_rule1 "sets_ext1" prove_rule[]
+		¨µa b c∑ a Ä b ± b Ä c ¥ a Ä cÆ)
+	THEN ∂_tac¨Q i ∏ ClosedInterval (t i) (t (i + 1))Æ THEN REPEAT strip_tac);
+a(bc_thm_tac(pc_rule1 "sets_ext1" prove_rule[∏_def]
+		¨µx y i∑ x Ä y ¥ (x ∏ i) Ä (y ∏ i)Æ));
+a(DROP_NTH_ASM_T 5 ante_tac THEN DROP_ASMS_T discard_tac);
+a(strip_tac THEN PC_T "sets_ext1" strip_tac);
+a(rewrite_tac[•_def] THEN REPEAT strip_tac);
+a(asm_prove_tac[]);
+(* *** Goal "2.3" *** *)
+a(strip_tac THEN DROP_NTH_ASM_T 3 bc_thm_tac THEN REPEAT strip_tac);
+val €product_interval_cover_thm› = save_pop_thm "product_interval_cover_thm";
+
 =TEX
 %%%%
 %%%%
