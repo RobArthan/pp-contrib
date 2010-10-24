@@ -11,7 +11,7 @@ or visit the OpenSource web site at http://www.opensource.org/
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-$Id: wrk067.doc,v 1.50 2010/10/23 15:50:53 rda Exp rda $
+$Id: wrk067.doc,v 1.51 2010/10/24 09:02:35 rda Exp rda $
 ********************************************************************************
 pp_make_database -f -p hol topology
 docsml wrk066 wrk067
@@ -58,7 +58,7 @@ doctex wrk067.doc  wrk067[1234].th.doc ; docdvi wrk067
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2010/10/23 15:50:53 $%
+\date{\FormatDate{$Date: 2010/10/24 09:02:35 $%
 }}
 \begin{document}
 \begin{titlepage}
@@ -101,7 +101,7 @@ give a groupoid modulo homotopy equivalence.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK067; issue $Revision: 1.50 $%
+Reference: LEMMA1/HOL/WRK067; issue $Revision: 1.51 $%
 
 
 \end{centering}
@@ -842,6 +842,8 @@ product_metric_thm
 product_metric_topology_thm
 lebesgue_number_thm
 collar_thm
+metric_topology_space_t_thm
+metric_topology_hausdorff_thm
 =TEX
 }
 We also define an induced metric on the set of lists of elements of a metric space. We use this, for example, to define $n$-dimensional euclidean space. Getting a good definition
@@ -5104,6 +5106,59 @@ a(∂_tac¨eÆ THEN REPEAT strip_tac);
 a(all_asm_fc_tac[]);
 a(all_var_elim_asm_tac1 THEN all_asm_fc_tac[]);
 val €collar_thm› = save_pop_thm "collar_thm";
+
+=TEX
+%%%%
+%%%%
+
+=SML
+
+set_goal([], ¨µD∑
+	D ç Metric
+¥	SpaceâT (D MetricTopology) = Universe
+Æ);
+a(PC_T1 "sets_ext1" rewrite_tac[metric_def, metric_topology_def, space_t_def]
+	THEN REPEAT strip_tac);
+a(∂_tac¨UniverseÆ THEN rewrite_tac[]);
+a(∂_tac¨1/2Æ THEN REPEAT strip_tac);
+val €space_t_metric_topology_thm› = save_pop_thm "space_t_metric_topology_thm";
+
+
+=TEX
+%%%%
+%%%%
+
+=SML
+
+set_goal([], ¨µD∑
+	D ç Metric
+¥	D MetricTopology ç Hausdorff
+Æ);
+a(REPEAT strip_tac THEN TOP_ASM_T ante_tac);
+a(rewrite_tac[metric_def, hausdorff_def, space_t_metric_topology_thm]
+	THEN REPEAT strip_tac);
+a(DROP_NTH_ASM_T 5 ante_tac);
+a(lemma_tac¨0. º D(x, y) ± ≥D(x, y) = 0.Æ
+	THEN1 asm_rewrite_tac[]);
+a(lemma_tac¨0. < 1/2 * D(x, y)Æ
+	THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]
+	THEN strip_tac);
+a(∂_tac¨{z | D(x, z) < 1/2 * D(x, y)}Æ
+	THEN ∂_tac¨{z | D(y, z) < 1/2 * D(x, y)}Æ
+	THEN ALL_FC_T rewrite_tac[arb_gen open_ball_open_thm]);
+a(POP_ASM_T ante_tac
+	THEN LEMMA_T¨µz∑ D(z, z) = 0.Æ asm_rewrite_thm_tac
+	THEN1 asm_rewrite_tac[]);
+a(PC_T1 "sets_ext1" REPEAT strip_tac);
+a(LEMMA_T¨D(x, y) º D(x, x') + D(x', y)Æ ante_tac
+	THEN1 DROP_NTH_ASM_T 10 rewrite_thm_tac);
+a(rewrite_tac[]);
+a(LEMMA_T ¨D(x', y) = D(y, x')Æ rewrite_thm_tac
+	THEN1 (DROP_NTH_ASM_T 3
+		(fn th => conv_tac(LEFT_C(once_rewrite_conv[th])))
+		THEN REPEAT strip_tac));
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+val €metric_topology_hausdorff_thm› = save_pop_thm "metric_topology_hausdorff_thm";
 
 =TEX
 %%%%
