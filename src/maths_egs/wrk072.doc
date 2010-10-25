@@ -11,9 +11,9 @@ or visit the OpenSource web site at http://www.opensource.org/
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-$Id: wrk072.doc,v 1.10 2010/10/24 13:37:17 rda Exp rda $
+$Id: wrk072.doc,v 1.11 2010/10/24 16:07:41 rda Exp rda $
 ********************************************************************************
-% wrk072.doc $Revision: 1.10 $ $RCSfile: wrk072.doc,v $ $Date: 2010/10/24 13:37:17 $
+% wrk072.doc $Revision: 1.11 $ $RCSfile: wrk072.doc,v $ $Date: 2010/10/24 16:07:41 $
 =TEX
 \documentclass[12pt,a4paper]{article}
 \usepackage{latexsym}
@@ -27,7 +27,7 @@ $Id: wrk072.doc,v 1.10 2010/10/24 13:37:17 rda Exp rda $
 \def\R{\mathbb{R}}
 \def\Z{\mathbb{Z}}
 \def\Q{\mathbb{Q}}
-\title{Mathematical Case Studies: the Complex Numbers\thanks{Copyright {\copyright} Lemma 1 Ltd. \number\year; filed in the {\Product} source code repository as {\tt wrk072.doc}; $Revision: 1.10 $.}}
+\title{Mathematical Case Studies: the Complex Numbers\thanks{Copyright {\copyright} Lemma 1 Ltd. \number\year; filed in the {\Product} source code repository as {\tt wrk072.doc}; $Revision: 1.11 $.}}
 \author{Rob Arthan\\{\tt rda@lemma-one.com}}
 \makeindex
 \begin{document}
@@ -789,7 +789,7 @@ val €exp_s1_onto_thm2› = save_pop_thm "exp_s1_onto_thm2";
 =SML
 
 set_goal([], ¨µc∑
-	{z | z ç S1 ±≥z = ExpS1 (c + –)} =
+	S1 \ {ExpS1 (c + –)} =
 	{z | ∂ x∑ x ç OpenInterval (c - –) (c + –) ± z = ExpS1 x}Æ);
 a(PC_T1 "sets_ext1" REPEAT strip_tac);
 (* *** Goal "1" *** *)
@@ -830,7 +830,7 @@ val €exp_s1_covering_projection_lemma1› = save_pop_thm "exp_s1_covering_projecti
 set_goal([], ¨µx∑
 	ExpS1 ç
 	(OpenInterval (x - –) (x + –) ÚâT OpenâR,
-		{z | z ç S1 ±≥z = ExpS1 (x + –)} ÚâT OpenâC) 
+		(S1 \ {ExpS1 (x + –)}) ÚâT OpenâC) 
 			Homeomorphism
 Æ);
 a(REPEAT strip_tac);
@@ -867,7 +867,52 @@ val €exp_s1_covering_projection_lemma2› = save_pop_thm "exp_s1_covering_projecti
 
 
 =TEX
+%%%%
+%%%%
+=SML
 
+val €exp_s1_covering_projection_lemma3› = save_thm (
+	"exp_s1_covering_projection_lemma3",
+ rewrite_rule[open_Ø_topology_thm,
+	open_÷_topology_thm,
+	exp_s1_continuous_thm,
+	exp_s1_ç_s1_thm,
+	universe_subspace_topology_thm]
+	(list_µ_elim[¨OpenâRÆ, ¨OpenâCÆ,
+		¨Universe:Ø SETÆ, ¨S1Æ, ¨ExpS1Æ] 
+			subspace_continuous_thm));
+
+=TEX
+
+%%%%
+%%%%
+=SML
+
+set_goal([], ¨µx∑
+	ExpS1 x ç S1 \ {ExpS1 (x + –)}
+Æ);
+a(REPEAT strip_tac THEN1 rewrite_tac[exp_s1_ç_s1_thm]);
+a(rewrite_tac[exp_s1_def, sin_cos_–_thm, sin_cos_plus_thm] THEN contr_tac);
+a(lemma_tac¨Sin x = 0. ± Cos x = 0.Æ
+	THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(ante_tac (µ_elim¨xÆcos_squared_plus_sin_squared_thm));
+a(asm_rewrite_tac[Ø_Ó_exp_square_thm]);
+val €exp_s1_covering_projection_lemma4› = save_pop_thm "exp_s1_covering_projection_lemma4";
+
+=TEX
+%%%%
+%%%%
+=SML
+
+val €÷_punctured_hausdorff_thm› = save_thm (
+	"÷_punctured_hausdorff_thm",
+	rewrite_rule[
+		open_÷_topology_thm,
+		open_÷_hausdorff_thm,
+		space_t_open_÷_thm]
+		(µ_elim¨OpenâCÆ punctured_hausdorff_thm));
+
+=TEX
 %%%%
 %%%%
 =SML
@@ -878,35 +923,52 @@ set_goal([], ¨
 	ExpS1 ç (OpenâR, S1 ÚâT OpenâC) CoveringProjection
 Æ);
 a(rewrite_tac[covering_projection_def, space_t_subspace_open_÷_thm,
-	exp_s1_continuous_thm]);
-a(bc_thm_tac Ä_compact_homeomorphism_thm);
-a(∂_tac¨ClosedInterval (x - –) (x + –)Æ);
-a(rewrite_tac[open_Ø_topology_thm, open_Ø_hausdorff_thm,
-	open_÷_topology_thm, open_÷_hausdorff_thm,
-	exp_s1_continuous_thm, compact_compact_Ø_thm,
-	closed_interval_compact_thm]);
-a(rewrite_tac[open_interval_def, closed_interval_def]);
-a(REPEAT strip_tac THEN1
-	(PC_T1 "sets_ext1" rewrite_tac[]
-	THEN PC_T1 "Ø_lin_arith" prove_tac[]));
-a(DROP_NTH_ASM_T 2 (strip_asm_tac o rewrite_rule[Ø_º_def]));
+	exp_s1_continuous_thm,
+	exp_s1_covering_projection_lemma3]
+	THEN REPEAT strip_tac);
+a(all_fc_tac[exp_s1_onto_thm] THEN all_var_elim_asm_tac1);
+a(∂_tac¨S1 \ {ExpS1(x + –)}Æ);
+a(rewrite_tac[exp_s1_covering_projection_lemma4,
+	÷_punctured_hausdorff_thm]);
+a(lemma_tac¨0. < –Æ THEN1 rewrite_tac[–_def]);
+a(∂_tac¨{I | ∂y∑ ExpS1 y = ExpS1 x
+	± I = OpenInterval (y - –) (y + –)}Æ
+	THEN rewrite_tac[]
+	THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
-a(ante_tac(list_µ_elim[¨xÆ, ¨ExpS1 yÆ] exp_s1_onto_thm1)
-	THEN rewrite_tac[exp_s1_ç_s1_thm]
-	THEN REPEAT strip_tac);
-a(spec_nth_asm_tac 1 ¨yÆ THEN all_var_elim_asm_tac1);
-a(DROP_NTH_ASM_T 3 (strip_asm_tac o eq_sym_rule)); 
-a(lemma_tac¨x + ~ – º x'Æ THEN1 asm_rewrite_tac[Ø_º_def]);
-a(LIST_DROP_NTH_ASM_T [3] all_fc_tac THEN all_var_elim_asm_tac);
+a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac
+	THEN all_var_elim_asm_tac1
+	THEN rewrite_tac[open_interval_open_thm]);
 (* *** Goal "2" *** *)
-a(i_contr_tac THEN all_var_elim_asm_tac1);
-a(POP_ASM_T (strip_asm_tac o eq_sym_rule));
-a(ante_tac(list_µ_elim[¨x' + –Æ, ¨ExpS1 (x + –)Æ] exp_s1_onto_thm1)
-	THEN rewrite_tac[exp_s1_ç_s1_thm]
-	THEN REPEAT strip_tac);
-a(spec_nth_asm_tac 3 ¨x + –Æ THEN_TRY PC_T1"Ø_lin_arith" asm_prove_tac[]
-	THEN all_var_elim_asm_tac1);
-a(spec_nth_asm_tac 2 ¨x'Æ THEN_TRY PC_T1"Ø_lin_arith" asm_prove_tac[]);
+a(∂_tac¨OpenInterval (x' + ~ –) (x' + –)Æ);
+a(rewrite_tac[open_interval_def]
+	THEN REPEAT strip_tac
+	THEN_TRY PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(∂_tac¨x'Æ THEN asm_rewrite_tac[]);
+(* *** Goal "3" *** *)
+a(LEMMA_T¨ExpS1 y = ExpS1 y'Æ ante_tac THEN1 asm_rewrite_tac[]);
+a(POP_ASM_T (PC_T1 "sets_ext1" strip_asm_tac));
+a(all_var_elim_asm_tac1);
+a(cases_tac¨y = y'Æ THEN1 asm_rewrite_tac[]);
+a(POP_ASM_T ante_tac THEN POP_ASM_T ante_tac
+	THEN POP_ASM_T ante_tac
+	THEN DROP_NTH_ASM_T 3 ante_tac
+	THEN DROP_ASMS_T discard_tac);
+a(rewrite_tac[exp_s1_period_thm, open_interval_def] THEN REPEAT ¥_tac
+	THEN all_var_elim_asm_tac1
+	THEN LEMMA_T ¨m = 0Æ rewrite_thm_tac
+	THEN strip_asm_tac (µ_elim¨m:ÓÆ Ó_cases_thm)
+	THEN all_var_elim_asm_tac1
+	THEN all_asm_ante_tac);
+
+	THEN rewrite_tac[ÓØ_times_homomorphism_thm,
+	ÓØ_plus_homomorphism_thm]);
+(* *** Goal "3.1" *** *)
+a(lemma_tac¨0. º ÓØ iÆ THEN1 rewrite_tac[ÓØ_º_thm]);
+a(REPEAT strip_tac);
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+
+
 val €exp_s1_covering_projection_lemma2› = save_pop_thm "exp_s1_covering_projection_lemma2";
 
 *)
