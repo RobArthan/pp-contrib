@@ -11,9 +11,9 @@ or visit the OpenSource web site at http://www.opensource.org/
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-$Id: wrk072.doc,v 1.11 2010/10/24 16:07:41 rda Exp rda $
+$Id: wrk072.doc,v 1.12 2010/10/25 17:04:24 rda Exp rda $
 ********************************************************************************
-% wrk072.doc $Revision: 1.11 $ $RCSfile: wrk072.doc,v $ $Date: 2010/10/24 16:07:41 $
+% wrk072.doc $Revision: 1.12 $ $RCSfile: wrk072.doc,v $ $Date: 2010/10/25 17:04:24 $
 =TEX
 \documentclass[12pt,a4paper]{article}
 \usepackage{latexsym}
@@ -27,7 +27,7 @@ $Id: wrk072.doc,v 1.11 2010/10/24 16:07:41 rda Exp rda $
 \def\R{\mathbb{R}}
 \def\Z{\mathbb{Z}}
 \def\Q{\mathbb{Q}}
-\title{Mathematical Case Studies: the Complex Numbers\thanks{Copyright {\copyright} Lemma 1 Ltd. \number\year; filed in the {\Product} source code repository as {\tt wrk072.doc}; $Revision: 1.11 $.}}
+\title{Mathematical Case Studies: the Complex Numbers\thanks{Copyright {\copyright} Lemma 1 Ltd. \number\year; filed in the {\Product} source code repository as {\tt wrk072.doc}; $Revision: 1.12 $.}}
 \author{Rob Arthan\\{\tt rda@lemma-one.com}}
 \makeindex
 \begin{document}
@@ -44,16 +44,23 @@ Definitions of the complex numbers and their arithmetic operators in {\ProductHO
 \section{INTRODUCTION}
 This document contains the beginnings of a theory of complex arithmetic in {\ProductHOL}.
 
-After some preliminaries, section~\ref{theory} introduces the field operations and the embedddings of the real numbers and of conjugation (which help to abbreviate the definition of reciprocals).
+After some preliminaries, section~\ref{sec:algebra} introduces the field operations and the embedddings of the real numbers and of conjugation (which help to abbreviate the definition of reciprocals).
 We then define the derived operations of binary subtraction and division and the embedding of the natural numbers.
 
-A proof script contained in the source of this document but hidden from the printed document gives proofs that the complex numbers form a field and  of some elementary algebraic properties of complex conjugation and of the embeddings of the natural numbers and the real numbers in the complex numbers.
-With one exception, the proofs comprise nothing more than simplifying using definitions and standard theorems and then application of the decision procedure for linear arithmetic to prove the resulting problem of real algebra.
-The exception is proving that $xx^{-1} = 1$, which requires a few lines of reasoning about real squares.
+In section~\ref{sec:topology} we introduce the topology on the complex numbers and define the exponential mapping of the real line onto the unit circle.
+
+A proof script contained in the source of this document but hidden from the printed document proves several theorems about the complex numbers.
 A listing of the theorems proved is given in appendix~\ref{listing}.
 
+We prove that the complex numbers form a field and prove some elementary algebraic properties of complex conjugation and of the embeddings of the natural numbers and the real numbers in the complex numbers.
+The proofs of these basic algebraic properties generally comprise little more than simplifying using definitions and standard theorems and then application of the decision procedure for linear arithmetic to prove the resulting problem of real algebra.
+One exception is proving that $zz^{-1} = 1$, which requires a few lines of reasoning about real squares.
 
-\section{THE THEORY ÷}\label{theory}
+The proof scripts then go on to develop basic facts about the exponential mapping of the real line onto the unit circle, leading up to the important fact that it is a covering projection.
+
+
+
+\section{THE ALGEBRA ÷}\label{sec:algebra}
 
 \subsection{Preliminaries}
 The following commands set up a theory to hold the definitions, theorems, etc.
@@ -202,7 +209,7 @@ declare_infix(320, "^âC");
 =SML
 declare_alias("^", ¨$^âCÆ);
 =TEX
-\section{÷ {\it qua} Real Normed Space}
+\subsection{÷ {\it qua} Real Normed Space}
 =SML
 declare_infix(310, "*âRC");
 =TEX
@@ -215,28 +222,28 @@ declare_infix(310, "*âRC");
 ∞
 
 πHOLCONST
-‹ $€AbsâC› : ÷ ≠ Ø
+‹ €AbsâC› : ÷ ≠ Ø
 ˜¸¸¸¸¸¸
 ‹µ v : ÷∑
 ‹	AbsâC v = Sqrt(Fst (v * v õ_))
 ∞
 
-\section{Topology}
+\section{TOPOLOGICAL ASPECTS}\label{sec:topology}
 The topology of ÷ is just the product topology.
 πHOLCONST
-‹ $€OpenâC› : ÷ SET SET
+‹ €OpenâC› : ÷ SET SET
 ˜¸¸¸¸¸¸
 ‹ OpenâC = OpenâR ∏âT OpenâR
 ∞
 The unit circle:
 πHOLCONST
-‹ $€S1› : ÷ SET
+‹ €S1› : ÷ SET
 ˜¸¸¸¸¸¸
 ‹ S1 = {z | AbsâC z = 1.}
 ∞
 and the exponential mapping of the real line onto the unit circle:
 πHOLCONST
-‹ $€ExpS1› : Ø ≠ ÷
+‹ €ExpS1› : Ø ≠ ÷
 ˜¸¸¸¸¸¸
 ‹ µt∑ ExpS1 t = (Cos t, Sin t)
 ∞
@@ -245,7 +252,7 @@ and the exponential mapping of the real line onto the unit circle:
 %\twocolumn[\section{INDEX}\label{INDEX}]
 %{\printindex}
 
-\bibliographystyle{plain}
+\bibliographystyle{fmu}
 \bibliography{fmu}
 
 \appendix
@@ -900,12 +907,40 @@ a(asm_rewrite_tac[Ø_Ó_exp_square_thm]);
 val €exp_s1_covering_projection_lemma4› = save_pop_thm "exp_s1_covering_projection_lemma4";
 
 =TEX
+
 %%%%
 %%%%
 =SML
 
-val €÷_punctured_hausdorff_thm› = save_thm (
-	"÷_punctured_hausdorff_thm",
+set_goal([], ¨µx y∑
+	ExpS1 x = ExpS1 y
+±	≥OpenInterval (x + ~ –) (x + –) °
+		OpenInterval (y + ~ –) (y + –) = {}
+¥	x = y
+Æ);
+a(PC_T1 "sets_ext1" rewrite_tac[exp_s1_period_thm, open_interval_def] THEN REPEAT strip_tac
+	THEN all_var_elim_asm_tac1
+	THEN strip_asm_tac (µ_elim¨m:ÓÆ Ó_cases_thm)
+	THEN all_var_elim_asm_tac1
+	THEN all_asm_ante_tac
+	THEN rewrite_tac[ÓØ_times_homomorphism_thm,
+		ÓØ_plus_homomorphism_thm,
+		Ø_times_plus_distrib_thm,
+		Ø_times_assoc_thm]
+	THEN	(lemma_tac ¨0. º ÓØ i * –Æ THEN_LIST [
+		bc_thm_tac Ø_0_º_0_º_times_thm,
+		PC_T1 "Ø_lin_arith" asm_prove_tac[]]));
+(* *** Goal "1" (duplicates "2") *** *)
+a(rewrite_tac[ÓØ_º_thm] THEN rewrite_tac[Ø_º_def, –_def]);
+val €exp_s1_covering_projection_lemma5› = save_pop_thm "exp_s1_covering_projection_lemma5";
+
+=TEX
+%%%%
+%%%%
+=SML
+
+val €÷_punctured_set_thm› = save_thm (
+	"÷_punctured_set_thm",
 	rewrite_rule[
 		open_÷_topology_thm,
 		open_÷_hausdorff_thm,
@@ -917,8 +952,6 @@ val €÷_punctured_hausdorff_thm› = save_thm (
 %%%%
 =SML
 
-(*
-
 set_goal([], ¨
 	ExpS1 ç (OpenâR, S1 ÚâT OpenâC) CoveringProjection
 Æ);
@@ -929,7 +962,7 @@ a(rewrite_tac[covering_projection_def, space_t_subspace_open_÷_thm,
 a(all_fc_tac[exp_s1_onto_thm] THEN all_var_elim_asm_tac1);
 a(∂_tac¨S1 \ {ExpS1(x + –)}Æ);
 a(rewrite_tac[exp_s1_covering_projection_lemma4,
-	÷_punctured_hausdorff_thm]);
+	÷_punctured_set_thm]);
 a(lemma_tac¨0. < –Æ THEN1 rewrite_tac[–_def]);
 a(∂_tac¨{I | ∂y∑ ExpS1 y = ExpS1 x
 	± I = OpenInterval (y - –) (y + –)}Æ
@@ -946,32 +979,19 @@ a(rewrite_tac[open_interval_def]
 	THEN_TRY PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 a(∂_tac¨x'Æ THEN asm_rewrite_tac[]);
 (* *** Goal "3" *** *)
-a(LEMMA_T¨ExpS1 y = ExpS1 y'Æ ante_tac THEN1 asm_rewrite_tac[]);
-a(POP_ASM_T (PC_T1 "sets_ext1" strip_asm_tac));
+a(lemma_tac¨ExpS1 y = ExpS1 y'Æ THEN1 asm_rewrite_tac[]
+	THEN all_var_elim_asm_tac1);
+a(ALL_FC_T rewrite_tac[exp_s1_covering_projection_lemma5]);
+(* *** Goal "4" *** *)
+a(lemma_tac¨S1 \ {ExpS1 (x + –)} Ä S1Æ
+	THEN1 PC_T1 "sets_ext1" prove_tac[]);
+a(ALL_FC_T rewrite_tac[Ä_subspace_topology_thm]);
+a(DROP_NTH_ASM_T 3 (strip_asm_tac o eq_sym_rule));
 a(all_var_elim_asm_tac1);
-a(cases_tac¨y = y'Æ THEN1 asm_rewrite_tac[]);
-a(POP_ASM_T ante_tac THEN POP_ASM_T ante_tac
-	THEN POP_ASM_T ante_tac
-	THEN DROP_NTH_ASM_T 3 ante_tac
-	THEN DROP_ASMS_T discard_tac);
-a(rewrite_tac[exp_s1_period_thm, open_interval_def] THEN REPEAT ¥_tac
-	THEN all_var_elim_asm_tac1
-	THEN LEMMA_T ¨m = 0Æ rewrite_thm_tac
-	THEN strip_asm_tac (µ_elim¨m:ÓÆ Ó_cases_thm)
-	THEN all_var_elim_asm_tac1
-	THEN all_asm_ante_tac);
-
-	THEN rewrite_tac[ÓØ_times_homomorphism_thm,
-	ÓØ_plus_homomorphism_thm]);
-(* *** Goal "3.1" *** *)
-a(lemma_tac¨0. º ÓØ iÆ THEN1 rewrite_tac[ÓØ_º_thm]);
-a(REPEAT strip_tac);
-a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-
-
-val €exp_s1_covering_projection_lemma2› = save_pop_thm "exp_s1_covering_projection_lemma2";
-
-*)
+a(LEMMA_T ¨ExpS1 (x + –) = ExpS1 (y + –)Æ rewrite_thm_tac
+	THEN1 asm_rewrite_tac[exp_s1_homomorphism_thm]);
+a(rewrite_tac[rewrite_rule[]exp_s1_covering_projection_lemma2]);
+val €exp_s1_covering_projection_thm› = save_pop_thm "exp_s1_covering_projection_thm";
 
 =TEX
 \Hide{
