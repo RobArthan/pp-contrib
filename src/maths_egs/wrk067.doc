@@ -11,7 +11,7 @@ or visit the OpenSource web site at http://www.opensource.org/
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-$Id: wrk067.doc,v 1.57 2010/10/30 14:22:12 rda Exp rda $
+$Id: wrk067.doc,v 1.58 2010/10/30 16:25:52 rda Exp rda $
 ********************************************************************************
 pp_make_database -f -p hol topology
 docsml wrk066 wrk067
@@ -58,7 +58,7 @@ doctex wrk067.doc  wrk067[1234].th.doc ; docdvi wrk067
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2010/10/30 14:22:12 $%
+\date{\FormatDate{$Date: 2010/10/30 16:25:52 $%
 }}
 \begin{document}
 \begin{titlepage}
@@ -101,7 +101,7 @@ give a groupoid modulo homotopy equivalence.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK067; issue $Revision: 1.57 $%
+Reference: LEMMA1/HOL/WRK067; issue $Revision: 1.58 $%
 
 
 \end{centering}
@@ -1834,6 +1834,18 @@ a(rewrite_tac[pc_rule1 "sets_ext1" prove_rule[]
 	¨µt∑ {a | ∂b∑ b ç t ± a = b} = tÆ]);
 val €universe_subspace_topology_thm› = save_pop_thm "universe_subspace_topology_thm";
 
+=TEX
+%%%%
+%%%%
+
+=SML
+
+set_goal([], ¨µ‘ A∑
+	‘ ç Topology
+±	A ç ‘
+¥	A Ä SpaceâT ‘Æ);
+a(PC_T1 "sets_ext1" REPEAT strip_tac THEN all_fc_tac[ç_space_t_thm]);
+val €open_Ä_space_t_thm› = save_pop_thm "open_Ä_space_t_thm";
 
 =TEX
 %%%%
@@ -1845,8 +1857,9 @@ set_goal([], ¨µ‘ A∑
 	‘ ç Topology
 ±	A ç ‘
 ¥	SpaceâT (A ÚâT ‘) = AÆ);
-a(REPEAT strip_tac THEN bc_thm_tac subspace_topology_space_t_thm1);
-a(PC_T1 "sets_ext1" REPEAT strip_tac THEN all_fc_tac[ç_space_t_thm]);
+a(REPEAT strip_tac THEN bc_tac[
+	subspace_topology_space_t_thm1,
+	open_Ä_space_t_thm] THEN REPEAT strip_tac);
 val €subspace_topology_space_t_thm2› = save_pop_thm "subspace_topology_space_t_thm2";
 
 
@@ -2140,6 +2153,25 @@ a(LEMMA_T ¨‘ = Universe ÚâT ‘Æ once_rewrite_thm_tac
 	THEN1 rewrite_tac[universe_subspace_topology_thm]);
 a(bc_thm_tac subspace_continuous_thm THEN asm_rewrite_tac[]);
 val €subspace_domain_continuous_thm› = save_pop_thm "subspace_domain_continuous_thm";
+
+=TEX
+%%%%
+%%%%
+
+=SML
+
+set_goal([], ¨µ” ‘ f∑
+	” ç Topology
+±	‘ ç Topology
+¥	f ç ({} ÚâT ”, ‘) Continuous
+Æ);
+a(REPEAT strip_tac);
+a(asm_rewrite_tac[continuous_def]);
+a(ALL_FC_T rewrite_tac[subspace_topology_space_t_thm]);
+a(rewrite_tac[pc_rule1"sets_ext1" prove_rule[]¨{x|F} = {}Æ]);
+a(REPEAT strip_tac THEN rewrite_tac[subspace_topology_def]);
+a(∂_tac¨{}Æ THEN ALL_FC_T rewrite_tac[empty_open_thm]);
+val €empty_continuous_thm› = save_pop_thm "empty_continuous_thm";
 
 =TEX
 %%%%
@@ -2626,6 +2658,64 @@ a(cases_tac¨x ç AÆ THEN asm_rewrite_tac[]
 a(ALL_ASM_FC_T asm_rewrite_tac[]);
 val €open_¿_open_continuous_thm› = save_pop_thm "open_¿_open_continuous_thm";
 
+=TEX
+
+%%%%
+%%%%
+=SML
+
+set_goal([], ¨µ” ‘ X U G∑
+	” ç Topology
+±	‘ ç Topology
+±	(µx∑ x ç X ¥ U x Ä X)
+±	(µx∑ x ç X ¥ x ç U x)
+±	(µx∑ x ç X ¥ U x ç X ÚâT ”)
+±	(µx∑ x ç X ¥ G x ç (U x ÚâT ”, ‘) Continuous)
+±	(µx y∑ y ç U x ¥ x ç U y)
+±	(µx y∑ y ç U x ¥ G y y = G x y)
+¥	(Ãx∑ G x x) ç (X ÚâT ”, ‘) Continuous
+Æ);
+a(rewrite_tac[continuous_def] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(POP_ASM_T ante_tac THEN ALL_FC_T rewrite_tac[subspace_topology_space_t_thm]
+	THEN REPEAT strip_tac);
+a(LIST_GET_NTH_ASM_T [5] (FC_T bc_tac));
+a(ALL_FC_T rewrite_tac[subspace_topology_space_t_thm]
+	THEN REPEAT strip_tac);
+a(all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(lemma_tac¨X Ä SpaceâT ”Æ);
+(* *** Goal "2.1" *** *)
+a(PC_T1 "sets_ext1" REPEAT strip_tac);
+a(all_asm_fc_tac[]);
+a(lemma_tac ¨X ÚâT ” ç TopologyÆ THEN1 
+	(bc_thm_tac subspace_topology_thm THEN REPEAT strip_tac));
+a(LEMMA_T ¨x ç SpaceâT (X ÚâT ”)Æ ante_tac THEN1 all_fc_tac[ç_space_t_thm]);
+a(ALL_FC_T rewrite_tac[subspace_topology_space_t_thm]
+	THEN REPEAT strip_tac);
+(* *** Goal "2.2" *** *)
+a(ALL_FC_T rewrite_tac[subspace_topology_space_t_thm1]);
+a(lemma_tac¨X ÚâT ” ç TopologyÆ THEN1 (bc_thm_tac subspace_topology_thm THEN REPEAT strip_tac));
+a(ALL_FC_T1 fc_§_canon once_rewrite_tac[open_open_neighbourhood_thm]
+	THEN REPEAT strip_tac);
+a(all_asm_fc_tac[]);
+a(LIST_DROP_NTH_ASM_T [3, 4](MAP_EVERY ante_tac));
+a(all_fc_tac[pc_rule1"sets_ext1" prove_rule[]¨µa b c∑a Ä b ± b Ä c ¥ a Ä cÆ]);
+a(ALL_FC_T rewrite_tac[subspace_topology_space_t_thm1]);
+a(rewrite_tac[subspace_topology_def] THEN REPEAT strip_tac);
+a(lemma_tac¨x ç B ° U xÆ
+	THEN1 (DROP_NTH_ASM_T 3 (rewrite_thm_tac o eq_sym_rule)
+		THEN asm_rewrite_tac[]));
+a(∂_tac¨B ° U xÆ THEN REPEAT strip_tac);
+(* *** Goal "2.2.1" *** *)
+a(∂_tac¨B ° B'Æ THEN REPEAT strip_tac THEN1 all_fc_tac[arb_gen °_open_thm]);
+a(asm_rewrite_tac[] THEN PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "2.2.2" *** *)
+a(DROP_NTH_ASM_T 4 (rewrite_thm_tac o eq_sym_rule));
+a(PC_T1 "sets_ext1" REPEAT strip_tac
+	THEN1 PC_T1 "sets_ext" all_asm_fc_tac[]);
+a(LIST_DROP_NTH_ASM_T [15] (ALL_FC_T asm_rewrite_tac));
+val €compatible_family_continuous_thm› = save_pop_thm "compatible_family_continuous_thm";
 
 =TEX
 
@@ -8114,11 +8204,24 @@ val €product_locally_path_connected_thm› = save_pop_thm "product_locally_path_co
 
 
 =TEX
-\subsection{The Homotopy Lifting Property for Covering Projections}
+\subsection{Covering Projections are Fibrations}
 
 =TEX
 %%%%
 %%%%
+We will prove that covering projections are fibrations, i.e., they have the following homotopy lifting property:
+let $p : S ≠ T$ be a covering projection,
+let $h : R  \times [0, 1] ≠ S$ be any continuous mapping
+and let $f : R ≠ T$ be such that $p(f x) = h(x, 0)$
+for every $x \in R$, then there is a continuous $L: R \times [0, 1] ≠ T$
+such that $L(x, 0) = f(x)$ and $p(L(x, s)) = h(x, s)$ for any $x \in R$ and $s \in [0, 1]$.
+This is done in a sequence of lemmas.
+
+=TEX
+%%%%
+%%%%
+
+We first look at the case where $h$ and $f$ are restricted to a subset $N$ of $R$ such that  $h(N \times [a, b])$ is contained in an evenly covered open subset $C$ of $T$ and  $f(N)$ lies in a single sheet $S$ over $C$.
 
 =SML
 
@@ -8128,7 +8231,7 @@ set_goal([], ¨µ“; ”; ‘;
 	f : 'a ≠ 'b;
 	h : 'a ∏ Ø ≠ 'c;
 	N : 'a SET;
-	x : 'a;
+	S : 'b SET;
 	a b : Ø;
 	C : 'c SET;
 	U : 'b SET SET ∑
@@ -8137,29 +8240,28 @@ set_goal([], ¨µ“; ”; ‘;
 ±	‘ ç Topology
 ±	f ç (“, ”) Continuous
 ±	h ç (“ ∏âT OpenâR, ‘) Continuous
-±	(µx∑ x ç N ¥ p(f x) = h(x, a))
-±	x0 ç N ± a < b
+±	(µx∑ x ç N ¥ f x ç S)
+±	(µx∑ x ç N ¥ h(x, a) = p(f x))
+±	S ç U
+±	a < b
 ±	(µx t∑ x ç N ± t ç ClosedInterval a b ¥ h (x, t) ç C)
 ±	C ç ‘
 ±	U Ä ”
-±	(µx∑ p x = h(x0, a) ¥ ∂A∑ x ç A ± A ç U)
-(*
-±	(µ A B∑ A ç U ± B ç U ± ≥ A ° B = {} ¥ A = B)
-*)
+±	(µx∑ p x ç C ¥ ∂A∑ x ç A ± A ç U)
 ±	(µ A∑ A ç U ¥ p ç (A ÚâT ”, C ÚâT ‘) Homeomorphism)
 ¥	∂L : 'a ∏ Ø ≠ 'b∑
 	L ç ((N ∏ ClosedInterval a b) ÚâT (“ ∏âT OpenâR), ”) Continuous
-±	µx t∑	x ç N
-	±	t ç ClosedInterval a b
-	¥	p(L(x, t)) = h(x, t)
+±	(µx∑	x ç N
+	¥	L(x, a) = f x)
+±	(µx s∑	x ç N
+	±	s ç ClosedInterval a b
+	¥	p(L(x, s)) = h(x, s))
 Æ);
 a(REPEAT strip_tac);
-a(LIST_GET_NTH_ASM_T[8] all_fc_tac);
-a(LIST_GET_NTH_ASM_T[3] all_fc_tac);
+a(LIST_GET_NTH_ASM_T[1] all_fc_tac);
+a(POP_ASM_T (ante_tac o rewrite_rule[homeomorphism_def]));
 a(all_fc_tac[pc_rule1 "sets_ext1" prove_rule[]
 	¨µa u s∑ a ç u ± u Ä s ¥ a ç sÆ]); 
-a(LIST_GET_NTH_ASM_T[5] all_fc_tac);
-a(POP_ASM_T (ante_tac o rewrite_rule[homeomorphism_def]));
 a(ALL_FC_T rewrite_tac[subspace_topology_space_t_thm2]
 	THEN REPEAT strip_tac);
 a(∂_tac¨Ãxt∑g(h xt)Æ THEN rewrite_tac[]);
@@ -8175,19 +8277,231 @@ subspace_topology_thm]
 a(bc_thm_tac subspace_continuous_thm);
 a(ALL_FC_T asm_rewrite_tac[product_topology_thm]);
 a(rewrite_tac[∏_def] THEN REPEAT strip_tac);
-a(LIST_DROP_NTH_ASM_T [16] all_fc_tac);
-a(DROP_NTH_ASM_T 2 ante_tac THEN rewrite_tac[]);
+a(LIST_DROP_NTH_ASM_T [13] all_fc_tac);
+a(POP_ASM_T ante_tac THEN rewrite_tac[]);
 (* *** Goal "1.2" *** *)
 a(bc_thm_tac subspace_range_continuous_thm);
-a(∂_tac¨AÆ THEN REPEAT strip_tac);
+a(∂_tac¨SÆ THEN REPEAT strip_tac);
 a(bc_thm_tac subspace_topology_thm THEN REPEAT strip_tac);
 (* *** Goal "1.3" *** *)
 a(bc_tac[product_topology_thm, subspace_topology_thm] THEN REPEAT strip_tac);
 (* *** Goal "2" *** *)
 a(LIST_DROP_NTH_ASM_T [15] all_fc_tac);
-a(LIST_DROP_NTH_ASM_T [5] (ALL_FC_T rewrite_tac));
+a(LIST_DROP_NTH_ASM_T [4, 15] (ALL_FC_T rewrite_tac));
+(* *** Goal "3" *** *)
+a(DROP_NTH_ASM_T 3 bc_thm_tac THEN all_asm_fc_tac[]);
 val €covering_projection_fibration_lemma1› = save_pop_thm "covering_projection_fibration_lemma1";
 
+
+
+=SML
+
+(*
+
+set_goal([], ¨µ“; ”; ‘;
+	p : 'b ≠ 'c;
+	f : 'a ≠ 'b;
+	h : 'a ∏ Ø ≠ 'c;
+	N : 'a SET;
+	a b : Ø;
+	C : 'c SET;
+	U : 'b SET SET ∑
+	“ ç Topology
+±	” ç Topology
+±	‘ ç Topology
+±	f ç (“, ”) Continuous
+±	h ç (“ ∏âT OpenâR, ‘) Continuous
+±	N ç “
+±	a < b
+±	(µx∑ x ç N ¥ h(x, a) = p(f x))
+±	(µx s∑ x ç N ± s ç ClosedInterval a b ¥ h (x, s) ç C)
+±	C ç ‘
+±	U Ä ”
+±	(µx∑ p x ç C ¥ ∂A∑ x ç A ± A ç U)
+±	(µ A B∑ A ç U ± B ç U ± ≥ A ° B = {} ¥ A = B)
+±	(µ A∑ A ç U ¥ p ç (A ÚâT ”, C ÚâT ‘) Homeomorphism)
+¥	∂L : 'a ∏ Ø ≠ 'b∑
+	L ç ((N ∏ ClosedInterval a b) ÚâT (“ ∏âT OpenâR), ”) Continuous
+±	(µx∑	x ç N
+	¥	L(x, a) = f x)
+±	(µx s∑	x ç N
+	±	s ç ClosedInterval a b
+	¥	p(L(x, s)) = h(x, s))
+Æ);
+a(REPEAT strip_tac);
+a(lemma_tac¨∂W∑µxs : 'a ∏ Ø∑
+	W xs = {y | y ç N ± ∂A∑ f (Fst xs) ç A ± f y ç A ± A ç U}Æ
+	THEN1 prove_∂_tac);
+a(lemma_tac¨∂V∑µxs∑
+	V xs = (W xs ∏ ClosedInterval a b)Æ
+	THEN1 prove_∂_tac);
+a(lemma_tac¨∂G∑µxs∑ Fst xs ç N ± Snd xs ç ClosedInterval a b ¥
+	G xs ç (V xs ÚâT (“ ∏âT OpenâR), ”) Continuous
+±	(µx∑	x ç W xs
+	¥	G xs(x, a) = f x)
+±	(µx s∑	x ç W xs
+	±	s ç ClosedInterval a b
+	¥	p(G xs (x, s)) = h(x, s))Æ
+	THEN1 prove_∂_tac);
+(* *** Goal "1" *** *)
+a(strip_tac THEN TOP_ASM_T rewrite_thm_tac);
+a(pair_tac¨xs' = (w, r)Æ THEN rewrite_tac[]);
+a(cases_tac¨≥w ç NÆ THEN1 asm_rewrite_tac[]);
+a(cases_tac¨≥r ç ClosedInterval a bÆ THEN1 asm_rewrite_tac[]);
+a(LIST_GET_NTH_ASM_T [1, 2] rewrite_tac);
+a(LEMMA_T¨h(w, a) ç CÆ ante_tac
+	THEN1 (DROP_NTH_ASM_T 10 bc_thm_tac THEN asm_rewrite_tac[closed_interval_def, Ø_º_def]));
+a(LIST_GET_NTH_ASM_T [11] (ALL_FC_T rewrite_tac) THEN strip_tac);
+a(LIST_GET_NTH_ASM_T [8] all_fc_tac);
+a(rename_tac[(¨AÆ, "S")] THEN bc_thm_tac covering_projection_fibration_lemma1);
+a(MAP_EVERY ∂_tac[¨CÆ, ¨UÆ, ¨SÆ, ¨‘Æ]);
+a(LIST_DROP_NTH_ASM_T [6, 7] asm_rewrite_tac THEN REPEAT strip_tac);
+(* *** Goal "1.1" *** *)
+a(lemma_tac¨f w ç S ± f w ç S' ¥ ≥S' ° S = {}Æ
+	THEN1 PC_T1 "sets_ext1" prove_tac[]);
+a(LIST_DROP_NTH_ASM_T [12] all_fc_tac THEN all_var_elim_asm_tac);
+(* *** Goal "1.2" *** *)
+a(DROP_NTH_ASM_T 16 bc_thm_tac THEN strip_tac);
+(* *** Goal "1.3" *** *)
+a(DROP_NTH_ASM_T 16 bc_thm_tac THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(∂_tac¨Ãxs∑ G xs xsÆ THEN REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(bc_thm_tac compatible_family_continuous_thm);
+a(∂_tac¨VÆ THEN POP_ASM_T ante_tac
+	THEN LIST_DROP_NTH_ASM_T [1, 2] rewrite_tac);
+a(rewrite_tac[∏_def] THEN REPEAT strip_tac);
+(* *** Goal "2.1.1" *** *)
+a(bc_thm_tac product_topology_thm THEN asm_rewrite_tac[open_Ø_topology_thm]);
+(* *** Goal "2.1.2" *** *)
+a(PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "2.1.3" *** *)
+a(LIST_DROP_NTH_ASM_T [1, 2] (MAP_EVERY ante_tac));
+a(pair_tac¨x = (w, r)Æ THEN rewrite_tac[] THEN REPEAT strip_tac);
+a(rewrite_tac[taut_rule¨µp q∑p ± p ± q § p ± qÆ]);
+a(GET_NTH_ASM_T 6 bc_thm_tac);
+a(LEMMA_T¨h(w, a) ç CÆ ante_tac
+	THEN1 (DROP_NTH_ASM_T 9 bc_thm_tac THEN asm_rewrite_tac[closed_interval_def, Ø_º_def]));
+a(LIST_DROP_NTH_ASM_T [10] (ALL_FC_T rewrite_tac));
+(* *** Goal "2.1.4" *** *)
+ ... TBC ...
+val €covering_projection_fibration_lemma2› = save_pop_thm "covering_projection_fibration_lemma2";
+
+*)
+
+=TEX
+%%%%
+%%%%
+
+=SML
+
+(*
+
+set_goal([], ¨µ“; ”; ‘;
+	p : 'b ≠ 'c;
+	f : 'a ≠ 'b;
+	h : 'a ∏ Ø ≠ 'c;
+	N : 'a SET;
+	x0 : 'a;
+	t : Ó ≠ Ø;
+	n : Ó ∑
+	“ ç Topology
+±	” ç Topology
+±	‘ ç Topology
+±	f ç (“, ”) Continuous
+±	h ç (“ ∏âT OpenâR, ‘) Continuous
+±	(µx∑ x ç N ¥ p(f x) = h(x, 0.))
+±	x0 ç N
+±	N Ä SpaceâT “
+±	t 0 = 0. ± t n = 1.
+±	(µ i∑ t i < t (i + 1))
+±	(µi∑ i < n ¥ ∂C∑
+			(µx s∑ x ç N ± s ç ClosedInterval (t i) (t(i+1)) ¥ h(x, s) ç C)
+		±	C ç ‘
+		±	∂U∑
+			U Ä ”
+		±	(µx∑ p x = h(x0, t i) ¥ ∂A∑ x ç A ± A ç U)
+		±	(µ A B∑ A ç U ± B ç U ± ≥ A ° B = {} ¥ A = B)
+		±	(µ A∑ A ç U ¥ p ç (A ÚâT ”, C ÚâT ‘) Homeomorphism))
+¥	∂L : 'a ∏ Ø ≠ 'b∑
+	L ç ((N ∏ ClosedInterval 0. 1.) ÚâT (“ ∏âT OpenâR), ”) Continuous
+±	µx s∑	x ç N
+	±	s ç ClosedInterval 0. 1.
+	¥	p(L(x, s)) = h(x, s)
+Æ);
+a(REPEAT strip_tac);
+a(lemma_tac¨µk∑k < n ¥
+	∂L : 'a ∏ Ø ≠ 'b∑
+	L ç ((N ∏ ClosedInterval 0. (t(k+1))) ÚâT (“ ∏âT OpenâR), ”) Continuous
+±	µx s∑	x ç N
+	±	s ç ClosedInterval 0. (t(k+1))
+	¥	p(L(x, s)) = h(x, s)Æ);
+a(strip_tac THEN induction_tac¨k:ÓÆ THEN REPEAT strip_tac
+	THEN_TRY PC_T1 "lin_arith" asm_prove_tac[]
+	THEN rewrite_tac[plus_assoc_thm]);
+(* *** Goal "1.1" *** *)
+a(bc_thm_tac covering_projection_fibration_lemma1);
+a(LIST_DROP_NTH_ASM_T [2] all_fc_tac);
+a(DROP_NTH_ASM_T 7 (ante_tac o µ_elim ¨0Æ));
+a(LIST_DROP_NTH_ASM_T [2, 5] (MAP_EVERY ante_tac)
+	THEN asm_rewrite_tac[] THEN REPEAT strip_tac);
+a(MAP_EVERY ∂_tac[¨UÆ, ¨CÆ, ¨x0Æ, ¨fÆ, ¨‘Æ] THEN asm_rewrite_tac[]);
+(* *** Goal "1.2" *** *)
+
+a(lemma_tac¨
+	∂L : 'a ∏ Ø ≠ 'b∑
+	L ç ((N ∏ ClosedInterval (t(k+1)) (t(k+2))) ÚâT (“ ∏âT OpenâR), ”) Continuous
+±	µx s∑	x ç N
+	±	s ç ClosedInterval (t(k+1)) (t(k+2))
+	¥	p(L(x, s)) = h(x, s)Æ);
+(* *** Goal "1.2.1" *** *)
+a(bc_thm_tac covering_projection_fibration_lemma1);
+a(LIST_DROP_NTH_ASM_T [4] all_fc_tac);
+a(DROP_NTH_ASM_T 9 (ante_tac o µ_elim ¨k+1Æ));
+a(LIST_DROP_NTH_ASM_T [5] (MAP_EVERY ante_tac)
+	THEN asm_rewrite_tac[plus_assoc_thm] THEN REPEAT strip_tac);
+a(MAP_EVERY ∂_tac[¨UÆ, ¨CÆ, ¨x0Æ, ¨Ãx∑L(x, t(k+1))Æ, ¨‘Æ] THEN asm_rewrite_tac[]
+	THEN REPEAT strip_tac);
+(* *** Goal "1.2.1.1" *** *)
+a(conv_tac(LEFT_C Ã_un_¬_rands_conv));
+a(bc_thm_tac comp_continuous_thm);
+a(strip_asm_tac open_Ø_topology_thm);
+a(lemma_tac¨“ ∏âT OpenâR ç TopologyÆ
+	THEN1 (bc_tac[product_topology_thm]
+		THEN REPEAT strip_tac));
+a(lemma_tac¨(N ∏ ClosedInterval 0. (t (k + 1))) ÚâT “ ∏âT OpenâR ç TopologyÆ
+	THEN1 (bc_tac[subspace_topology_thm]
+		THEN REPEAT strip_tac));
+a(∂_tac¨(N ∏ ClosedInterval 0. (t (k + 1))) ÚâT “ ∏âT OpenâRÆ
+	THEN REPEAT strip_tac);
+a(lemma_tac¨(N ∏ ClosedInterval 0. (t (k + 1))) Ä SpaceâT (“ ∏âT OpenâR)Æ);
+(* *** Goal "1.2.1.1.1" *** *)
+a(ALL_FC_T rewrite_tac[product_topology_space_t_thm]);
+a(rewrite_tac[space_t_Ø_thm]);
+a(DROP_NTH_ASM_T 15 ante_tac
+	THEN PC_T1 "sets_ext1" prove_tac[∏_def]);
+a(ALL_FC_T1 fc_§_canon rewrite_tac[arb_gen subspace_range_continuous_§_thm]
+	THEN REPEAT strip_tac);
+(* *** Goal "1.2.1.1.2.1" *** *)
+a(conv_tac(LEFT_C Ã_un_¬_rands_conv)
+	THEN bc_thm_tac product_continuous_thm);
+a(ALL_FC_T asm_rewrite_tac[id_continuous_thm,
+	open_Ø_const_continuous_thm]);
+(* *** Goal "1.2.1.1.2.2" *** *)
+
+
+
+(* *** Goal "2" *** *)
+a(lemma_tac¨≥n = 0Æ
+	THEN1 (contr_tac THEN all_var_elim_asm_tac1
+			THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]));
+a(strip_asm_tac (µ_elim ¨nÆ Ó_cases_thm));
+a(DROP_NTH_ASM_T 2 discard_tac THEN all_var_elim_asm_tac1);
+a(POP_ASM_T (ante_tac o µ_elim¨iÆ));
+a(asm_rewrite_tac[]);
+val €covering_projection_fibration_lemma2› = save_pop_thm "covering_projection_fibration_lemma2";
+
+*)
 
 =TEX
 %%%%
