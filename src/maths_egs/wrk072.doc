@@ -11,9 +11,9 @@ or visit the OpenSource web site at http://www.opensource.org/
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-$Id: wrk072.doc,v 1.15 2010/11/10 15:20:43 rda Exp rda $
+wrk072.doc,v 1.15 2010/11/14 11:55:24 rda Exp
 ********************************************************************************
-% wrk072.doc $Revision: 1.15 $ $RCSfile: wrk072.doc,v $ $Date: 2010/11/10 15:20:43 $
+% wrk072.doc 1.15 wrk072.doc,v 2010/11/14 11:55:24
 =TEX
 \documentclass[12pt,a4paper]{article}
 \usepackage{latexsym}
@@ -27,7 +27,7 @@ $Id: wrk072.doc,v 1.15 2010/11/10 15:20:43 rda Exp rda $
 \def\R{\mathbb{R}}
 \def\Z{\mathbb{Z}}
 \def\Q{\mathbb{Q}}
-\title{Mathematical Case Studies: the Complex Numbers\thanks{Copyright {\copyright} Lemma 1 Ltd. \number\year; filed in the {\Product} source code repository as {\tt wrk072.doc}; $Revision: 1.15 $.}}
+\title{Mathematical Case Studies: the Complex Numbers\thanks{Copyright {\copyright} Lemma 1 Ltd. \number\year; filed in the {\Product} source code repository as {\tt wrk072.doc}; 1.15.}}
 \author{Rob Arthan\\{\tt rda@lemma-one.com}}
 \makeindex
 \begin{document}
@@ -269,9 +269,32 @@ The following function gives the $n$-partial sum of a series.
 The following function then sums a power series $s$ up to the term of degree $n$:
 
 πHOLCONST
-‹ €PowerSeriesâC› : (Ó ≠ ÷) ≠ Ó ≠ ÷ ≠ ÷
+‹ €PolyEvalâC› : (Ó ≠ ÷) ∏ Ó ≠ ÷ ≠ ÷
 ˜¸¸¸¸¸¸
-‹	µs n z∑ PowerSeriesâC s n z = SeriesâC (Ãi∑ s i * z^i) (n+1)
+‹	µs n z∑ PolyEvalâC (s, n) z = SeriesâC (Ãi∑ s i * z^i) (n+1)
+∞
+We now define operations on pairs comprising a sequence of coefficients and a degree that correspond to addition of polynomials of the given degrees \ldots
+
+πHOLCONST
+‹ €PlusCoeffsâC› : ((Ó ≠ ÷) ∏ Ó) ≠ ((Ó ≠ ÷) ∏ Ó) ≠ ((Ó ≠ ÷) ∏ Ó)
+˜¸¸¸¸¸¸
+‹ µs m t n∑
+‹	PlusCoeffsâC (s, m) (t, n) =
+‹	((Ãi∑	(if i º m then s i else Ó÷ 0) +
+‹		(if i º n then t i else Ó÷ 0)), m+n)
+∞
+
+\ldots and to multiplication of one polynomial by another.
+
+πHOLCONST
+‹ €TimesCoeffsâC› : ((Ó ≠ ÷) ∏ Ó) ≠ ((Ó ≠ ÷) ∏ Ó) ≠ ((Ó ≠ ÷) ∏ Ó)
+˜¸¸¸¸¸¸
+‹ 	(µs t n∑ TimesCoeffsâC (s, 0) (t, n) = ((Ãi∑ s 0 * t i), n))
+‹±	(µs m t n∑
+‹	TimesCoeffsâC (s, m+1) (t, n) =
+‹	PlusCoeffsâC
+‹	(TimesCoeffsâC (s, m) (t, n))
+‹	((Ãi∑ if i º m then Ó÷ 0 else s (m+1) * t (i-(m+1))), m+n+1))
 ∞
 
 \section{TOPOLOGICAL ASPECTS}\label{sec:topology}
@@ -313,7 +336,7 @@ and the exponential mapping of the real line onto the unit circle:
 \end{document} %% COMMENT THIS LINE OUT TO TYPESET THE PROOF SCRIPTS
 \section{PROOFS}
 
-\subsection{Preamble
+\subsection{Preamble}
 
 =TEX
 Set context for proofs in case of future expansion.
@@ -343,12 +366,27 @@ val €÷_ops_defs› = [÷_plus_def, ÷_minus_def, ÷_conj_def, ÷_times_def,
 	÷_recip_def, ÷_subtract_def, Ó÷_def, Ø÷_def, ÷_Ó_exp_def];
 val €÷_poly_func_def› = get_spec ¨PolyFuncâCÆ;
 val €÷_series_def› = get_spec ¨SeriesâCÆ;
-val €÷_power_series_def› = get_spec ¨PowerSeriesâCÆ;
+val €÷_poly_eval_def› = get_spec ¨PolyEvalâCÆ;
+val €÷_plus_coeffs_def› = get_spec ¨PlusCoeffsâCÆ;
+val €÷_times_coeffs_def› = get_spec ¨TimesCoeffsâCÆ;
 val €open_÷_def› = get_spec ¨OpenâCÆ;
 val €s1_def› = get_spec ¨S1Æ;
 val €exp_s1_def› = get_spec ¨ExpS1Æ;
 val €exp_s1_def1› = §_t_elim (rewrite_conv[exp_s1_def]
 	¨ExpS1 = (Ã x∑ (Cos x, Sin x))Æ);
+
+=TEX
+
+\subsection{Tools}
+The following could usefully go elsewhere:
+
+
+=SML
+val €un_»_conv› : CONV =
+	simple_eq_match_conv
+		(conv_rule(ONCE_MAP_C eq_sym_conv) »_axiom);
+
+=TEX
 =TEX
 \subsection{Basic Algebraic Properties}
 
@@ -813,6 +851,20 @@ save_pop_thm "÷_Ó_exp_rw_thm"
 %%%%
 =SML
 
+val €÷_Ó_exp_plus_thm› = (
+set_goal ([], ¨µ z :÷; m n : Ó∑ z^(m+n) = z^m * z^nÆ);
+a(REPEAT strip_tac THEN induction_tac¨n:ÓÆ
+	THEN asm_rewrite_tac[÷_Ó_exp_def, plus_assoc_thm1, ÷_times_clauses]);
+a(rewrite_tac[µ_elim¨zÆ ÷_times_order_thm]);
+save_pop_thm "÷_Ó_exp_plus_thm"
+);
+
+=TEX
+
+%%%%
+%%%%
+=SML
+
 val €÷_Ó_exp_clauses› = (
 set_goal ([], ¨µ z :÷; n : Ó ∑ z^0 = Ó÷ 1 ± z^1 = z ± Ó÷ 1^n = Ó÷ 1Æ);
 a(rewrite_tac[÷_Ó_exp_1_thm]);
@@ -919,52 +971,20 @@ pop_thm()
 
 =TEX
 
-
-%%%%
-Now we will show that any polynomial function can be represented by a finite power series.
-
-Constants \ldots
 %%%%
 %%%%
 =SML
-
-val €÷_const_eval_thm› = save_thm( "÷_const_eval_thm", (
-set_goal([], ¨µc∑(Ãx∑c) = PowerSeriesâC (Ãi∑c) 0Æ);
-a(rewrite_tac[] THEN pure_rewrite_tac[÷_power_series_def, ÷_series_def]);
-a(rewrite_tac ÷_ops_defs);
-pop_thm()
-));
-
-=TEX
-\ldots identity function \ldots
-%%%%
-%%%%
-=SML
-
-val €÷_id_eval_thm› = save_thm( "÷_id_eval_thm", (
-set_goal([], ¨(Ãx∑x) = PowerSeriesâC (Ãi∑if i = 1 then Ó÷ 1 else Ó÷ 0) 1Æ);
-a(rewrite_tac[÷_power_series_def]);
-a(REPEAT (once_rewrite_tac[÷_series_rw_thm] THEN rewrite_tac[]));
-pop_thm()
-));
-
-=TEX
-\ldots sums \ldots
-%%%%
-%%%%
-=SML
-
-val €÷_partial_sum_rec_thm› = save_thm( "÷_partial_sum_rec_thm", (
+val €÷_poly_eval_rec_thm› = save_thm( "÷_poly_eval_rec_thm", (
 set_goal([], ¨
-	(µs z∑ PowerSeriesâC s 0 z = s 0)
-±	(µs n z∑ PowerSeriesâC s (n+1) z = PowerSeriesâC s n z + s(n+1) * z^(n+1))
+	(µs z∑ PolyEvalâC (s, 0) z = s 0)
+±	(µs n z∑ PolyEvalâC (s, (n+1)) z = PolyEvalâC (s, n) z + s(n+1) * z^(n+1))
 Æ);
 a(REPEAT strip_tac);
 (* *** Goal "1" *** *)
-a(rewrite_tac[÷_power_series_def]);
+a(rewrite_tac[÷_poly_eval_def]);
 a(REPEAT (once_rewrite_tac[÷_series_rw_thm] THEN rewrite_tac[]));
 (* *** Goal "2" *** *)
-a(rewrite_tac[÷_power_series_def]);
+a(rewrite_tac[÷_poly_eval_def]);
 a(conv_tac (LEFT_C (once_rewrite_conv[÷_series_def])));
 a(rewrite_tac[]);
 pop_thm()
@@ -979,20 +999,72 @@ pop_thm()
 =SML
 
 
-val €÷_partial_sum_eq_thm› = save_thm( "÷_partial_sum_eq_thm", (
-set_goal([], ¨µs t n z∑
-	(µi∑ i º n ¥ s i = t i)
-¥	PowerSeriesâC s n z = PowerSeriesâC t n z
+val €÷_poly_eval_eq_thm1› = save_thm( "÷_poly_eval_eq_thm1", (
+set_goal([], ¨µs t m z∑
+	(µi∑ i º m ¥ s i = t i)
+¥	PolyEvalâC (s, m) z = PolyEvalâC (t, m) z
 Æ);
-a(REPEAT µ_tac THEN induction_tac¨n:ÓÆ
-	THEN asm_rewrite_tac[÷_partial_sum_rec_thm]);
+a(REPEAT µ_tac THEN induction_tac¨m:ÓÆ
+	THEN asm_rewrite_tac[÷_poly_eval_rec_thm]);
 (* *** Goal "1" *** *)
 a(STRIP_T bc_thm_tac THEN REPEAT strip_tac);
 (* *** Goal "2" *** *)
 a(STRIP_T (strip_asm_tac o µ_elim¨iÆ)
 	THEN i_contr_tac THEN PC_T1 "lin_arith" asm_prove_tac[]);
 (* *** Goal "3" *** *)
-a(STRIP_T (strip_asm_tac o µ_elim¨n+1Æ) THEN asm_rewrite_tac[]);
+a(STRIP_T (strip_asm_tac o µ_elim¨m+1Æ) THEN asm_rewrite_tac[]);
+pop_thm()
+));
+
+=TEX
+
+
+%%%%
+%%%%
+=SML
+
+
+val €÷_poly_eval_eq_thm2› = save_thm( "÷_poly_eval_eq_thm2", (
+set_goal([], ¨µs m n z∑
+	(µi∑ m < i ¥ s i = Ó÷ 0)
+±	m º n
+¥	PolyEvalâC (s, m) z = PolyEvalâC (s, n) z
+Æ);
+a(REPEAT µ_tac THEN induction_tac¨n:ÓÆ
+	THEN REPEAT strip_tac
+	THEN asm_rewrite_tac[÷_poly_eval_rec_thm]);
+(* *** Goal "1" *** *)
+a(all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(lemma_tac¨m = n + 1Æ THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(asm_rewrite_tac[÷_poly_eval_rec_thm]);
+(* *** Goal "3" *** *)
+a(cases_tac¨m < n + 1Æ THEN1 ALL_ASM_FC_T rewrite_tac[]);
+a(lemma_tac¨m = n + 1Æ THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(DROP_NTH_ASM_T 5 ante_tac THEN all_var_elim_asm_tac1);
+a(rewrite_tac[÷_poly_eval_rec_thm]);
+pop_thm()
+));
+
+
+=TEX
+
+
+%%%%
+%%%%
+=SML
+
+val €÷_poly_eval_eq_thm› = save_thm( "÷_poly_eval_eq_thm", (
+set_goal([], ¨µs t m n z∑
+	(µi∑ i º m ¥ s i = t i)
+±	(µi∑ m < i ¥ t i = Ó÷ 0)
+±	m º n
+¥	PolyEvalâC (s, m) z = PolyEvalâC (t, n) z
+Æ);
+a(REPEAT strip_tac);
+a(LEMMA_T¨PolyEvalâC (t, n) z = PolyEvalâC (t, m) zÆ rewrite_thm_tac
+	THEN1 ALL_FC_T rewrite_tac[÷_poly_eval_eq_thm2]);
+a(bc_thm_tac ÷_poly_eval_eq_thm1 THEN asm_rewrite_tac[]);
 pop_thm()
 ));
 
@@ -1005,12 +1077,30 @@ pop_thm()
 =SML
 
 
-val €÷_partial_sum_minus_thm› = save_thm( "÷_partial_sum_minus_thm", (
-set_goal([], ¨µs n z∑
-	PowerSeriesâC (Ãi∑~(s i)) n z = ~(PowerSeriesâC s n z)
+val €÷_poly_eval_0_thm› = save_thm( "÷_poly_eval_0_thm", (
+set_goal([], ¨µn z∑
+	PolyEvalâC ((Ãi∑Ó÷ 0), n) z = Ó÷ 0
 Æ);
 a(REPEAT µ_tac THEN induction_tac¨n:ÓÆ
-	THEN asm_rewrite_tac[÷_partial_sum_rec_thm]);
+	THEN asm_rewrite_tac[÷_poly_eval_rec_thm]);
+pop_thm()
+));
+
+
+=TEX
+
+
+%%%%
+%%%%
+=SML
+
+
+val €÷_poly_eval_minus_thm› = save_thm( "÷_poly_eval_minus_thm", (
+set_goal([], ¨µs n z∑
+	PolyEvalâC ((Ãi∑~(s i)), n) z = ~(PolyEvalâC (s, n) z)
+Æ);
+a(REPEAT µ_tac THEN induction_tac¨n:ÓÆ
+	THEN asm_rewrite_tac[÷_poly_eval_rec_thm]);
 a(rewrite_tac[÷_times_minus_thm]);
 pop_thm()
 ));
@@ -1024,17 +1114,48 @@ pop_thm()
 =SML
 
 
-val €÷_partial_sum_plus_thm› = save_thm( "÷_partial_sum_plus_thm", (
+val €÷_poly_eval_plus_thm› = save_thm( "÷_poly_eval_plus_thm", (
 set_goal([], ¨µs t n z∑
-	PowerSeriesâC (Ãi∑s i + t i) n z =
-	PowerSeriesâC s n z + PowerSeriesâC t n z
+	PolyEvalâC ((Ãi∑s i + t i), n) z =
+	PolyEvalâC (s, n) z + PolyEvalâC (t, n) z
 Æ);
 a(REPEAT µ_tac THEN induction_tac¨n:ÓÆ
-	THEN asm_rewrite_tac[÷_partial_sum_rec_thm]);
+	THEN asm_rewrite_tac[÷_poly_eval_rec_thm]);
 a(rewrite_tac[÷_plus_assoc_thm,
-	µ_elim¨PowerSeriesâC s n zÆ ÷_plus_order_thm,
+	µ_elim¨PolyEvalâC (s, n) zÆ ÷_plus_order_thm,
 	÷_times_plus_distrib_thm]);
-a(rewrite_tac[µ_elim¨PowerSeriesâC t n zÆ ÷_plus_order_thm]);
+a(rewrite_tac[µ_elim¨PolyEvalâC (t, n) zÆ ÷_plus_order_thm]);
+pop_thm()
+));
+
+=TEX
+
+
+%%%%
+Now we will show that any polynomial function can be represented by a finite power series.
+
+Constants \ldots
+%%%%
+%%%%
+=SML
+
+val €÷_const_eval_thm› = save_thm( "÷_const_eval_thm", (
+set_goal([], ¨µc∑(Ãx∑c) = PolyEvalâC ((Ãi∑c), 0)Æ);
+a(rewrite_tac[] THEN pure_rewrite_tac[÷_poly_eval_def, ÷_series_def]);
+a(rewrite_tac ÷_ops_defs);
+pop_thm()
+));
+
+=TEX
+\ldots identity function \ldots
+%%%%
+%%%%
+=SML
+
+val €÷_id_eval_thm› = save_thm( "÷_id_eval_thm", (
+set_goal([], ¨(Ãx∑x) = PolyEvalâC ((Ãi∑if i = 1 then Ó÷ 1 else Ó÷ 0), 1)Æ);
+a(rewrite_tac[÷_poly_eval_def]);
+a(REPEAT (once_rewrite_tac[÷_series_rw_thm] THEN rewrite_tac[]));
 pop_thm()
 ));
 
@@ -1044,27 +1165,39 @@ pop_thm()
 %%%%
 =SML
 
-(*
+=TEX
+\ldots sums \ldots
+%%%%
+%%%%
+=SML
 
 val €÷_plus_eval_thm› = save_thm( "÷_plus_eval_thm", (
-set_goal([], ¨µs t n∑
-	(Ãx∑ PowerSeriesâC s t x + PowerSeriesâC s t x) =
-	PowerSeriesâC (Ãi∑ 
-		(if i º n1 then s1 i else Ó÷ 0) +
-		(if i º n2 then s2 i else Ó÷ 0)) (n1+n2)Æ);
-a(REPEAT strip_tac THEN rewrite_tac[] THEN induction_tac¨n2:ÓÆ
-	THEN rewrite_tac[÷_partial_sum_rec_thm]);
-(* *** Goal "1" *** *)
-a(conv_tac (RIGHT_C (RATOR_C(RATOR_C (RAND_C Ã_un_¬_rands_conv)))));
-a(pure_rewrite_tac[÷_partial_sum_plus_thm]);
-a(bc_thm_tac(prove_rule[]¨µa b c d:÷∑a = b ± c = d ¥ a + c = b + dÆ));
-a(REPEAT strip_tac THEN1
-	(bc_thm_tac ÷_partial_sum_eq_thm THEN REPEAT strip_tac THEN asm_rewrite_tac[]));
-a(induction_tac¨n1Æ THEN asm_rewrite_tac[÷_partial_sum_rec_thm]);
-(* *** Goal "2" *** *)
-a(asm_rewrite_tac[÷_plus_assoc_thm1]);
-a(rewrite_tac[plus_assoc_thm1, ÷_partial_sum_rec_thm]);
+set_goal([], ¨µs m t n∑
+	(Ãx∑ PolyEvalâC (s, m) x + PolyEvalâC (t, n) x) =
+	PolyEvalâC (PlusCoeffsâC (s, m) (t, n))Æ);
+a(REPEAT strip_tac THEN rewrite_tac[÷_plus_coeffs_def]);
+a(conv_tac(RIGHT_C(RATOR_C(RAND_C (LEFT_C Ã_un_¬_rands_conv)))));
+a(pure_rewrite_tac[÷_poly_eval_plus_thm]);
+a(bc_tac [prove_rule[]¨µa b c d:÷∑a = c ± b = d ¥ a + b = c + dÆ,
+	÷_poly_eval_eq_thm]
+	THEN REPEAT strip_tac THEN asm_rewrite_tac[]);
+(* *** Goal "1" (duplicates "2") *** *)
+a(LEMMA_T ¨≥i º mÆ asm_rewrite_thm_tac THEN PC_T1 "lin_arith" asm_prove_tac[]);
+pop_thm()
+));
+=TEX
+which we can usefully reformulate thus
+%%%%
+%%%%
+=SML
 
+val €÷_plus_eval_rw_thm› = save_thm( "÷_plus_eval_rw_thm", (
+set_goal([], ¨µsm tn∑
+	PolyEvalâC (PlusCoeffsâC sm tn) =
+	(Ãx∑ PolyEvalâC sm x + PolyEvalâC tn x) Æ);
+a(REPEAT strip_tac);
+a(pair_tac¨sm = (s, m)Æ THEN pair_tac¨tn = (t, n)Æ);
+a(rewrite_tac[conv_rule (ONCE_MAP_C eq_sym_conv) ÷_plus_eval_thm]);
 pop_thm()
 ));
 
@@ -1075,11 +1208,10 @@ pop_thm()
 =SML
 
 val €÷_const_times_eval_thm› = save_thm( "÷_const_times_eval_thm", (
-set_goal([], ¨µc l∑(Ãx∑c * PolyEval l x) = PolyEval (Map (Ãy∑c * y) l)Æ);
+set_goal([], ¨µc s m∑ PolyEvalâC ((Ãi∑c * s i), m) = (Ãx∑c * PolyEvalâC (s, m) x)Æ);
 a(REPEAT strip_tac);
-a(list_induction_tac¨lÆ THEN rewrite_tac[map_def, poly_eval_def]);
-a(POP_ASM_T (rewrite_thm_tac o eq_sym_rule));
-a(PC_T1 "Ø_lin_arith" prove_tac[]);
+a(induction_tac¨mÆ THEN asm_rewrite_tac[÷_poly_eval_rec_thm]);
+a(rewrite_tac ÷_ops_defs THEN PC_T1 "Ø_lin_arith" prove_tac[]);
 pop_thm()
 ));
 
@@ -1089,23 +1221,90 @@ pop_thm()
 =SML
 
 val €÷_times_eval_thm› = save_thm( "÷_times_eval_thm", (
-set_goal([], ¨µl1 l2∑
-	(Ãx∑PolyEval l1 x * PolyEval l2 x) =
-	PolyEval (TimesCoeffs l1 l2)Æ);
-a(strip_tac);
-a(list_induction_tac¨l1Æ THEN
-	rewrite_tac[times_coeffs_def, poly_eval_def, plus_coeffs_def]);
-a(REPEAT strip_tac);
-a(POP_ASM_T (strip_asm_tac o rewrite_rule[]));
-a(rewrite_tac[conv_rule (ONCE_MAP_C eq_sym_conv) plus_eval_thm,
-	conv_rule (ONCE_MAP_C eq_sym_conv) const_times_eval_thm,
-	poly_eval_def]);
-a(conv_tac (RANDS_C Ø_anf_conv));
-a(asm_rewrite_tac[]);
+set_goal([], ¨µs m t n∑
+	(Ãx∑PolyEvalâC (s, m) x * PolyEvalâC (t, n) x) =
+	PolyEvalâC (TimesCoeffsâC (s, m) (t, n))Æ);
+a(REPEAT strip_tac THEN rewrite_tac[]);
+a(induction_tac¨mÆ THEN
+	rewrite_tac[÷_times_coeffs_def, ÷_poly_eval_rec_thm, ÷_const_times_eval_thm]
+	THEN REPEAT strip_tac);
+a(asm_rewrite_tac[÷_times_plus_distrib_thm, ÷_plus_eval_rw_thm]);
+a(POP_ASM_T discard_tac THEN induction_tac¨nÆ THEN REPEAT strip_tac THEN
+	asm_rewrite_tac[÷_poly_eval_rec_thm]);
+(* *** Goal "1" *** *)
+a(rewrite_tac[µ_elim¨t 0Æ ÷_times_order_thm]);
+a(LEMMA_T ¨Ó÷ 0 = PolyEvalâC ((Ãi∑ Ó÷ 0), m) xÆ
+	(fn th => conv_tac(RIGHT_C (once_rewrite_conv[th])))
+	THEN1 rewrite_tac[÷_poly_eval_0_thm]);
+a(conv_tac eq_sym_conv THEN bc_thm_tac ÷_poly_eval_eq_thm1
+	THEN REPEAT strip_tac
+	THEN1 asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(asm_rewrite_tac[÷_times_plus_distrib_thm, ÷_poly_eval_rec_thm,
+	pc_rule1 "lin_arith" prove_rule[]
+		¨m + (n + 1) + 1 = (m + n + 1) + 1Æ]);
+a(asm_rewrite_tac[pc_rule1 "lin_arith" prove_rule[]
+		¨(m + n + 1) + 1 = m + n + 2Æ]);
+a(rewrite_tac[minus_def, pc_rule1 "lin_arith" prove_rule[]
+		¨m + n + 2 = (m+1) + (n+1)Æ]);
+a(rewrite_tac[÷_Ó_exp_plus_thm]);
+a(rewrite_tac[÷_times_assoc_thm, µ_elim¨t(n+1)Æ ÷_times_order_thm]);
 pop_thm()
 ));
 
-*)
+=TEX
+which we can usefully reformulate thus
+%%%%
+%%%%
+=SML
+
+val €÷_times_eval_rw_thm› = save_thm( "÷_times_eval_rw_thm", (
+set_goal([], ¨µsm tn∑
+	PolyEvalâC (TimesCoeffsâC sm tn) =
+	(Ãx∑ PolyEvalâC sm x * PolyEvalâC tn x) Æ);
+a(REPEAT strip_tac);
+a(pair_tac¨sm = (s, m)Æ THEN pair_tac¨tn = (t, n)Æ);
+a(rewrite_tac[conv_rule (ONCE_MAP_C eq_sym_conv) ÷_times_eval_thm]);
+pop_thm()
+));
+
+
+=TEX
+Following what we did for the reals,
+we now show that the set of all complex polynomial functions is the
+range of the polynomial evaluation function. I.e., a function
+is polynomial iff. it can be represented by a sequence of coefficients
+and a degree.
+We prove the two inclusions separately:
+%%%%
+%%%%
+=SML
+
+
+val €÷_poly_eval_Ä_poly_thm› = (
+set_goal([], ¨{f | ∂s n∑ f = PolyEvalâC (s, n)} Ä PolyFuncâCÆ);
+a(pure_rewrite_tac[÷_poly_func_def] THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+a(all_var_elim_asm_tac1 THEN induction_tac¨nÆ);
+(* *** Goal "1" *** *)
+a(conv_tac (LEFT_C un_»_conv));
+a(pure_rewrite_tac[÷_poly_eval_rec_thm] THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(conv_tac (LEFT_C un_»_conv));
+a(pure_rewrite_tac[÷_poly_eval_rec_thm]);
+a(conv_tac(LEFT_C Ã_un_¬_rands_conv));
+a(GET_NTH_ASM_T 3 bc_thm_tac THEN asm_rewrite_tac[»_axiom]);
+a(conv_tac(LEFT_C Ã_un_¬_rands_conv));
+a(GET_NTH_ASM_T 2 bc_thm_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2.1" *** *)
+a(rewrite_tac[÷_Ó_exp_def]
+	THEN POP_ASM_T discard_tac THEN induction_tac¨nÆ
+	THEN asm_rewrite_tac[÷_Ó_exp_def]);
+a(conv_tac(LEFT_C Ã_un_¬_rands_conv));
+a(GET_NTH_ASM_T 2 bc_thm_tac THEN asm_rewrite_tac[]);
+pop_thm ()
+);
+
+
 =TEX
 For the reverse inclusion, and for later use, it is convenient
 to prove an induction theorem for polynomials and use it
@@ -1156,18 +1355,45 @@ fun €÷_poly_induction_tac› (tm : TERM) : TACTIC = (
 
 
 
-(*
+=TEX
 
-val €open_÷_topology_thm› = save_thm( "open_÷_topology_thm", (
-set_goal([], ¨
-	µf∑f ç PolyFuncâC 
-Æ);
-a(rewrite_tac[open_÷_def]);
-a(bc_thm_tac product_topology_thm THEN rewrite_tac[open_Ø_topology_thm]);
+
+%%%%
+%%%%
+=SML
+
+val €÷_poly_Ä_poly_eval_thm› = (
+set_goal([], ¨PolyFuncâC Ä {f | ∂s n∑ f = PolyEvalâC (s, n)}Æ);
+a(PC_T1 "sets_ext1" REPEAT strip_tac);
+a(÷_poly_induction_tac¨xÆ);
+(* *** Goal "1" *** *)
+a(ante_tac ÷_const_eval_thm THEN prove_tac[]);
+(* *** Goal "2" *** *)
+a(ante_tac ÷_id_eval_thm THEN prove_tac[]);
+(* *** Goal "3" *** *)
+a(∂_tac¨Fst(PlusCoeffsâC (s, n) (s', n'))Æ THEN ∂_tac¨Snd(PlusCoeffsâC (s, n) (s', n'))Æ
+	THEN rewrite_tac[]);
+a(asm_rewrite_tac[÷_plus_eval_rw_thm]);
+(* *** Goal "4" *** *)
+a(∂_tac¨Fst(TimesCoeffsâC (s, n) (s', n'))Æ THEN ∂_tac¨Snd(TimesCoeffsâC (s, n) (s', n'))Æ
+	THEN rewrite_tac[]);
+a(asm_rewrite_tac[÷_times_eval_rw_thm]);
+pop_thm ()
+);
+
+=TEX
+
+
+%%%%
+%%%%
+=SML
+
+val €÷_poly_func_eq_poly_eval_thm› = save_thm( "÷_poly_func_eq_poly_eval_thm", (
+set_goal([], ¨PolyFuncâC = {f | ∂s n∑ f = PolyEvalâC (s, n)}Æ);
+a(rewrite_tac[÷_poly_Ä_poly_eval_thm, ÷_poly_eval_Ä_poly_thm,
+	pc_rule1 "sets_ext1" prove_rule[] ¨µa b∑a = b § a Ä b ± b Ä aÆ]);
 pop_thm()
 ));
-
-*)
 
 =TEX
 \subsection{Topological Properties}
