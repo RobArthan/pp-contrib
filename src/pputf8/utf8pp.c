@@ -15,6 +15,10 @@
  * but, if not, it will be mapped to itself.
  */
 #include "utf8pptab.h"
+#ifndef VERSION
+	#define VERSION "(test version)"
+#endif
+
 /*
  * To avoid any possible problems with locales or signed characters
  * we roll our own strcmp.
@@ -87,8 +91,8 @@ static void do_utf8_to_pp(void)
 
 static void usage(void)
 {
-	printf("utf8pp $Revision$:"
-		" convert UTF-8 to ProofPower extended character format\n");
+	printf("utf8pp v" VERSION
+		": convert UTF-8 to ProofPower extended character format\n");
 	printf("utf8pp: usage: utf8pp < input_file > output_file\n");
 }
 

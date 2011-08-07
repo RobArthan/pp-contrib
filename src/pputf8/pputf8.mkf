@@ -1,26 +1,31 @@
 #
 # Makefile for pputf8 and utf8pp
 #
+VERSION=$(shell echo $${VERSION:-`cat version 2>/dev/null || echo X.Y`})
+
 default: pputf8 utf8pp
 
-pputf8.o: pputf8tab.h
+pputf8.o: pputf8tab.h pputf8.c
+	$(CC) -c pputf8.c -DVERSION='"$(VERSION)"' 
 
 pputf8: pputf8.o
-	gcc -o pputf8 pputf8.o
+	$(CC) -o pputf8 pputf8.o
 
-utf8pp.o: utf8pptab.h
+utf8pp.o: utf8pptab.h utf8pp.c
+	$(CC) -c utf8pp.c -DVERSION='"$(VERSION)"' 
 
 utf8pp: utf8pp.o
-	gcc -o utf8pp utf8pp.o
+	$(CC) -o utf8pp utf8pp.o
 #
 # CUT-FROM-HERE
 # The above is all you need if the two header files have been generated for you.
-# The rest is concerned with generating the header files and a cutdown
+# The rest is concerned with generating the header files and the cutdown
 # makefile etc.
 #
 SRC=utf8pp.c pputf8.c genutf8tabs.ML pputf8.mkf
 RELSRC=utf8pp.c pputf8.c pputf8tab.h utf8pptab.h Makefile
 RELDIR=rel
+VER=$(shell echo ${VER:-`cat version 2>/dev/null | echo X.Y`})
 
 pputf8tab.h utf8pptab.h: genutf8tabs.ML
 	pp -n -f genutf8tabs.ML -d hol
@@ -36,6 +41,7 @@ rel: $(RELSRC)
 	mkdir $(RELDIR); \
 	cp $(RELSRC) $(RELDIR); \
 	cd $(RELDIR); \
+	echo $(VER) > version; \
 	chmod u+w $(RELSRC); \
 	tar cvfz ../pputf8-rel.tgz $(RELSRC); \
 	cd .. ; \
