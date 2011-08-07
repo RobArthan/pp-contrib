@@ -85,8 +85,20 @@ static void do_utf8_to_pp(void)
 	}
 }
 
+static void usage(void)
+{
+	printf("utf8pp $Revision$:"
+		" convert UTF-8 to ProofPower extended character format\n");
+	printf("utf8pp: usage: utf8pp < input_file > output_file\n");
+}
+
 int main (int argc, char *argv[])
 {
-	do_utf8_to_pp();
-	return ferror(stdin) || ferror(stdout);
+	if(argc == 1) {
+		do_utf8_to_pp();
+		return ferror(stdin) || ferror(stdout);
+	} else {
+		usage();
+		return 0;
+	}
 }

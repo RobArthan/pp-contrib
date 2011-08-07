@@ -25,9 +25,20 @@ static void do_pp_to_utf8 (void)
 	}
 }
 
+static void usage(void)
+{
+	printf("pputf8 $Revision$:"
+		" convert ProofPower extended character format to UTF-8\n");
+	printf("usage: pputf8 < input_file > output_file\n");
+}
 
 int main (int argc, char *argv[])
 {
-	do_pp_to_utf8();
-	return ferror(stdin) || ferror(stdout);
+	if(argc == 1) {
+		do_pp_to_utf8();
+		return ferror(stdin) || ferror(stdout);
+	} else {
+		usage();
+		return 0;
+	}
 }

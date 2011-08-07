@@ -1,10 +1,7 @@
-SRC=utf8pp.c pputf8.c genutf8tabs.ML Makefile
-EXPORTSRC=utf8pp.c pputf8.c pputf8tab.h utf8pptab.h Makefile
-
+#
+# Makefile for pputf8 and utf8pp
+#
 default: pputf8 utf8pp
-
-pputf8tab.h utf8pptab.h: genutf8tabs.ML
-	pp -n -f genutf8tabs.ML -d hol
 
 pputf8.o: pputf8tab.h
 
@@ -15,10 +12,32 @@ utf8pp.o: utf8pptab.h
 
 utf8pp: utf8pp.o
 	gcc -o utf8pp utf8pp.o
+#
+# CUT-FROM-HERE
+# The above is all you need if the two header files have been generated for you.
+# The rest is concerned with generating the header files and a cutdown
+# makefile etc.
+#
+SRC=utf8pp.c pputf8.c genutf8tabs.ML pputf8.mkf
+RELSRC=utf8pp.c pputf8.c pputf8tab.h utf8pptab.h Makefile
+RELDIR=rel
+
+pputf8tab.h utf8pptab.h: genutf8tabs.ML
+	pp -n -f genutf8tabs.ML -d hol
+
+Makefile: pputf8.mkf
+	sed -e '/CUT-FROM-HERE/,$$d' < pputf8.mkf > Makefile
 
 tgz: $(SRC)
-	tar cvfz pputf8.tgz $(SRC)
+	tar cvfz pputf8-src.tgz $(SRC)
 
-export: $(EXPORTSRC)
-	tar cvfz pputf8-export.tgz $(EXPORTSRC)
+rel: $(RELSRC)
+	rm -rf $(RELDIR); \
+	mkdir $(RELDIR); \
+	cp $(RELSRC) $(RELDIR); \
+	cd $(RELDIR); \
+	chmod u+w $(RELSRC); \
+	tar cvfz ../pputf8-rel.tgz $(RELSRC); \
+	cd .. ; \
+	rm -rf $(RELDIR)
 
