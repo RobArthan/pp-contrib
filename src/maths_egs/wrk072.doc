@@ -81,6 +81,14 @@ We capture this in a type abbreviation:
 =SML
 declare_type_abbrev("Ö", [], ”¯ ¸ ¯®);
 =TEX
+We declare aliases for the instances of the projection functions
+that give the real and imaginary part of a complex number:
+=SML
+app declare_alias [
+	("Re", ¬Fst : Ö ­ ¯®),
+	("Im", ¬Snd : Ö ­ ¯®)];
+=TEX
+
 \subsection{Algebraic Operators}
 \subsubsection{Addition}
 
@@ -91,7 +99,7 @@ declare_infix(300, "+‰C");
 ¹HOLCONST
 Ü $Û+‰Cİ : Ö ­ Ö ­ Ö
 ÷üüüüüü
-Üµ z w : Ö· z +‰C w = (Fst z + Fst w, Snd z + Snd w)
+Üµ z w : Ö· z +‰C w = (Re z + Re w, Im z + Im w)
 °
 
 =SML
@@ -102,7 +110,7 @@ declare_alias("+", ¬$+‰C®);
 ¹HOLCONST
 Ü Û~‰Cİ : Ö ­ Ö
 ÷üüüüüü
-Üµ z : Ö· ~‰C z = (~(Fst z), ~(Snd z))
+Üµ z : Ö· ~‰C z = (~(Re z), ~(Im z))
 °
 =SML
 declare_alias("~", ¬~‰C®);
@@ -118,7 +126,7 @@ declare_infix(310, "*‰C");
 Ü $Û*‰Cİ : Ö ­ Ö ­ Ö
 ÷üüüüüü
 Üµ z w : Ö·
-Ü	z *‰C w = (Fst z * Fst w - Snd z * Snd w, Fst z * Snd w + Snd z * Fst w)
+Ü	z *‰C w = (Re z * Re w - Im z * Im w, Re z * Im w + Im z * Re w)
 °
 
 =SML
@@ -145,7 +153,7 @@ declare_postfix(320, "›_");
 ¹HOLCONST
 Ü Û$›_İ : Ö ­ Ö
 ÷üüüüüü
-Üµ z : Ö· z ›_ = (Fst z, ~(Snd z))
+Üµ z : Ö· z ›_ = (Re z, ~(Im z))
 °
 \subsubsection{Reciprocal}
 =SML
@@ -155,7 +163,7 @@ declare_postfix(320, "›-›1›C");
 ¹HOLCONST
 Ü $Û›-›1›Cİ : Ö ­ Ö
 ÷üüüüüü
-Üµ z : Ö· z ›-›1›C = z ›_ * ¯Ö(Fst (z * z ›_) ›-›1)
+Üµ z : Ö· z ›-›1›C = z ›_ * ¯Ö(Re (z * z ›_) ›-›1)
 °
 
 =SML
@@ -238,7 +246,7 @@ declare_infix(310, "*‰RC");
 Ü ÛAbs‰Cİ : Ö ­ ¯
 ÷üüüüüü
 Üµ v : Ö·
-Ü	Abs‰C v = Sqrt(Fst (v * v ›_))
+Ü	Abs‰C v = Sqrt(Re (v * v ›_))
 °
 
 \section{POLYNOMIALS}\label{sec:polynomials}
@@ -441,7 +449,7 @@ pop_thm()
 
 val ÛÖ_times_conj_thmİ = save_thm( "Ö_times_conj_thm", (
 set_goal([], ¬µ x:Ö·
-	x * (x ›_) = ¯Ö(Fst x ^ 2 + Snd x ^ 2)
+	x * (x ›_) = ¯Ö(Re x ^ 2 + Im x ^ 2)
 ®);
 a(rewrite_tac (¯_î_exp_square_thm::Ö_ops_defs) THEN PC_T1 "¯_lin_arith" prove_tac[]);
 pop_thm()
@@ -493,10 +501,10 @@ a(rewrite_tac[conv_rule (ONCE_MAP_C eq_sym_conv) Ö_times_assoc_thm, Ö_times_conj
 a(rewrite_tac Ö_ops_defs);
 a(µ_tac THEN STRIP_T asm_tac);
 a(bc_thm_tac (rewrite_rule[](nth 2 (fc_canon(±_left_elim ¯_recip_clauses)))));
-a(strip_asm_tac(µ_elim¬Fst x® ¯_0_¼_square_thm));
-a(strip_asm_tac(µ_elim¬Snd x® ¯_0_¼_square_thm));
+a(strip_asm_tac(µ_elim¬Re x® ¯_0_¼_square_thm));
+a(strip_asm_tac(µ_elim¬Im x® ¯_0_¼_square_thm));
 a(swap_nth_asm_concl_tac 3);
-a(LEMMA_T ¬Fst x ^ 2 = î¯ 0 ± Snd x ^ 2  = î¯ 0® ante_tac
+a(LEMMA_T ¬Re x ^ 2 = î¯ 0 ± Im x ^ 2  = î¯ 0® ante_tac
 	THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
 a(asm_rewrite_tac[¯_square_eq_0_thm]);
 pop_thm()
@@ -1574,7 +1582,7 @@ pop_thm()
 
 
 val Û_s1_lemmaİ = save_thm( "_s1_lemma", (
-set_goal([], ¬µz· z  S1 ¤ Fst z^2 + Snd z^2 = 1.®);
+set_goal([], ¬µz· z  S1 ¤ Re z^2 + Im z^2 = 1.®);
 a(MERGE_PCS_T1 ["'pair", "sets_ext1"] rewrite_tac[s1_def, Ö_abs_def, Ö_times_conj_thm, ¯Ö_def, Ö_abs_squared_lemma]);
 pop_thm()
 ));
