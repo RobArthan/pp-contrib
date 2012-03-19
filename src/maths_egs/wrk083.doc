@@ -1,0 +1,430 @@
+=IGN
+********************************************************************************
+wrkNNN.doc: this file is supplementary material for the ProofPower system
+
+Copyright (c) 2004 Lemma 1 Ltd.
+
+This file is supplied under the GNU General Public Licence (GPL) version 2.
+
+See the file LICENSE supplied with ProofPower source for the terms of the GPL
+or visit the OpenSource web site at http://www.opensource.org/
+
+Contact: Rob Arthan < rda@lemma-one.com >
+********************************************************************************
+wrkNNN.doc,v 1.115 2011/02/06 17:42:00 rda Exp
+********************************************************************************
+=TEX
+\documentclass[11pt,a4paper]{article}
+\usepackage{latexsym}
+\usepackage{amsmath}
+\usepackage{ProofPower}
+\ftlinepenalty=9999
+\usepackage{A4}
+\makeindex
+\title{Mathematical Case Studies: Recognising Morphisms}
+\author{Rob Arthan}
+\makeindex
+\author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
+\date{\FormatDate{$Date: 2012/03/04 16:07:18 $%
+}}
+
+\def\Func#1{\mathsf{#1}}
+\def\Frees{\Func{frees}}
+\def\Constant{\Func{Constant}}
+\def\Unary{\Func{Unary}}
+\def\Binary{\Func{Binary}}
+\def\Parametrized{\Func{Parametrized}}
+
+\begin{document}
+\begin{titlepage}
+\maketitle
+\begin{abstract}
+
+TBS
+\end{abstract}
+\vfill
+\begin{centering}
+
+\bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
+Reference: LEMMA1/HOL/WRKNNN; issue 1.115%
+
+
+\end{centering}
+\thispagestyle{empty}
+\end{titlepage}
+\newpage
+\addtocounter{page}{1}
+%\section{DOCUMENT CONTROL}
+%\subsection{Contents list}
+\tableofcontents
+%\newpage
+%\subsection{Document cross references}
+\newpage
+\subsection*{To Do}
+\begin{itemize}
+
+\item
+TBS
+\end{itemize}
+
+
+\bibliographystyle{plain}
+\bibliography{fmu}
+
+%%%%
+%%%%
+%%%%
+%%%%
+\newpage
+\section{INTRODUCTION}
+%%%%
+%%%%
+
+
+\section{SUPPORTING THEORY}
+%%%%
+%%%%
+
+=SML
+open_theory "combin";
+new_theory "morphisms";
+set_pc"basic_hol1";
+=TEX
+We define aliases for the I and K combinators useful for working in a typical concrete category
+whose morphisms are represented as HOL functions.
+
+%%%%
+%%%%
+=SML
+declare_alias("Ic", ¬CombI : 'a ­ 'a®);
+declare_alias("Kc", ¬CombK : 'a ­ 'b ­ 'a®);
+=TEX
+{\bf Note:} the type ascriptions here and in other alias declarations
+in this document give the most general type of 
+the constant and are just for documentary purposes. (We are not introducing
+ aliases for special instances of the constants.)
+
+%%%%
+%%%%
+
+We introduce the combinator {\em Pair} corresponding to the universal property
+of a binary product:
+¹HOLCONST
+Ü ÛPairÝ : ('a ­ 'b) ¸ ('a ­ 'c) ­ 'a ­ 'b ¸ 'c
+÷üüüüüü
+Ü µf g· Pair(f, g) = (Ìx· (f x, g x))
+°
+=TEX
+=SML
+val Ûpair_defÝ : THM = get_spec¬Pair®;
+=TEX
+%%%%
+=TEX
+\begin{align*}
+(\lambda V \bullet x)^M &= \pi^V_x
+	& \mbox{if $x \in \Frees(V)$} \\
+(\lambda V \bullet y)^M &= \kappa y
+	& \mbox{if $y \not\in \Frees(V)$} \\
+(\lambda V \bullet c)^M &= c
+	& \mbox{if $c \in \Constant$} \\
+(\lambda V \bullet (t_1, t_2))^M &= \langle(\lambda V\bullet t_1)^M, (\lambda V\bullet t_2)^M\rangle
+	&  \\
+(\lambda V \bullet f\,t)^M &= f \circ (\lambda V\bullet t)^M
+	& \mbox{if $f \in \Unary$} \\
+(\lambda V \bullet g\,t_1\,t_2)^M &= \Upsilon g \circ \langle(\lambda V\bullet t_1)^M, (\lambda V\bullet t_2)^M\rangle
+	& \mbox{if $g \in \Binary$} \\
+(\lambda V \bullet h\,t\,p)^M &= (\lambda x\bullet h\,x\,p) \circ (\lambda V\bullet t)^M
+	& \mbox{if $h \in \Parametrized$} \\
+\end{align*}
+Here, if $V$ is a varstruct with a free occurrence of the variable $x$,
+$\pi^V_x$ denotes the combination of projections which extracts $x$.
+For example $\pi^{((z, x), y)}_x$ is $\pi_2 \circ \pi_1$.
+
+Note that if pairing is implemented by taking `,' to be a binary operator
+of type $\alpha \rightarrow \beta \rightarrow \alpha \times \beta$,
+the rule for pairing is subsumed by the rule for binary operators
+together with a simplification rule $\Upsilon (,) = \iota$.
+=TEX
+=SML
+val Ûi_rule_thmÝ = save_thm ("i_rule_thm", (
+set_goal([], ¬(Ìx· x) = Ic®);
+a(rewrite_tac [get_spec¬CombI®]);
+pop_thm()
+));
+=TEX
+%%%%
+
+=SML
+val Ûo_i_rule_thmÝ = save_thm ("o_i_rule_thm", (
+set_goal([], ¬µf·f o Ic = f®);
+a(rewrite_tac [get_spec¬CombI®, get_spec¬$o®]);
+pop_thm()
+));
+=TEX
+%%%%
+
+=SML
+val Ûk_rule_thmÝ = save_thm ("k_rule_thm", (
+set_goal([], ¬µc· (Ìx· c) = Kc c®);
+a(rewrite_tac [get_spec¬CombK®]);
+pop_thm()
+));
+=TEX
+%%%%
+
+=SML
+val Ûunary_rule_thmÝ = save_thm ("unary_rule_thm", (
+set_goal([], ¬ µf t· (Ìx·f (t x)) = f o t ®);
+a(rewrite_tac[o_def]);
+pop_thm()
+));
+=TEX
+%%%%
+
+=SML
+val Ûpair_rule_thmÝ = save_thm ("pair_rule_thm", (
+set_goal([], ¬ µs t· (Ìx·(s x, t x)) = Pair(s, t)®);
+a(rewrite_tac[pair_def, o_def, uncurry_def]);
+pop_thm()
+));
+=TEX
+%%%%
+
+=SML
+val Ûbinary_rule_thmÝ = save_thm ("binary_rule_thm", (
+set_goal([], ¬ µf s t· (Ìx·f (s x) (t x)) = Uncurry f o Pair(s, t)®);
+a(rewrite_tac[pair_def, o_def, uncurry_def]);
+pop_thm()
+));
+=TEX
+%%%%
+
+=SML
+val Ûbinary_rule_thm1Ý = save_thm ("binary_rule_thm1", (
+set_goal([], ¬ µf c t· (Ìx·f c (t x)) = Uncurry f o Pair ((Ìx·c), t)®);
+a(rewrite_tac[pair_def, o_def, uncurry_def]);
+pop_thm()
+));
+=TEX
+%%%%
+=SML
+val Ûparametrized_rule_thmÝ = save_thm ("parametrized_rule_thm", (
+set_goal([], ¬ µf s p· (Ìx·f (s x) p) = (Ìx·f x p) o s®);
+a(rewrite_tac[o_def]);
+pop_thm()
+));
+=TEX
+%%%%
+
+=SML
+fun Ûlist_string_variantÝ (avoid : string list) (ss : string list) : string list = (
+	let	fun aux (s, (av, res)) = (
+			let	val s' = string_variant av s;
+			in	(s'::av, s'::res)
+			end
+		);
+	in	rev(snd (revfold aux ss (avoid, [])))
+	end
+);
+=TEX
+%%%%
+
+=SML
+fun Ûgen_µ_elimÝ (tm : TERM) (thm : THM) = (
+	let	val tm_tyvs = term_tyvars tm;
+		val (asms, conc) = dest_thm thm;
+		val thm_tyvs = term_tyvars (mk_list(conc::asms));
+		val tm_tyvs' = list_string_variant thm_tyvs tm_tyvs;
+		val tm' = inst [] (combine (map mk_vartype tm_tyvs') (map mk_vartype tm_tyvs)) tm;
+	in	µ_elim tm' thm
+	end
+);
+=TEX
+%%%%
+
+=SML
+fun Ûmorphism_convÝ
+	{unary : TERM list, binary : TERM list, parametrized : TERM list}
+	: CONV = (
+	let	val unary_thms = map (switch gen_µ_elim unary_rule_thm)
+			unary;
+		val binary_thms = map (switch gen_µ_elim binary_rule_thm)
+			binary;
+		val binary_thms1 = map (switch gen_µ_elim binary_rule_thm1)
+			binary;
+		val parametrized_thms = map (switch gen_µ_elim parametrized_rule_thm)
+			parametrized;
+		val i_conv = simple_eq_match_conv i_rule_thm;
+		val k_conv = simple_eq_match_conv k_rule_thm;
+		val pair_conv = simple_ho_eq_match_conv pair_rule_thm;
+		val unary_conv = FIRST_C (map simple_ho_eq_match_conv unary_thms);
+		val binary_conv = FIRST_C (map simple_ho_eq_match_conv (binary_thms @ binary_thms1));
+		val parametrized_conv = FIRST_C (map simple_ho_eq_match_conv parametrized_thms);
+		val simp_conv = simple_eq_match_conv o_i_rule_thm;
+		val rec rec_conv = (fn t =>
+			((i_conv ORELSE_C
+			k_conv ORELSE_C
+			(pair_conv THEN_C RAND_C(RANDS_C(TRY_C rec_conv))) ORELSE_C
+			(unary_conv THEN_TRY_C RIGHT_C rec_conv) ORELSE_C
+			(binary_conv THEN_C RIGHT_C (RAND_C(RANDS_C (TRY_C rec_conv)))) ORELSE_C
+			(parametrized_conv THEN_C RIGHT_C (TRY_C rec_conv)))
+				AND_OR_C simp_conv) t
+		);
+	in	Ì_unpair_conv AND_OR_C rec_conv
+	end
+);
+=IGN
+new_parent "¯";
+val ¯_morphism_conv = morphism_conv {
+	unary = [¬~ : ¯ ­ ¯®, ¬Fst®, ¬Snd®] : TERM list,
+	binary = [¬$+ : ¯ ­ ¯ ­ ¯®, ¬$* : ¯ ­ ¯ ­ ¯®],
+	parametrized = [¬$^ : ¯ ­ î ­ ¯®]};
+¯_morphism_conv ¬Ì xy· Snd xy * Snd xy + 1.0®;
+¯_morphism_conv ¬Ì(x, y)·x + y * y + 1.0®;
+¯_morphism_conv ¬Ì(x:¯, y)·(x + y, x * y)®;
+¯_morphism_conv ¬Ì((z, x), y)·x®;
+simple_ho_match ¬Ìx:'a ¸ 'b·Snd x® ¬Ìy:'b· Snd (t y)®;
+¯_morphism_conv ¬Ì(x:¯, y)· x^3 * y®;
+¯_morphism_conv ¬Ì(x:¯, y)· (x, x+y, x^3 * y)®;
+=IGN
+new_parent "Ö";
+val Ö_morphism_conv = morphism_conv {
+	unary = [¬~ : Ö ­ Ö®, ¬Exp : Ö ­ Ö®,
+		¬Fst®, ¬Snd® ] : TERM list,
+	binary = [¬$+ : Ö ­ Ö ­ Ö®, ¬$* : Ö ­ Ö ­ Ö®],
+	parametrized = [¬$^ : Ö ­ î ­ Ö®]};
+Ö_morphism_conv ¬Ì xy· Snd xy * Snd xy + (1.0, 0.0)®;
+Ö_morphism_conv ¬Ì(x, y)·x + y * y + îÖ 2®;
+Ö_morphism_conv ¬Ì(x:Ö, y)·(x + y, x * y, x^3)®;
+Ö_morphism_conv ¬Ì(x:Ö, y)·(x + y, x * y, y * x)®;
+Ö_morphism_conv ¬Ì(x:Ö, y)·(y * x^3) + z * îÖ 99 +(a + x)*y®;
+Ö_morphism_conv ¬Ìx· Exp(¯Ö 2. * ¯Ö Ð * ¯É 1. * x)®;
+=IGN
+set_flag("pp_show_HOL_types", true);
+set_flag("pp_show_HOL_types", false);
+=TEX
+\section{APPLICATION TO TOPOLOGY}
+%%%%
+%%%%
+=SML
+=IGN
+(get_const_theory o fst o dest_const) ¬ Curry ®;
+
+get_spec ¬ Uncurry ®;
+
+open_theory "morphisms";
+open_theory "topology_¯";
+find_thm [ ¬ Uncurry ® ];
+
+Ì_pair_conv¬(Ìxy·Fst xy + Snd xy)®;
+uncurry_def;
+=TEX
+
+{\let\Section\section
+\def\section#1{\Section{#1}\label{TheoryListing}}
+\include{morphisms.th}
+}  %\let
+
+\twocolumn[\section{INDEX}\label{INDEX}]
+{\small\printindex}
+
+\end{document}
+
+{\HOLindexOff
+%%%%
+%%%%
+%%%%
+%%%%
+
+} % matches turning off of HOL index entries.
+=TEX
+%%%%
+%%%%
+=SML
+output_theory{out_file="morphisms.th.doc", theory="-"};
+=TEX
+The intention is that theorems should always have an outer universal quantifier if necessary rather than free variables
+and that all variables bound by logical quantifiers should
+actually be used.
+The following code reports on theorems that fail to comply.
+=SML
+fun Ûunused_qvsÝ (tm : TERM) : TERM list = (
+	let	fun drop_fst (t :: ts) v = (
+			if	t =$ v
+			then	ts
+			else	t :: drop_fst ts v
+		) | drop_fst [] _ = [];
+		fun dest_quant t = (
+			let	val (vs, b) = dest_µ t
+				handle Fail _ => dest_¶ t
+				handle Fail _ => dest_¶‰1 t;
+			in	(frees vs, b)
+			end
+		);
+		fun aux (acc, tm) = (
+			(dest_var tm; drop_fst acc tm)
+		handle Fail _ => 
+			(dest_const tm; acc)
+		handle Fail _ =>
+			(aux (dest_quant tm))
+		handle Fail _ =>
+			let	val (v, b) = dest_simple_Ì tm;
+			in	if	v mem acc
+				then	v :: aux (acc less v, b)
+				else	aux (acc, b)
+			end
+		handle Fail _ =>
+			let 	val (f, x) = dest_app tm;
+			in	aux (aux(acc, f), x)
+			end
+		);
+	in	aux ([], tm)
+	end
+);
+fun Ûthm_unused_qvsÝ (thm : THM) : TERM list = (
+	let	val tuple = fold mk_pair (asms thm) (concl thm);
+	in	unused_qvs tuple
+	end
+);
+fun Ûcheck_thmsÝ (thyn : string) : unit = (
+	let	val thy = if thyn = "-" then get_current_theory_name () else thyn;
+		val thms = get_thms thy;
+		val fv_bad_thms = thms drop (is_nil o thm_frees o snd);
+		val bv_bad_thms = thms drop (is_nil o thm_unused_qvs o snd);
+		fun aux (ns, _) = (
+			output(ExtendedIO.std_err,
+				translate_for_output (hd ns));
+			output(ExtendedIO.std_err, "\n")
+		);
+	in	(case fv_bad_thms of
+			[] => ()
+		|	_ => (
+			output(ExtendedIO.std_err,
+		"**** The following theorems in theory \"" ^ thy
+			^"\" have one or more free variables:\n");
+			app aux fv_bad_thms
+		));
+		(case bv_bad_thms of
+			[] => ()
+		|	_ => (
+			output(ExtendedIO.std_err,
+		"**** The following theorems in theory \"" ^ thy
+			^"\" have one or more unused quantified variables:\n");
+			app aux bv_bad_thms
+		));
+		(case (fv_bad_thms, bv_bad_thms) of
+			([], []) => (
+			output(ExtendedIO.std_err,
+		"**** Theorem quality control checks for theory \"" ^ thy
+			^"\" all passed\n")
+		) |	_ => ())
+	end
+);
+check_thms "-";
+(*
+val _ = app check_thms (get_descendants "min");
+*)
+=TEX
+\end{document}
+=IGN
+
