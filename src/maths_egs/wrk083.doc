@@ -1,6 +1,6 @@
 =IGN
 ********************************************************************************
-wrkNNN.doc: this file is supplementary material for the ProofPower system
+wrk083.doc: this file is supplementary material for the ProofPower system
 
 Copyright (c) 2004 Lemma 1 Ltd.
 
@@ -11,24 +11,27 @@ or visit the OpenSource web site at http://www.opensource.org/
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-wrkNNN.doc,v 1.115 2011/02/06 17:42:00 rda Exp
+wrk083.doc,v 1.115 2011/02/06 17:42:00 rda Exp
 ********************************************************************************
 =TEX
 \documentclass[11pt,a4paper]{article}
 \usepackage{latexsym}
-\usepackage{amsmath}
 \usepackage{ProofPower}
+%\usepackage{amsmath} % breaks the index!
 \ftlinepenalty=9999
 \usepackage{A4}
 \makeindex
 \title{Mathematical Case Studies: Recognising Morphisms}
 \author{Rob Arthan}
-\makeindex
+%\makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2012/03/04 16:07:18 $%
+\date{\FormatDate{$Date: 2012/03/19 17:15:15 $%
 }}
 
 \def\Func#1{\mathsf{#1}}
+\def\I{\Func{I}}
+\def\K{\Func{K}}
+\def\Uncurry{\Func{Uncurry}}
 \def\Frees{\Func{frees}}
 \def\Constant{\Func{Constant}}
 \def\Unary{\Func{Unary}}
@@ -46,7 +49,7 @@ TBS
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRKNNN; issue 1.115%
+Reference: LEMMA1/HOL/WRK083; issue 1.115%
 
 
 \end{centering}
@@ -119,31 +122,36 @@ of a binary product:
 val €pair_def› : THM = get_spec¨PairÆ;
 =TEX
 %%%%
-=TEX
-\begin{align*}
-(\lambda V \bullet x)^M &= \pi^V_x
+\section{REPRESENTING $\lambda$-ABSTRACTIONS WITH COMBINATORS}
+
+\[
+\begin{array}{rcl@{\quad\quad}l}
+(\lambda V \bullet x)^M &=& \pi^V_x
 	& \mbox{if $x \in \Frees(V)$} \\
-(\lambda V \bullet y)^M &= \kappa y
+(\lambda V \bullet y)^M &=& \K\,y
 	& \mbox{if $y \not\in \Frees(V)$} \\
-(\lambda V \bullet c)^M &= c
+(\lambda V \bullet c)^M &=& \K\,c
 	& \mbox{if $c \in \Constant$} \\
-(\lambda V \bullet (t_1, t_2))^M &= \langle(\lambda V\bullet t_1)^M, (\lambda V\bullet t_2)^M\rangle
+(\lambda V \bullet (t_1, t_2))^M &=& \langle(\lambda V\bullet t_1)^M, (\lambda V\bullet t_2)^M\rangle
 	&  \\
-(\lambda V \bullet f\,t)^M &= f \circ (\lambda V\bullet t)^M
+(\lambda V \bullet f\,t)^M &=& f \circ (\lambda V\bullet t)^M
 	& \mbox{if $f \in \Unary$} \\
-(\lambda V \bullet g\,t_1\,t_2)^M &= \Upsilon g \circ \langle(\lambda V\bullet t_1)^M, (\lambda V\bullet t_2)^M\rangle
+(\lambda V \bullet g\,t_1\,t_2)^M &=& \Uncurry\,g \circ \langle(\lambda V\bullet t_1)^M, (\lambda V\bullet t_2)^M\rangle
 	& \mbox{if $g \in \Binary$} \\
-(\lambda V \bullet h\,t\,p)^M &= (\lambda x\bullet h\,x\,p) \circ (\lambda V\bullet t)^M
+(\lambda V \bullet h\,t\,p)^M &=& (\lambda x\bullet h\,x\,p) \circ (\lambda V\bullet t)^M
 	& \mbox{if $h \in \Parametrized$} \\
-\end{align*}
+\end{array}
+\]
+
 Here, if $V$ is a varstruct with a free occurrence of the variable $x$,
 $\pi^V_x$ denotes the combination of projections which extracts $x$.
 For example $\pi^{((z, x), y)}_x$ is $\pi_2 \circ \pi_1$.
+As a special case, $\pi^x_x = \I$.
 
-Note that if pairing is implemented by taking `,' to be a binary operator
-of type $\alpha \rightarrow \beta \rightarrow \alpha \times \beta$,
-the rule for pairing is subsumed by the rule for binary operators
-together with a simplification rule $\Upsilon (,) = \iota$.
+%Note that if pairing is implemented by taking `,' to be a binary operator
+%of type $\alpha \rightarrow \beta \rightarrow \alpha \times \beta$,
+%the rule for pairing is subsumed by the rule for binary operators
+%together with a simplification rule $\Upsilon (,) = \iota$.
 =TEX
 =SML
 val €i_rule_thm› = save_thm ("i_rule_thm", (
@@ -273,12 +281,138 @@ fun €morphism_conv›
 	in	Ã_unpair_conv AND_OR_C rec_conv
 	end
 );
-=IGN
-new_parent "Ø";
+=TEX
+%%%%
+\section{APPLICATION IN TOPOLOGY}
+=SML
+new_theory"topology-examples";
+new_parent "topology_Ø";
+new_parent "÷";
+set_merge_pcs ["basic_hol1", "'Ø", "'sets_alg"];
+=TEX
+=SML
+declare_alias("OâR", ¨OpenâRÆ);
+declare_alias("OâC", ¨OpenâCÆ);
+=TEX
+=SML
+val €fst_continuous_rule_thm› = fst_continuous_thm;
+val €snd_continuous_rule_thm› = snd_continuous_thm;
+
+=TEX
+=SML
+val €i_continuous_rule_thm› = save_thm( "i_continuous_rule_thm", (
+set_goal([], ¨µ‘∑ ‘ ç Topology ¥ Ic ç (‘, ‘) ContinuousÆ);
+a(REPEAT strip_tac THEN rewrite_tac[
+		prove_rule[get_spec¨IcÆ] ¨Ic = Ãx∑ xÆ]
+	THEN ALL_FC_T rewrite_tac[id_continuous_thm]);
+pop_thm()
+));
+
+=TEX
+=SML
+val €k_continuous_rule_thm› = save_thm( "k_continuous_rule_thm", (
+set_goal([], ¨µ ” ‘ c∑
+	” ç Topology ± ‘ ç Topology ± c ç SpaceâT ‘ ¥
+	Kc c ç (”, ‘) ContinuousÆ);
+a(REPEAT strip_tac THEN rewrite_tac[
+		prove_rule[get_spec¨KcÆ] ¨µc∑Kc c = Ãx∑ cÆ]
+	THEN ALL_FC_T rewrite_tac[const_continuous_thm]);
+pop_thm()
+));
+
+=TEX
+=SML
+val €minus_continuous_rule_thm› = save_thm( "minus_continuous_rule_thm", (
+set_goal([], ¨~ ç (OpenâR, OpenâR) ContinuousÆ);
+a(rewrite_tac[continuous_cts_at_Ø_thm, minus_cts_thm]);
+pop_thm()
+));
+
+
+=TEX
+=SML
+val €exp_sin_cos_continuous_rule_thm› = save_thm( "exp_sin_cos_continuous_rule_thm", (
+set_goal([], ¨
+	Exp ç (OpenâR, OpenâR) Continuous
+±	Sin ç (OpenâR, OpenâR) Continuous
+±	Cos ç (OpenâR, OpenâR) Continuous
+Æ);
+a(rewrite_tac[continuous_cts_at_Ø_thm, exp_cts_thm, sin_cos_cts_thm]);
+pop_thm()
+));
+
+
+=TEX
+=SML
+val €plus_continuous_rule_thm› = plus_continuous_Ø_∏_Ø_thm;
+val €times_continuous_rule_thm› = times_continuous_Ø_∏_Ø_thm;
+
+=TEX
+=SML
+=TEX
+=SML
+val €Ø_Ó_exp_continuous_rule_thm› = save_thm( "Ø_Ó_exp_continuous_rule_thm", (
+set_goal([], ¨µn : Ó∑ (Ãx∑ x ^ n) ç (OpenâR, OpenâR) ContinuousÆ);
+a(rewrite_tac[continuous_cts_at_Ø_thm, Ø_Ó_exp_cts_thm]);
+pop_thm()
+));
+
+=TEX
+=SML
+val €pair_continuous_rule_thm› = save_thm( "pair_continuous_rule_thm", (
+set_goal([], ¨µ “ ” ‘ f g∑
+	“ ç Topology ± ” ç Topology ± ‘ ç Topology ±
+	f ç (“, ”) Continuous ± g ç (“, ‘) Continuous ¥
+	Pair (f, g) ç (“, ” ∏âT ‘) Continuous
+Æ);
+a(REPEAT strip_tac THEN rewrite_tac[pair_def]
+	THEN ALL_FC_T rewrite_tac[product_continuous_thm]);
+pop_thm()
+));
+
+=TEX
+=SML
+val €o_continuous_rule_thm› = save_thm( "o_continuous_rule_thm", (
+set_goal([], ¨µ “ ” ‘ f g∑
+	“ ç Topology ± ” ç Topology ± ‘ ç Topology ±
+	f ç (“, ”) Continuous ± g ç (”, ‘) Continuous ¥
+	g o f ç (“, ‘) Continuous
+Æ);
+a(REPEAT strip_tac THEN rewrite_tac[
+		prove_rule[o_def] ¨µf g∑ g o f = Ãx∑ g(f x)Æ]
+	THEN ALL_FC_T rewrite_tac[comp_continuous_thm]);
+pop_thm()
+));
+
+=TEX
+=SML
+
+val €continuity_axiom_thms› : THM list = [
+	open_Ø_topology_thm,
+	space_t_Ø_thm,
+	minus_continuous_rule_thm,
+	exp_sin_cos_continuous_rule_thm,
+	plus_continuous_rule_thm,
+	times_continuous_rule_thm,
+	Ø_Ó_exp_continuous_rule_thm];
+
+val €continuity_rule_thms› : THM list = [
+	product_topology_thm,
+	fst_continuous_rule_thm,
+	snd_continuous_rule_thm,
+	i_continuous_rule_thm,
+	k_continuous_rule_thm,
+	pair_continuous_rule_thm,
+	o_continuous_rule_thm];
+=TEX
+=SML
 val Ø_morphism_conv = morphism_conv {
-	unary = [¨~ : Ø ≠ ØÆ, ¨FstÆ, ¨SndÆ] : TERM list,
+	unary = [¨~ : Ø ≠ ØÆ, ¨Exp : Ø ≠ ØÆ, ¨Sin : Ø ≠ ØÆ,
+		¨Cos : Ø ≠ ØÆ, ¨FstÆ, ¨SndÆ] : TERM list,
 	binary = [¨$+ : Ø ≠ Ø ≠ ØÆ, ¨$* : Ø ≠ Ø ≠ ØÆ],
 	parametrized = [¨$^ : Ø ≠ Ó ≠ ØÆ]};
+=IGN
+
 Ø_morphism_conv ¨Ã xy∑ Snd xy * Snd xy + 1.0Æ;
 Ø_morphism_conv ¨Ã(x, y)∑x + y * y + 1.0Æ;
 Ø_morphism_conv ¨Ã(x:Ø, y)∑(x + y, x * y)Æ;
@@ -286,25 +420,162 @@ val Ø_morphism_conv = morphism_conv {
 simple_ho_match ¨Ãx:'a ∏ 'b∑Snd xÆ ¨Ãy:'b∑ Snd (t y)Æ;
 Ø_morphism_conv ¨Ã(x:Ø, y)∑ x^3 * yÆ;
 Ø_morphism_conv ¨Ã(x:Ø, y)∑ (x, x+y, x^3 * y)Æ;
+Ø_morphism_conv ¨Ãx∑ (Cos x, Sin x)Æ;
+Ø_morphism_conv ¨Ã(x, y) : Ø ∏ Ø∑ Exp(x + y)Æ;
+Ø_morphism_conv ¨Ã(x, y) : Ø ∏ Ø∑ (a*x + c*y, c*x + d*y)Æ;
+Ø_morphism_conv ¨Ãx : Ø∑ 2.0 * x ^ 4Æ;
 =IGN
-new_parent "÷";
+
+set_goal([], ¨(Ãx∑x ^ 2 + 2. * x + 1.) ç (OpenâR, OpenâR) ContinuousÆ);
+a(conv_tac (LEFT_C Ø_morphism_conv));
+a (bc_tac continuity_rule_thms);
+
+a(∂_tac¨OpenâR ∏âT OpenâRÆ);
+a(rewrite_tac continuity_axiom_thms);
+a(REPEAT strip_tac THEN bc_tac continuity_rule_thms
+	THEN_TRY rewrite_tac continuity_axiom_thms);
+
+a(∂_tac¨OpenâR ∏âT OpenâRÆ);
+a(rewrite_tac continuity_axiom_thms);
+a(REPEAT strip_tac THEN bc_tac continuity_rule_thms
+	THEN_TRY rewrite_tac continuity_axiom_thms);
+
+a(∂_tac¨OpenâR ∏âT OpenâRÆ);
+a(rewrite_tac continuity_axiom_thms);
+a(REPEAT strip_tac THEN bc_tac continuity_rule_thms
+	THEN_TRY rewrite_tac continuity_axiom_thms);
+
+val thm1 = pop_thm();
+
+=IGN
 val ÷_morphism_conv = morphism_conv {
 	unary = [¨~ : ÷ ≠ ÷Æ, ¨Exp : ÷ ≠ ÷Æ,
 		¨FstÆ, ¨SndÆ ] : TERM list,
 	binary = [¨$+ : ÷ ≠ ÷ ≠ ÷Æ, ¨$* : ÷ ≠ ÷ ≠ ÷Æ],
 	parametrized = [¨$^ : ÷ ≠ Ó ≠ ÷Æ]};
-÷_morphism_conv ¨Ã xy∑ Snd xy * Snd xy + (1.0, 0.0)Æ;
-÷_morphism_conv ¨Ã(x, y)∑x + y * y + Ó÷ 2Æ;
-÷_morphism_conv ¨Ã(x:÷, y)∑(x + y, x * y, x^3)Æ;
-÷_morphism_conv ¨Ã(x:÷, y)∑(x + y, x * y, y * x)Æ;
-÷_morphism_conv ¨Ã(x:÷, y)∑(y * x^3) + z * Ó÷ 99 +(a + x)*yÆ;
-÷_morphism_conv ¨Ãx∑ Exp(Ø÷ 2. * Ø÷ – * Ø… 1. * x)Æ;
+
+=TEX
+Notes:
+
+Axioms and rules for: morphism-ness (continuity) and object-ness (topology).
+
+Could/should automate the »-expansion at the beginning of the following.
+
+Put ML bindings for spec of Exp etc. in wrk072.
+
+Sort out parent relationships
+
+=IGN
+set_goal([], ¨Exp ç (OpenâC, OpenâC) ContinuousÆ);
+a(conv_tac(LEFT_C(once_rewrite_conv[prove_rule[]¨µf∑ f = Ãz∑ f zÆ])));
+a(rewrite_tac[get_spec¨ExpâCÆ, get_spec¨Ø÷Æ, ÷_times_def, open_÷_def]);
+
+a(conv_tac (LEFT_C Ø_morphism_conv));
+
+a(REPEAT strip_tac THEN bc_tac continuity_rule_thms
+	THEN_TRY rewrite_tac continuity_axiom_thms);
+
+(* *** Goal "1" *** *)
+
+a(∂_tac¨OpenâR ∏âT OpenâRÆ);
+a(REPEAT strip_tac THEN_TRY bc_tac continuity_rule_thms
+	THEN_TRY rewrite_tac continuity_axiom_thms);
+
+(* *** Goal "1.1" *** *)
+
+a(∂_tac¨OpenâRÆ);
+a(REPEAT strip_tac THEN_TRY bc_tac continuity_rule_thms
+	THEN_TRY rewrite_tac continuity_axiom_thms);
+
+(* *** Goal "1.2" *** *)
+
+a(∂_tac¨OpenâRÆ);
+a(REPEAT strip_tac THEN_TRY bc_tac continuity_rule_thms
+	THEN_TRY rewrite_tac continuity_axiom_thms);
+
+(* *** Goal "2" *** *)
+
+
+a(∂_tac¨OpenâR ∏âT OpenâRÆ);
+a(REPEAT strip_tac THEN_TRY bc_tac continuity_rule_thms
+	THEN_TRY rewrite_tac continuity_axiom_thms);
+
+(* *** Goal "2.1" *** *)
+
+a(∂_tac¨OpenâRÆ);
+a(REPEAT strip_tac THEN_TRY bc_tac continuity_rule_thms
+	THEN_TRY rewrite_tac continuity_axiom_thms);
+
+(* *** Goal "2.2" *** *)
+
+a(∂_tac¨OpenâRÆ);
+a(REPEAT strip_tac THEN_TRY bc_tac continuity_rule_thms
+	THEN_TRY rewrite_tac continuity_axiom_thms);
+
+
+val thm1 = pop_thm();
+=TEX
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+=SML
+
+val »_expand_thm : THM = prove_rule[]¨µf∑ f = Ãz∑ f zÆ;
+
+val  €»_expand_conv› : CONV = (fn tm => (
+	if	is_Ã tm
+	then	fail_conv
+	else	simple_eq_match_conv »_expand_thm) tm);
+
+val €unpair_rewrite_tac› : THM list -> TACTIC = 
+	rewrite_tac o map (conv_rule (TRY_C (MAP_C Ã_unpair_conv)));
+
+fun €basic_continuity_tac› (thms : THM list) : TACTIC = (
+		TRY (conv_tac (LEFT_C »_expand_conv))
+	THEN	TRY (unpair_rewrite_tac thms)
+	THEN	conv_tac (LEFT_C Ø_morphism_conv)	
+	THEN REPEAT (
+		(TRY o FIRST o map ∂_tac) [¨OpenâRÆ, ¨OpenâR ∏âT OpenâRÆ]
+	THEN	REPEAT strip_tac
+	THEN	(TRY o bc_tac) continuity_rule_thms
+	THEN	(TRY o rewrite_tac) continuity_axiom_thms)
+);
+
+set_goal([], ¨(Ãz∑ Exp(Ø÷ 2. * Ø÷ – * Ø… 1. * z)) ç (OpenâC, OpenâC) ContinuousÆ);
+
+a(basic_continuity_tac[get_spec¨ExpâCÆ, get_spec¨Ø÷Æ, ÷_times_def, open_÷_def]);
+
+val thm2 = pop_thm();
+
+=TEX
+=SML
+
+
+set_goal([], ¨(Ãx∑ Exp(Ø÷ 2. * Ø÷ – * IâC * Ø÷ x)) ç (OâR, OâC) ContinuousÆ);
+(*
+
+a(rewrite_tac[÷_exp_def, Ø÷_def, ÷_i_def, ÷_times_def, open_÷_def]);
+a(conv_tac(LEFT_C Ø_morphism_conv));
+
+*)
+a(basic_continuity_tac[÷_exp_def, Ø÷_def, ÷_i_def, ÷_times_def, open_÷_def]);
+
+val thm3 = pop_thm();
+=TEX
+=SML
+
+
+set_goal([], ¨Exp ç (OpenâC, OpenâC) ContinuousÆ);
+a(basic_continuity_tac[÷_exp_def, Ø÷_def, Ø…_def, ÷_times_def, open_÷_def]);
+
+val thm4 = pop_thm();
+
+=IGN
 =IGN
 set_flag("pp_show_HOL_types", true);
 set_flag("pp_show_HOL_types", false);
 =TEX
-\section{APPLICATION TO TOPOLOGY}
 %%%%
+
 %%%%
 =SML
 =IGN
@@ -322,7 +593,7 @@ uncurry_def;
 
 {\let\Section\section
 \def\section#1{\Section{#1}\label{TheoryListing}}
-\include{morphisms.th}
+\include{wrk083.th}
 }  %\let
 
 \twocolumn[\section{INDEX}\label{INDEX}]
@@ -341,7 +612,7 @@ uncurry_def;
 %%%%
 %%%%
 =SML
-output_theory{out_file="morphisms.th.doc", theory="-"};
+output_theory{out_file="wrk083.th.doc", theory="-"};
 =TEX
 The intention is that theorems should always have an outer universal quantifier if necessary rather than free variables
 and that all variables bound by logical quantifiers should
