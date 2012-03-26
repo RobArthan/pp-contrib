@@ -25,7 +25,7 @@ wrk083.doc,v 1.115 2011/02/06 17:42:00 rda Exp
 \author{Rob Arthan}
 %\makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2012/03/19 17:15:15 $%
+\date{\FormatDate{$Date: 2012/03/25 14:49:46 $%
 }}
 
 \def\Func#1{\mathsf{#1}}
@@ -254,20 +254,23 @@ fun €gen_µ_elim› (tm : TERM) (thm : THM) = (
 fun €morphism_conv›
 	{unary : TERM list, binary : TERM list, parametrized : TERM list}
 	: CONV = (
-	let	val unary_thms = map (switch gen_µ_elim unary_rule_thm)
+	let	val unary_thms = map (all_µ_intro o switch gen_µ_elim unary_rule_thm)
 			unary;
-		val binary_thms = map (switch gen_µ_elim binary_rule_thm)
+		val binary_thms = map (all_µ_intro o switch gen_µ_elim binary_rule_thm)
 			binary;
-		val binary_thms1 = map (switch gen_µ_elim binary_rule_thm1)
+		val binary_thms1 = map (all_µ_intro o switch gen_µ_elim binary_rule_thm1)
 			binary;
 		val parametrized_thms = map (switch gen_µ_elim parametrized_rule_thm)
 			parametrized;
 		val i_conv = simple_eq_match_conv i_rule_thm;
 		val k_conv = simple_eq_match_conv k_rule_thm;
 		val pair_conv = simple_ho_eq_match_conv pair_rule_thm;
-		val unary_conv = FIRST_C (map simple_ho_eq_match_conv unary_thms);
-		val binary_conv = FIRST_C (map simple_ho_eq_match_conv (binary_thms @ binary_thms1));
-		val parametrized_conv = FIRST_C (map simple_ho_eq_match_conv parametrized_thms);
+		val unary_conv = FIRST_C (map simple_ho_eq_match_conv unary_thms)
+			handle Fail _ => fail_conv;
+		val binary_conv = FIRST_C (map simple_ho_eq_match_conv (binary_thms @ binary_thms1))
+			handle Fail _ => fail_conv;
+		val parametrized_conv = FIRST_C (map simple_ho_eq_match_conv parametrized_thms)
+			handle Fail _ => fail_conv;
 		val simp_conv = simple_eq_match_conv o_i_rule_thm;
 		val rec rec_conv = (fn t =>
 			((i_conv ORELSE_C
@@ -411,6 +414,7 @@ val Ø_morphism_conv = morphism_conv {
 		¨Cos : Ø ≠ ØÆ, ¨FstÆ, ¨SndÆ] : TERM list,
 	binary = [¨$+ : Ø ≠ Ø ≠ ØÆ, ¨$* : Ø ≠ Ø ≠ ØÆ],
 	parametrized = [¨$^ : Ø ≠ Ó ≠ ØÆ]};
+=TEX
 =IGN
 
 Ø_morphism_conv ¨Ã xy∑ Snd xy * Snd xy + 1.0Æ;
@@ -424,8 +428,15 @@ simple_ho_match ¨Ãx:'a ∏ 'b∑Snd xÆ ¨Ãy:'b∑ Snd (t y)Æ;
 Ø_morphism_conv ¨Ã(x, y) : Ø ∏ Ø∑ Exp(x + y)Æ;
 Ø_morphism_conv ¨Ã(x, y) : Ø ∏ Ø∑ (a*x + c*y, c*x + d*y)Æ;
 Ø_morphism_conv ¨Ãx : Ø∑ 2.0 * x ^ 4Æ;
+=TEX
 =IGN
-
+val Ø_linear_morphism_conv = morphism_conv {
+	unary = [¨~ : Ø ≠ ØÆ, ¨$* : Ø ≠ Ø ≠ ØÆ] : TERM list,
+	binary = [¨$+ : Ø ≠ Ø ≠ ØÆ],
+	parametrized = []};
+=IGN
+Ø_linear_morphism_conv ¨Ã(x, y):Ø ∏ Ø∑(a*x+c*y, b*x+d*y)Æ;
+=SML
 set_goal([], ¨(Ãx∑x ^ 2 + 2. * x + 1.) ç (OpenâR, OpenâR) ContinuousÆ);
 a(conv_tac (LEFT_C Ø_morphism_conv));
 a (bc_tac continuity_rule_thms);
@@ -540,11 +551,33 @@ fun €basic_continuity_tac› (thms : THM list) : TACTIC = (
 	THEN	(TRY o rewrite_tac) continuity_axiom_thms)
 );
 
-set_goal([], ¨(Ãz∑ Exp(Ø÷ 2. * Ø÷ – * Ø… 1. * z)) ç (OpenâC, OpenâC) ContinuousÆ);
+=TEX
+=SML
 
-a(basic_continuity_tac[get_spec¨ExpâCÆ, get_spec¨Ø÷Æ, ÷_times_def, open_÷_def]);
+set_goal([], ¨(Ãx∑ Sin(Cos (Exp x))) ç (OpenâR, OpenâR) ContinuousÆ);
+
+a(basic_continuity_tac[]);
 
 val thm2 = pop_thm();
+
+=TEX
+=SML
+
+set_goal([], ¨(Ãx∑(Sin(Exp x), Cos (Exp x))) ç (OâR, OâR ∏âT OâR) ContinuousÆ);
+
+a(basic_continuity_tac[]);
+
+val thm3 = pop_thm();
+
+=TEX
+=SML
+
+set_goal([], ¨(Ãx∑ 2.0 * (x ^ 4)) ç (OâR, OâR) ContinuousÆ);
+
+a(basic_continuity_tac[]);
+
+val thm4 = pop_thm();
+
 
 =TEX
 =SML
@@ -559,7 +592,7 @@ a(conv_tac(LEFT_C Ø_morphism_conv));
 *)
 a(basic_continuity_tac[÷_exp_def, Ø÷_def, ÷_i_def, ÷_times_def, open_÷_def]);
 
-val thm3 = pop_thm();
+val thm5 = pop_thm();
 =TEX
 =SML
 
