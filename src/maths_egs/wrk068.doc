@@ -11,7 +11,7 @@ or visit the OpenSource web site at http:/www.opensource.org/
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-$Id: wrk068.doc,v 1.29 2010/03/03 11:35:32 rda Exp rda $
+$Id: wrk068.doc,v 1.30 2011/02/11 17:47:01 rda Exp rda $
 ********************************************************************************
 =IGN
 pp_make_database -f -p hol maths_egs
@@ -83,7 +83,7 @@ doctex wrk068 wrk068.th; texdvi -b wrk068; texdvi wrk068; texdvi wrk068
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2010/03/03 11:35:32 $%
+\date{\FormatDate{$Date: 2011/02/11 17:47:01 $%
 }}
 
 \begin{document}
@@ -103,7 +103,7 @@ Several examples of groups are exhibited and used to show that the various abstr
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK068; issue $Revision: 1.29 $%
+Reference: LEMMA1/HOL/WRK068; issue $Revision: 1.30 $%
 
 
 \end{centering}
@@ -1031,6 +1031,38 @@ finite_cosets_thm
 lagrange_cosets_thm
 =TEX
 }
+\subsection{Cartesian Product}
+The Cartesian product of two groups is the standard pointwise construction:
+=SML
+declare_infix(290, "∏âG");
+=TEX
+πHOLCONST
+‹ €$∏âG› : 'a GROUP ≠ 'b GROUP ≠ ('a ∏ 'b) GROUP
+˜¸¸¸¸¸¸
+‹ µG H∑	(G ∏âG H) =
+‹	MkGROUP
+‹		(Car G ∏ Car H)
+‹		(Ã(a, b)(c, d)∑ ((a.c)G, (b.d)H))
+‹		(Unit G, Unit H)
+‹		(Ã(a, b)∑((a õ~)G, (b õ~)H))
+∞
+The Cartesian product of two groups is again a group;
+the projections onto the factors of the products are homomorphisms
+as is the lift of a pair of homomorphism into the product.
+\ThmsIII{
+=GFT
+product_group_thm
+product_homomorphism_thm
+=TEX
+}{%
+=GFT
+fst_homomorphism_thm
+=TEX
+}{%
+=GFT
+snd_homomorphism_thm
+=TEX
+}
 
 \newpage
 \section{Examples of Groups}\label{groupegs}
@@ -1109,6 +1141,7 @@ We now define the group of reals under addition and the group of positive reals 
 
 As with the groups of integers, we show that these are groups and instantiate various definitions to them.
 We can then show that the function $\ExpName$ provides an isomorphism between the two groups.
+We also show that a linear mapping is a homomorphism from the additive group to itself.
 \ThmsII{
 =GFT
 Ø_plus_group_thm
@@ -1123,6 +1156,7 @@ We can then show that the function $\ExpName$ provides an isomorphism between th
 Ø_plus_Ø_pos_homomorphism_inverse_thm
 Ø_plus_Ø_pos_isomorphism_def
 exp_isomorphism_thm
+linear_homomorphism
 =TEX
 }
 %%%%
@@ -1464,6 +1498,7 @@ val €quotient_group_def› = get_spec¨QuotientGroupÆ;
 val €img_def› = get_spec¨ImgÆ;
 val €isomorphism_def› = get_spec¨IsomorphismÆ;
 val €size_group_def› = get_spec¨SizeâGÆ;
+val €∏_group_def› = get_spec¨$∏âGÆ;
 =TEX
 =SML
 push_consistency_goal¨InverseÆ;
@@ -3046,6 +3081,62 @@ a(rewrite_tac[right_congruent_def]);
 a(group_nf_tac THEN REPEAT strip_tac);
 val €lagrange_cosets_thm› = save_pop_thm "lagrange_cosets_thm";
 =TEX
+=SML
+set_goal([], ¨
+µG H∑
+	G ç Group
+±	H ç Group
+¥	G ∏âG H ç Group
+Æ);
+a(rewrite_tac[group_def, group_ops_def, ∏_group_def, ∏_def]);
+a(REPEAT strip_tac THEN all_asm_fc_tac[]);
+val €product_group_thm› = save_pop_thm "product_group_thm";
+=TEX
+%%%%
+%%%%
+%%%%
+=SML
+set_goal([], ¨
+µG H∑
+	G ç Group
+±	H ç Group
+¥	Fst ç Homomorphism(G ∏âG H, G)
+Æ);
+a(rewrite_tac[group_def, group_ops_def, ∏_group_def, ∏_def, homomorphism_def]);
+a(REPEAT strip_tac THEN all_asm_fc_tac[]);
+val €fst_homomorphism_thm› = save_pop_thm "fst_honomorphism_thm";
+=TEX
+%%%%
+%%%%
+%%%%
+=SML
+set_goal([], ¨
+µG H∑
+	G ç Group
+±	H ç Group
+¥	Snd ç Homomorphism(G ∏âG H, H)
+Æ);
+a(rewrite_tac[group_def, group_ops_def, ∏_group_def, ∏_def, homomorphism_def]);
+a(REPEAT strip_tac THEN all_asm_fc_tac[]);
+val €snd_homomorphism_thm› = save_pop_thm "snd_honomorphism_thm";
+=TEX
+%%%%
+%%%%
+%%%%
+=SML
+set_goal([], ¨
+µG H∑
+	G ç Group
+±	H ç Group
+±	K ç Group
+±	f ç Homomorphism(G, H)
+±	g ç Homomorphism(G, K)
+¥	(Ãx∑(f x, g x)) ç Homomorphism(G, H ∏âG K)
+Æ);
+a(rewrite_tac[group_def, group_ops_def, ∏_group_def, ∏_def, homomorphism_def]);
+a(REPEAT strip_tac THEN all_asm_fc_tac[]);
+val €product_homomorphism_thm› = save_pop_thm "product_honomorphism_thm";
+=TEX
 %%%%
 %%%%
 %%%%
@@ -3188,6 +3279,13 @@ a(rewrite_tac[log_def]);
 (* *** Goal "2" *** *)
 a(∂_tac¨Log zÆ THEN ALL_FC_T rewrite_tac[exp_log_thm]);
 val €exp_isomorphism_thm› = save_pop_thm "exp_isomorphism_thm";
+=TEX
+=SML
+set_goal([], ¨µc∑
+	(Ãx∑c * x) ç Homomorphism(Ø_plus, Ø_plus)
+Æ);
+a(rewrite_tac[Ø_plus_def, group_ops_def, homomorphism_def, Ø_times_plus_distrib_thm]);
+val €linear_homomorphism_thm› = save_pop_thm "linear_homomorphism_thm";
 =TEX
 %%%%
 =TEX
