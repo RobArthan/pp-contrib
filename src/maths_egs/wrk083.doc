@@ -25,7 +25,7 @@ wrk083.doc,v 1.115 2011/02/06 17:42:00 rda Exp
 \author{Rob Arthan}
 %\makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2012/03/26 16:46:28 $%
+\date{\FormatDate{$Date: 2012/03/29 15:49:27 $%
 }}
 
 \def\Func#1{\mathsf{#1}}
@@ -88,7 +88,9 @@ TBS
 \section{SUPPORTING DEFINITIONS}
 %%%%
 %%%%
-
+=GFT
+÷â+\
+÷â*
 =SML
 open_theory "combin";
 new_theory "morphisms";
@@ -294,11 +296,107 @@ fun €morphism_conv›
 	end
 );
 =TEX
+=TEX
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Now we build the basic morphismhood tactic.
+It expects a goal of the form
+=INLINEFT
+f ç (X, Y) Morphism
+=TEX
+.
+The tactic begins by »-expanding $f$ if it not already an abstraction.
+=SML
+
+val »_expand_thm : THM = prove_rule[]¨µf∑ f = Ãz∑ f zÆ;
+
+val  €»_expand_conv› : CONV = (fn tm => (
+	if	is_Ã tm
+	then	fail_conv
+	else	simple_eq_match_conv »_expand_thm) tm);
+
+=TEX
+The theorem is parametrized by a list of theorems that are used
+as an initial set of rewrite rules. For convenience, we convert
+any paired abstractions in these theorems into simple abstractions,
+which makes them more general as rewrite rules.
+=SML
+
+val €unpair_rewrite_tac› : THM list -> TACTIC = 
+	rewrite_tac o map (conv_rule (TRY_C (MAP_C Ã_unpair_conv)));
+=TEX
+Now the tactic. After the »-expansion and rewriting discussed above,
+it converts the function into combinator form.
+It then goes through a cycle of backchaining with implicative facts
+applying the supplied tactic to guess
+existential witnesses, then stripping and rewriting with the basic facts.
+=SML
+fun €basic_morphism_tac›
+	{
+		unary : TERM list,
+		binary : TERM list,
+		parametrized : TERM list,
+		facts : THM list,
+		witness_tac : TACTIC} : THM list -> TACTIC = (
+	let	val m_conv = morphism_conv {unary = unary, binary = binary, parametrized = parametrized};
+		val is_rule = is_¥ o snd o strip_µ o concl;
+		val rule_thms = facts drop (not o is_rule);
+		val axiom_thms = facts drop is_rule;
+	in	fn rw_thms =>
+			TRY (conv_tac (LEFT_C »_expand_conv))
+		THEN	TRY (unpair_rewrite_tac rw_thms)
+		THEN	conv_tac (LEFT_C m_conv)	
+		THEN 	(REPEAT o CHANGED_T) (
+				(TRY o bc_tac) rule_thms
+			THEN	TRY witness_tac
+			THEN	REPEAT strip_tac
+			THEN	(TRY o rewrite_tac) axiom_thms)
+	end
+);
+=TEX
+The following constructs witnesses to objecthood using a supplied list of object constructors based on the type of the desired witness.
+=SML
+fun €object_by_type› (ocs : TERM list) : TYPE -> TERM = (
+	let	fun preprocess acc [] = acc
+		|   preprocess acc (oc :: more) = (
+			let	val rev_tys = rev(strip_≠_type (type_of oc));
+				val res_ty = hd (rev_tys);
+				val arg_tys = rev (tl rev_tys);
+			in	preprocess ((res_ty,  (oc, arg_tys)) :: acc) more
+			end
+		);
+		val table = preprocess [] ocs;
+		fun solve [] ty = fail "object_by_type" 1005 []
+		|   solve ((res_ty, (oc, arg_tys)) :: more) ty = (
+			let	val recur = solve table;
+				val tysubs = type_match ty res_ty;
+				val args = map (recur o inst_type tysubs) arg_tys;
+				val ioc = inst [] tysubs oc;
+			in	list_mk_app(ioc, args)
+			end	handle Fail _ => solve more ty
+		);
+	in	solve table
+	end
+);
+=TEX
+%%%%
+
+=SML
+fun €∂_object_by_type_tac› (ocs : TERM list) : TACTIC = (
+	let	val witness_by_type = object_by_type ocs;
+	in	fn gl as (_, conc) => 
+		let	val (x, _) = dest_simple_∂ conc;
+		in	(simple_∂_tac o witness_by_type o type_of) x gl
+		end
+	end
+);
+
+=TEX
 %%%%
 \section{PROVING CONTINUITY}
 We set up a theory to work in.
 Our examples will use the topology on the real line and the complex plane.
 =SML
+open_theory "morphisms";
 new_theory"topology-examples";
 new_parent "topology_Ø";
 new_parent "÷";
@@ -408,16 +506,14 @@ We collect the theorems together.
 
 =SML
 
-val €continuity_axiom_thms› : THM list = [
+val €continuity_fact_thms› : THM list = [
 	open_Ø_topology_thm,
 	space_t_Ø_thm,
 	minus_continuous_axiom_thm,
 	exp_sin_cos_continuous_axiom_thm,
 	plus_continuous_axiom_thm,
 	times_continuous_axiom_thm,
-	Ø_Ó_exp_continuous_axiom_thm];
-
-val €continuity_rule_thms› : THM list = [
+	Ø_Ó_exp_continuous_axiom_thm,
 	product_topology_thm,
 	fst_continuous_rule_thm,
 	snd_continuous_rule_thm,
@@ -425,36 +521,7 @@ val €continuity_rule_thms› : THM list = [
 	k_continuous_rule_thm,
 	pair_continuous_rule_thm,
 	o_continuous_rule_thm];
-=TEX
-=SML
-val Ø_morphism_conv = morphism_conv {
-	unary = [¨~ : Ø ≠ ØÆ, ¨Exp : Ø ≠ ØÆ, ¨Sin : Ø ≠ ØÆ,
-		¨Cos : Ø ≠ ØÆ, ¨FstÆ, ¨SndÆ] : TERM list,
-	binary = [¨$+ : Ø ≠ Ø ≠ ØÆ, ¨$* : Ø ≠ Ø ≠ ØÆ],
-	parametrized = [¨$^ : Ø ≠ Ó ≠ ØÆ]};
-=TEX
-=IGN
 
-Ø_morphism_conv ¨Ã xy∑ Snd xy * Snd xy + 1.0Æ;
-Ø_morphism_conv ¨Ã(x, y)∑x + y * y + 1.0Æ;
-Ø_morphism_conv ¨Ã(x:Ø, y)∑(x + y, x * y)Æ;
-Ø_morphism_conv ¨Ã((z, x), y)∑xÆ;
-simple_ho_match ¨Ãx:'a ∏ 'b∑Snd xÆ ¨Ãy:'b∑ Snd (t y)Æ;
-Ø_morphism_conv ¨Ã(x:Ø, y)∑ x^3 * yÆ;
-Ø_morphism_conv ¨Ã(x:Ø, y)∑ (x, x+y, x^3 * y)Æ;
-Ø_morphism_conv ¨Ãx∑ (Cos x, Sin x)Æ;
-Ø_morphism_conv ¨Ã(x, y) : Ø ∏ Ø∑ Exp(x + y)Æ;
-Ø_morphism_conv ¨Ã(x, y) : Ø ∏ Ø∑ (a*x + c*y, c*x + d*y)Æ;
-Ø_morphism_conv ¨Ãx : Ø∑ 2.0 * x ^ 4Æ;
-=TEX
-=IGN
-val Ø_linear_morphism_conv = morphism_conv {
-	unary = [¨~ : Ø ≠ ØÆ, ¨$* : Ø ≠ Ø ≠ ØÆ] : TERM list,
-	binary = [¨$+ : Ø ≠ Ø ≠ ØÆ],
-	parametrized = []};
-=IGN
-Ø_linear_morphism_conv ¨Ã(x, y):Ø ∏ Ø∑(a*x+c*y, b*x+d*y)Æ;
-=SML
 =TEX
 Notes:
 
@@ -463,98 +530,16 @@ Put ML bindings for spec of Exp etc. in wrk072.
 Sort out parent relationships
 
 =IGN
-set_goal([], ¨Exp ç (OâC, OâC) ContinuousÆ);
-a(conv_tac(LEFT_C(once_rewrite_conv[prove_rule[]¨µf∑ f = Ãz∑ f zÆ])));
-a(rewrite_tac[get_spec¨ExpâCÆ, get_spec¨Ø÷Æ, ÷_times_def, open_÷_def]);
-
-a(conv_tac (LEFT_C Ø_morphism_conv));
-
-a(REPEAT strip_tac THEN bc_tac continuity_rule_thms
-	THEN_TRY rewrite_tac continuity_axiom_thms);
-
-(* *** Goal "1" *** *)
-
-a(∂_tac¨OâR ∏âT OâRÆ);
-a(REPEAT strip_tac THEN_TRY bc_tac continuity_rule_thms
-	THEN_TRY rewrite_tac continuity_axiom_thms);
-
-(* *** Goal "1.1" *** *)
-
-a(∂_tac¨OâRÆ);
-a(REPEAT strip_tac THEN_TRY bc_tac continuity_rule_thms
-	THEN_TRY rewrite_tac continuity_axiom_thms);
-
-(* *** Goal "1.2" *** *)
-
-a(∂_tac¨OâRÆ);
-a(REPEAT strip_tac THEN_TRY bc_tac continuity_rule_thms
-	THEN_TRY rewrite_tac continuity_axiom_thms);
-
-(* *** Goal "2" *** *)
-
-
-a(∂_tac¨OâR ∏âT OâRÆ);
-a(REPEAT strip_tac THEN_TRY bc_tac continuity_rule_thms
-	THEN_TRY rewrite_tac continuity_axiom_thms);
-
-(* *** Goal "2.1" *** *)
-
-a(∂_tac¨OâRÆ);
-a(REPEAT strip_tac THEN_TRY bc_tac continuity_rule_thms
-	THEN_TRY rewrite_tac continuity_axiom_thms);
-
-(* *** Goal "2.2" *** *)
-
-a(∂_tac¨OâRÆ);
-a(REPEAT strip_tac THEN_TRY bc_tac continuity_rule_thms
-	THEN_TRY rewrite_tac continuity_axiom_thms);
-
-
-val thm1 = pop_thm();
-=TEX
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Now we build the basic continuity tactic.
-It expects a goal of the form
-=INLINEFT
-f ç (”, ‘) Continuous
-=TEX
-\ wehre ” and ‘ are built from the topology of the real line using the product topology construction.
-The tactic begins by »-expanding $f$ if it not already an abstraction.
 =SML
+val continuity_params = {
+	unary = [¨~ : Ø ≠ ØÆ, ¨Exp : Ø ≠ ØÆ, ¨Sin : Ø ≠ ØÆ,
+		¨Cos : Ø ≠ ØÆ, ¨FstÆ, ¨SndÆ] : TERM list,
+	binary = [¨$+ : Ø ≠ Ø ≠ ØÆ, ¨$* : Ø ≠ Ø ≠ ØÆ],
+	parametrized = [¨$^ : Ø ≠ Ó ≠ ØÆ],
+	facts = continuity_fact_thms,
+	witness_tac = ∂_object_by_type_tac [¨OâRÆ, ¨OâR ∏âT OâRÆ]};
 
-val »_expand_thm : THM = prove_rule[]¨µf∑ f = Ãz∑ f zÆ;
-
-val  €»_expand_conv› : CONV = (fn tm => (
-	if	is_Ã tm
-	then	fail_conv
-	else	simple_eq_match_conv »_expand_thm) tm);
-
-=TEX
-The theorem is parametrized by a list of theorems that are used
-as an initial set of rewrite rules. For convenience, we convert
-any paired abstractions in these theorems into simple abstractions,
-which makes them more general as rewrite rules.
-=SML
-
-val €unpair_rewrite_tac› : THM list -> TACTIC = 
-	rewrite_tac o map (conv_rule (TRY_C (MAP_C Ã_unpair_conv)));
-=TEX
-Now the tactic. After the »-expansion and rewriting discussed above,
-it converts the function into combinator form.
-It then goes through a cycle of backchaining, then guessing
-existential witnesses, then stripping and then rewriting with the basic theorems.
-=SML
-fun €basic_continuity_tac› (thms : THM list) : TACTIC = (
-		TRY (conv_tac (LEFT_C »_expand_conv))
-	THEN	TRY (unpair_rewrite_tac thms)
-	THEN	conv_tac (LEFT_C Ø_morphism_conv)	
-	THEN REPEAT (
-		(TRY o bc_tac) continuity_rule_thms
-	THEN	(TRY o FIRST o map ∂_tac) [¨OâRÆ, ¨OâR ∏âT OâRÆ]
-	THEN	REPEAT strip_tac
-	THEN	(TRY o rewrite_tac) continuity_axiom_thms)
-);
-
+val €basic_continuity_tac› = basic_morphism_tac continuity_params;
 =TEX
 =SML
 
@@ -604,29 +589,224 @@ val thm5 = pop_thm();
 set_goal([], ¨Exp ç (OpenâC, OpenâC) ContinuousÆ);
 a(basic_continuity_tac[÷_exp_def, Ø÷_def, Ø…_def, ÷_times_def, open_÷_def]);
 
-val thm4 = pop_thm();
-
-=IGN
-=IGN
-set_flag("pp_show_HOL_types", true);
-set_flag("pp_show_HOL_types", false);
+val thm6 = pop_thm();
 =TEX
-%%%%
-
-%%%%
+\section{PROVING GROUP HOMOMORPHISMHOOD}
 =SML
-=IGN
-(get_const_theory o fst o dest_const) ¨ Curry Æ;
-
-get_spec ¨ Uncurry Æ;
-
 open_theory "morphisms";
-open_theory "topology_Ø";
-find_thm [ ¨ Uncurry Æ ];
-
-Ã_pair_conv¨(Ãxy∑Fst xy + Snd xy)Æ;
-uncurry_def;
+new_theory "group-examples";
+new_parent "group_egs";
+set_merge_pcs["basic_hol1", "'sets_alg", "'Ø", "'÷"];
 =TEX
+Now we give the theorems asserting that various basic functions are linear.
+
+=SML
+val €minus_homomorphism_thm› = save_thm( "minus_homomorphism_thm", (
+set_goal([], ¨~ ç Homomorphism(Øâ+, Øâ+)Æ);
+a(rewrite_tac[Ø_additive_def, group_ops_def, homomorphism_def, ∏_group_def, ∏_def]
+	THEN PC_T1 "Ø_lin_arith" prove_tac[]);
+pop_thm()
+));
+
+val €plus_homomorphism_thm› = plus_Ø_additive_homomorphism_thm;
+val €const_times_homomorphism_thm› = save_thm( "const_times_homomorphism_thm", (
+set_goal([], ¨µc∑ $* c ç Homomorphism(Øâ+, Øâ+)Æ);
+a(strip_tac THEN conv_tac(LEFT_C »_expand_conv));
+a(rewrite_tac[linear_homomorphism_thm]);
+pop_thm()
+));
+
+val €times_const_homomorphism_thm› = once_rewrite_rule[Ø_times_comm_thm] linear_homomorphism_thm;
+
+val €÷_const_times_homomorphism_thm› = save_thm( "÷_const_times_homomorphism_thm", (
+set_goal([], ¨µc∑ $* c ç Homomorphism(Øâ+ ∏âG Øâ+, Øâ+ ∏âG Øâ+)Æ);
+a(strip_tac THEN conv_tac(LEFT_C »_expand_conv));
+a(rewrite_tac[rewrite_rule[÷_eq_Ø_∏_Ø_thm]÷_linear_homomorphism_thm]);
+pop_thm()
+));
+
+val €÷_times_const_homomorphism_thm› = once_rewrite_rule[÷_times_comm_thm] ÷_linear_homomorphism_thm;
+
+val €Ø÷_homomorphism_thm› = save_thm( "Ø÷_homomorphism_thm", (
+set_goal([], ¨Ø÷ ç Homomorphism (Øâ+, Øâ+ ∏âG Øâ+)Æ);
+a(rewrite_tac[Ø÷_def, homomorphism_def, ∏_group_def, Ø_additive_ops_thm, group_ops_def, ∏_def]);
+pop_thm()
+));
+=TEX
+Some of the following material should be in WRK068.
+=SML
+val €÷_conj_eq_0_thm› = save_thm( "÷_conj_eq_0_thm", (
+set_goal([], ¨µz∑ z õ_  = Ó÷ 0 § z = Ó÷ 0Æ);
+a(rewrite_tac[÷_conj_def, Ó÷_def, Ø÷_def]THEN PC_T1 "Ø_lin_arith" prove_tac[]);
+pop_thm()
+));
+=TEX
+=SML
+
+val €÷_conj_additive_homomorphism_thm› = save_thm( "÷_conj_additive_homomorphism_thm", (
+set_goal([], ¨$õ_  ç Homomorphism (Øâ+ ∏âG Øâ+, Øâ+ ∏âG Øâ+)Æ);
+a(rewrite_tac[eq_sym_rule ÷_eq_Ø_∏_Ø_thm]);
+a(rewrite_tac[homomorphism_def, ÷_additive_def, group_ops_def,
+	÷_conj_plus_homomorphism_thm]);
+pop_thm()
+));
+
+val €÷_conj_multiplicative_homomorphism_thm› = save_thm( "÷_conj_multiplicative_homomorphism_thm", (
+set_goal([], ¨$õ_  ç Homomorphism (÷â*, ÷â*)Æ);
+a(rewrite_tac[homomorphism_def, ÷_additive_def, group_ops_def,
+	÷_conj_times_homomorphism_thm, ÷_conj_eq_0_thm]);
+pop_thm()
+));
+
+=TEX
+Next we give the backchaining theorems.
+=SML
+val €pair_homomorphism_rule_thm› = save_thm( "pair_homomorphism_rule_thm", (
+set_goal([], ¨µ G H K f g∑
+		G ç Group ± H ç Group ± K ç Group ±
+		f ç Homomorphism (G, H) ± g ç Homomorphism (G, K)
+	¥ Pair(f, g) ç Homomorphism (G, H ∏âG K)
+Æ);
+a(REPEAT strip_tac THEN rewrite_tac[pair_def]
+	THEN ALL_FC_T rewrite_tac[product_homomorphism_thm]);
+pop_thm()
+));
+
+=TEX
+=SML
+val €o_homomorphism_rule_thm› = save_thm( "o_homomorphism_rule_thm", (
+set_goal([], ¨µ G H K f g∑
+		G ç Group ± H ç Group ± K ç Group ±
+		f ç Homomorphism (G, H) ± g ç Homomorphism (H, K)
+	¥ g o f ç Homomorphism (G, K)
+Æ);
+a(REPEAT strip_tac THEN rewrite_tac[
+		prove_rule[o_def] ¨µf g∑ g o f = Ãx∑ g(f x)Æ]
+	THEN ALL_FC_T rewrite_tac[comp_homomorphism_thm]);
+pop_thm()
+));
+
+
+val €unit_Ø_additive_thm› = save_thm( "unit_Ø_additive_thm", (
+set_goal([], ¨Unit Øâ+ = 0.0Æ);
+a(rewrite_tac[Ø_additive_def, group_ops_def]);
+pop_thm()
+));
+
+val €k_zero_homomorphism_rule_thm› = 
+	rewrite_rule[Ø_additive_group_thm, unit_Ø_additive_thm,
+		prove_rule[get_spec¨KcÆ] ¨µc∑ (Ãx∑ c) = Kc cÆ] (
+		list_µ_elim[¨G:'a GROUPÆ, ¨Øâ+Æ] unit_homomorphism_thm);
+
+=TEX
+
+=SML
+val €fst_homomorphism_rule_thm› = fst_homomorphism_thm;
+val €snd_homomorphism_rule_thm› = snd_homomorphism_thm;
+
+=TEX
+=SML
+val €i_homomorphism_rule_thm› = save_thm( "i_homomorphism_rule_thm", (
+set_goal([], ¨µG∑ G ç Group ¥ Ic ç Homomorphism(G, G)Æ);
+a(REPEAT strip_tac THEN rewrite_tac[
+		prove_rule[get_spec¨IcÆ] ¨Ic = Ãx∑ xÆ]
+	THEN ALL_FC_T rewrite_tac[id_homomorphism_thm]);
+pop_thm()
+));
+
+=TEX
+=SML
+
+val €k_homomorphism_rule_thm› = save_thm( "k_homomorphism_rule_thm", (
+set_goal([], ¨µG H∑
+		G ç Group ± H ç Group
+	¥	Kc (Unit H) ç Homomorphism(G, H)
+Æ);
+a(REPEAT strip_tac THEN rewrite_tac[
+		prove_rule[get_spec¨KcÆ] ¨µc∑Kc c = Ãx∑ cÆ]
+	THEN ALL_FC_T rewrite_tac[unit_homomorphism_thm]);
+pop_thm()
+));
+
+
+=TEX
+We collect the theorems together.
+
+=SML
+
+val €homomorphism_fact_thms› : THM list = [
+	÷_eq_Ø_∏_Ø_thm,
+	÷_const_times_homomorphism_thm,
+	÷_conj_additive_homomorphism_thm,
+	÷_conj_multiplicative_homomorphism_thm,
+	Ø÷_homomorphism_thm,
+	rewrite_rule[÷_eq_Ø_∏_Ø_thm] ÷_exp_homomorphism_thm,
+	Ø_additive_group_thm,
+	÷_multiplicative_group_thm,
+	minus_homomorphism_thm,
+	plus_homomorphism_thm,
+	const_times_homomorphism_thm,
+	times_const_homomorphism_thm,
+	÷_times_const_homomorphism_thm,
+	plus_homomorphism_thm,
+	k_zero_homomorphism_rule_thm,
+	product_group_thm,
+	pair_homomorphism_rule_thm,
+	o_homomorphism_rule_thm,
+	fst_homomorphism_rule_thm,
+	snd_homomorphism_rule_thm,
+	i_homomorphism_rule_thm,
+	k_homomorphism_rule_thm
+];
+
+val homomorphism_params = {
+	unary = [¨~ : Ø ≠ ØÆ, ¨$* c: Ø ≠ ØÆ,
+		¨$* c: ÷ ≠ ÷Æ, ¨Exp: ÷ ≠ ÷Æ,
+		¨$õ_ : ÷ ≠ ÷Æ],
+	binary = [¨$+ : Ø ≠ Ø ≠ ØÆ],
+	parametrized = [¨$* : Ø ≠ Ø ≠ ØÆ, ¨$* : ÷ ≠ ÷  ≠ ÷Æ],
+	facts = homomorphism_fact_thms,
+	witness_tac = ∂_object_by_type_tac [¨Øâ+Æ, ¨Øâ+ ∏âG Øâ+Æ]};
+
+val €basic_homomorphism_tac› = basic_morphism_tac homomorphism_params;
+
+=TEX
+=SML
+set_goal([], ¨(Ãx∑2.0 * x) ç Homomorphism(Øâ+, Øâ+)Æ);
+a(basic_homomorphism_tac[]);
+val thm1 = pop_thm();
+=TEX
+=SML
+set_goal([], ¨(Ã(x, y)∑(a*x+c*y, b*x+d*y)) ç Homomorphism(Øâ+ ∏âG Øâ+, Øâ+ ∏âG Øâ+)Æ);
+a(basic_homomorphism_tac[]);
+val thm2 = pop_thm();
+=TEX
+=SML
+set_goal([], ¨(Ã(x, y)∑(a*x*u, 0.0)) ç Homomorphism(Øâ+ ∏âG Øâ+, Øâ+ ∏âG Øâ+)Æ);
+a(basic_homomorphism_tac[]);
+val thm3 = pop_thm();
+
+
+=TEX
+=SML
+
+set_goal([], ¨(Ãx∑ Exp(Ø÷ 2. * Ø÷ – * IâC * Ø÷ x)) ç Homomorphism(Øâ+, ÷â*)Æ);
+
+a(basic_homomorphism_tac[]);
+
+val thm5 = pop_thm();
+
+=TEX
+=SML
+
+set_goal([], ¨(Ãx∑ Exp(x)õ_) ç Homomorphism(Øâ+ ∏âG Øâ+, ÷â*)Æ);
+
+a(basic_homomorphism_tac[]);
+
+val thm5 = pop_thm();
+
+=IGN
+
 
 {\let\Section\section
 \def\section#1{\Section{#1}\label{TheoryListing}}
@@ -736,3 +916,31 @@ val _ = app check_thms (get_descendants "min");
 \end{document}
 =IGN
 
+=TEX
+=IGN
+val Ø_morphism_conv = morphism_conv {
+	unary = [¨~ : Ø ≠ ØÆ, ¨Exp : Ø ≠ ØÆ, ¨Sin : Ø ≠ ØÆ,
+		¨Cos : Ø ≠ ØÆ, ¨FstÆ, ¨SndÆ] : TERM list,
+	binary = [¨$+ : Ø ≠ Ø ≠ ØÆ, ¨$* : Ø ≠ Ø ≠ ØÆ],
+	parametrized = [¨$^ : Ø ≠ Ó ≠ ØÆ]};
+Ø_morphism_conv ¨Ã xy∑ Snd xy * Snd xy + 1.0Æ;
+Ø_morphism_conv ¨Ã(x, y)∑x + y * y + 1.0Æ;
+Ø_morphism_conv ¨Ã(x:Ø, y)∑(x + y, x * y)Æ;
+Ø_morphism_conv ¨Ã((z, x), y)∑xÆ;
+simple_ho_match ¨Ãx:'a ∏ 'b∑Snd xÆ ¨Ãy:'b∑ Snd (t y)Æ;
+Ø_morphism_conv ¨Ã(x:Ø, y)∑ x^3 * yÆ;
+Ø_morphism_conv ¨Ã(x:Ø, y)∑ (x, x+y, x^3 * y)Æ;
+Ø_morphism_conv ¨Ãx∑ (Cos x, Sin x)Æ;
+Ø_morphism_conv ¨Ã(x, y) : Ø ∏ Ø∑ Exp(x + y)Æ;
+Ø_morphism_conv ¨Ã(x, y) : Ø ∏ Ø∑ (a*x + c*y, c*x + d*y)Æ;
+Ø_morphism_conv ¨Ãx : Ø∑ 2.0 * x ^ 4Æ;
+=TEX
+=IGN
+=IGN
+
+val Ø_homomorphism_morphism_conv =  morphism_conv {
+	unary = [¨~ : Ø ≠ ØÆ, ¨$* c: Ø ≠ ØÆ, ¨$* c: ÷ ≠ ÷Æ, ¨Exp: ÷ ≠ ÷Æ] : TERM list,
+	binary = [¨$+ : Ø ≠ Ø ≠ ØÆ],
+	parametrized = [¨$* : Ø ≠ Ø ≠ ØÆ, ¨$* : ÷ ≠ ÷  ≠ ÷Æ]};
+
+Ø_homomorphism_morphism_conv ¨Ãx∑ Exp(Ø÷ 2. * Ø÷ – * IâC * Ø÷ x)Æ;
