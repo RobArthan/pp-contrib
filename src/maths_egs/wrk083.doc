@@ -25,7 +25,7 @@ wrk083.doc,v 1.115 2011/02/06 17:42:00 rda Exp
 \author{Rob Arthan}
 %\makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2012/03/29 15:49:27 $%
+\date{\FormatDate{$Date: 2012/03/30 19:31:40 $%
 }}
 
 \def\Func#1{\mathsf{#1}}
@@ -83,8 +83,78 @@ TBS
 \section{INTRODUCTION}
 %%%%
 %%%%
-
-
+\section{UTILITIES}
+=SML
+new_error_message{id = 999001,
+	text = "?0 is not of form ?1"};
+new_error_message{id = 999002,
+	text = "?0 expects a ?1-element argument list"};
+new_error_message{id = 999003,
+	text = "hd2 expects a list with at least 2 elements"};
+fun €dest_any› (pattern : TERM, fun_name : string) : TERM -> TERM list = (
+	let	val (f, args) = strip_app pattern;
+		val arity = length args;
+		fun strip_and_check tm = (
+			let	val (g, args) = strip_app tm;
+				val _ = term_match g f;
+			in	if	length args = arity
+				then	args
+				else	fail "" 0 []
+			end	handle Fail _ => (
+				term_fail fun_name 999001 [tm, pattern]
+			)
+		);
+	in	strip_and_check
+	end
+);
+=TEX
+=SML
+fun €is_any› (pattern : TERM) : TERM -> bool = (
+	let	val dest = dest_any (pattern, "is_any");
+	in	fn tm => (dest tm; true) handle Fail _ => false
+	end
+);
+=TEX
+=SML
+fun €mk_any› (pattern : TERM, fun_name : string) : TERM list -> TERM = (
+	let	val (f, args) = strip_app pattern;
+		val arity_s = string_of_int (length args);
+		val ftys = map type_of args;
+		fun match_arg_tys i (aty :: more_atys) (fty :: more_ftys) = (
+			let	val i = type_match1 i aty fty;
+			in	match_arg_tys i more_atys more_ftys
+			end
+		) | match_arg_tys i [] [] = (i
+		) | match_arg_tys _ _ _ = (
+			fail fun_name 999002 [fn () => arity_s]
+		);
+		fun match_and_apply tms = (
+			let	val atys = map type_of tms;
+				val i = match_arg_tys [] atys ftys;
+				val f' = inst [] i f;
+			in	list_mk_app (f', tms)
+			end
+		);
+	in	match_and_apply
+	end
+);
+=SML
+fun €hd2› (x :: y :: _ : 'a list) : 'a * 'a = (x, y)
+|   hd2 _ = fail "hd2" 999003 [];
+=TEX
+=SML
+val €mk_o› : TERM * TERM -> TERM = (
+	let	val mk = mk_any (¨(t1 : 'b ≠ 'c) o (t2 : 'a ≠ 'b)Æ, "mk_o");
+	in	fn (t1, t2) => mk [t1, t2]
+	end
+);
+val €dest_o› : TERM -> TERM * TERM = (
+	let	val dest = dest_any (¨(t1 : 'b ≠ 'c) o (t2 : 'a ≠ 'b)Æ, "mk_o");
+	in	hd2 o dest
+	end
+);
+val €is_o› : TERM -> bool = is_any ¨(t1 : 'b ≠ 'c) o (t2 : 'a ≠ 'b)Æ;
+=TEX
 \section{SUPPORTING DEFINITIONS}
 %%%%
 %%%%
@@ -799,11 +869,14 @@ val thm5 = pop_thm();
 =TEX
 =SML
 
-set_goal([], ¨(Ãx∑ Exp(x)õ_) ç Homomorphism(Øâ+ ∏âG Øâ+, ÷â*)Æ);
+
+
+set_goal([], ¨(Ãx∑ Fst(Exp(x)õ_)) ç Homomorphism(Øâ+ ∏âG Øâ+, ÷â*)Æ);
 
 a(basic_homomorphism_tac[]);
 
-val thm5 = pop_thm();
+(* fails *)
+drop_main_goal();
 
 =IGN
 
