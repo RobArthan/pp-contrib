@@ -354,15 +354,18 @@ and the exponential mapping of the real line onto the unit circle:
 \bibliography{fmu}
 
 \appendix
-{\HOLindexOff
-\let\Section\section
+{\let\Section\section
 \let\subsection\Hide
 \def\section#1{\Section{#1}\label{listing}}
 \let\subsection\Hide
 \include{wrk072.th}}
 
+
+\twocolumn[\section{INDEX}\label{INDEX}]
+{\small\printindex}
+
 =TEX
-%\end{document} %% COMMENT THIS LINE OUT TO TYPESET THE PROOF SCRIPTS
+\end{document} %% COMMENT THIS LINE OUT TO TYPESET THE PROOF SCRIPTS
 \ftlinepenalty=9999
 \section{PROOFS}
 
@@ -1514,17 +1517,26 @@ val €space_t_subspace_open_÷_thm› = save_thm ("space_t_subspace_open_÷_thm",
 %%%%
 =SML
 
-val €continuous_open_÷_thm1› = save_thm( "continuous_open_÷_thm1", (
-set_goal([], ¨µ‘ : 'a SET SET; r i: 'a ≠ Ø∑
-	‘ ç Topology
-¥	(	(Ãx∑(r x, i x)) ç (‘, OpenâC) Continuous
-	§	r ç (‘, OpenâR) Continuous
-	±	i ç (‘, OpenâR) Continuous)
-Æ);
-a(REPEAT µ_tac THEN ¥_tac);
-a(strip_asm_tac open_Ø_topology_thm);
-a(rewrite_tac[open_÷_def]);
-a(ALL_FC_T1 fc_§_canon rewrite_tac[product_continuous_§_thm]);
+val €÷_minus_continuous_thm› = save_thm( "÷_minus_continuous_thm", (
+set_goal([], ¨~ ç (OpenâC, OpenâC) Continuous Æ);
+a(LEMMA_T ¨~ = Ãz∑ (~ z : ÷)Æ once_rewrite_thm_tac
+	THEN1 rewrite_tac[uncurry_def]);
+a(rewrite_tac[÷_minus_def, open_÷_def]);
+a(basic_continuity_tac[]);
+pop_thm()
+));
+
+=TEX
+
+%%%%
+%%%%
+=SML
+val €÷_conj_continuous_thm› = save_thm( "÷_conj_continuous_thm", (
+set_goal([], ¨$õ_ ç (OpenâC, OpenâC) Continuous Æ);
+a(LEMMA_T ¨$õ_ = Ãz∑ z õ_Æ once_rewrite_thm_tac
+	THEN1 rewrite_tac[uncurry_def]);
+a(rewrite_tac[÷_conj_def, open_÷_def]);
+a(basic_continuity_tac[]);
 pop_thm()
 ));
 
@@ -1534,15 +1546,12 @@ pop_thm()
 %%%%
 =SML
 
-val €continuous_open_÷_thm2› = save_thm( "continuous_open_÷_thm2", (
-set_goal([], ¨µr i: Ø ≠ Ø∑
-	(Ãx∑(r x, i x)) ç (OpenâR, OpenâC) Continuous §	
-	(µx∑ r Cts x) ± (µx∑ i Cts x)
-Æ);
-a(REPEAT µ_tac);
-a(strip_asm_tac open_Ø_topology_thm);
-a(ALL_FC_T1 fc_§_canon rewrite_tac[continuous_open_÷_thm1]);
-a(rewrite_tac[continuous_cts_at_Ø_thm]);
+val €÷_plus_continuous_thm› = save_thm( "÷_plus_continuous_thm", (
+set_goal([], ¨Uncurry $+ ç (OpenâC ∏âT OpenâC, OpenâC) Continuous Æ);
+a(LEMMA_T ¨Uncurry $+ = Ã(w, z)∑ (w + z : ÷)Æ rewrite_thm_tac
+	THEN1 rewrite_tac[uncurry_def]);
+a(rewrite_tac[÷_plus_def, open_÷_def]);
+a(basic_continuity_tac[]);
 pop_thm()
 ));
 
@@ -1552,12 +1561,12 @@ pop_thm()
 %%%%
 =SML
 
-val €continuous_open_÷_thm3› = save_thm( "continuous_open_÷_thm3", (
-set_goal([], ¨µr i: ÷ ≠ Ø∑
-	(Ãx∑(r x, i x)) ç (OpenâC, OpenâC) Continuous §		r ç (OpenâC, OpenâR) Continuous
-	±	i ç (OpenâC, OpenâR) Continuous
-Æ);
-a(accept_tac(rewrite_rule[open_÷_topology_thm](µ_elim¨OpenâCÆcontinuous_open_÷_thm1)));
+val €÷_times_continuous_thm› = save_thm( "÷_times_continuous_thm", (
+set_goal([], ¨Uncurry $* ç (OpenâC ∏âT OpenâC, OpenâC) Continuous Æ);
+a(LEMMA_T ¨Uncurry $* = Ã(w, z)∑ (w * z : ÷)Æ rewrite_thm_tac
+	THEN1 rewrite_tac[uncurry_def]);
+a(rewrite_tac[÷_times_def, open_÷_def]);
+a(basic_continuity_tac[]);
 pop_thm()
 ));
 
@@ -1566,18 +1575,23 @@ pop_thm()
 %%%%
 %%%%
 =SML
-(*
-recip_cts_thm;
-val €÷_plus_continuous_open_thm› = save_thm( "÷_plus_continuous_open_thm", (
-set_goal([], ¨
-	(Ãx∑(r x, i x)) ç (OpenâC, OpenâC) Continuous Æ);
-a(accept_tac(rewrite_rule[open_÷_topology_thm](µ_elim¨OpenâCÆcontinuous_open_÷_thm1)));
+
+val €÷_poly_continuous_thm› = save_thm( "÷_poly_continuous_thm", (
+set_goal([], ¨µf∑f ç PolyFuncâC ¥ f ç (OpenâC, OpenâC) Continuous Æ);
+a(rewrite_tac[open_÷_def] THEN REPEAT strip_tac);
+a(÷_poly_induction_tac ¨fÆ);
+a(basic_continuity_tac[open_÷_topology_thm]
+	THEN rewrite_tac[rewrite_rule[open_÷_def]space_t_open_÷_thm]);
+(* *** Goal "2" *** *)
+a(basic_continuity_tac[]);
+(* *** Goal "3" *** *)
+a(basic_continuity_tac[rewrite_rule[open_÷_def]÷_plus_continuous_thm]);
+(* *** Goal "4" *** *)
+a(basic_continuity_tac[rewrite_rule[open_÷_def]÷_times_continuous_thm]);
 pop_thm()
 ));
 
-*)
 =TEX
-
 %%%%
 %%%%
 =SML
@@ -1586,7 +1600,8 @@ val €exp_s1_continuous_thm› = save_thm( "exp_s1_continuous_thm", (
 set_goal([], ¨
 	ExpS1 ç (OpenâR, OpenâC) Continuous
 Æ);
-a(rewrite_tac[exp_s1_def1, continuous_open_÷_thm2, sin_cos_cts_thm]);
+a(rewrite_tac[exp_s1_def1, open_÷_def]);
+a(basic_continuity_tac[]);
 pop_thm()
 ));
 
