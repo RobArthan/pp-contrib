@@ -11,7 +11,7 @@ or visit the OpenSource web site at http://www.opensource.org/
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-$Id: wrk067.doc,v 1.64 2011/02/11 17:47:01 rda Exp rda $
+$Id: wrk067.doc,v 1.65 2012/05/06 15:17:10 rda Exp rda $
 ********************************************************************************
 pp_make_database -f -p hol topology
 docsml wrk066 wrk067
@@ -58,7 +58,7 @@ doctex wrk067.doc  wrk067[1234].th.doc ; docdvi wrk067
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2011/02/11 17:47:01 $%
+\date{\FormatDate{$Date: 2012/05/06 15:17:10 $%
 }}
 \begin{document}
 \begin{titlepage}
@@ -101,7 +101,7 @@ give a groupoid modulo homotopy equivalence.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK067; issue $Revision: 1.64 $%
+Reference: LEMMA1/HOL/WRK067; issue $Revision: 1.65 $%
 
 
 \end{centering}
@@ -6970,18 +6970,23 @@ val Ûcontinuity_fact_thmsÝ : THM list = [
 
 =SML
 val (unary_v, unary_p) = dest_pair ¬(x, x  Á Continuous)®;
+val (binary_v, binary_p) = dest_pair ¬(x, Uncurry x  Á Continuous)®;
 val (object_v, object_p) = dest_pair ¬(Á, Á  Topology)®;
 
-fun Ûget_patterns_thmsÝ (accs as (acc_u, acc_o, acc_th))
+fun Ûget_patterns_thmsÝ (accs as (acc_u, acc_b, acc_o, acc_th))
 		((thm :: more) : THM list) = (
 	let	val tm = concl thm;
-	in	let	val (tym, tmm) = term_match tm unary_p;
+	in	let	val (tym, tmm) = term_match tm binary_p;
+			val bin = subst tmm (inst [] tym binary_v);
+		in	get_patterns_thms (acc_u, bin::acc_b, acc_o, (thm :: acc_th)) more
+		end	handle Fail _ =>
+		let	val (tym, tmm) = term_match tm unary_p;
 			val un = subst tmm (inst [] tym unary_v);
-		in	get_patterns_thms (un::acc_u, acc_o, (thm :: acc_th)) more
+		in	get_patterns_thms (un::acc_u, acc_b, acc_o, (thm :: acc_th)) more
 		end	handle Fail _ =>
 		let	val (tym, tmm) = term_match tm object_p;
 			val ob = subst tmm (inst [] tym object_v);
-		in	get_patterns_thms (acc_u, ob::acc_o, (thm :: acc_th)) more
+		in	get_patterns_thms (acc_u, acc_b, ob::acc_o, (thm :: acc_th)) more
 		end	handle Fail _ => get_patterns_thms accs more
 	end
 ) | get_patterns_thms accs [] = accs;
@@ -6993,11 +6998,11 @@ fun continuity_params (thms : THM list) :
 	 binary: TERM list,
 	 witness_tac: TACTIC,
 	 parametrized: TERM list} = (
-	let	val (uns, obs, thms) = get_patterns_thms ([], [], []) thms;
+	let	val (uns, bins, obs, thms) = get_patterns_thms ([], [], [], []) thms;
 	in
 		{unary = uns @ [¬~ : ¯ ­ ¯®, ¬Exp : ¯ ­ ¯®, ¬Sin : ¯ ­ ¯®,
 				¬Cos : ¯ ­ ¯®, ¬Fst®, ¬Snd®] : TERM list,
-		 binary = [¬$+ : ¯ ­ ¯ ­ ¯®, ¬$* : ¯ ­ ¯ ­ ¯®],
+		 binary = bins @ [¬$+ : ¯ ­ ¯ ­ ¯®, ¬$* : ¯ ­ ¯ ­ ¯®],
 		 parametrized = [¬$^ : ¯ ­ î ­ ¯®],
 		 facts = thms @ continuity_fact_thms,
 		 witness_tac = ¶_object_by_type_tac (obs @ [¬Open‰R®, ¬$¸‰T®])}
