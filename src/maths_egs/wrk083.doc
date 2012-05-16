@@ -25,7 +25,7 @@ wrk083.doc,v 1.115 2011/02/06 17:42:00 rda Exp
 \author{Rob Arthan}
 %\makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2012/04/03 13:09:31 $%
+\date{\FormatDate{$Date: 2012/05/06 15:17:10 $%
 }}
 
 \def\Func#1{\mathsf{#1}}
@@ -448,21 +448,23 @@ fun Ûbasic_morphism_tacÝ
 );
 =TEX
 The following constructs witnesses to objecthood using a supplied list of object constructors based on the type of the desired witness.
+Each object constructor is given with a list of type variables that are not to be instantiated in the search for a witness.
 =SML
-fun Ûobject_by_typeÝ (ocs : TERM list) : TYPE -> TERM = (
+fun Ûobject_by_typeÝ (ocs : (string list * TERM) list) : TYPE -> TERM = (
 	let	fun preprocess acc [] = acc
-		|   preprocess acc (oc :: more) = (
+		|   preprocess acc ((tvs, oc) :: more) = (
 			let	val rev_tys = rev(strip_­_type (type_of oc));
 				val res_ty = hd (rev_tys);
+				val tysubs0 = map (fn tv => (mk_vartype tv, mk_vartype tv)) tvs;
 				val arg_tys = rev (tl rev_tys);
-			in	preprocess ((res_ty,  (oc, arg_tys)) :: acc) more
+			in	preprocess ((res_ty,  (oc, tysubs0, arg_tys)) :: acc) more
 			end
 		);
 		val table = preprocess [] ocs;
 		fun solve [] ty = fail "object_by_type" 1005 []
-		|   solve ((res_ty, (oc, arg_tys)) :: more) ty = (
+		|   solve ((res_ty, (oc, tysubs0, arg_tys)) :: more) ty = (
 			let	val recur = solve table;
-				val tysubs = type_match ty res_ty;
+				val tysubs = type_match1 tysubs0 ty res_ty;
 				val args = map (recur o inst_type tysubs) arg_tys;
 				val ioc = inst [] tysubs oc;
 			in	list_mk_app(ioc, args)
@@ -474,8 +476,10 @@ fun Ûobject_by_typeÝ (ocs : TERM list) : TYPE -> TERM = (
 =TEX
 %%%%
 
+In the following, the list of strings with each object constructor is a list of type variables that are not to be instantiated when matching with this constructor. Typically these would be type variables appearing in the type of something which is an object by dint of an assumption of the goal.
+
 =SML
-fun Û¶_object_by_type_tacÝ (ocs : TERM list) : TACTIC = (
+fun Û¶_object_by_type_tacÝ (ocs : (string list * TERM) list) : TACTIC = (
 	let	val witness_by_type = object_by_type ocs;
 	in	fn gl as (_, conc) => 
 		let	val (x, _) = dest_simple_¶ conc;
