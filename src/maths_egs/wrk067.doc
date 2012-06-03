@@ -11,7 +11,7 @@ or visit the OpenSource web site at http://www.opensource.org/
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-$Id: wrk067.doc,v 1.69 2012/06/02 09:47:36 rda Exp rda $
+$Id: wrk067.doc,v 1.70 2012/06/02 15:53:03 rda Exp rda $
 ********************************************************************************
 pp_make_database -f -p hol topology
 docsml wrk066 wrk067
@@ -58,7 +58,7 @@ doctex wrk067.doc  wrk067[1234].th.doc ; docdvi wrk067
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2012/06/02 09:47:36 $%
+\date{\FormatDate{$Date: 2012/06/02 15:53:03 $%
 }}
 \begin{document}
 \begin{titlepage}
@@ -105,7 +105,7 @@ lifting property.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK067; issue $Revision: 1.69 $%
+Reference: LEMMA1/HOL/WRK067; issue $Revision: 1.70 $%
 
 
 \end{centering}
@@ -2649,6 +2649,177 @@ a(PC_T1 "sets_ext1" rewrite_tac[one_def]);
 val Ûdomain_unit_topology_continuous_thmÝ = save_pop_thm "domain_unit_topology_continuous_thm";
 
 =TEX
+
+We instantiate the morphism-proving tools to prove continuity of functions between topological spaces.
+
+=TEX
+Next we give the backchaining theorems.
+=SML
+val Ûpair_continuous_thmÝ = snd ( "pair_continuous_thm", (
+set_goal([], ¬µ Ò Ó Ô f g·
+	Ò  Topology ± Ó  Topology ± Ô  Topology ±
+	f  (Ò, Ó) Continuous ± g  (Ò, Ô) Continuous ´
+	Pair (f, g)  (Ò, Ó ¸‰T Ô) Continuous
+®);
+a(REPEAT strip_tac THEN rewrite_tac[pair_def]
+	THEN ALL_FC_T rewrite_tac[product_continuous_thm]);
+pop_thm()
+));
+
+=TEX
+=SML
+val Ûo_continuous_thmÝ = snd ( "o_continuous_thm", (
+set_goal([], ¬µ Ò Ó Ô f g·
+	Ò  Topology ± Ó  Topology ± Ô  Topology ±
+	f  (Ò, Ó) Continuous ± g  (Ó, Ô) Continuous ´
+	g o f  (Ò, Ô) Continuous
+®);
+a(REPEAT strip_tac THEN rewrite_tac[
+		prove_rule[o_def] ¬µf g· g o f = Ìx· g(f x)®]
+	THEN ALL_FC_T rewrite_tac[comp_continuous_thm]);
+pop_thm()
+));
+
+=TEX
+=SML
+val Ûi_continuous_thmÝ = snd ( "i_continuous_thm", (
+set_goal([], ¬µÔ· Ô  Topology ´ CombI  (Ô, Ô) Continuous®);
+a(REPEAT strip_tac THEN rewrite_tac[
+		prove_rule[get_spec¬CombI®] ¬CombI = Ìx· x®]
+	THEN ALL_FC_T rewrite_tac[id_continuous_thm]);
+pop_thm()
+));
+
+=TEX
+=SML
+val Ûk_continuous_thmÝ = snd ( "k_continuous_thm", (
+set_goal([], ¬µ Ó Ô c·
+	Ó  Topology ± Ô  Topology ± c  Space‰T Ô ´
+	CombK c  (Ó, Ô) Continuous®);
+a(REPEAT strip_tac THEN rewrite_tac[
+		prove_rule[get_spec¬CombK®] ¬µc·CombK c = Ìx· c®]
+	THEN ALL_FC_T rewrite_tac[const_continuous_thm]);
+pop_thm()
+));
+
+=TEX
+=SML
+
+val Û_space_t_product_thmÝ = snd ( "_space_t_product_thm", (
+set_goal([], ¬µÓ Ô x·
+	Ó  Topology ± Ô  Topology ± Fst x  Space‰T Ó ± Snd x  Space‰T Ô ´
+	x  Space‰T(Ó ¸‰T Ô)®);
+a(REPEAT strip_tac THEN ALL_FC_T rewrite_tac[product_topology_space_t_thm]);
+a(asm_rewrite_tac[¸_def]);
+pop_thm()
+));
+
+
+=TEX
+Now we define the basic continuity-proving tactic. It will be parametrized by a list of theorems from which it extracts information about known topological spaces and known continuous functions.
+
+=SML
+
+local
+
+(*
+=TEX
+We bring together the basic facts about product topologies and constructing new continuous functions from old.
+=SML
+*)
+
+val Ûcontinuity_fact_thmsÝ : THM list = [
+	product_topology_thm,
+	_space_t_product_thm,
+	fst_continuous_thm,
+	snd_continuous_thm,
+	i_continuous_thm,
+	k_continuous_thm,
+	pair_continuous_thm,
+	o_continuous_thm];
+
+(*
+=TEX
+We analyse the input theorems by matching their conclusions with template terms as follows. (Here in each pair, the first element is the variable that matches the continuous function or topological space and the second is the template term).
+=SML
+*)
+
+val (unary_v, unary_p) = dest_pair ¬(x, x  (Á, Â) Continuous)®;
+val (binary_v, binary_p) = dest_pair ¬(x, Uncurry x  (Á, Â) Continuous)®;
+val (parametrized_v, parametrized_p) = dest_pair ¬(h, (Ì x· h x p)  (Á, Â) Continuous)®;
+val (object_v, object_p) = dest_pair ¬(Á, Á  Topology)®;
+
+(*
+=TEX
+The following function matches each of a list of theorems with a pattern and extracts lists of known unary, binary and parametrized continuous functions and a list of known topological spaces (objects).
+=SML
+*)
+
+fun Ûget_patternsÝ
+	(accs as (acc_u, acc_b, acc_p, acc_o)
+		: TERM list * TERM list * TERM list * (string list * TERM) list)
+	((thm :: more) : THM list)
+	: TERM list * TERM list * TERM list * (string list * TERM) list = (
+	let	val tm = (snd o strip_µ o concl) thm;
+	in	let	val (tym, tmm) = term_match tm binary_p;
+			val bin = subst tmm (inst [] tym binary_v);
+		in	get_patterns (acc_u, bin::acc_b, acc_p, acc_o) more
+		end	handle Fail _ =>
+		let	val (tym, tmm) = term_match tm parametrized_p;
+			val par = subst tmm (inst [] tym parametrized_v);
+		in	get_patterns (acc_u, acc_b, par::acc_p, acc_o) more
+		end	handle Fail _ =>
+		let	val (tym, tmm) = term_match tm unary_p;
+			val un = subst tmm (inst [] tym unary_v);
+		in	get_patterns (un::acc_u, acc_b, acc_p, acc_o) more
+		end	handle Fail _ =>
+		let	val (tym, tmm) = term_match tm object_p;
+			val ob = subst tmm (inst [] tym object_v);
+			val tvs = (list_cup o map term_tyvars o asms) thm;
+		in	get_patterns (acc_u, acc_b, acc_p, (tvs, ob)::acc_o) more
+		end	handle Fail _ => get_patterns accs more
+	end
+) | get_patterns accs [] = accs;
+
+(*
+=TEX
+Now we pull the above pieces together into a function that constructs the parameters needed by the basic morphismhood prover from a list of theorems.
+=SML
+*)
+
+val Ûfst_constÝ : TERM = ¬Fst®;
+val Ûsnd_constÝ : TERM = ¬Snd®;
+val Ûproduct_t_constÝ : TERM = ¬$¸‰T®;
+
+fun continuity_params (thms : THM list) :
+	{facts: THM list,
+	 unary: TERM list,
+	 binary: TERM list,
+	 witness_tac: TACTIC,
+	 parametrized: TERM list} = (
+	let	val (uns, bins, pars, obs) = get_patterns ([], [], [], []) thms;
+	in
+		{unary = fst_const :: snd_const :: uns,
+		 binary = bins,
+		 parametrized = pars,
+		 facts = thms @ continuity_fact_thms,
+		 witness_tac = ¶_object_by_type_tac (([], product_t_const) :: obs)}
+	end
+);
+
+in
+(*
+=TEX
+This gives us our basic continuity prover.
+=SML
+*)
+fun Ûbasic_continuity_tacÝ (thms : THM list): TACTIC = (fn gl as (asms, _) =>
+	basic_morphism_tac (continuity_params (thms @ map asm_rule asms)) [] gl
+);
+end (* local ... in ... end *);
+
+
+=TEX
 %%%%
 %%%%
 
@@ -2659,8 +2830,7 @@ set_goal([], ¬µ Ô : 'a SET SET·
 ´	(Ìx· (x, x))  (Ô, Ô ¸‰T Ô) Continuous
 ®);
 a(REPEAT strip_tac);
-a(ante_tac(list_µ_elim[¬Ìx:'a· x®, ¬Ìx:'a·x®, ¬Ô®, ¬Ô®, ¬Ô®] product_continuous_thm));
-a(ALL_FC_T asm_rewrite_tac[id_continuous_thm, const_continuous_thm]);
+a(basic_continuity_tac[]);
 val Ûdiag_inj_continuous_thmÝ = save_pop_thm "diag_inj_continuous_thm";
 
 =TEX
@@ -5288,6 +5458,25 @@ a(LIST_DROP_NTH_ASM_T [16] all_fc_tac THEN all_var_elim_asm_tac);
 a(¶_tac¬x'® THEN REPEAT strip_tac);
 val Û€_compact_homeomorphism_thmÝ = save_pop_thm "€_compact_homeomorphism_thm";
 
+
+=TEX
+%%%%
+%%%%
+The useful principle about functions between Hausdorff spaces.
+
+=SML
+(*
+
+set_goal([], ¬µÔ·
+	Ô  Topology
+´	(Ìx·(x, One))  (Ô, Ô ¸‰T 1‰T) Homeomorphism
+®);
+a(REPEAT strip_tac);
+
+val Û€_compact_homeomorphism_thmÝ = save_pop_thm "€_compact_homeomorphism_thm";
+
+*)
+
 =TEX
 \subsection{Interior, Boundary and Closure Operators}
 =TEX
@@ -6282,6 +6471,9 @@ set_goal([], ¬µf· f  (O‰R, O‰R) Continuous ¤ µx·f Cts x®);
 a(rewrite_tac[continuous_def, cts_open_¯_thm, space_t_¯_thm] THEN REPEAT strip_tac);
 val Ûcontinuous_cts_at_¯_thmÝ = save_pop_thm "continuous_cts_at_¯_thm";
 
+val Ûcts_at_¯_continuous_thmÝ = save_thm( "cts_at_¯_continuous_thm",
+	conv_rule(BINDER_C eq_sym_conv) continuous_cts_at_¯_thm);
+
 =TEX
 With a distant view to doing some algebraic topology, we now look at connectedness,
 which was not much studied in \cite{LEMMA1/HOL/WRK066}. Our intention is to characterise the connected
@@ -7020,181 +7212,35 @@ in this theory.
 First we give the theorems asserting that various basic functions are indeed continuous with respect to specific topologies in the required form.
 
 =SML
-val Ûminus_continuous_axiom_thmÝ = snd ( "minus_continuous_axiom_thm", (
-set_goal([], ¬~  (O‰R, O‰R) Continuous®);
-a(rewrite_tac[continuous_cts_at_¯_thm, minus_cts_thm]);
-pop_thm()
-));
-
-
-=TEX
-=SML
-val Ûexp_sin_cos_continuous_axiom_thmÝ = snd ( "exp_sin_cos_continuous_axiom_thm", (
-set_goal([], ¬
-	Exp  (O‰R, O‰R) Continuous
-±	Sin  (O‰R, O‰R) Continuous
-±	Cos  (O‰R, O‰R) Continuous
-®);
-a(rewrite_tac[continuous_cts_at_¯_thm, exp_cts_thm, sin_cos_cts_thm]);
-pop_thm()
-));
-
-
-=TEX
-=SML
-val Ûplus_continuous_axiom_thmÝ = plus_continuous_¯_¸_¯_thm;
-val Ûtimes_continuous_axiom_thmÝ = times_continuous_¯_¸_¯_thm;
-
-=TEX
-=SML
-val Û¯_î_exp_continuous_axiom_thmÝ = snd ( "¯_î_exp_continuous_axiom_thm", (
-set_goal([], ¬µn : î· (Ìx· x ^ n)  (O‰R, O‰R) Continuous®);
-a(rewrite_tac[continuous_cts_at_¯_thm, ¯_î_exp_cts_thm]);
-pop_thm()
-));
-
-=TEX
-Next we give the backchaining theorems.
-=SML
-val Ûpair_continuous_rule_thmÝ = snd ( "pair_continuous_rule_thm", (
-set_goal([], ¬µ Ò Ó Ô f g·
-	Ò  Topology ± Ó  Topology ± Ô  Topology ±
-	f  (Ò, Ó) Continuous ± g  (Ò, Ô) Continuous ´
-	Pair (f, g)  (Ò, Ó ¸‰T Ô) Continuous
-®);
-a(REPEAT strip_tac THEN rewrite_tac[pair_def]
-	THEN ALL_FC_T rewrite_tac[product_continuous_thm]);
-pop_thm()
-));
-
-=TEX
-=SML
-val Ûo_continuous_rule_thmÝ = snd ( "o_continuous_rule_thm", (
-set_goal([], ¬µ Ò Ó Ô f g·
-	Ò  Topology ± Ó  Topology ± Ô  Topology ±
-	f  (Ò, Ó) Continuous ± g  (Ó, Ô) Continuous ´
-	g o f  (Ò, Ô) Continuous
-®);
-a(REPEAT strip_tac THEN rewrite_tac[
-		prove_rule[o_def] ¬µf g· g o f = Ìx· g(f x)®]
-	THEN ALL_FC_T rewrite_tac[comp_continuous_thm]);
-pop_thm()
-));
-=TEX
-
-=SML
-val Ûfst_continuous_rule_thmÝ = fst_continuous_thm;
-val Ûsnd_continuous_rule_thmÝ = snd_continuous_thm;
-
-=TEX
-=SML
-val Ûi_continuous_rule_thmÝ = snd ( "i_continuous_rule_thm", (
-set_goal([], ¬µÔ· Ô  Topology ´ CombI  (Ô, Ô) Continuous®);
-a(REPEAT strip_tac THEN rewrite_tac[
-		prove_rule[get_spec¬CombI®] ¬CombI = Ìx· x®]
-	THEN ALL_FC_T rewrite_tac[id_continuous_thm]);
-pop_thm()
-));
-
-=TEX
-=SML
-val Ûk_continuous_rule_thmÝ = snd ( "k_continuous_rule_thm", (
-set_goal([], ¬µ Ó Ô c·
-	Ó  Topology ± Ô  Topology ± c  Space‰T Ô ´
-	CombK c  (Ó, Ô) Continuous®);
-a(REPEAT strip_tac THEN rewrite_tac[
-		prove_rule[get_spec¬CombK®] ¬µc·CombK c = Ìx· c®]
-	THEN ALL_FC_T rewrite_tac[const_continuous_thm]);
-pop_thm()
-));
+rewrite_rule[cts_at_¯_continuous_thm] minus_cts_thm;
 
 =TEX
 =SML
 
-val Û_space_t_product_thmÝ = snd ( "_space_t_product_thm", (
-set_goal([], ¬µÓ Ô x·
-	Ó  Topology ± Ô  Topology ± Fst x  Space‰T Ó ± Snd x  Space‰T Ô ´
-	x  Space‰T(Ó ¸‰T Ô)®);
-a(REPEAT strip_tac THEN ALL_FC_T rewrite_tac[product_topology_space_t_thm]);
-a(asm_rewrite_tac[¸_def]);
-pop_thm()
-));
-
-
-=TEX
-We collect the theorems together.
-
-=SML
-
-val Ûcontinuity_fact_thmsÝ : THM list = [
+local
+	
+val Û¯_continuity_fact_thmsÝ : THM list =
+	map (rewrite_rule[cts_at_¯_continuous_thm]) (
+		¯_î_exp_cts_thm::
+		minus_cts_thm::
+		exp_cts_thm::
+		(map all_µ_intro o strip_±_rule o all_µ_elim)
+			sin_cos_cts_thm) @ [
+	plus_continuous_¯_¸_¯_thm,
+	times_continuous_¯_¸_¯_thm,
 	open_¯_topology_thm,
-	space_t_¯_thm,
-	minus_continuous_axiom_thm,
-	exp_sin_cos_continuous_axiom_thm,
-	plus_continuous_axiom_thm,
-	times_continuous_axiom_thm,
-	¯_î_exp_continuous_axiom_thm,
-	product_topology_thm,
-	_space_t_product_thm,
-	fst_continuous_rule_thm,
-	snd_continuous_rule_thm,
-	i_continuous_rule_thm,
-	k_continuous_rule_thm,
-	pair_continuous_rule_thm,
-	o_continuous_rule_thm];
-
-=TEX
-
-=SML
-val (unary_v, unary_p) = dest_pair ¬(x, x  Á Continuous)®;
-val (binary_v, binary_p) = dest_pair ¬(x, Uncurry x  Á Continuous)®;
-val (object_v, object_p) = dest_pair ¬(Á, Á  Topology)®;
-
-fun Ûget_patterns_thmsÝ
-	(accs as (acc_u, acc_b, acc_o, acc_th)
-		: TERM list * TERM list * (string list * TERM) list * THM list)
-	((thm :: more) : THM list)
-	: TERM list * TERM list * (string list * TERM) list * THM list = (
-	let	val tm = concl thm;
-	in	let	val (tym, tmm) = term_match tm binary_p;
-			val bin = subst tmm (inst [] tym binary_v);
-		in	get_patterns_thms (acc_u, bin::acc_b, acc_o, (thm :: acc_th)) more
-		end	handle Fail _ =>
-		let	val (tym, tmm) = term_match tm unary_p;
-			val un = subst tmm (inst [] tym unary_v);
-		in	get_patterns_thms (un::acc_u, acc_b, acc_o, (thm :: acc_th)) more
-		end	handle Fail _ =>
-		let	val (tym, tmm) = term_match tm object_p;
-			val ob = subst tmm (inst [] tym object_v);
-			val tvs = (term_tyvars o mk_list o asms) thm;
-		in	get_patterns_thms (acc_u, acc_b, (tvs, ob)::acc_o, (thm :: acc_th)) more
-		end	handle Fail _ => get_patterns_thms accs more
-	end
-) | get_patterns_thms accs [] = accs;
+	space_t_¯_thm];
 
 
-fun continuity_params (thms : THM list) :
-	{facts: THM list,
-	 unary: TERM list,
-	 binary: TERM list,
-	 witness_tac: TACTIC,
-	 parametrized: TERM list} = (
-	let	val (uns, bins, obs, thms) = get_patterns_thms ([], [], [], []) thms;
-	in
-		{unary = uns @ [¬~ : ¯ ­ ¯®, ¬Exp : ¯ ­ ¯®, ¬Sin : ¯ ­ ¯®,
-				¬Cos : ¯ ­ ¯®, ¬Fst®, ¬Snd®] : TERM list,
-		 binary = bins @ [¬$+ : ¯ ­ ¯ ­ ¯®, ¬$* : ¯ ­ ¯ ­ ¯®],
-		 parametrized = [¬$^ : ¯ ­ î ­ ¯®],
-		 facts = thms @ continuity_fact_thms,
-		 witness_tac = ¶_object_by_type_tac (obs @ [([], ¬O‰R®), ([], ¬$¸‰T®)])}
-	end
-);
-
+in
+(*
 =TEX
 =SML
-fun Ûbasic_continuity_tacÝ (thms : THM list): TACTIC = (fn gl as (asms, _) =>
-	basic_morphism_tac (continuity_params (thms @ map asm_rule asms)) [] gl
+*)
+fun Û¯_continuity_tacÝ (thms : THM list): TACTIC = (
+	basic_continuity_tac (thms @ ¯_continuity_fact_thms)
 );
+end (* local ... in ... end *);
 
 =TEX
 =SML
@@ -7292,7 +7338,7 @@ set_goal([], ¬µÓ X Ô f·
 a(rewrite_tac[ homotopy_def, homotopy_class_def ] THEN REPEAT strip_tac);
 a(asm_tac open_¯_topology_thm);
 a(¶_tac¬Ì x· f (Fst x)® THEN asm_rewrite_tac[]);
-a(basic_continuity_tac[]);
+a(¯_continuity_tac[]);
 val Ûhomotopy_class_refl_thmÝ = save_pop_thm "homotopy_class_refl_thm";
 
 =TEX
@@ -7316,7 +7362,7 @@ set_goal([], ¬µÓ : 'a SET SET; X Ô f g·
 ®);
 a(rewrite_tac[ homotopy_def, homotopy_class_def ] THEN REPEAT strip_tac);
 a(¶_tac¬Ì xt· H(Fst xt, î¯ 1 -  Snd xt)® THEN asm_rewrite_tac[]);
-a(basic_continuity_tac[]);
+a(¯_continuity_tac[]);
 val Ûhomotopy_class_sym_thmÝ = save_pop_thm "homotopy_class_sym_thm";
 
 =TEX
@@ -7344,7 +7390,7 @@ a(conv_tac (LEFT_C Ì_un_Â_rands_conv));
 a(conv_tac (LEFT_C(Ì_C(RATOR_C(RATOR_C(RAND_C Â_conv))))));
 a(bc_thm_tac cond_continuous_¯_thm);
 a(strip_asm_tac open_¯_topology_thm THEN ALL_FC_T asm_rewrite_tac[product_topology_thm]);
-a(REPEAT strip_tac THEN_TRY basic_continuity_tac[]
+a(REPEAT strip_tac THEN_TRY ¯_continuity_tac[]
 	THEN asm_rewrite_tac[]);
 (* *** Goal "2" *** *)
 a(LEMMA_T ¬µt· H(x, t) = g x ± H'(x, t) = g x® rewrite_thm_tac THEN REPEAT strip_tac);
@@ -7875,7 +7921,7 @@ a(conv_tac (LEFT_C Ì_un_Â_rands_conv));
 a(pure_rewrite_tac[prove_rule[]¬µt· ((Ì t· t ¼ 1 / 2) t) = ((Ìt· t) t ¼ 1/2)®]);
 a(bc_thm_tac cond_continuous_¯_thm);
 a(strip_asm_tac open_¯_topology_thm THEN rewrite_tac[]);
-a(REPEAT strip_tac THEN_TRY SOLVED_T (basic_continuity_tac []));
+a(REPEAT strip_tac THEN_TRY SOLVED_T (¯_continuity_tac []));
 a(all_var_elim_asm_tac1 THEN asm_rewrite_tac[]);
 (* *** Goal "2" *** *)
 a(LEMMA_T ¬x ¼ 1 / 2® rewrite_thm_tac THEN1 PC_T1 "¯_lin_arith" asm_prove_tac[]);
@@ -7898,7 +7944,7 @@ set_goal([], ¬µÔ f·
 ®);
 a(rewrite_tac[path_minus_def, paths_def] THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
-a(basic_continuity_tac []);
+a(¯_continuity_tac []);
 (* *** Goal "2" *** *)
 a(DROP_NTH_ASM_T 2 bc_thm_tac THEN PC_T1 "¯_lin_arith" asm_prove_tac[]);
 (* *** Goal "3" *** *)
@@ -7957,13 +8003,13 @@ a(conv_tac (LEFT_C Ì_un_Â_rands_conv));
 a(pure_rewrite_tac[prove_rule[]¬µt· ((Ì t· t ¼ 1 / 4) t) = ((Ìt· t) t ¼ 1/4)®]);
 a(bc_thm_tac cond_continuous_¯_thm);
 a(rewrite_tac[open_¯_topology_thm]);
-a(REPEAT strip_tac THEN_TRY SOLVED_T (basic_continuity_tac []));
+a(REPEAT strip_tac THEN_TRY SOLVED_T (¯_continuity_tac []));
 (* *** Goal "1" *** *)
 a(conv_tac (LEFT_C Ì_un_Â_rands_conv));
 a(pure_rewrite_tac[prove_rule[]¬µt· ((Ì t· t ¼ 1 / 2) t) = ((Ìt· t) t ¼ 1/2)®]);
 a(bc_thm_tac cond_continuous_¯_thm);
 a(rewrite_tac[open_¯_topology_thm]);
-a(REPEAT strip_tac THEN_TRY SOLVED_T (basic_continuity_tac []));
+a(REPEAT strip_tac THEN_TRY SOLVED_T (¯_continuity_tac []));
 a(PC_T1 "¯_lin_arith" asm_prove_tac[]);
 (* *** Goal "2" *** *)
 a(all_var_elim_asm_tac1 THEN rewrite_tac[]);
@@ -8059,7 +8105,7 @@ a(conv_tac (LEFT_C Ì_un_Â_rands_conv));
 a(pure_rewrite_tac[prove_rule[]¬µt· ((Ì t· t ¼ 1 / 2) t) = ((Ìt· t) t ¼ 1/2)®]);
 a(bc_thm_tac cond_continuous_¯_thm);
 a(rewrite_tac[open_¯_topology_thm]);
-a(REPEAT strip_tac THEN_TRY (SOLVED_T (basic_continuity_tac[])));
+a(REPEAT strip_tac THEN_TRY (SOLVED_T (¯_continuity_tac[])));
 a(asm_rewrite_tac[]);
 val Ûpath_plus_0_lemma2Ý = save_pop_thm "path_plus_0_lemma2";
 
@@ -8144,7 +8190,7 @@ a(conv_tac (LEFT_C Ì_un_Â_rands_conv));
 a(pure_rewrite_tac[prove_rule[]¬µt· ((Ì t· t ¼ 1 / 2) t) = ((Ìt· t) t ¼ 1/2)®]);
 a(bc_thm_tac cond_continuous_¯_thm);
 a(rewrite_tac[open_¯_topology_thm]);
-a(REPEAT strip_tac THEN_TRY (SOLVED_T (basic_continuity_tac[])));
+a(REPEAT strip_tac THEN_TRY (SOLVED_T (¯_continuity_tac[])));
 a(asm_rewrite_tac[]);
 val Ûpath_0_plus_lemma2Ý = save_pop_thm "path_0_plus_lemma2";
 
@@ -8229,7 +8275,7 @@ a(conv_tac (LEFT_C Ì_un_Â_rands_conv));
 a(pure_rewrite_tac[prove_rule[]¬µt· ((Ì t· t ¼ 1 / 2) t) = ((Ìt· t) t ¼ 1/2)®]);
 a(bc_thm_tac cond_continuous_¯_thm);
 a(rewrite_tac[open_¯_topology_thm]);
-a(REPEAT strip_tac THEN_TRY (SOLVED_T (basic_continuity_tac[])));
+a(REPEAT strip_tac THEN_TRY (SOLVED_T (¯_continuity_tac[])));
 a(asm_rewrite_tac[]);
 val Ûpath_plus_minus_lemma2Ý = save_pop_thm "path_plus_minus_lemma2";
 
@@ -8419,14 +8465,14 @@ a(bc_thm_tac
 		[¬x®, ¬Ìx:¯·x®, ¬Ìt:¯·x'®, ¬Ì t· if t ¼ y then x' + (y' + ~ x') * t else y'®]
 			cond_continuous_¯_thm)));
 a(rewrite_tac[open_¯_topology_thm]);
-a(REPEAT strip_tac THEN_TRY SOLVED_T (basic_continuity_tac[]));
+a(REPEAT strip_tac THEN_TRY SOLVED_T (¯_continuity_tac[]));
 (* *** Goal "1.1" *** *)
 a(bc_thm_tac
 	(rewrite_rule[] (list_µ_elim
 		[¬y®, ¬Ìx:¯·x®, ¬Ìt:¯·x' + (y' + ~x') * t®, ¬Ìx:¯·y'®]
 			cond_continuous_¯_thm)));
 a(rewrite_tac[open_¯_topology_thm]);
-a(REPEAT strip_tac THEN_TRY SOLVED_T (basic_continuity_tac[]));
+a(REPEAT strip_tac THEN_TRY SOLVED_T (¯_continuity_tac[]));
 a(asm_rewrite_tac[] THEN PC_T1 "¯_lin_arith" prove_tac[]);
 (* *** Goal "1.2" *** *)
 a(asm_rewrite_tac[]);
