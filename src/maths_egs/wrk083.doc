@@ -25,7 +25,7 @@ wrk083.doc,v 1.115 2011/02/06 17:42:00 rda Exp
 \author{Rob Arthan}
 %\makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2012/05/06 15:17:10 $%
+\date{\FormatDate{$Date: 2012/05/16 20:44:12 $%
 }}
 
 \def\Func#1{\mathsf{#1}}
@@ -489,6 +489,59 @@ fun Û¶_object_by_type_tacÝ (ocs : (string list * TERM) list) : TACTIC = (
 );
 
 =TEX
+\section{HIGHER-ORDER BACKCHAINING}
+
+=TEX
+%%%%
+%%%%
+
+=SML
+local
+fun Ûbc_ruleÝ (th : THM) : THM = (
+	let	val (ant, suc) = dest_´ (concl th);
+		fun aux (v :: vs) a th = (
+			let	val (a', th') = aux vs a th;
+				val a'' = mk_simple_¶ (v, a');
+				val th1 = asm_rule a'';
+				val th2 = simple_¶_elim v th1 th';
+			in	(a'', th2)
+			end
+		) | aux [] a th = (a, th);
+	in	case frees ant term_diff
+		(flat(map frees(suc :: asms th))) of
+		[] => th
+		|	vs => (
+			let	val (a,th1) = aux vs ant (undisch_rule th);
+				val th2 = ´_intro a th1;
+			in	th2
+			end
+		)
+	end
+);
+in
+fun Ûho_bc_thm_tacÝ (thm : THM) : TACTIC = ( 
+	let	val thm0 = all_µ_elim thm;
+		val thm1 = all_µ_intro(
+			if	is_´(concl thm0)
+			then	thm0
+			else	fst (¤_elim thm0))
+			handle Fail _ => thm_fail "bc_thm_tac" 29012 [thm];
+		val (bvs, _) =  strip_µ(concl thm1);
+	in
+	fn gl as (_, conc) =>
+	let	val nbvs = list_variant (frees conc) bvs;
+		val thm2 = list_µ_elim nbvs thm1;
+		val (_, suc) = dest_´(concl thm2);
+		val (tym, tmm) = simple_ho_match [] conc suc
+			handle Fail _ => term_fail "bc_thm_tac" 29011 [suc];
+		val thm3 = asm_inst_term_rule tmm (asm_inst_type_rule tym thm2);
+		val thm4 = conv_rule (ONCE_MAP_C simple_Â_conv) thm3;
+		val thm5 = bc_rule thm4;
+	in	´_thm_tac thm5 gl
+	end
+	end
+);
+end;
 =TEX
 \end{document}
 =IGN
