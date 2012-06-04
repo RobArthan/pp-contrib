@@ -11,7 +11,7 @@ or visit the OpenSource web site at http://www.opensource.org/
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-$Id: wrk067.doc,v 1.72 2012/06/03 12:48:52 rda Exp rda $
+$Id: wrk067.doc,v 1.73 2012/06/03 16:05:53 rda Exp rda $
 ********************************************************************************
 pp_make_database -f -p hol topology
 docsml wrk066 wrk067
@@ -58,7 +58,7 @@ doctex wrk067.doc  wrk067[1234].th.doc ; docdvi wrk067
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2012/06/03 12:48:52 $%
+\date{\FormatDate{$Date: 2012/06/03 16:05:53 $%
 }}
 \begin{document}
 \begin{titlepage}
@@ -105,7 +105,7 @@ lifting property.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK067; issue $Revision: 1.72 $%
+Reference: LEMMA1/HOL/WRK067; issue $Revision: 1.73 $%
 
 
 \end{centering}
@@ -1221,20 +1221,16 @@ product_locally_path_connected_thm
 =TEX
 }
 
-We prove a sequence of lemmas that build up to the theorem that a covering project has the homotopy lifting property (i.e., it is a fibration).
+We prove that a covering project has the homotopy lifting property (i.e., it is a fibration) and hence the path-lifting property.
 
 \ThmsII{%
 =GFT
-covering_projection_fibration_lemma1
-covering_projection_fibration_lemma2
-covering_projection_fibration_lemma3
-covering_projection_fibration_lemma4
+covering_projection_fibration_thm1
+covering_projection_fibration_thm
 =TEX
 }{%
 =GFT
-covering_projection_fibration_lemma5
-covering_projection_fibration_thm1
-covering_projection_fibration_thm
+covering_projection_path_lifting_thm
 =TEX
 }
 =TEX
@@ -2951,6 +2947,35 @@ fun €basic_continuity_tac› (thms : THM list): TACTIC = (fn gl as (asms, _) =>
 	basic_morphism_tac (continuity_params (thms @ map asm_rule asms)) [] gl
 );
 end (* local ... in ... end *);
+=TEX
+
+A tactic to prove objecthood in the category of topological spaces is also useful. The following will do this given a list of theorems that either
+assert that particular sets are topologies.
+=SML
+local
+	val ç_topology_pattern = ¨¡ ç TopologyÆ;
+in
+fun €ç_topology_tac› (thms : THM list) : TACTIC = (fn gl as (asms, _) =>
+	let
+		val all_thms = product_topology_thm :: map asm_rule asms @ thms;
+		fun is_ç_topology tm = (
+			(term_match tm ç_topology_pattern; true)
+			handle Fail _ => false
+		);
+		fun is_rule thm = (
+			let	val tm = (snd o strip_µ o concl) thm;
+			in
+			is_¥ tm andalso (is_ç_topology o snd o dest_¥) tm
+			end
+		);
+		val is_axiom = is_ç_topology o snd o strip_µ o concl;
+		val rule_thms = all_thms drop (not o is_rule);
+		val basic_thms = all_thms drop (not o is_axiom);
+	in	(REPEAT o CHANGED_T o FIRST)
+			[rewrite_tac basic_thms, bc_tac rule_thms]
+	end	gl
+);
+end;
 
 
 =TEX
@@ -7759,9 +7784,7 @@ a(∂_tac¨
 	else	H'(Fst xt, ÓØ 2 * (Snd xt + ~ (1/2)))Æ THEN asm_rewrite_tac[]);
 a(REPEAT strip_tac);
 (* *** Goal "1" *** *)
-a(conv_tac (LEFT_C Ã_un_¬_rands_conv));
-a(conv_tac (LEFT_C(Ã_C(RATOR_C(RATOR_C(RAND_C ¬_conv))))));
-a(bc_thm_tac cond_continuous_Ø_thm);
+a(ho_bc_thm_tac cond_continuous_Ø_thm);
 a(strip_asm_tac open_Ø_topology_thm THEN ALL_FC_T asm_rewrite_tac[product_topology_thm]);
 a(REPEAT strip_tac THEN_TRY Ø_continuity_tac[]
 	THEN asm_rewrite_tac[]);
@@ -7910,55 +7933,7 @@ a(bc_thm_tac comp_continuous_thm);
 a(∂_tac¨OâR ∏âT OâRÆ THEN asm_rewrite_tac[plus_continuous_Ø_∏_Ø_thm]);
 a(strip_asm_tac open_Ø_topology_thm);
 a(ALL_FC_T asm_rewrite_tac[product_topology_thm]);
-a(conv_tac (LEFT_C Ã_un_¬_rands_conv));
-a(bc_thm_tac product_continuous_thm);
-a(ALL_FC_T asm_rewrite_tac[product_topology_thm] THEN REPEAT strip_tac);
-(* *** Goal "1.1" *** *)
-a(pure_once_rewrite_tac[prove_rule[]¨µx y:Ø∑ x * y = Uncurry $* (x, y)Æ]);
-a(conv_tac (LEFT_C Ã_un_¬_rand_conv));
-a(bc_thm_tac comp_continuous_thm);
-a(∂_tac¨OâR ∏âT OâRÆ THEN asm_rewrite_tac[times_continuous_Ø_∏_Ø_thm]);
-a(ALL_FC_T asm_rewrite_tac[product_topology_thm] THEN REPEAT strip_tac);
-a(conv_tac (LEFT_C Ã_un_¬_rands_conv));
-a(bc_thm_tac product_continuous_thm);
-a(ALL_FC_T asm_rewrite_tac[product_topology_thm] THEN REPEAT strip_tac);
-(* *** Goal "1.1.1" *** *)
-a(pure_once_rewrite_tac[prove_rule[]¨µx y:Ø∑ x + y = Uncurry $+ (x, y)Æ]);
-a(conv_tac (LEFT_C Ã_un_¬_rand_conv));
-a(bc_thm_tac comp_continuous_thm);
-a(∂_tac¨OâR ∏âT OâRÆ THEN asm_rewrite_tac[plus_continuous_Ø_∏_Ø_thm]);
-a(ALL_FC_T asm_rewrite_tac[product_topology_thm]);
-a(conv_tac (LEFT_C Ã_un_¬_rands_conv));
-a(bc_thm_tac product_continuous_thm);
-a(lemma_tac¨(‘ ∏âT OâR) ç TopologyÆ THEN1 ALL_FC_T asm_rewrite_tac[product_topology_thm]);
-a(lemma_tac¨ÓØ 1 ç SpaceâT OâRÆ THEN1 rewrite_tac[space_t_Ø_thm]);
-a(ALL_FC_T asm_rewrite_tac[product_topology_thm, const_continuous_thm]);
-a(bc_thm_tac comp_continuous_thm);
-a(∂_tac¨OâRÆ THEN asm_rewrite_tac[minus_cts_thm, continuous_cts_at_Ø_thm]);
-a(rewrite_tac[prove_rule[]¨Snd = (Ã(x, y)∑ y)Æ]);
-a(bc_thm_tac right_proj_continuous_thm THEN REPEAT strip_tac);
-(* *** Goal "1.1.2" *** *)
-a(bc_thm_tac comp_continuous_thm);
-a(∂_tac¨‘Æ THEN ALL_FC_T asm_rewrite_tac[product_topology_thm]);
-a(rewrite_tac[prove_rule[]¨Fst = (Ã(x, y)∑ x)Æ]);
-a(bc_thm_tac left_proj_continuous_thm THEN REPEAT strip_tac);
-(* *** Goal "1.2" *** *)
-a(pure_once_rewrite_tac[prove_rule[]¨µx y:Ø∑ x * y = Uncurry $* (x, y)Æ]);
-a(conv_tac (LEFT_C Ã_un_¬_rand_conv));
-a(bc_thm_tac comp_continuous_thm);
-a(∂_tac¨OâR ∏âT OâRÆ THEN asm_rewrite_tac[times_continuous_Ø_∏_Ø_thm]);
-a(ALL_FC_T asm_rewrite_tac[product_topology_thm]);
-a(conv_tac (LEFT_C Ã_un_¬_rands_conv));
-a(bc_thm_tac product_continuous_thm);
-a(ALL_FC_T asm_rewrite_tac[product_topology_thm] THEN REPEAT strip_tac);
-(* *** Goal "1.2.1" *** *)
-a(rewrite_tac[»_axiom, prove_rule[]¨Snd = (Ã(x, y)∑ y)Æ]);
-a(bc_thm_tac right_proj_continuous_thm THEN REPEAT strip_tac);
-(* *** Goal "1.2.2" *** *)
-a(bc_thm_tac comp_continuous_thm);
-a(∂_tac¨‘Æ THEN ALL_FC_T asm_rewrite_tac[product_topology_thm]);
-a(rewrite_tac[prove_rule[]¨Fst = (Ã(x, y)∑ x)Æ]);
-a(bc_thm_tac left_proj_continuous_thm THEN REPEAT strip_tac);
+a(Ø_continuity_tac[]);
 (* *** Goal "2" *** *)
 a(asm_rewrite_tac[] THEN PC_T1 "Ø_lin_arith" prove_tac[]);
 (* *** Goal "3" *** *)
@@ -7974,7 +7949,7 @@ pop_thm()
 %%%%
 %%%%
 
-We honour the implied promise to prove that a continuous function on $X \times [a, b]$ can always be extebded to a continuous function on $X \times Ø$. We first show that $[-\infty, b]$ is a retract of Ø:
+We honour the implied promise to prove that a continuous function on $X \times [a, b]$ can always be extended to a continuous function on $X \times Ø$. We first show that $[-\infty, b]$ is a retract of Ø:
 =SML
 
 val €half_open_interval_retract_thm› = save_thm ( "half_open_interval_retract_thm", (
@@ -7989,11 +7964,9 @@ a(ALL_FC_T1 fc_§_canon rewrite_tac
 	[subspace_range_continuous_§_thm]
 	THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
-a(bc_thm_tac(rewrite_rule[space_t_Ø_thm, open_Ø_id_continuous_thm]
-	(list_µ_elim[¨bÆ, ¨Ãs:Ø∑sÆ, ¨Ãs:Ø∑sÆ,
-	¨Ãs:Ø∑bÆ, ¨OâRÆ, ¨OâRÆ]
-		cond_continuous_Ø_thm)));
-a(ALL_FC_T asm_rewrite_tac[open_Ø_const_continuous_thm]);
+a(ho_bc_thm_tac cond_continuous_Ø_thm);
+a(asm_rewrite_tac[space_t_Ø_thm]);
+a(REPEAT strip_tac THEN Ø_continuity_tac[]);
 (* *** Goal "2" *** *)
 a(cases_tac¨x º bÆ THEN asm_rewrite_tac[]);
 pop_thm()
@@ -8020,14 +7993,12 @@ a(ALL_FC_T1 fc_§_canon rewrite_tac
 	[subspace_range_continuous_§_thm]
 	THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
-a(bc_thm_tac(rewrite_rule[space_t_Ø_thm, open_Ø_id_continuous_thm]
-	(list_µ_elim[¨aÆ, ¨Ãs:Ø∑sÆ, ¨Ãs:Ø∑aÆ,
-	¨Ãs∑if s º b then s else bÆ, ¨OâRÆ, ¨OâRÆ]
-		cond_continuous_Ø_thm)));
-a(strip_asm_tac(µ_elim¨bÆ half_open_interval_retract_thm));
-a(ALL_FC_T asm_rewrite_tac[open_Ø_const_continuous_thm,
-	subspace_range_continuous_thm]);
-a(REPEAT strip_tac THEN asm_rewrite_tac[]);
+a(ho_bc_thm_tac cond_continuous_Ø_thm);
+a(asm_rewrite_tac[space_t_Ø_thm]);
+a(REPEAT strip_tac THEN_TRY Ø_continuity_tac[] THEN_TRY asm_rewrite_tac[]);
+a(ho_bc_thm_tac cond_continuous_Ø_thm);
+a(asm_rewrite_tac[space_t_Ø_thm]);
+a(REPEAT strip_tac THEN Ø_continuity_tac[]);
 (* *** Goal "2" *** *)
 a(rewrite_tac[closed_interval_def]);
 a(cases_tac¨x º aÆ THEN asm_rewrite_tac[]);
@@ -8281,6 +8252,54 @@ a(prove_tac[paths_def]);
 pop_thm()
 ));
 
+val €paths_representative_thm› = save_thm ( "paths_representative_thm", (
+set_goal([], ¨µ‘ f∑
+	‘ ç Topology
+±	f ç (OâR, ‘) Continuous
+¥	∂â1 g∑ g ç Paths ‘ ± µs∑ s ç ClosedInterval 0. 1. ¥ g s = f s
+Æ);
+a(rewrite_tac[paths_def] THEN REPEAT strip_tac);
+a(∂â1_tac ¨Ãt∑ if t º 0. then f 0. else if t º 1. then f t else f 1.Æ
+	THEN rewrite_tac[] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(ho_bc_thm_tac cond_continuous_Ø_thm);
+a(asm_rewrite_tac[open_Ø_topology_thm]);
+a(REPEAT strip_tac THEN_TRY Ø_continuity_tac[] THEN_TRY asm_rewrite_tac[]);
+(* *** Goal "1.1" *** *)
+a(bc_thm_tac continuous_ç_space_t_thm);
+a(∂_tac¨OâRÆ THEN asm_rewrite_tac[space_t_Ø_thm]);
+(* *** Goal "1.2" *** *)
+a(ho_bc_thm_tac cond_continuous_Ø_thm);
+a(asm_rewrite_tac[open_Ø_topology_thm]);
+a(REPEAT strip_tac THEN_TRY Ø_continuity_tac[] THEN_TRY asm_rewrite_tac[]);
+a(bc_thm_tac continuous_ç_space_t_thm);
+a(∂_tac¨OâRÆ THEN asm_rewrite_tac[space_t_Ø_thm]);
+(* *** Goal "2" *** *)
+a(asm_rewrite_tac[]);
+(* *** Goal "3" *** *)
+a(LEMMA_T¨≥ x º 0.Æ asm_rewrite_thm_tac THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(cases_tac¨x = 1.Æ THEN1 asm_rewrite_tac[]);
+a(LEMMA_T¨≥ x º 1.Æ rewrite_thm_tac THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "4" *** *)
+a(POP_ASM_T (strip_asm_tac o rewrite_rule[closed_interval_def]));
+a(cases_tac¨s = 0.Æ THEN asm_rewrite_tac[]);
+a(LEMMA_T¨≥ s º 0.Æ asm_rewrite_thm_tac THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "5" *** *)
+a(POP_ASM_T (strip_asm_tac o rewrite_rule[closed_interval_def]));
+a(cases_tac ¨x º 0.Æ THEN ALL_ASM_FC_T asm_rewrite_tac[]);
+(* *** Goal "5.1" *** *)
+a(DROP_NTH_ASM_T 2 bc_thm_tac THEN REPEAT strip_tac);
+(* *** Goal "5.2" *** *)
+a(cases_tac¨x º 1.Æ THEN asm_rewrite_tac[]);
+(* *** Goal "5.2.1" *** *)
+a(DROP_NTH_ASM_T 3 bc_thm_tac THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "5.2.2" *** *)
+a(lemma_tac¨1. º xÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(LIST_DROP_NTH_ASM_T [5] (ALL_FC_T rewrite_tac));
+a(DROP_NTH_ASM_T 4 bc_thm_tac THEN REPEAT strip_tac);
+pop_thm()
+));
+
 =TEX
 
 %%%%
@@ -8316,10 +8335,8 @@ set_goal([], ¨µ‘ f g∑
 Æ);
 a(rewrite_tac[paths_def, path_plus_def] THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
-a(conv_tac (LEFT_C Ã_un_¬_rands_conv));
-a(pure_rewrite_tac[prove_rule[]¨µt∑ ((Ã t∑ t º 1 / 2) t) = ((Ãt∑ t) t º 1/2)Æ]);
-a(bc_thm_tac cond_continuous_Ø_thm);
-a(strip_asm_tac open_Ø_topology_thm THEN rewrite_tac[]);
+a(ho_bc_thm_tac cond_continuous_Ø_thm);
+a(strip_asm_tac open_Ø_topology_thm THEN asm_rewrite_tac[]);
 a(REPEAT strip_tac THEN_TRY SOLVED_T (Ø_continuity_tac []));
 a(all_var_elim_asm_tac1 THEN asm_rewrite_tac[]);
 (* *** Goal "2" *** *)
@@ -8404,15 +8421,11 @@ set_goal([], ¨µk∑
 a(REPEAT strip_tac);
 a(pure_once_rewrite_tac[conv_rule(ONCE_MAP_C eq_sym_conv) (µ_elim¨kÆ»_axiom)]);
 a(POP_ASM_T pure_rewrite_thm_tac);
-a(conv_tac (LEFT_C Ã_un_¬_rands_conv));
-a(pure_rewrite_tac[prove_rule[]¨µt∑ ((Ã t∑ t º 1 / 4) t) = ((Ãt∑ t) t º 1/4)Æ]);
-a(bc_thm_tac cond_continuous_Ø_thm);
+a(ho_bc_thm_tac cond_continuous_Ø_thm);
 a(rewrite_tac[open_Ø_topology_thm]);
 a(REPEAT strip_tac THEN_TRY SOLVED_T (Ø_continuity_tac []));
 (* *** Goal "1" *** *)
-a(conv_tac (LEFT_C Ã_un_¬_rands_conv));
-a(pure_rewrite_tac[prove_rule[]¨µt∑ ((Ã t∑ t º 1 / 2) t) = ((Ãt∑ t) t º 1/2)Æ]);
-a(bc_thm_tac cond_continuous_Ø_thm);
+a(ho_bc_thm_tac cond_continuous_Ø_thm);
 a(rewrite_tac[open_Ø_topology_thm]);
 a(REPEAT strip_tac THEN_TRY SOLVED_T (Ø_continuity_tac []));
 a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
@@ -8514,9 +8527,7 @@ set_goal([], ¨µk∑
 a(REPEAT strip_tac);
 a(pure_once_rewrite_tac[conv_rule(ONCE_MAP_C eq_sym_conv) (µ_elim¨kÆ»_axiom)]);
 a(POP_ASM_T pure_rewrite_thm_tac);
-a(conv_tac (LEFT_C Ã_un_¬_rands_conv));
-a(pure_rewrite_tac[prove_rule[]¨µt∑ ((Ã t∑ t º 1 / 2) t) = ((Ãt∑ t) t º 1/2)Æ]);
-a(bc_thm_tac cond_continuous_Ø_thm);
+a(ho_bc_thm_tac cond_continuous_Ø_thm);
 a(rewrite_tac[open_Ø_topology_thm]);
 a(REPEAT strip_tac THEN_TRY (SOLVED_T (Ø_continuity_tac[])));
 a(asm_rewrite_tac[]);
@@ -8607,9 +8618,7 @@ set_goal([], ¨µk∑
 a(REPEAT strip_tac);
 a(pure_once_rewrite_tac[conv_rule(ONCE_MAP_C eq_sym_conv) (µ_elim¨kÆ»_axiom)]);
 a(POP_ASM_T pure_rewrite_thm_tac);
-a(conv_tac (LEFT_C Ã_un_¬_rands_conv));
-a(pure_rewrite_tac[prove_rule[]¨µt∑ ((Ã t∑ t º 1 / 2) t) = ((Ãt∑ t) t º 1/2)Æ]);
-a(bc_thm_tac cond_continuous_Ø_thm);
+a(ho_bc_thm_tac cond_continuous_Ø_thm);
 a(rewrite_tac[open_Ø_topology_thm]);
 a(REPEAT strip_tac THEN_TRY (SOLVED_T (Ø_continuity_tac[])));
 a(asm_rewrite_tac[]);
@@ -8700,9 +8709,7 @@ set_goal([], ¨µk∑
 a(REPEAT strip_tac);
 a(pure_once_rewrite_tac[conv_rule(ONCE_MAP_C eq_sym_conv) (µ_elim¨kÆ»_axiom)]);
 a(POP_ASM_T pure_rewrite_thm_tac);
-a(conv_tac (LEFT_C Ã_un_¬_rands_conv));
-a(pure_rewrite_tac[prove_rule[]¨µt∑ ((Ã t∑ t º 1 / 2) t) = ((Ãt∑ t) t º 1/2)Æ]);
-a(bc_thm_tac cond_continuous_Ø_thm);
+a(ho_bc_thm_tac cond_continuous_Ø_thm);
 a(rewrite_tac[open_Ø_topology_thm]);
 a(REPEAT strip_tac THEN_TRY (SOLVED_T (Ø_continuity_tac[])));
 a(asm_rewrite_tac[]);
@@ -8901,17 +8908,11 @@ a(rewrite_tac[path_connected_def, open_interval_def, paths_def, space_t_Ø_thm]
 a(∂_tac¨Ãt∑if t º ÓØ 0 then x' else if t º ÓØ 1 then x' + (y' + ~x') * t else y'Æ THEN rewrite_tac[]
 	THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
-a(bc_thm_tac
-	(rewrite_rule[] (list_µ_elim
-		[¨xÆ, ¨Ãx:Ø∑xÆ, ¨Ãt:Ø∑x'Æ, ¨Ã t∑ if t º y then x' + (y' + ~ x') * t else y'Æ]
-			cond_continuous_Ø_thm)));
+a(ho_bc_thm_tac cond_continuous_Ø_thm);
 a(rewrite_tac[open_Ø_topology_thm]);
 a(REPEAT strip_tac THEN_TRY SOLVED_T (Ø_continuity_tac[]));
 (* *** Goal "1.1" *** *)
-a(bc_thm_tac
-	(rewrite_rule[] (list_µ_elim
-		[¨yÆ, ¨Ãx:Ø∑xÆ, ¨Ãt:Ø∑x' + (y' + ~x') * tÆ, ¨Ãx:Ø∑y'Æ]
-			cond_continuous_Ø_thm)));
+a(ho_bc_thm_tac cond_continuous_Ø_thm);
 a(rewrite_tac[open_Ø_topology_thm]);
 a(REPEAT strip_tac THEN_TRY SOLVED_T (Ø_continuity_tac[]));
 a(asm_rewrite_tac[] THEN PC_T1 "Ø_lin_arith" prove_tac[]);
@@ -8946,7 +8947,7 @@ a(bc_thm_tac Ø_º_less_trans_thm THEN ∂_tac¨x'Æ THEN REPEAT strip_tac);
 a(bc_thm_tac (pc_rule1"Ø_lin_arith" prove_rule[]
 	¨ÓØ 0 º (x' + ~y') *t ¥ (y' + ~ x') * t º ÓØ 0Æ));
 a(bc_thm_tac Ø_0_º_0_º_times_thm THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
-(* *** Goal "4" *** *)
+(* *** Goal "6" *** *)
 a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 pop_thm()
 ));
@@ -9919,6 +9920,75 @@ a(ALL_ASM_FC_T asm_rewrite_tac[]);
 pop_thm()
 ));
 
+
+=TEX
+%%%%
+%%%%
+
+Path lifting property.
+
+=SML
+
+val €covering_projection_path_lifting_thm› = save_thm ( "covering_projection_path_lifting_thm", (
+set_goal([], ¨µ”; ‘;
+	p : 'a ≠ 'b;
+	y : 'a;
+	f : Ø ≠ 'b ∑
+	” ç Topology
+±	‘ ç Topology
+±	p ç (”, ‘) CoveringProjection
+±	f ç Paths ‘
+±	y ç SpaceâT ”
+±	p y = f 0.
+¥	∂g: Ø ≠ 'a∑
+	g ç Paths ”
+±	g 0. = y
+±	(µs∑ p(g s) = f s)
+Æ);
+a(REPEAT strip_tac);
+a(DROP_NTH_ASM_T 3 (strip_asm_tac o rewrite_rule[paths_def]));
+a(lemma_tac¨∂h: Ø ≠ 'a∑
+	h ç (OâR, ”) Continuous
+±	h 0. = y
+±	(µs∑ s ç ClosedInterval 0. 1. ¥ p(h s) = f s)Æ);
+(* *** Goal "1" *** *)
+a((ante_tac o list_µ_elim[ ¨1âTÆ, ¨”Æ, ¨‘Æ, ¨pÆ, ¨Ãx:ONE∑yÆ, ¨Ã(x:ONE, t)∑f tÆ])
+	covering_projection_fibration_thm);
+a(asm_rewrite_tac[one_def, unit_topology_thm, space_t_unit_topology_thm]
+	THEN REPEAT strip_tac);
+(* *** Goal "1.1" *** *)
+a(i_contr_tac THEN POP_ASM_T ante_tac THEN Ø_continuity_tac[unit_topology_thm]);
+(* *** Goal "1.2" *** *)
+a(i_contr_tac THEN POP_ASM_T ante_tac THEN Ø_continuity_tac[unit_topology_thm]);
+(* *** Goal "1.3" *** *)
+a(∂_tac¨Ãt∑ L(One, t)Æ THEN asm_rewrite_tac[]);
+a(lemma_tac¨1âT ∏âT OâR ç TopologyÆ THEN1 ç_topology_tac[unit_topology_thm, open_Ø_topology_thm]);
+a(Ø_continuity_tac[unit_topology_thm, space_t_unit_topology_thm]);
+(* *** Goal "2" *** *)
+a(DROP_NTH_ASM_T 6 (fn th => all_fc_tac[paths_representative_thm]
+	THEN asm_tac th));
+a(∂_tac¨gÆ THEN REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(DROP_NTH_ASM_T 6 (rewrite_thm_tac o eq_sym_rule));
+a(DROP_NTH_ASM_T 3 bc_thm_tac THEN rewrite_tac[closed_interval_def]);
+(* *** Goal "2.2" *** *)
+a(cases_tac¨s ç ClosedInterval 0. 1.Æ THEN1 ALL_ASM_FC_T rewrite_tac[]);
+a(DROP_NTH_ASM_T 5 (strip_asm_tac o rewrite_rule[paths_def]));
+a(DROP_NTH_ASM_T 4 (strip_asm_tac o rewrite_rule[closed_interval_def]));
+(* *** Goal "2.2.1" *** *)
+a(lemma_tac¨s º 0.Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(ALL_ASM_FC_T rewrite_tac[]);
+a(LEMMA_T ¨g 0. = h 0.Æ rewrite_thm_tac THEN1
+	(DROP_NTH_ASM_T 8 bc_thm_tac THEN rewrite_tac[closed_interval_def]));
+a(DROP_NTH_ASM_T 9 bc_thm_tac THEN rewrite_tac[closed_interval_def]);
+(* *** Goal "2.2.2" *** *)
+a(lemma_tac¨1. º sÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(ALL_ASM_FC_T rewrite_tac[]);
+a(LEMMA_T ¨g 1. = h 1.Æ rewrite_thm_tac THEN1
+	(DROP_NTH_ASM_T 8 bc_thm_tac THEN rewrite_tac[closed_interval_def]));
+a(DROP_NTH_ASM_T 9 bc_thm_tac THEN rewrite_tac[closed_interval_def]);
+pop_thm()
+));
 
 =TEX
 \subsection{Epilogue}
