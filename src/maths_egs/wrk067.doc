@@ -11,7 +11,7 @@ or visit the OpenSource web site at http://www.opensource.org/
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-$Id: wrk067.doc,v 1.73 2012/06/03 16:05:53 rda Exp rda $
+$Id: wrk067.doc,v 1.74 2012/06/04 15:48:28 rda Exp rda $
 ********************************************************************************
 pp_make_database -f -p hol topology
 docsml wrk066 wrk067
@@ -58,7 +58,7 @@ doctex wrk067.doc  wrk067[1234].th.doc ; docdvi wrk067
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2012/06/03 16:05:53 $%
+\date{\FormatDate{$Date: 2012/06/04 15:48:28 $%
 }}
 \begin{document}
 \begin{titlepage}
@@ -105,7 +105,7 @@ lifting property.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK067; issue $Revision: 1.73 $%
+Reference: LEMMA1/HOL/WRK067; issue $Revision: 1.74 $%
 
 
 \end{centering}
@@ -2950,14 +2950,15 @@ end (* local ... in ... end *);
 =TEX
 
 A tactic to prove objecthood in the category of topological spaces is also useful. The following will do this given a list of theorems that either
-assert that particular sets are topologies.
+assert that particular sets are topologies or are Horn clauses with
+conclusions making such an assertion.
 =SML
 local
 	val _topology_pattern = ¬Á  Topology®;
 in
-fun Û_topology_tacÝ (thms : THM list) : TACTIC = (fn gl as (asms, _) =>
+fun Ûbasic_topology_tacÝ (thms : THM list) : TACTIC = (fn gl as (asms, _) =>
 	let
-		val all_thms = product_topology_thm :: map asm_rule asms @ thms;
+		val all_thms = map asm_rule asms @ thms;
 		fun is__topology tm = (
 			(term_match tm _topology_pattern; true)
 			handle Fail _ => false
@@ -2969,14 +2970,16 @@ fun Û_topology_tacÝ (thms : THM list) : TACTIC = (fn gl as (asms, _) =>
 			end
 		);
 		val is_axiom = is__topology o snd o strip_µ o concl;
-		val rule_thms = all_thms drop (not o is_rule);
-		val basic_thms = all_thms drop (not o is_axiom);
+		val rule_thms = product_topology_thm ::
+					subspace_topology_thm ::
+					all_thms drop (not o is_rule);
+		val basic_thms = unit_topology_thm ::
+					all_thms drop (not o is_axiom);
 	in	(REPEAT o CHANGED_T o FIRST)
 			[rewrite_tac basic_thms, bc_tac rule_thms]
 	end	gl
 );
 end;
-
 
 =TEX
 %%%%
@@ -3208,7 +3211,7 @@ a(ALL_FC_T rewrite_tac[subspace_topology_space_t_thm]
 	THEN REPEAT strip_tac);
 (* *** Goal "2.2" *** *)
 a(ALL_FC_T rewrite_tac[subspace_topology_space_t_thm1]);
-a(lemma_tac¬X ò‰T Ó  Topology® THEN1 (bc_thm_tac subspace_topology_thm THEN REPEAT strip_tac));
+a(lemma_tac¬X ò‰T Ó  Topology® THEN1 basic_topology_tac[]);
 a(ALL_FC_T1 fc_¤_canon once_rewrite_tac[open_open_neighbourhood_thm]
 	THEN REPEAT strip_tac);
 a(all_asm_fc_tac[]);
@@ -3327,7 +3330,7 @@ set_goal([], ¬µÒ Ó Ô f A B·
 				x  A ¡ C ± y  B ¡ D ´ f(x, y)  E))
 ®);
 a(REPEAT_UNTIL is_¤ strip_tac);
-a(lemma_tac¬Ò ¸‰T Ó  Topology® THEN1 all_fc_tac[product_topology_thm]);
+a(lemma_tac¬Ò ¸‰T Ó  Topology® THEN1 basic_topology_tac[]);
 a(rewrite_tac[continuous_def]);
 a(ALL_FC_T rewrite_tac[subspace_topology_space_t_thm,
 		product_topology_space_t_thm]);
@@ -3994,7 +3997,7 @@ a(lemma_tac ¬x'  Space‰T Ó® THEN1
 	(LIST_DROP_NTH_ASM_T [1, 8] (MAP_EVERY ante_tac) THEN
 	rewrite_tac[compact_def] THEN PC_T1 "sets_ext1" prove_tac[]));
 a(strip_asm_tac (list_µ_elim[¬Ó®, ¬Ô®, ¬x'®] right_product_inj_continuous_thm));
-a(lemma_tac ¬(Ó ¸‰T Ô)  Topology® THEN1 all_fc_tac[product_topology_thm]);
+a(lemma_tac ¬(Ó ¸‰T Ô)  Topology® THEN1 basic_topology_tac[]);
 a(ante_tac (list_µ_elim[¬Ìy:'b·(x', y)®, ¬Y®, ¬Ô®, ¬Ó ¸‰T Ô®] image_compact_thm));
 a(asm_rewrite_tac[compact_def] THEN REPEAT strip_tac);
 a(lemma_tac¬x'  X ´ {y|¶ x· x  Y ± Fst y = x' ± Snd y = x} € (X ¸ Y)®
@@ -4433,7 +4436,7 @@ set_goal([], ¬µX : 'a SET; Y : 'b SET; Ó Ô ·
 ±	Ô  Topology
 ´	(X ¸ Y)  (Ó ¸‰T Ô) Connected®);
 a(REPEAT strip_tac);
-a(lemma_tac ¬(Ó ¸‰T Ô)  Topology® THEN1 all_fc_tac[product_topology_thm]);
+a(lemma_tac ¬(Ó ¸‰T Ô)  Topology® THEN1 basic_topology_tac[]);
 a(ALL_FC_T1 fc_¤_canon once_rewrite_tac[connected_pointwise_thm]);
 a(REPEAT strip_tac);
 a(lemma_tac¬
@@ -5724,7 +5727,7 @@ set_goal([], ¬µf Ó Ô B C·
 ®);
 a(REPEAT strip_tac);
 a(lemma_tac¬B ò‰T Ó  Topology ± {y | ¶x· x  B ± y = f x} ò‰T Ô  Topology®
-	THEN1 ALL_FC_T rewrite_tac[subspace_topology_thm]);
+	THEN1 (REPEAT strip_tac THEN basic_topology_tac[]));
 a(ALL_FC_T1 fc_¤_canon rewrite_tac[homeomorphism_one_one_closed_mapping_thm]);
 a(all_fc_tac[compact_closed_thm]);
 a(lemma_tac¬C € Space‰T Ó® THEN1 all_fc_tac[closed_open_neighbourhood_thm]);
@@ -7476,7 +7479,7 @@ set_goal([], ¬µÔ U x·
 ®);
 a(strip_asm_tac open_¯_topology_thm);
 a(REPEAT strip_tac);
-a(lemma_tac¬(Ô ¸‰T O‰R)  Topology® THEN1 all_fc_tac[product_topology_thm]);
+a(lemma_tac¬(Ô ¸‰T O‰R)  Topology® THEN1 basic_topology_tac[]);
 a(lemma_tac¬
 	{I | I  O‰R ±
 	¶X B· x  X ± X  Ô ± B  U ± (X ¸ I) € B} € O‰R®
@@ -8023,8 +8026,7 @@ set_goal([], ¬µÔ X a b·
 		(X ¸ ClosedInterval a b) ò‰T (Ô ¸‰T O‰R)) Continuous
 ®);
 a(REPEAT strip_tac THEN strip_asm_tac open_¯_topology_thm);
-a(lemma_tac¬Ô ¸‰T O‰R  Topology®
-	THEN1 all_fc_tac[product_topology_thm]);
+a(lemma_tac¬Ô ¸‰T O‰R  Topology® THEN1 basic_topology_tac[]);
 a(lemma_tac¬(X ¸ ClosedInterval a b) € Space‰T (Ô ¸‰T O‰R)®);
 (* *** Goal "1" *** *)
 a(ALL_FC_T rewrite_tac[product_topology_space_t_thm]);
@@ -8142,8 +8144,7 @@ a(¶_tac¬Ìxs· if Snd xs ¼ b then ef xs else eg xs®
 (* *** Goal "1" *** *)
 a(lemma_tac¬(X ¸ ClosedInterval a c) € (X ¸ Universe)®
 	THEN1 MERGE_PCS_T1 ["'pair", "sets_ext1"] prove_tac[¸_def]);
-a(lemma_tac¬Ò ¸‰T O‰R  Topology®
-	THEN1 bc_tac[product_topology_thm] THEN REPEAT strip_tac);
+a(lemma_tac¬Ò ¸‰T O‰R  Topology® THEN1 basic_topology_tac[]);
 a(ALL_FC_T (once_rewrite_tac o map (conv_rule (ONCE_MAP_C eq_sym_conv)))
 	 [€_subspace_topology_thm]);
 a(bc_thm_tac subspace_domain_continuous_thm);
@@ -9089,9 +9090,7 @@ a(bc_thm_tac subspace_range_continuous_bc_thm
 	THEN strip_tac
 	THEN1 (bc_tac [product_topology_thm, subspace_topology_thm]
 		THEN REPEAT strip_tac));
-a(lemma_tac¬Ò ¸‰T O‰R  Topology®
-	THEN1 (bc_thm_tac product_topology_thm
-		THEN REPEAT strip_tac));
+a(lemma_tac¬Ò ¸‰T O‰R  Topology® THEN1 basic_topology_tac[]);
 a(µ_tac THEN ALL_FC_T rewrite_tac[subspace_topology_space_t_thm1,
 	product_topology_space_t_thm]);
 a(rewrite_tac[¸_def]);
@@ -9474,37 +9473,28 @@ a(LIST_DROP_NTH_ASM_T [6] (MAP_EVERY ante_tac)
 a(MAP_EVERY ¶_tac[¬U®, ¬C®, ¬Ô®] THEN asm_rewrite_tac[]
 	THEN REPEAT strip_tac);
 (* *** Goal "1.2.1.1" *** *)
-a(conv_tac(LEFT_C Ì_un_Â_rands_conv));
-a(bc_thm_tac comp_continuous_thm);
-a(strip_asm_tac open_¯_topology_thm);
-a(lemma_tac¬Ò ¸‰T O‰R  Topology®
-	THEN1 (bc_tac[product_topology_thm]
-		THEN REPEAT strip_tac));
 a(lemma_tac¬(N ¸ ClosedInterval 0. (t (k + 1))) ò‰T Ò ¸‰T O‰R  Topology®
-	THEN1 (bc_tac[subspace_topology_thm]
-		THEN REPEAT strip_tac));
-a(lemma_tac ¬N ò‰T Ò  Topology®
-	THEN1 (bc_thm_tac subspace_topology_thm THEN REPEAT strip_tac));
-a(¶_tac¬(N ¸ ClosedInterval 0. (t (k + 1))) ò‰T Ò ¸‰T O‰R®
-	THEN REPEAT strip_tac);
-a(bc_thm_tac subspace_range_continuous_bc_thm);
-a(ALL_FC_T rewrite_tac[subspace_topology_space_t_thm2,
-	product_topology_space_t_thm]);
-a(rewrite_tac[space_t_¯_thm] THEN REPEAT strip_tac);
+	THEN1 basic_topology_tac[open_¯_topology_thm]);
+a(lemma_tac¬N ò‰T Ò  Topology®
+	THEN1 basic_topology_tac[]);
+a(¯_continuity_tac[subspace_range_continuous_bc_thm]);
 (* *** Goal "1.2.1.1.1" *** *)
-a(all_fc_tac[open_€_space_t_thm]);
-a(POP_ASM_T ante_tac THEN PC_T1 "sets_ext1" prove_tac[¸_def]);
+a(strip_asm_tac open_¯_topology_thm);
+a(ALL_FC_T rewrite_tac[product_topology_space_t_thm]);
+a(PC_T1 "sets_ext1" rewrite_tac[space_t_¯_thm, ¸_def]);
+a(LEMMA_T ¬N € Space‰T Ò® ante_tac THEN1 all_fc_tac [open_€_space_t_thm]);
+a(PC_T1 "sets_ext1" prove_tac[]);
 (* *** Goal "1.2.1.1.2" *** *)
-a(asm_rewrite_tac[¸_def, closed_interval_def]);
-a(GET_NTH_ASM_T 16 (ante_tac o list_µ_elim [¬0®, ¬k+1®])
+a(rewrite_tac[comb_i_def, comb_k_def, ¸_def]);
+a(POP_ASM_T ante_tac THEN ALL_FC_T rewrite_tac[subspace_topology_space_t_thm]
+	THEN REPEAT strip_tac);
+a(rewrite_tac[closed_interval_def]);
+a(GET_NTH_ASM_T 15 (ante_tac o list_µ_elim [¬0®, ¬k+1®])
 	THEN rewrite_tac[]);
-a(asm_rewrite_tac[¯_¼_def] THEN taut_tac);
+a(asm_rewrite_tac[] THEN PC_T1 "¯_lin_arith" prove_tac[]);
 (* *** Goal "1.2.1.1.3" *** *)
-a(conv_tac(LEFT_C Ì_un_Â_rands_conv)
-	THEN bc_thm_tac product_continuous_thm);
-a(ALL_FC_T asm_rewrite_tac[open_¯_const_continuous_thm]);
 a(bc_thm_tac subspace_domain_continuous_thm THEN REPEAT strip_tac);
-a(ALL_FC_T asm_rewrite_tac[id_continuous_thm]);
+a(ALL_FC_T rewrite_tac[i_continuous_thm]);
 (* *** Goal "1.2.1.2" *** *)
 a(LEMMA_T ¬
 	(N ¸ ClosedInterval (t (k + 1)) (t (k + 2))) ò‰T Ò ¸‰T O‰R =
@@ -9789,7 +9779,7 @@ a(LEMMA_T ¬ClosedInterval 0. 1. = Space‰T(ClosedInterval 0. 1. ò‰T O‰R)®
 	THEN1 (ALL_FC_T rewrite_tac[subspace_topology_space_t_thm]
 		THEN rewrite_tac[space_t_¯_thm]));
 a(lemma_tac¬ClosedInterval 0. 1. ò‰T O‰R  Topology®
-	THEN1 ALL_FC_T rewrite_tac[subspace_topology_thm]);
+	THEN1 basic_topology_tac[]);
 a(bc_thm_tac unique_lifting_thm);
 a(MAP_EVERY ¶_tac[¬0.®, ¬p®, ¬Ô®, ¬Ó®]
 	THEN ALL_FC_T asm_rewrite_tac[subspace_topology_space_t_thm]
@@ -9906,8 +9896,7 @@ a(¶_tac¬g® THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
 a(DROP_NTH_ASM_T 2 ante_tac);
 a(strip_asm_tac open_¯_topology_thm);
-a(lemma_tac¬Ò ¸‰T O‰R  Topology®
-	THEN1 ALL_FC_T asm_rewrite_tac[product_topology_thm]);
+a(lemma_tac¬Ò ¸‰T O‰R  Topology® THEN1 basic_topology_tac[]);
 a(LEMMA_T ¬(Space‰T Ò ¸ Universe) = Space‰T(Ò ¸‰T O‰R)®
 	(fn th => rewrite_tac[th]
 		THEN ALL_FC_T rewrite_tac[trivial_subspace_topology_thm]));
@@ -9962,7 +9951,7 @@ a(i_contr_tac THEN POP_ASM_T ante_tac THEN ¯_continuity_tac[unit_topology_thm]);
 a(i_contr_tac THEN POP_ASM_T ante_tac THEN ¯_continuity_tac[unit_topology_thm]);
 (* *** Goal "1.3" *** *)
 a(¶_tac¬Ìt· L(One, t)® THEN asm_rewrite_tac[]);
-a(lemma_tac¬1‰T ¸‰T O‰R  Topology® THEN1 _topology_tac[unit_topology_thm, open_¯_topology_thm]);
+a(lemma_tac¬1‰T ¸‰T O‰R  Topology® THEN1 basic_topology_tac[open_¯_topology_thm]);
 a(¯_continuity_tac[unit_topology_thm, space_t_unit_topology_thm]);
 (* *** Goal "2" *** *)
 a(DROP_NTH_ASM_T 6 (fn th => all_fc_tac[paths_representative_thm]
