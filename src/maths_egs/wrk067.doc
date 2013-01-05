@@ -11,7 +11,7 @@ or visit the OpenSource web site at http://www.opensource.org/
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-$Id: wrk067.doc,v 1.74 2012/06/04 15:48:28 rda Exp rda $
+$Id: wrk067.doc,v 1.75 2012/06/05 10:24:46 rda Exp rda $
 ********************************************************************************
 pp_make_database -f -p hol topology
 docsml wrk066 wrk067
@@ -58,7 +58,7 @@ doctex wrk067.doc  wrk067[1234].th.doc ; docdvi wrk067
 \author{Rob Arthan}
 \makeindex
 \author{R.D. Arthan \\ Lemma 1 Ltd. \\ rda@lemma-one.com}
-\date{\FormatDate{$Date: 2012/06/04 15:48:28 $%
+\date{\FormatDate{$Date: 2012/06/05 10:24:46 $%
 }}
 \begin{document}
 \begin{titlepage}
@@ -105,7 +105,7 @@ lifting property.
 \begin{centering}
 
 \bf Copyright \copyright\ : Lemma 1 Ltd \number\year \\
-Reference: LEMMA1/HOL/WRK067; issue $Revision: 1.74 $%
+Reference: LEMMA1/HOL/WRK067; issue $Revision: 1.75 $%
 
 
 \end{centering}
@@ -133,6 +133,9 @@ Make the treatment of homotopy classes use the treatment of equivalence relation
 \item
 Complete the work on homotopy theory at least to the point where the fundamental group can be defined and said to be a group in the sense of  \cite{LEMMA1/HOL/WRK068} (and calculate some non-trivial fundamental groups, e.g., that of the circle).
 \end{itemize}
+
+\subsection*{Acknowledgments}
+Thanks to Bill Richter for pointing out that one can define the notion of homotopy lifting property with respect to a given space without falling foul of the restriction on type variables in constant specifications.
 
 \bibliographystyle{fmu}
 \bibliography{fmu}
@@ -1221,7 +1224,35 @@ product_locally_path_connected_thm
 =TEX
 }
 
-We prove that a covering project has the homotopy lifting property (i.e., it is a fibration) and hence the path-lifting property.
+We define the notion of homotopy lifting property for a pair comprising a topological space $\rho$ and a continuous mapping 
+$p$ from a topological $\sigma$ to a topological space $\tau$
+as follows:
+
+πHOLCONST
+‹ €HomotopyLiftingProperty› :
+‹	('a SET SET ∏ ('b ≠ 'c ) ∏ 'b SET SET ∏ 'c SET SET) SET
+˜¸¸¸¸¸¸
+‹ µ“ ” ‘ p∑
+‹	(“, (p, ”, ‘)) ç HomotopyLiftingProperty
+‹ §		“ ç Topology
+‹	±	” ç Topology
+‹	±	‘ ç Topology
+‹	±	p ç (”, ‘) Continuous
+‹	±	(µf h∑
+‹			f ç (“, ”) Continuous
+‹		±	h ç (“ ∏âT OâR, ‘) Continuous
+‹		±	(µ x∑ x ç SpaceâT “ ¥ h (x, 0.) = p (f x))
+‹		¥	(∂L∑
+‹				L ç (“ ∏âT OâR, ”) Continuous
+‹			± 	(µ x∑ x ç SpaceâT “ ¥ L (x, 0.) = f x)
+‹			±	(µ x s∑
+‹					x ç SpaceâT “
+‹				±	s ç ClosedInterval 0. 1.
+‹				¥	p (L (x, s)) = h (x, s))))
+∞
+
+
+We prove that a covering project has the homotopy lifting property with respect to any space(i.e., it is a fibration) and hence the path-lifting property.
 
 \ThmsII{%
 =GFT
@@ -7657,6 +7688,7 @@ val €homotopy_class_def› = get_spec¨$HomotopyClassÆ;
 val €path_plus_def› = get_spec¨$+âPÆ;
 val €path_0_def› = get_spec¨0âPÆ;
 val €path_minus_def› = get_spec¨~âPÆ;
+val €homotopy_lifting_property_def› = get_spec¨HomotopyLiftingPropertyÆ;
 =TEX
 \subsection{Path-connectedness}
 Path-connectedness implies connectedness, because a path, as the continuous image of
@@ -9020,6 +9052,7 @@ for every $x \in R$, then there is a continuous $L: R \times [0, 1] ≠ T$
 such that $L(x, 0) = f(x)$ and $p(L(x, s)) = h(x, s)$ for any $x \in R$ and $s \in [0, 1]$.
 This is done in a sequence of lemmas.
 
+
 =TEX
 %%%%
 %%%%
@@ -9864,30 +9897,33 @@ pop_thm()
 %%%%
 %%%%
 
+=SML
+val €covering_projection_continuous_thm› = save_thm ( "covering_projection_continuous_thm", (
+set_goal([], ¨µ” ‘ p ∑
+	” ç Topology
+±	‘ ç Topology
+±	p ç (”, ‘) CoveringProjection
+¥	p ç (”, ‘) Continuous
+Æ);
+a(rewrite_tac [covering_projection_def] THEN taut_tac);
+pop_thm()
+));
+
+=TEX
 This leads to the second form, with the lifting continuous on $R \times Ø$.
 =SML
 
 val €covering_projection_fibration_thm› = save_thm ( "covering_projection_fibration_thm", (
 set_goal([], ¨µ“; ”; ‘;
-	p : 'b ≠ 'c;
-	f : 'a ≠ 'b;
-	h : 'a ∏ Ø ≠ 'c ∑
+	p : 'b ≠ 'c ∑
 	“ ç Topology
 ±	” ç Topology
 ±	‘ ç Topology
 ±	p ç (”, ‘) CoveringProjection
-±	f ç (“, ”) Continuous
-±	h ç (“ ∏âT OâR, ‘) Continuous
-±	(µx∑ x ç SpaceâT “ ¥  h (x, 0.) = p (f x))
-¥	∂L : 'a ∏ Ø ≠ 'b∑
-	L ç (“ ∏âT OâR, ”) Continuous
-±	(µx∑	x ç SpaceâT “
-	¥	L(x, 0.) = f x)
-±	(µx s∑	x ç SpaceâT “
-	±	s ç ClosedInterval 0. 1.
-	¥	p(L(x, s)) = h(x, s))
+¥	(“, (p, ”, ‘)) ç HomotopyLiftingProperty
 Æ);
-a(REPEAT strip_tac);
+a(rewrite_tac [homotopy_lifting_property_def] THEN REPEAT strip_tac
+	THEN1 all_fc_tac[covering_projection_continuous_thm]);
 a(all_fc_tac[covering_projection_fibration_thm1]);
 a(LEMMA_T ¨SpaceâT “ Ä SpaceâT “Æ asm_tac THEN1 rewrite_tac[]);
 a(LEMMA_T ¨0. º 1.Æ asm_tac THEN1 rewrite_tac[]);
@@ -9902,6 +9938,7 @@ a(LEMMA_T ¨(SpaceâT “ ∏ Universe) = SpaceâT(“ ∏âT OâR)Æ
 		THEN ALL_FC_T rewrite_tac[trivial_subspace_topology_thm]));
 a(ALL_FC_T rewrite_tac[product_topology_space_t_thm]);
 a(rewrite_tac[space_t_Ø_thm]);
+(* *** Goal "2" *** *)
 a(lemma_tac¨0. ç ClosedInterval 0. 1.Æ THEN1 rewrite_tac[closed_interval_def]);
 a(ALL_ASM_FC_T asm_rewrite_tac[]);
 (* *** Goal "3" *** *)
@@ -9941,10 +9978,13 @@ a(lemma_tac¨∂h: Ø ≠ 'a∑
 ±	h 0. = y
 ±	(µs∑ s ç ClosedInterval 0. 1. ¥ p(h s) = f s)Æ);
 (* *** Goal "1" *** *)
-a((ante_tac o list_µ_elim[ ¨1âTÆ, ¨”Æ, ¨‘Æ, ¨pÆ, ¨Ãx:ONE∑yÆ, ¨Ã(x:ONE, t)∑f tÆ])
+a((ante_tac o list_µ_elim[ ¨1âTÆ, ¨”Æ, ¨‘Æ, ¨pÆ])
 	covering_projection_fibration_thm);
-a(asm_rewrite_tac[one_def, unit_topology_thm, space_t_unit_topology_thm]
-	THEN REPEAT strip_tac);
+a(asm_rewrite_tac [homotopy_lifting_property_def,
+	one_def, unit_topology_thm, space_t_unit_topology_thm]);
+a(ALL_FC_T rewrite_tac[covering_projection_continuous_thm]);
+a(STRIP_T (ante_tac o list_µ_elim[ ¨Ãx:ONE∑yÆ, ¨Ã(x:ONE, t)∑f tÆ]));
+a(asm_rewrite_tac[] THEN REPEAT strip_tac);
 (* *** Goal "1.1" *** *)
 a(i_contr_tac THEN POP_ASM_T ante_tac THEN Ø_continuity_tac[unit_topology_thm]);
 (* *** Goal "1.2" *** *)
