@@ -9,25 +9,25 @@ See the file LICENSE for your rights to use and change this file.
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-% $Id:$
+% $Id: wrk084.doc,v 1.1 2014/02/14 10:35:22 rda Exp rda $
 =TEX
 %%%%% YOU MAY WANT TO CHANGE POINT SIZE IN THE FOLLOWING:
 \documentclass[a4paper,12pt]{article}
-
 %%%%% YOU CAN ADD OTHER PACKAGES AS NEEDED BELOW:
 \usepackage{A4}
 \usepackage{Lemma1}
 \usepackage{ProofPower}
 \usepackage{epsf}
 \makeindex
+\ftlinepenalty=9999
 
 %%%%% YOU WILL WANT TO CHANGE THE FOLLOWING TO SUIT YOU AND YOUR DOCUMENT:
 
-\def\Title{ OpenTheory for \Product }
+\def\Title{ OpenTheory for ProofPower }
 
 \def\Abstract{\begin{center}
 {\bf Abstract}\par\parbox{0.7\hsize}
-{\small This document is a literate script containing an experimental implementation
+{\small This document discusses an experimental implementation
 of OpenTheory for {\Product}.}
 \end{center}}
 
@@ -37,7 +37,7 @@ of OpenTheory for {\Product}.}
 
 \def\EMail{{\tt rda@lemma-one.com}}
 
-\def\Phone{+44 118 958 4409}
+\def\Phone{+44 7947 030 682}
 
 \def\Fax{+44 118 956 1920}
 
@@ -54,9 +54,9 @@ of OpenTheory for {\Product}.}
 
 %%%%% THE FOLLOWING DEFAULTS WILL GENERALLY BE RIGHT:
 
-\def\Version{$Revision:$%
+\def\Version{$Revision: 1.1 $%
 }
-\def\Date{\FormatDate{$Date:$%
+\def\Date{\FormatDate{$Date: 2014/02/14 10:35:22 $%
 }}
 
 %%%%% NOW BEGIN THE DOCUMENT AND MAKE THE FRONT PAGE
@@ -124,18 +124,60 @@ supported by the {\tt opentheory} tool which provides a number of useful
 services for grouping articles into packages and for managing a set of packages.
 
 In order to provide some level of inter-operability between {\Product} and
-other implementations of HOL, specifically HOL4. D-RisQ have commissioned
+other implementations of HOL, specifically to allow specifications to
+be transferred between the two systems. As part of a research programme
+funded by DSTL, D-RisQ have commissioned
 an experimental implementation of OpenTheory  in {\Product}.
 This document is a {\Product} literate script that contains this
-implemementation.
+implemementation and some discussion of its capabilities and of further work
+that could be done in this area.
 
 The OpenTheory interface provided here comprises a {\em reader} for importing
 OpenTheory articles and a {\em writer} for exporting them.
-The reader interface is described in section~\ref{sec:reader} and
-the writer interface is described ins section~\ref{sec:writer}.
+Both these interfaces are experimental and are likely to need further customisation
+but they serve the basic goal of transferring specifications between HOL4 and {\Product}.
+
+The remainder of this document is structured as follows:
+\begin{description}
+\item[Section~\ref{sec:discussion}] discusses OpenTheory and the present
+implementation of it in {\Product}.
+\item[Section~\ref{sec:structure}] documents the interfaces provided in
+the style of the {\Product} reference manual.
+\item[Appendix~\ref{sec:implementation}] is the {\Product} literate script that
+implements the interfaces. (There is an index to the implementation at the end of
+the document.)
+\end{description}
 
 \newpage
-\section{THE STRUCTURE OpenTheory}\label{sec:reader}
+\section{DISCUSSION}\label{sec:discussion}
+\subsection{Overview of OpenTheory}
+The goal of OpenTheory is to allow proofs and the specifications on which
+those proofs depend to be shared between different
+implementations higher-order logic (HOL) theorem provers, specifically,
+HOL4, HOL Light and {\Product}.
+The Gilith OpenTheory Repo, a collection of theory packages containing
+a large collection of proofs extending a base theory package containing
+definitions intended to be common to all HOL implementations.
+
+The OpenTheory project has defined two file formats that are used to
+describe theory packages: the {\em article file format} is the basic
+mechanism for transferring specifications and proofs;
+the {\em theory file format} describes how one or more article files
+can be combined into a package. In this document we are only
+concerned with importing from and exporting to article files
+(The {\tt opentheory} tool can be used, as needed, to create theory
+files.)
+
+An article file comprises a sequence of commands for a virtual machine.
+The virtual machine constructs HOL types, terms and theorems and outputs
+two sets: a set of assumptions, i.e., axioms, and a set of theorems,
+i.e., assertions that have been proved using the axioms.
+An implementation in a system like {\Product} can realise the virtual
+machine so that the output is added to its database of
+definitions, axioms and theorems.
+
+\newpage
+\section{THE STRUCTURE OpenTheory}\label{sec:structure}
 The OpenTheory implementation is packaged in a structure (i.e., a Standard ML module)
 with the following signature.
 (As usual in {\Product} we document a structure by annotating its
@@ -144,7 +186,7 @@ signature with narrative describing the intended implementation.)
 signature ÛOpenTheoryÝ = sig
 =TEX
 
-\subsection{The Reader}
+\subsection{The Reader}\label{sec:reader}
 
 \subsubsection{Command Interface}
 
@@ -160,6 +202,8 @@ for the purpose (any existing theory of that name is deleted).
 The theory is created as a child of the indicated parent theory and
 the theory ``open-theory-base'' is made a parent if it is not an ancestor
 of the specified parent.
+
+
 =ENDDOC
 \subsubsection{Programmatic Interface}
 For experimental purposes, the core functionality of the OpenTheory reader
@@ -307,12 +351,12 @@ The OpenTheory interfaces define the following error messages.
 122010	attempt to access non-existent dictionary entry
 122011	ill-formed substitution
 122012	invalid command
-122013	Cannot define ?0 = ?1 (?0 clashes with an existing constant)
+122013	Cannot define ?0 = ?1 (?0 clashes with an existing constant, original exception: ?2)
 =TEX
 
 \newpage
 \appendix
-\section{READER IMPLEMENTATION}
+\section{IMPLEMENTATION}\label{sec:implementation}
 =TEX
 =SML
 structure ÛOpenTheoryInternalsÝ = struct 
@@ -506,7 +550,8 @@ fun Ûpop_thmÝ (st : WM_STATE) : THM * WM_STATE = (
 );
 =TEX
 =SML
-fun Ûpop_item_listÝ (proj : OBJECT -> 'a) (st : WM_STATE) : 'a list * WM_STATE = (
+fun Ûpop_item_listÝ
+	(proj : OBJECT -> 'a) (st : WM_STATE) : 'a list * WM_STATE = (
 	let	val (objs, st') = pop_list st;
 	in	(map proj objs, st')
 	end
@@ -775,8 +820,8 @@ fun Ûdo_define_constÝ
 =TEX
 =SML
 fun Ûdo_define_type_opÝ
-	(st as {interface = {define_type_op, type_name, const_name, ...}, ...} : WM_STATE)
-		: WM_STATE = (
+	(st as {interface = {define_type_op, type_name, const_name, ...}, ...}
+		: WM_STATE) : WM_STATE = (
 	let	val (thm, st') = pop_thm st;
 		val (pars, st'') = pop_name_list st';
 		val (rep, st''') = pop_name st'';
@@ -855,7 +900,8 @@ fun Ûdo_removeÝ (st as {dictionary, ...} : WM_STATE) : WM_STATE = (
 fun Ûdo_substÝ (st : WM_STATE) : WM_STATE = (
 	let	val (thm1, st') = pop_thm st;
 		val ((tysubs, tmsubs), st'') = pop_subst_info st';
-		val thm2 = (asm_inst_term_rule tmsubs o asm_inst_type_rule tysubs) thm1;
+		val thm2 = (asm_inst_term_rule tmsubs o
+				asm_inst_type_rule tysubs) thm1;
 	in	push_thm thm2 st''
 	end
 );
@@ -992,10 +1038,6 @@ fun Ûdo_commandÝ (cmd : string) (st : WM_STATE) : WM_STATE = (
 	|	"var" =>  do_var st
 	|	"varTerm" =>  do_var_term st
 	|	"varType" =>  do_var_type st
-(* Allow page break
-=TEX
-=SML
-*)
 	|	_ => (
 			if	size cmd = 0 orelse substring(cmd, 0, 1) = "#"
 			then	st
@@ -1038,20 +1080,24 @@ val Ûot_t_defÝ : THM = t_def;
 val Ûot_f_defÝ : THM = f_def;
 val Ûot_³_defÝ : THM = ³_def;
 val Ûot_µ_defÝ : THM = µ_def;
-val Ûot_±_defÝ : THM = tac_proof(([], ¬$± = Ìp q·(Ìf·f p q : BOOL) = (Ìf·f T T)®),
+val Ûot_±_defÝ : THM = tac_proof(([],
+		¬$± = Ìp q·(Ìf·f p q : BOOL) = (Ìf·f T T)®),
 	rewrite_tac[] THEN REPEAT_UNTIL is_´ strip_tac THEN1
 		(strip_tac THEN asm_rewrite_tac[]) THEN
 			STRIP_T (ante_tac o µ_elim¬Ìa b·a ± b®) THEN rewrite_tac[]);
-val Ûot_´_defÝ : THM = tac_proof(([], ¬$´ = Ìp q·p ± q ¤ p®), rewrite_tac[] THEN taut_tac);
+val Ûot_´_defÝ : THM = tac_proof(([], ¬$´ = Ìp q·p ± q ¤ p®), rewrite_tac[]
+	THEN taut_tac);
 val Ûot_¶_defÝ : THM = tac_proof(([], ¬$¶ = Ìp·µq· (µx: 'a·p x ´ q) ´ q®),
 	rewrite_tac[] THEN µ_tac THEN
-		pure_once_rewrite_tac [(conv_rule eq_sym_conv o µ_elim¬x: 'a ­ BOOL®)È_axiom] THEN
-			rewrite_tac[] THEN prove_tac[]);
+		pure_once_rewrite_tac
+			[(conv_rule eq_sym_conv o µ_elim¬x: 'a ­ BOOL®)È_axiom]
+				THEN rewrite_tac[] THEN prove_tac[]);
 val Ûot_²_defÝ : THM = ²_def;
-val Ûot_¶‰1_defÝ : THM = tac_proof(([], ¬$¶‰1 = ÌP· $¶ P ± (µx y:'a·P x ± P y ´ x = y)®),
+val Ûot_¶‰1_defÝ : THM = tac_proof(([],
+		¬$¶‰1 = ÌP· $¶ P ± (µx y:'a·P x ± P y ´ x = y)®),
 	rewrite_tac[¶‰1_def] THEN µ_tac THEN 
-		pure_once_rewrite_tac [prove_rule[È_axiom] ¬x = Ìt·x t®] THEN rewrite_tac[] THEN 
-			REPEAT strip_tac THEN_LIST
+		pure_once_rewrite_tac [prove_rule[È_axiom] ¬x = Ìt·x t®]
+			THEN rewrite_tac[] THEN REPEAT strip_tac THEN_LIST
 			[asm_prove_tac[],
 			 contr_tac THEN all_asm_fc_tac[] THEN all_var_elim_asm_tac,
 			 ¶_tac¬t : 'a® THEN contr_tac THEN all_asm_fc_tac[]]);
@@ -1126,7 +1172,8 @@ fun Ûget_ot_defÝ (n : string) (rhs : TERM) : THM = (
 );
 =TEX
 =SML
-val Ûot_ONE_defÝ : THM = tac_proof(([], ¬¶ f : ONE ­ BOOL· TypeDefn (Ì b· b) f®),
+val Ûot_ONE_defÝ : THM = tac_proof(([],
+	¬¶ f : ONE ­ BOOL· TypeDefn (Ì b· b) f®),
 	¶_tac¬Ìx· T® THEN rewrite_tac[type_defn_def, one_one_def, onto_def]);
 =TEX
 =SML
@@ -1136,10 +1183,13 @@ val Ûot_¸_defÝ : THM = tac_proof(([], ¬
 	¶_tac¬Ì(p:'a, q:'b) r s· r = p ± s = q® THEN rewrite_tac[type_defn_def,
 		one_one_def, onto_def, ot_mk_pair_rep_def] THEN
 	REPEAT strip_tac THEN_LIST [
-		conv_tac eq_sym_conv THEN pure_once_rewrite_tac[prove_rule [] ¬µp· p = (Fst p, Snd p)®]
-			THEN asm_rewrite_tac[],
+		conv_tac eq_sym_conv
+			THEN pure_once_rewrite_tac[
+				prove_rule [] ¬µp· p = (Fst p, Snd p)®]
+				THEN asm_rewrite_tac[],
 		¶_tac¬(a:'a, b:'b)® THEN asm_rewrite_tac[],
-		¶_tac¬Fst (y: 'a ¸ 'b)® THEN ¶_tac¬Snd (y: 'a ¸ 'b)® THEN asm_rewrite_tac[]]);
+		¶_tac¬Fst (y: 'a ¸ 'b)® THEN ¶_tac¬Snd (y: 'a ¸ 'b)®
+			THEN asm_rewrite_tac[]]);
 =TEX
 =SML
 val Ûot_type_defsÝ : (string * (string list * THM)) list = [
@@ -1156,7 +1206,9 @@ fun Ûget_ot_type_defÝ (pars : string list) (tyname : string) : THM = (
 );
 =TEX
 =SML
-fun Ûconvert_nameÝ (interp : (NAME * string) list) ( n as (cxt, base) : NAME ) : string = (
+fun Ûconvert_nameÝ
+	(interp : (NAME * string) list) ( n as (cxt, base) : NAME )
+		: string = (
 	lassoc3 interp n
 	handle Fail _ => format_list (fn s => s) (cxt @ [base]) "_"
 );
@@ -1164,8 +1216,12 @@ fun Ûconvert_nameÝ (interp : (NAME * string) list) ( n as (cxt, base) : NAME ) :
 new_theory "temp";
 set_pc "basic_hol1";
 =SML
-val Ûot_È_axiomÝ : THM = (conv_rule (MAP_C Â_conv) o pure_rewrite_rule ot_bool_defs) È_axiom;
-val Ûot_Å_axiomÝ : THM = (conv_rule (MAP_C Â_conv) o pure_rewrite_rule ot_bool_defs) Å_axiom;
+val Ûot_È_axiomÝ : THM =
+	(conv_rule (MAP_C Â_conv) o
+		pure_rewrite_rule ot_bool_defs) È_axiom;
+val Ûot_Å_axiomÝ : THM =
+	(conv_rule (MAP_C Â_conv) o
+		pure_rewrite_rule ot_bool_defs) Å_axiom;
 val Ûot_infinity_axiomÝ : THM  =
 	(conv_rule (MAP_C Â_conv) o
 		pure_rewrite_rule (ot_function_defs @ ot_bool_defs)) infinity_axiom;
@@ -1193,7 +1249,8 @@ fun Ûmk_instanceÝ (wanted : TERM) (thm : THM) : THM = (
 =SML
 fun Ûget_ot_axiomÝ (tm : TERM) : THM OPT = (
 	let	fun aux [] = Nil
-		|   aux (thm::more) = Value (mk_instance tm thm) handle Fail _ => aux more;
+		|   aux (thm::more) =
+			Value (mk_instance tm thm) handle Fail _ => aux more;
 	in	aux ot_axioms
 	end
 );
@@ -1237,7 +1294,8 @@ fun Ûdefine_hol_type_opÝ ({thm, pars, rep, abs, tyname} : TYPE_DEFN_INFO)
 			end;
 		val thm2 = simple_´_match_mp_rule type_lemmas_thm thm1;
 		val conc2 = concl thm2;
-		val (abs_var, (rep_var, body2)) = let val (x, b) = dest_¶ conc2 in (x, dest_¶ b) end;
+		val (abs_var, (rep_var, body2)) =
+			let val (x, b) = dest_¶ conc2 in (x, dest_¶ b) end;
 		val pp_abs_var = mk_var(abs, type_of abs_var);
 		val pp_rep_var = mk_var(rep, type_of rep_var);
 		val body3 = subst[(pp_abs_var, abs_var), (pp_rep_var, rep_var)] body2; 
@@ -1262,16 +1320,19 @@ fun Ûdefine_hol_constÝ ({name, def_rhs} : CONST_DEFN_INFO) : THM = (
 		val n  = "const_spec" ^ string_of_int(!const_spec_count);
 		val thm2 = new_spec([n], 1, thm1);
 	in	thm2
-	end	handle Fail _ => (
+	end	handle ex as (Fail _) => (
 			get_ot_def name def_rhs
 			handle Fail _ => fail "open-theory-reader" 122013 [
 				fn _ => name,
-				fn _ => string_of_term def_rhs]
+				fn _ => string_of_term def_rhs, 
+				fn _ => string_of_exn ex]
 		)
 );
 =TEX
 =SML
-fun Ûaxiomatic_hol_interfaceÝ ({type_map, const_map} : NAME_MAPS) : IMPORT_INTERFACE = {
+fun Ûaxiomatic_hol_interfaceÝ
+	({type_map, const_map} : NAME_MAPS)
+		: IMPORT_INTERFACE = {
 	declare_axiom = axiom_as_axiom,
 	define_type_op = define_hol_type_op,
 	define_const = define_hol_const,
@@ -1296,30 +1357,34 @@ The following translates the Gilith Open Theory Repo namespace to ProofPower:
 =SML
 val Ûgilith_mapsÝ : NAME_MAPS = {
 	type_map = map (name_of_string ** (fn x => x)) [
-		("bool", "BOOL"), ("->", "­"), ("ind", "IND"),
+		("bool", "BOOL"), ("->", "­"), ("ind", "IND")
+(*,
 		("Data.Unit.unit", "ONE"),
-		("Data.Pair.*", "¸")
+		("Data.Pair.*", "¸") *)
 	],
 	const_map = map (name_of_string ** (fn x => x)) [
 		("select", "Å"),
 		("Data.Bool.T", "T"), ("Data.Bool.F", "F"),
 		("Data.Bool.~", "³"),
-		("Data.Bool./\\\\", "±"), ("Data.Bool.\\\\/", "²"), ("Data.Bool.==>", "´"),
-		("Data.Bool.!", "µ"), ("Data.Bool.?", "¶"), ("Data.Bool.?!", "¶‰1"),
+		("Data.Bool./\\\\", "±"), ("Data.Bool.\\\\/", "²"),
+		("Data.Bool.==>", "´"),
+		("Data.Bool.!", "µ"),
+		("Data.Bool.?", "¶"), ("Data.Bool.?!", "¶‰1"),
 		("Data.Bool.cond", "Cond"),
-		("Data.Unit.()", "One"),
-		("Function.o", "o"),
 		("Function.id", "CombI"),
 		("Function.K", "CombK"),
 		("Function.S", "CombS"),
 		("Function.C", "CombC"),
-		("Function.W", "CombW"),
+		("Function.W", "CombW")
+(*,
+		("Data.Unit.()", "One"),
+		("Function.o", "o"),
 		("Function.injective", "OneOne"),
 		("Function.surjective", "Onto"),
 		("HOLLight.mk_pair", "MkPairRep"),
 		("Data.Pair.,", ","),
 		("Data.Pair.fst", "Fst"),
-		("Data.Pair.snd", "Snd")
+		("Data.Pair.snd", "Snd") *)
 	]
 };
 =TEX
@@ -1338,7 +1403,9 @@ fun Ûopen_theory_importÝ {file : string, parent : string, theory : string} : uni
 			read_instream strm
 			handle ex as Fail _ => (close_in strm; raise ex);
 		val thms = net_flatten theorems;
-		val names = map (fn n => "thm" ^ string_of_int n) (interval 1 (length thms));
+		val names =
+			map (fn n => "thm" ^ string_of_int n)
+				(interval 1 (length thms));
 	in	map save_thm (combine names thms); ()
 	end
 );
@@ -1638,17 +1705,31 @@ to:
 Thm ‡, „ ô B ::
 Stack
 =TEX
+Here and in future derived rules, we give comments indicating what
+theorems is expected to be on the stack after execution of selected commands.
+The numbers indicate the depth: 1 is deepest, 2 is second deepest, etc.
+Here for example, we expect theorem
+=INLINEFT
+‡ ô A
+=TEX
+\ and
+=INLINEFT
+„, A ô B
+=TEX
+\ to be on the stack on entry. 
 =SML
 fun Ûlog_prove_asmÝ (():unit) : unit = (
 	let	val k1 = next_key();
 		val k2 = k1 + 1;
-	in	log_num k1;
+	in					(* 1. ‡ ô A *)
+						(* 2. „, A ô B *)
+		log_num k1;
 		log_cmd "def";
 		log_cmd "pop";			(* 1. ‡ ô A *)
 		log_num k2;
 		log_cmd "def";
 		log_num k1;
-		log_cmd "ref";			(* 2. „, A ô B *)
+		log_cmd "ref";			
 		log_cmd "deductAntisym";	(* 1. ‡, „ ô A = B *)
 		log_num k2;
 		log_cmd "remove";		(* 2. ‡ ô A *)
@@ -1889,7 +1970,8 @@ A, B ô A ± B
 =TEX
 =SML
 val Ûlog_±_intro_thmÝ : unit -> unit = (
-	let	val obj = (OThm o undisch_rule o undisch_rule o taut_rule) ¬A ´ B ´ A ± B®;
+	let	val obj = (OThm o undisch_rule o undisch_rule o taut_rule)
+				¬A ´ B ´ A ± B®;
 		val f = ¬f : BOOL ­ BOOL ­ BOOL®;
 		val a_±_b = mk_±(a_prop, b_prop);
 		val conj_def = ¬Ì p q· (Ì f· f p q:BOOL) = (Ì f· f T T)®;
@@ -1947,42 +2029,60 @@ val Ûlog_±_left_elim_thmÝ : unit -> unit = (
 		val p1tt = list_mk_app(p1, [mk_t, mk_t]);
 	in	fn () => try_stored obj handle Fail _ => (
 			log_antecedent ot_±_def;
-						(* 1. ô $± = (Ìp q·Q[p/A, q/B]) *)
+					(* 1. ô $± = (Ìp q·Q[p/A, q/B]) *)
 			log_refl a_prop;
 			log_cmd"appThm";
 			log_refl b_prop;
-			log_cmd"appThm";	(* 1. A ± B = (Ìp q·Q[p/A, q/B]) A B *)
+			log_cmd"appThm";
+					(* 1. A ± B = (Ìp q·Q[p/A, q/B]) A B *)
 			log_Â_Â_conv conj_def_a_b;
-						(* 2. ô (Ìp q·Q[p/A,q/B]) A B ¤ Q *)
+					(* 2. ô (Ìp q·Q[p/A,q/B]) A B ¤ Q *)
 			log_eq_trans(a_±_b, conj_def_a_b, q);
 			log_prove_asm();
-			log_prove_asm();	(* 1. ô A ± B ¤ Q *)
-			log_assume a_±_b;	(* 2. ô A ± B ô A ± B *)
-			log_cmd"eqMp";		(* 1. ô A ± B ô Q *)
-			log_refl p1;		(* 2. ô (Ìp q·p) = (Ìp q·p) *)
-			log_cmd"appThm";	(* 1. A ± B  ô s (Ìp q·p) = t (Ìp q·p) *)
-			log_Â_conv sp1;		(* 2. ô s (Ìp q·p) = (Ìp q·p) A B *)
+			log_prove_asm();
+					(* 1. ô A ± B ¤ Q *)
+			log_assume a_±_b;
+					(* 2. ô A ± B ô A ± B *)
+			log_cmd"eqMp";
+					(* 1. ô A ± B ô Q *)
+			log_refl p1;
+					(* 2. ô (Ìp q·p) = (Ìp q·p) *)
+			log_cmd"appThm";
+					(* 1. A ± B  ô s (Ìp q·p) = t (Ìp q·p) *)
+			log_Â_conv sp1;
+					(* 2. ô s (Ìp q·p) = (Ìp q·p) A B *)
 			log_eq_sym(sp1, p1ab);
-			log_prove_asm();	(* 2. ô (Ìp q·p) A B = s (Ìp q·p) *)
+			log_prove_asm();
+					(* 2. ô (Ìp q·p) A B = s (Ìp q·p) *)
 			log_eq_trans(p1ab, sp1, tp1);
 			log_prove_asm();
-			log_prove_asm();	(* 1. A ± B ô (Ìp q·p) A B = t (Ìp q· p) *)
-			log_Â_conv tp1;		(* ô t(Ìp q·p) = (Ìp q·p) T T *)
+			log_prove_asm();
+					(* 1. A ± B ô (Ìp q·p) A B = t (Ìp q· p) *)
+			log_Â_conv tp1;
+					(* ô t(Ìp q·p) = (Ìp q·p) T T *)
 			log_eq_trans(p1ab, tp1, p1tt);
 			log_prove_asm();
-			log_prove_asm();	(* 1. A ± B ô (Ìp q·p) A B = (Ìp q·p) T T *)
-			log_Â_Â_conv p1tt;	(* 2. ô (Ìp q·p) T T = T *)
+			log_prove_asm();
+					(* 1. A ± B ô (Ìp q·p) A B = (Ìp q·p) T T *)
+			log_Â_Â_conv p1tt;
+					(* 2. ô (Ìp q·p) T T = T *)
 			log_eq_trans(p1ab, p1tt, mk_t);
 			log_prove_asm();
-			log_prove_asm();	(* 1. A ± B ô (Ìp q·p) A B = T *)
-			log_Â_Â_conv p1ab;	(* 2. ô (Ìp q·p) A B = A *)
+			log_prove_asm();
+					(* 1. A ± B ô (Ìp q·p) A B = T *)
+			log_Â_Â_conv p1ab;
+					(* 2. ô (Ìp q·p) A B = A *)
 			log_eq_sym(p1ab, a_prop);
-			log_prove_asm();	(* 2. ô A = (Ìp q·p) A B *)
+			log_prove_asm();
+					(* 2. ô A = (Ìp q·p) A B *)
 			log_eq_trans(a_prop, p1ab, mk_t);
 			log_prove_asm();
-			log_prove_asm();	(* 1. A ± B ô A ¤ T *)
-			log_¤_t_elim_thm();	(* 2. A ¤ T ô A *)
-			log_prove_asm();	(* 1. A ± B ô A *)
+			log_prove_asm();
+					(* 1. A ± B ô A ¤ T *)
+			log_¤_t_elim_thm();
+					(* 2. A ¤ T ô A *)
+			log_prove_asm();
+					(* 1. A ± B ô A *)
 			store obj; ()
 		)
 	end
@@ -1990,7 +2090,7 @@ val Ûlog_±_left_elim_thmÝ : unit -> unit = (
 
 =TEX
 =INLINEFT
-log_±_left_elim_thm ()
+log_±_right_elim_thm ()
 =TEX
 \ pushes the following theorem onto the stack:
 =GFT
@@ -2011,44 +2111,63 @@ val Ûlog_±_right_elim_thmÝ : unit -> unit = (
 		val p2tt = list_mk_app(p2, [mk_t, mk_t]);
 	in	fn () => try_stored obj handle Fail _ => (
 			log_antecedent ot_±_def;
-						(* 1. ô $± = (Ìp q·Q[p/A, q/B]) *)
+					(* 1. ô $± = (Ìp q·Q[p/A, q/B]) *)
 			log_refl a_prop;
 			log_cmd"appThm";
 			log_refl b_prop;
-			log_cmd"appThm";	(* 1. A ± B = (Ìp q·Q[p/A, q/B]) A B *)
+			log_cmd"appThm";
+					(* 1. A ± B = (Ìp q·Q[p/A, q/B]) A B *)
 			log_Â_Â_conv conj_def_a_b;
 						(* 2. ô (Ìp q·Q[p/A,q/B]) A B ¤ Q *)
 			log_eq_trans(a_±_b, conj_def_a_b, q);
 			log_prove_asm();
-			log_prove_asm();	(* 1. ô A ± B ¤ Q *)
-			log_assume a_±_b;	(* 2. ô A ± B ô A ± B *)
-			log_cmd"eqMp";		(* 1. ô A ± B ô Q *)
-			log_refl p2;		(* 2. ô (Ìp q·q) = (Ìp q·q) *)
-			log_cmd"appThm";	(* 1. A ± B  ô s (Ìp q·q) = t (Ìp q·p) *)
-			log_Â_conv sp2;		(* 2. ô s (Ìp q·q) = (Ìp q·q) A B *)
+			log_prove_asm();
+					(* 1. ô A ± B ¤ Q *)
+			log_assume a_±_b;
+					(* 2. ô A ± B ô A ± B *)
+			log_cmd"eqMp";
+					(* 1. ô A ± B ô Q *)
+			log_refl p2;
+					(* 2. ô (Ìp q·q) = (Ìp q·q) *)
+			log_cmd"appThm";
+					(* 1. A ± B  ô s (Ìp q·q) = t (Ìp q·p) *)
+			log_Â_conv sp2;
+					(* 2. ô s (Ìp q·q) = (Ìp q·q) A B *)
 			log_eq_sym(sp2, p2ab);
-			log_prove_asm();	(* 2. ô (Ìp q·q) A B = s (Ìp q·q) *)
+			log_prove_asm();
+					(* 2. ô (Ìp q·q) A B = s (Ìp q·q) *)
 			log_eq_trans(p2ab, sp2, tp2);
 			log_prove_asm();
-			log_prove_asm();	(* 1. A ± B ô (Ìp q·q) A B = t (Ìp q· q) *)
-			log_Â_conv tp2;		(* ô t(Ìp q·q) = (Ìp q·q) T T *)
+			log_prove_asm();
+					(* 1. A ± B ô (Ìp q·q) A B = t (Ìp q· q) *)
+			log_Â_conv tp2;
+					(* ô t(Ìp q·q) = (Ìp q·q) T T *)
 			log_eq_trans(p2ab, tp2, p2tt);
 			log_prove_asm();
-			log_prove_asm();	(* 1. A ± B ô (Ìp q·q) A B = (Ìp q·p) T T *)
-			log_Â_Â_conv p2tt;	(* 2. ô (Ìp q·q) T T = T *)
+			log_prove_asm();
+					(* 1. A ± B ô (Ìp q·q) A B = (Ìp q·p) T T *)
+			log_Â_Â_conv p2tt;
+					(* 2. ô (Ìp q·q) T T = T *)
 			log_eq_trans(p2ab, p2tt, mk_t);
 			log_prove_asm();
-			log_prove_asm();	(* 1. A ± B ô (Ìp q·q) A B = T *)
-			log_Â_Â_conv p2ab;	(* 2. ô (Ìp q·q) A B = B *)
+			log_prove_asm();
+					(* 1. A ± B ô (Ìp q·q) A B = T *)
+			log_Â_Â_conv p2ab;
+					(* 2. ô (Ìp q·q) A B = B *)
 			log_eq_sym(p2ab, b_prop);
-			log_prove_asm();	(* 2. ô B = (Ìp q·q) A B *)
+			log_prove_asm();
+					(* 2. ô B = (Ìp q·q) A B *)
 			log_eq_trans(b_prop, p2ab, mk_t);
 			log_prove_asm();
-			log_prove_asm();	(* 1. A ± B ô B ¤ T *)
+			log_prove_asm();
+					(* 1. A ± B ô B ¤ T *)
 			log_subst_params ([], [(b_prop, a_prop)]);
-			log_¤_t_elim_thm();	(* 2. A ¤ T ô A *)
-			log_cmd"subst";		(* 2. B ¤ T ô B *)
-			log_prove_asm();	(* 1. A ± B ô B *)
+			log_¤_t_elim_thm();
+					(* 2. A ¤ T ô A *)
+			log_cmd"subst";
+					(* 2. B ¤ T ô B *)
+			log_prove_asm();
+					(* 1. A ± B ô B *)
 			store obj; ()
 		)
 	end
@@ -2072,20 +2191,25 @@ val Ûlog_´_intro_lemmaÝ : unit -> unit = (
 		val r =  ¬A ± B ¤ A®;
 	in	fn () => try_stored obj handle Fail _ => (
 			log_antecedent ot_´_def;
-						(* 1. ô $´ = (Ìp q·p ± q ¤ p) *)
+				(* 1. ô $´ = (Ìp q·p ± q ¤ p) *)
 			log_refl a_prop;
 			log_cmd"appThm";
 			log_refl b_prop;
-			log_cmd"appThm";	(* 1. (A ´ B) = (Ìp q·p ± q ¤ p) A B *)
+			log_cmd"appThm";
+				(* 1. (A ´ B) = (Ìp q·p ± q ¤ p) A B *)
 			log_Â_Â_conv imp_def_a_b;
-						(* 2. ô (Ìp q·p ± q ¤ p) A B ¤ (A ± B ¤ A) *)
+				(* 2. ô (Ìp q·p ± q ¤ p) A B ¤ (A ± B ¤ A) *)
 			log_eq_trans(a_´_b, imp_def_a_b, r);
 			log_prove_asm();
-			log_prove_asm();	(* 1. ô (A ´ B) ¤ (A ± B ´ A) *)
+			log_prove_asm();
+				(* 1. ô (A ´ B) ¤ (A ± B ´ A) *)
 			log_eq_sym(a_´_b, r);
-			log_prove_asm();	(* 1. ô (A ± B ´ A) ¤ (A ´ B) *)
-			log_assume r;		(* 2. A ± B ¤ A ô A ± B ¤ A *)
-			log_cmd"eqMp";		(* 1. A ± B ¤ A ô A ´ B *)
+			log_prove_asm();
+				(* 1. ô (A ± B ´ A) ¤ (A ´ B) *)
+			log_assume r;	
+				(* 2. A ± B ¤ A ô A ± B ¤ A *)
+			log_cmd"eqMp";
+				(* 1. A ± B ¤ A ô A ´ B *)
 			store obj; ()
 		)
 	end
@@ -2109,24 +2233,33 @@ val Ûlog_´_elim_thmÝ : unit -> unit = (
 		val r =  ¬A ± B ¤ A®;
 	in	fn () => try_stored obj handle Fail _ => (
 			log_antecedent ot_´_def;
-						(* 1. ô $´ = (Ìp q·p ± q ¤ p) *)
+				(* 1. ô $´ = (Ìp q·p ± q ¤ p) *)
 			log_refl a_prop;
 			log_cmd"appThm";
 			log_refl b_prop;
-			log_cmd"appThm";	(* 1. (A ´ B) = (Ìp q·p ± q ¤ p) A B *)
+			log_cmd"appThm";
+				(* 1. (A ´ B) = (Ìp q·p ± q ¤ p) A B *)
 			log_Â_Â_conv imp_def_a_b;
-						(* 2. ô (Ìp q·p ± q ¤ p) A B ¤ (A ± B ¤ A) *)
+				(* 2. ô (Ìp q·p ± q ¤ p) A B ¤ (A ± B ¤ A) *)
 			log_eq_trans(a_´_b, imp_def_a_b, r);
 			log_prove_asm();
-			log_prove_asm();	(* 1. ô (A ´ B) ¤ (A ± B ´ A) *)
-			log_assume a_´_b;	(* 2. A ´ B ô A ´ B *)
-			log_cmd"eqMp";		(* 1. A ´ B ô A ± B = A *)
+			log_prove_asm();
+				(* 1. ô (A ´ B) ¤ (A ± B ´ A) *)
+			log_assume a_´_b;
+				(* 2. A ´ B ô A ´ B *)
+			log_cmd"eqMp";	
+				(* 1. A ´ B ô A ± B = A *)
 			log_eq_sym(mk_±(a_prop, b_prop), a_prop);
-			log_prove_asm();	(* 1. A ´ B ô A = A ± B *)
-			log_assume a_prop;	(* 2. A ô A *)
-			log_cmd"eqMp";		(* 1. A, A ´ B ô A ± B *)
-			log_±_right_elim_thm(); (* 2. A ± B ô B *)
-			log_prove_asm();	(* 1. A, A ´ B ô B *)
+			log_prove_asm();
+				(* 1. A ´ B ô A = A ± B *)
+			log_assume a_prop;
+				(* 2. A ô A *)
+			log_cmd"eqMp";	
+				(* 1. A, A ´ B ô A ± B *)
+			log_±_right_elim_thm();
+				(* 2. A ± B ô B *)
+			log_prove_asm();
+				(* 1. A, A ´ B ô B *)
 			store obj; ()
 		)
 	end
@@ -2151,24 +2284,36 @@ val Ûlog_µ_elim_thmÝ : unit -> unit = (
 		val px = mk_app(p_func, x_var);
 		val t = ¬(Ìx:'a· T) x®;
 	in	fn () => try_stored obj handle Fail _ => (
-			log_Â_conv all_def_p;	(* 1. ô (Ì P· P = (Ì x· T)) P ¤ (P = (Ìx· T)) *)
+			log_Â_conv all_def_p;
+				(* 1. ô (Ì P· P = (Ì x· T)) P ¤ (P = (Ìx· T)) *)
 			log_antecedent ot_µ_def;
-						(* 2. ô $µ = (Ì P· P = (Ì x· T)) *)
-			log_refl p_func;	(* 3. ô P = P *)
-			log_cmd"appThm";	(* 2. $µ P ¤ (Ì P· P = (Ì x· T)) P *)
-			log_assume µ_p;		(* 3. $µ P ô $µ P *)
-			log_cmd"eqMp";		(* 2. $µ P ô (Ì P· P = (Ì x· T)) P *)
-			log_cmd"eqMp";		(* 1. $µ P ô P = (Ìx· T) *)
-			log_refl x_var;		(* 2. ô x = x *)
-			log_cmd"appThm";	(* 1. $µ P ô P x ¤ (Ìx· T) x *)
-			log_Â_conv t;		(* 2. ô (Ìx· T) x ¤ T *)
+				(* 2. ô $µ = (Ì P· P = (Ì x· T)) *)
+			log_refl p_func;
+				(* 3. ô P = P *)
+			log_cmd"appThm";
+				(* 2. $µ P ¤ (Ì P· P = (Ì x· T)) P *)
+			log_assume µ_p;
+				(* 3. $µ P ô $µ P *)
+			log_cmd"eqMp";
+				(* 2. $µ P ô (Ì P· P = (Ì x· T)) P *)
+			log_cmd"eqMp";	
+				(* 1. $µ P ô P = (Ìx· T) *)
+			log_refl x_var;	
+				(* 2. ô x = x *)
+			log_cmd"appThm";
+				(* 1. $µ P ô P x ¤ (Ìx· T) x *)
+			log_Â_conv t;
+				(* 2. ô (Ìx· T) x ¤ T *)
 			log_eq_trans(px, t, mk_t);
 			log_prove_asm();
-			log_prove_asm();	(* 1. $µ P ô P x ¤ T *)
+			log_prove_asm();
+				(* 1. $µ P ô P x ¤ T *)
 			log_subst_params([], [(px, a_prop)]);
 			log_¤_t_elim_thm();
-			log_cmd"subst";		(* 2. P x ¤ T ô P x *)
-			log_prove_asm();	(* 1. $µ P ô P x *)
+			log_cmd"subst";
+				(* 2. P x ¤ T ô P x *)
+			log_prove_asm();
+				(* 1. $µ P ô P x *)
 			store obj; ()
 		)
 	end
@@ -2231,18 +2376,18 @@ val Ûlog_µ_intro_lemmaÝ : unit -> unit = (
 		val Ì = ¬(Ìx:'a·T)®;
 	in	fn () => try_stored obj handle Fail _ => (
 			log_assume a_¤_r;	
-	(* 1. (A ¤ (ÌP· P = (Ìx· T))(Ìx· T)) ô (A ¤ (ÌP· P = (Ìx· T))(Ìx· T)) *)
+(* 1. (A ¤ (ÌP· P = (Ìx· T))(Ìx· T)) ô (A ¤ (ÌP· P = (Ìx· T))(Ìx· T)) *)
 			log_Â_conv r;
 			log_eq_trans(a_prop, r, Ì_eq_Ì);
 			log_prove_asm();
 			log_prove_asm();	
-	(* 1. (A ¤ (ÌP· P = (Ìx· T))(Ìx· T)) ô A ¤ ((Ìx·T) = (Ìx·T)) *)
+(* 1. (A ¤ (ÌP· P = (Ìx· T))(Ìx· T)) ô A ¤ ((Ìx·T) = (Ìx·T)) *)
 			log_eq_sym(a_prop, Ì_eq_Ì);
 			log_prove_asm();
-	(* 1. (A ¤ (ÌP· P = (Ìx· T))(Ìx· T)) ô ((Ìx·T) = (Ìx·T)) ¤ A *)
+(* 1. (A ¤ (ÌP· P = (Ìx· T))(Ìx· T)) ô ((Ìx·T) = (Ìx·T)) ¤ A *)
 			log_refl Ì;
 			log_cmd "eqMp";
-	(* 1. (A ¤ (ÌP· P = (Ìx· T))(Ìx· T)) ô A *)
+(* 1. (A ¤ (ÌP· P = (Ìx· T))(Ìx· T)) ô A *)
 			store obj; ()
 		)
 	end
@@ -2251,7 +2396,10 @@ val Ûlog_µ_intro_lemmaÝ : unit -> unit = (
 =TEX
 Now the actual {\Product} built-ins
 =SML
-fun Ûlog_subst_ruleÝ((thm_var_list, template, ithm, res) : (THM * TERM) list * TERM * THM * THM) : unit = (
+fun Ûlog_subst_ruleÝ
+	((thm_var_list, template, ithm, res)
+		: (THM * TERM) list * TERM * THM * THM)
+		: unit = (
 	let	val obj = OThm res;
 	in	try_stored obj handle Fail _ => (
 			log_antecedent res;
@@ -2261,7 +2409,9 @@ fun Ûlog_subst_ruleÝ((thm_var_list, template, ithm, res) : (THM * TERM) list * T
 );
 =TEX
 =SML
-fun Ûlog_simple_Ì_eq_ruleÝ((absvar, thrm, res) : TERM * THM * THM) : unit = (
+fun Ûlog_simple_Ì_eq_ruleÝ
+	((absvar, thrm, res) : TERM * THM * THM)
+		: unit = (
 	let	val obj = OThm res;
 	in	try_stored obj handle Fail _ => (
 			(log_var o dest_var) absvar;
@@ -2273,7 +2423,9 @@ fun Ûlog_simple_Ì_eq_ruleÝ((absvar, thrm, res) : TERM * THM * THM) : unit = (
 );
 =TEX
 =SML
-fun Ûlog_inst_type_ruleÝ((talist, thrm, res) : (TYPE * TYPE) list * THM * THM) : unit = (
+fun Ûlog_inst_type_ruleÝ
+	((talist, thrm, res) : (TYPE * TYPE) list * THM * THM)
+		: unit = (
 	let	val obj = OThm res;
 	in	try_stored obj handle Fail _ => (
 			log_subst_params (talist, []);
@@ -2285,7 +2437,9 @@ fun Ûlog_inst_type_ruleÝ((talist, thrm, res) : (TYPE * TYPE) list * THM * THM) :
 );
 =TEX
 =SML
-fun Ûlog_´_introÝ((asm, thrm, res) : TERM * THM * THM) : unit = (
+fun Ûlog_´_introÝ
+	((asm, thrm, res) : TERM * THM * THM)
+		: unit = (
 	let	val obj = OThm res;
 	in	try_stored obj handle Fail _ => (
 			let	val a = asm;
@@ -2311,7 +2465,9 @@ fun Ûlog_´_introÝ((asm, thrm, res) : TERM * THM * THM) : unit = (
 );
 =TEX
 =SML
-fun Ûlog_´_elimÝ((thrm1, thrm2, res) : THM * THM * THM) : unit = (
+fun Ûlog_´_elimÝ
+	((thrm1, thrm2, res) : THM * THM * THM)
+		: unit = (
 	let	val obj = OThm res;
 	in	try_stored obj handle Fail _ => (
 			let	val (a, b) = (dest_´ o concl) thrm1;
@@ -2329,7 +2485,9 @@ fun Ûlog_´_elimÝ((thrm1, thrm2, res) : THM * THM * THM) : unit = (
 );
 =TEX
 =SML
-fun Ûlog_asm_ruleÝ((tm, res) : TERM * THM) : unit = (
+fun Ûlog_asm_ruleÝ
+	((tm, res) : TERM * THM)
+		: unit = (
 	let	val obj = OThm res;
 	in	try_stored obj handle Fail _ => (
 			log_term tm;
@@ -2340,7 +2498,9 @@ fun Ûlog_asm_ruleÝ((tm, res) : TERM * THM) : unit = (
 );
 =TEX
 =SML
-fun Ûlog_refl_convÝ((tm, res) : TERM * THM) : unit = (
+fun Ûlog_refl_convÝ
+	((tm, res) : TERM * THM)
+		: unit = (
 	let	val obj = OThm res;
 	in	try_stored obj handle Fail _ => (
 			log_term tm;
@@ -2351,7 +2511,8 @@ fun Ûlog_refl_convÝ((tm, res) : TERM * THM) : unit = (
 );
 =TEX
 =SML
-fun Ûlog_simple_Â_convÝ((tm, res) : TERM * THM) : unit = (
+fun Ûlog_simple_Â_convÝ
+	((tm, res) : TERM * THM) : unit = (
 	let	val obj = OThm res;
 	in	try_stored obj handle Fail _ => (
 			log_term tm;
@@ -2362,7 +2523,9 @@ fun Ûlog_simple_Â_convÝ((tm, res) : TERM * THM) : unit = (
 );
 =TEX
 =SML
-fun Ûlog_suc_convÝ((tm, res) : TERM * THM) : unit = (
+fun Ûlog_suc_convÝ
+	((tm, res) : TERM * THM)
+		: unit = (
 	let	val obj = OThm res;
 	in	try_stored obj handle Fail _ => (
 			log_antecedent res;
@@ -2372,7 +2535,9 @@ fun Ûlog_suc_convÝ((tm, res) : TERM * THM) : unit = (
 );
 =TEX
 =SML
-fun Ûlog_string_convÝ((tm, res) : TERM * THM) : unit = (
+fun Ûlog_string_convÝ
+	((tm, res) : TERM * THM)
+		: unit = (
 	let	val obj = OThm res;
 	in	try_stored obj handle Fail _ => (
 			log_antecedent res;
@@ -2382,7 +2547,9 @@ fun Ûlog_string_convÝ((tm, res) : TERM * THM) : unit = (
 );
 =TEX
 =SML
-fun Ûlog_char_convÝ((tm, res) : TERM * THM) : unit = (
+fun Ûlog_char_convÝ
+	((tm, res) : TERM * THM)
+		: unit = (
 	let	val obj = OThm res;
 	in	try_stored obj handle Fail _ => (
 			log_antecedent res;
@@ -2392,7 +2559,9 @@ fun Ûlog_char_convÝ((tm, res) : TERM * THM) : unit = (
 );
 =TEX
 =SML
-fun Ûlog_eq_sym_ruleÝ((thrm, res) : THM * THM) : unit = (
+fun Ûlog_eq_sym_ruleÝ
+	((thrm, res) : THM * THM)
+		: unit = (
 	let	val obj = OThm res;
 		val (a, b) = (dest_eq o concl) thrm;
 	in	try_stored obj handle Fail _ => (
@@ -2405,7 +2574,9 @@ fun Ûlog_eq_sym_ruleÝ((thrm, res) : THM * THM) : unit = (
 );
 =TEX
 =SML
-fun Ûlog_list_simple_µ_elimÝ((tml, thrm, res) : TERM list * THM * THM) : unit = (
+fun Ûlog_list_simple_µ_elimÝ
+	((tml, thrm, res) : TERM list * THM * THM)
+		: unit = (
 	let	val obj = OThm res;
 	in	try_stored obj handle Fail _ => (
 			let	fun aux (t::ts) vs q = (
@@ -2417,7 +2588,9 @@ fun Ûlog_list_simple_µ_elimÝ((tml, thrm, res) : TERM list * THM * THM) : unit = 
 					log_cmd"subst"
 				);
 				fun mk_v(i, ty) = mk_var("v" ^ string_of_int i, ty);
-				val vs = map mk_v (combine (interval 1 (length tml)) (map type_of tml));
+				val vs = map mk_v
+					(combine (interval 1 (length tml))
+						(map type_of tml));
 			in	log_subst_params([], combine tml vs);
 				log_antecedent thrm;
 				aux tml vs (concl thrm);
@@ -2429,7 +2602,9 @@ fun Ûlog_list_simple_µ_elimÝ((tml, thrm, res) : TERM list * THM * THM) : unit = 
 
 =TEX
 =SML
-fun Ûlog_eq_trans_ruleÝ((thrm1, thrm2, res) : THM * THM * THM) : unit = (
+fun Ûlog_eq_trans_ruleÝ
+	((thrm1, thrm2, res) : THM * THM * THM)
+		: unit = (
 	let	val obj = OThm res;
 		val (a, b) = (dest_eq o concl) thrm1;
 		val (_, c) = (dest_eq o concl) thrm2;
@@ -2445,7 +2620,9 @@ fun Ûlog_eq_trans_ruleÝ((thrm1, thrm2, res) : THM * THM * THM) : unit = (
 );
 =TEX
 =SML
-fun Ûlog_mk_app_ruleÝ((thrm1, thrm2, res) : THM * THM * THM) : unit = (
+fun Ûlog_mk_app_ruleÝ
+	((thrm1, thrm2, res) : THM * THM * THM)
+		: unit = (
 	let	val obj = OThm res;
 	in	try_stored obj handle Fail _ => (
 			log_antecedent thrm1;
@@ -2457,7 +2634,9 @@ fun Ûlog_mk_app_ruleÝ((thrm1, thrm2, res) : THM * THM * THM) : unit = (
 );
 =TEX
 =SML
-fun Ûlog_¤_mp_ruleÝ((thrm1, thrm2, res) : THM * THM * THM) : unit = (
+fun Ûlog_¤_mp_ruleÝ
+	((thrm1, thrm2, res) : THM * THM * THM)
+		: unit = (
 	let	val obj = OThm res;
 	in	try_stored obj handle Fail _ => (
 			log_antecedent thrm1;
@@ -2469,7 +2648,9 @@ fun Ûlog_¤_mp_ruleÝ((thrm1, thrm2, res) : THM * THM * THM) : unit = (
 );
 =TEX
 =SML
-fun Ûlog_simple_µ_introÝ((tm, thrm, res) : TERM * THM * THM) : unit = (
+fun Ûlog_simple_µ_introÝ
+	((tm, thrm, res) : TERM * THM * THM)
+		: unit = (
 	let	val obj = OThm res;
 	in	try_stored obj handle Fail _ => (
 			let	val a = concl thrm;
@@ -2478,18 +2659,24 @@ fun Ûlog_simple_µ_introÝ((tm, thrm, res) : TERM * THM * THM) : unit = (
 				val µ = concl res;
 			in	log_subst_params ([(ty, alpha)], []);
 				log_antecedent ot_µ_def;
-				log_cmd"subst";		(* 1. ô $µ = (Ì P· P = (Ì x· T)) *)
+				log_cmd"subst";
+					(* 1. ô $µ = (Ì P· P = (Ì x· T)) *)
 				log_var x;
-				log_antecedent thrm;	(* 2. ‡ ô A *)
+				log_antecedent thrm;
+					(* 2. ‡ ô A *)
 				log_subst_params([], [(a, a_prop)]);
 				log_¤_t_intro_thm();
 				log_cmd"subst";
-				log_prove_asm();	(* 2. ‡ ô A ¤ T *)
-				log_cmd"absThm";	(* 2. ‡ ô (Ìx·A) ¤ (Ìx·T) *)
-				log_cmd"appThm";	(* 1. ‡ ô (µx·A) ¤ (Ì P· P = (Ì x· T))(Ìx·T) *)
+				log_prove_asm();
+					(* 2. ‡ ô A ¤ T *)
+				log_cmd"absThm";
+					(* 2. ‡ ô (Ìx·A) ¤ (Ìx·T) *)
+				log_cmd"appThm";
+					(* 1. ‡ ô (µx·A) ¤ (Ì P· P = (Ì x· T))(Ìx·T) *)
 				log_subst_params([(ty, alpha)], [(µ, a_prop)]);
 				log_µ_intro_lemma();
-				log_cmd"subst";		(* 2. (µx·A) ¤ (Ì P· P = (Ì x· T))(Ìx·T) ô µx·A *)
+				log_cmd"subst";
+					(* 2. (µx·A) ¤ (Ì P· P = (Ì x· T))(Ìx·T) ô µx·A *)
 				log_prove_asm();
 				store obj; ()
 			end
@@ -2499,7 +2686,9 @@ fun Ûlog_simple_µ_introÝ((tm, thrm, res) : TERM * THM * THM) : unit = (
 
 =TEX
 =SML
-fun Ûlog_inst_term_ruleÝ((tvl, thrm, res) : (TERM * TERM) list * THM * THM) : unit = (
+fun Ûlog_inst_term_ruleÝ
+	((tvl, thrm, res) : (TERM * TERM) list * THM * THM)
+		: unit = (
 	let	val obj = OThm res;
 	in	try_stored obj handle Fail _ => (
 			log_subst_params ([], tvl);
@@ -2511,7 +2700,9 @@ fun Ûlog_inst_term_ruleÝ((tvl, thrm, res) : (TERM * TERM) list * THM * THM) : un
 );
 =TEX
 =SML
-fun Ûlog_plus_convÝ((tm, res) : TERM * THM) : unit = (
+fun Ûlog_plus_convÝ
+	((tm, res) : TERM * THM)
+		: unit = (
 	let	val obj = OThm res;
 	in	try_stored obj handle Fail _ => (
 			log_antecedent res;
@@ -2595,7 +2786,7 @@ structure OpenTheory : OpenTheory = OpenTheoryInternals;
 open OpenTheory;
 =TEX
 
-\twocolumn[\section{INDEX}]
+\twocolumn[\section*{INDEX}]
 \small
 \printindex
 
@@ -2681,7 +2872,7 @@ stop_logging();
 close_log();
 
 val _ = open_theory_import{file = "t.art", parent = "open-theory-base", theory = "t"}; 
-val _ = open_theory_import{file = "s.art", parent = "open-theory-base", theory = "t"}; 
+val _ = open_theory_import{file = "base.art", parent = "open-theory-base", theory = "t"}; 
 
 (#stack o force_value o !) diag_state;
 
