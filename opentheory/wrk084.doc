@@ -9,7 +9,7 @@ See the file LICENSE for your rights to use and change this file.
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-% $Id: wrk084.doc,v 1.3 2014/02/14 18:13:00 rda Exp rda $
+% $Id: wrk084.doc,v 1.4 2014/02/15 16:52:36 rda Exp rda $
 =TEX
 %%%%% YOU MAY WANT TO CHANGE POINT SIZE IN THE FOLLOWING:
 \documentclass[a4paper,12pt]{article}
@@ -54,9 +54,9 @@ of OpenTheory for {\Product}.}
 
 %%%%% THE FOLLOWING DEFAULTS WILL GENERALLY BE RIGHT:
 
-\def\Version{$Revision: 1.3 $%
+\def\Version{$Revision: 1.4 $%
 }
-\def\Date{\FormatDate{$Date: 2014/02/14 18:13:00 $%
+\def\Date{\FormatDate{$Date: 2014/02/15 16:52:36 $%
 }}
 
 %%%%% NOW BEGIN THE DOCUMENT AND MAKE THE FRONT PAGE
@@ -177,7 +177,7 @@ machine so that the output is added to its database of
 definitions, axioms and theorems.
 The OpenTheory reader for {\Product} does exactly that.
 
-We did not think that the Gilith OpenTheory Repo would be relevant to the
+Initially, it was not clear whether the Gilith OpenTheory Repo would be relevant to the
 specific problem of transferring specifications from HOL4 to {\Product}.
 However, it turned out to be very useful both as a source of test material
 and in defining a common vocabulary that is used by the HOL4 implementation
@@ -207,7 +207,6 @@ complicated in the present implementation to support the handling of the basic l
 vocabulary of the base theory package in the Gilith OpenTheory Repo. This is done by
 recognising the OpenTheory definitions of the logical operators and substituting
 a theorem derived from the {\Product} definitions.
-
 \subsection{{\Product} OpenTheory Writer}
 The OpenTheory writers for HOL4 and HOL Light use a special version of the logical
 kernel that includes a proof tree in the representation of a theorem. 
@@ -219,6 +218,35 @@ by functions that map type and constant names to the desired external form.
 Exporting proofs is a more intricate problem than importing them because OpenTheory
 does not provide high-level facilities for programming proofs. (This is intended,
 since it makes the OpenTheory kernel small, simple and dependable.)
+The writer is implemented as a library of functions that output the command sequences
+for tasks such as building a term or carrying out an inference step.
+
+
+OpenTheory only supports constant definitions of the form $c = t$ where $c$ is
+the constant being defined, whereas {\Product} and HOL4 both support
+a more general mechanism whereby if an existence theorem
+$\vdash \exists x_1, \ldots x_k \bullet \phi(x_1, \ldots, x_k)$ has been
+proved, it can be used to specify new constants $c_1, \ldots, c_k$
+with defining property $\vdash \phi(c_1, \ldots, c_k)$.
+We simulate the effect of this mechanism using the Hilbert choice function
+$\epsilon$, defining
+$c_1 = \epsilon x_1 \bullet  \exists x_2, \ldots x_k \bullet \phi(x_1, \ldots, x_k)$, 
+$c_2 = \epsilon x_2 \bullet  \exists x_3, \ldots x_k \bullet \phi(c_1, x_2, \ldots, x_k)$ and so on.
+The theorem  $\vdash \phi(c_1, \ldots, c_k)$ can then be inferred from
+the existence theorem and these definitions.
+The resulting translated definition is less abstract than the original
+but this is inevitable. It is hoped that a more general mechanism for
+constant definitions will be added to OpenTheory.
+
+Type definitions in OpenTheory follow HOL Light in introducing constants
+for the abstraction and representation functions for the new type as well
+as just the new type. In contrast, the new type definition mechanism in
+in {\Product} and HOL4 returns a theorem that implies the abstraction
+and representation functions exist, but does not actually make the
+constant definitions. The translation of type definitions involves
+deducing the existence theorem from the defining properties of the
+new constants.
+
 
 \newpage
 \section{THE STRUCTURE OpenTheory}\label{sec:structure}
@@ -240,14 +268,13 @@ val €open_theory_import› : {file : string, parent : string, theory : string} -> 
 This function provides a simple interface to the OpenTheory reader to
 import a single article file into a {\Product} theory.
 It expects the article to use the naming conventions and definitions
-of the Gilith OpenTheory Repo.
+of the Gilith OpenTheory Repo, but also supports the forms of
+type definition implemented in HOL4 and {\Product}.
 The article file is loaded into the named theory, which is newly created
 for the purpose (any existing theory of that name is deleted).
 The theory is created as a child of the indicated parent theory and
 the theory ``open-theory-base'' is made a parent if it is not an ancestor
 of the specified parent.
-
-
 =ENDDOC
 \subsubsection{Programmatic Interface}
 For experimental purposes, the core functionality of the OpenTheory reader
@@ -257,14 +284,6 @@ virtual machine.
 A name in an article file is a pair comprising a hierarchical name space and the name of a component within that namespace.
 =SML
 type €NAME› = string list * string;
-=TEX
-The virtual machine is parametrized by tables mapping OpenTheory names to the
-{\Product} names of types and constants.
-=SML
-type €NAME_MAPS› = {
-	type_map : (NAME * string) list,
-	const_map : (NAME * string) list
-};
 =TEX
 The types {\em TYPE\_DEFN\_INFO} and {\em ABS\_REP\_THMS} represent
 the inputs and outputs of the {\em defineTypeOp} command.
@@ -296,18 +315,41 @@ type €CONST_DEFN_INFO› = {
 	def_rhs : TERM
 };
 =TEX
-The import interface then comprises the parameters discussed above together
-with a function {\em declare\_axiom} to handle the {\em axiom} command.
-{\em declare\_axiom} will typically use various heuristics to attempt to
-prove the axiom rather than create an actual {\Product} axiom.
+The import interface then comprises 
+{\em(i)} a function {\em declare\_axiom} to handle the {\em axiom} command,
+{\em(ii)} a function {\em define\_type\_op} to handle the {\em defineTypeOp} command,
+{\em(iii)} a function {\em define\_const} to handle the {\em defineConst} command,
+{\em(iv)} a function {\em const\_name} to map OpenTheory names to constant names,
+{\em(v)} a function {\em type\_name} to map OpenTheory names to type names
+and {\em(vi)} a an initial set of assumptions.
 =SML
 type €IMPORT_INTERFACE› = {
 	declare_axiom : SEQ -> THM,
 	define_type_op : TYPE_DEFN_INFO -> ABS_REP_THMS,
  	define_const : CONST_DEFN_INFO -> THM,
 	const_name : NAME -> string,
-	type_name : NAME -> string 
+	type_name : NAME -> string,
+	assumptions : THM list
 };
+=TEX
+The {\em const\_name} and {\em type\_name} functions in the import
+interfaces may be defined using tables mapping OpenTheory names to the
+{\Product} names of types and constants.
+=SML
+type €NAME_MAPS› = {
+	type_map : (NAME * string) list,
+	const_map : (NAME * string) list
+};
+=TEX
+The function {\em mk\_import\_interface} sets up an import interface
+from name map tables given as a parameter.
+The functions {\em declare\_axiom}, {\em define\_type\_op} and
+{\em define\_const} it constructs map to the corresponding {\Product}
+operations or use the Gilith OpenTheory Repo definitions (proved
+as theorems using existing {\Product} definitions for the relevant operators).
+=SML
+val mk_import_interface : NAME_MAPS -> IMPORT_INTERFACE;
+=SML
 =TEX
 The objects that the virtual machine deals with range over the type {\em OBJECT}:
 =SML
@@ -331,7 +373,7 @@ type €WM_STATE› = {
 	stack : OBJECT list,
 	dictionary : OBJECT_DICT,
 	assumptions : THM NET,
-	theorems : THM NET};
+	theorems : THM list};
 =TEX
 {\em vm\_diagnostics} can be set to give various levels of diagnostic
 output.
@@ -352,12 +394,15 @@ val €open_theory_vm› : IMPORT_INTERFACE ->
 \subsection{The Writer}\label{sec:writer}
 \subsubsection{Parameters}
 The writer is parametrized by functions that map type and constant names to
-OpenTheory names.
+OpenTheory names and by strings used as prefixes for the abstraction and representation
+functions for new types. 
 =TEX
 =SML
 type EXPORT_INTERFACE = {
 	type_name : string -> NAME,
-	const_name : string -> NAME};
+	const_name : string -> NAME,
+	abs_prefix : string,
+	rep_prefix : string};
 =TEX
 =SML
 val export_interface : EXPORT_INTERFACE ref;
@@ -395,7 +440,8 @@ The OpenTheory interfaces define the following error messages.
 122010	attempt to access non-existent dictionary entry
 122011	ill-formed substitution
 122012	invalid command
-122013	Cannot define ?0 = ?1 (?0 clashes with an existing constant, original exception: ?2)
+122013	Cannot define ?0 = ?1 (?0 clashes with an existing constant,
+	original exception: ?2)
 =TEX
 
 \newpage
@@ -405,10 +451,9 @@ The OpenTheory interfaces define the following error messages.
 =SML
 structure €OpenTheoryInternals› = struct 
 =TEX
-=IGN
-use_file "opentheory";
-val _ = open_theory_import{file = "basethms.art", parent = "open-theory-base", theory = "t"};
-output_theory{theory = "t", out_file = "t.thy.doc"};
+=SML
+val _ = open_theory "basic_hol";
+val _ = set_merge_pcs ["basic_hol1"];
 =TEX
 
 \subsection{Interface Types}
@@ -432,6 +477,7 @@ type €IMPORT_INTERFACE› = {
 	declare_axiom : SEQ -> THM,
 	define_type_op : TYPE_DEFN_INFO -> ABS_REP_THMS,
  	define_const : CONST_DEFN_INFO -> THM,
+	assumptions : THM list,
 	const_name : NAME -> string,
 	type_name : NAME -> string 
 };
@@ -460,7 +506,7 @@ type €WM_STATE› = {
 	stack : OBJECT list,
 	dictionary : OBJECT_DICT,
 	assumptions : THM NET,
-	theorems : THM NET};
+	theorems : THM list};
 =TEX
 \subsubsection{State Access Functions}
 =TEX
@@ -475,13 +521,17 @@ fun €convert_tyvar_name› ( ([], base) : NAME ) : string = (
 		"'"::_ => base
 	|	_ => "'" ^ base
 ) | convert_tyvar_name _ = fail "open-theory-reader" 122007 [];
+=TEX
 =SML
 fun €initial_vm_state› (interface : IMPORT_INTERFACE) : WM_STATE = ({
 	interface = interface,
 	stack = [],
 	dictionary = initial_search_tree int_order,
-	assumptions = empty_net,
-	theorems = empty_net}
+	assumptions =
+		list_net_enter
+			(map (fn th => (concl th, th)) (#assumptions interface))
+				empty_net,
+	theorems = []}
 );
 =TEX
 =SML
@@ -678,7 +728,7 @@ fun €set_assumptions› (asms: THM NET)
 );
 =TEX
 =SML
-fun €set_theorems› (thms: THM NET)
+fun €set_theorems› (thms: THM list)
 	({interface, stack, dictionary, assumptions, ...} : WM_STATE)
 		: WM_STATE = (
 		{	interface = interface,
@@ -686,6 +736,79 @@ fun €set_theorems› (thms: THM NET)
 			dictionary = dictionary,
 			assumptions = assumptions,
 			theorems = thms }
+);
+=TEX
+\subsubsection{Heuristics for Assumptions}
+If an assumption is a formula of propositional logic then it better be a tautology.
+=SML
+fun €is_propositional› (tm : TERM) : bool = (
+	let	fun rec2 (tm1, tm2) =
+			is_propositional tm1 andalso is_propositional tm2;
+		fun rec3 (tm1, tm2, tm3) = 
+			rec2(tm1, tm2) andalso is_propositional tm3;
+	in	(rec2 o dest_¥) tm handle Fail _ =>
+		(rec2 o dest_±) tm handle Fail _ =>
+		(rec2 o dest_≤) tm handle Fail _ =>
+		(rec2 o dest_§) tm handle Fail _ =>
+		(rec3 o dest_if) tm handle Fail _ =>
+		is_t tm orelse
+		is_f tm orelse
+		(is_var tm andalso type_of tm = BOOL)
+	end
+);
+=TEX
+=SML
+fun €try_taut_rule› (([], conc) : SEQ) : THM OPT = (
+	if	(is_propositional o snd o strip_µ) conc
+	then	Value (taut_rule conc) handle Fail _ => Nil
+	else	Nil
+) | try_taut_rule _ = Nil;
+=TEX
+Rewriting in the proof context for the predicate calculus (which also
+does $\beta$-reduction) will prove many trivia.
+=SML
+fun €try_pred_rewrites› (([], conc) : SEQ) : THM OPT = (
+	(Value o §_t_elim o PC_C1 "predicates" rewrite_conv[]) conc
+		handle Fail _ => Nil
+) | try_pred_rewrites _ = Nil;
+=TEX
+If an assumption is an instance of an existing assumption, then we
+can just instantiate that.
+In the following, we assume that the types in the conclusiom of the sequent
+and an assumption will be sufficient to determine the correct instantation
+of the assumption.
+=SML
+fun €try_assumptions›
+	(st as {assumptions, ...} : WM_STATE)
+		(seq as (_, conc): SEQ)
+			: THM OPT = (
+	let	val thms = net_lookup assumptions conc;
+		fun aux (th :: more) = (
+			let	val (tym, tmm) = term_match conc (concl th);
+				val th' = (asm_inst_term_rule tmm o
+					asm_inst_type_rule tym) th;
+			in	if	dest_thm th' ~=# seq
+				then	Value th'
+				else	aux more
+			end	handle Fail _ => aux more
+		) | aux [] = Nil;
+	in	aux thms
+	end
+);
+=TEX
+=SML
+fun €heuristics› (st : WM_STATE) (seq : SEQ) : THM OPT = (
+	let	fun first [] = Nil
+		|   first (t::ts) = (
+			case t seq of
+				res as Value _ => res
+			|	Nil => first ts
+		);
+	in	first [
+			try_assumptions st,
+			try_taut_rule,
+			try_pred_rewrites]
+	end
 );
 =TEX
 \subsubsection{Command Functions}
@@ -781,15 +904,14 @@ fun €do_assume› (st : WM_STATE) : WM_STATE = (
 fun €do_axiom›
 	(st as {interface = {declare_axiom, ...}, assumptions, ...} : WM_STATE)
 		: WM_STATE = (
-	let	val (seq as (_, conc), st') = pop_sequent st;
-		val thms = net_lookup assumptions conc;
-		fun wanted th = dest_thm th ~=# seq;
-		val (new, thm) =
-			(false, find thms wanted)
-				handle Fail _ => (true, declare_axiom seq);
+	let	val (seq, st') = pop_sequent st;
+		val (new, thm) = 
+			case heuristics st' seq of
+				Value thm => (false, thm)
+			|	Nil => (true, declare_axiom seq);
 		val assumptions' =
 			if new
-			then net_enter (conc, thm) assumptions
+			then net_enter (concl thm, thm) assumptions
 			else assumptions;
 	in	(set_assumptions assumptions' o push_thm thm) st'
 	end
@@ -885,6 +1007,17 @@ fun €do_define_type_op›
 );
 =TEX
 =SML
+fun €do_diag› (st : WM_STATE) : WM_STATE = (
+	let	val ((_, msg), st' as {stack = stk, ...}) = pop_name st;
+	in	diag_line("diag: " ^ msg ^
+			": current stack length: "
+				^ string_of_int(length stk) ^ ":");
+		PolyML.print stk;
+		st'
+	end
+);
+=TEX
+=SML
 fun €do_eq_mp› (st : WM_STATE) : WM_STATE = (
 	let	val (thm1, st') = pop_thm st;
 		val (thm2, st'') = pop_thm st';
@@ -955,7 +1088,7 @@ fun €do_thm› (st as {theorems, ...} : WM_STATE) : WM_STATE = (
 	let	val (seq as (_, conc), st') = pop_sequent st;
 		val (thm1, st'') = pop_thm st';
 		val thm2 = tac_proof(seq, accept_tac thm1);
-		val theorems' = net_enter (conc, thm2) theorems;
+		val theorems' = thm2 :: theorems;
 	in	(set_theorems theorems' o push_thm thm2) st''
 	end
 );
@@ -1021,28 +1154,22 @@ val €vm_fetch_cmds› : string list =  ["ref", "remove"];
 =TEX
 =SML
 fun €vm_diags› (cmd : string)
-	(st1 : WM_STATE)
-	(st2 : WM_STATE) : WM_STATE = (
-	let	val (msg, stk1, st3 as {stack = stk3, ...}) =
-			if cmd = "diag"
-			then	let	val ((_, m), st) = pop_name st2;
-				in	("diag: " ^ m, (tl o #stack) st1, st)
-				end
-			else	("diag: " ^ cmd, #stack st1, st2);
-		val show_old_stack = cmd = "diag" orelse
+	(st1 as {stack = stk1, ...} : WM_STATE)
+	(st2 as {stack = stk2, ...} : WM_STATE) : WM_STATE = (
+	let	val show_old_stack =
 			(!vm_diagnostics >= 1 andalso
 			(cmd mem vm_inference_cmds orelse 
-				((case stk3 of (OThm _::_) => true | _ => false) andalso
+				((case stk2 of (OThm _::_) => true | _ => false) andalso
 					cmd mem vm_fetch_cmds)));
 	in	(if	!vm_diagnostics > 2 orelse show_old_stack
-		then	let	val n = length stk3;
+		then	let	val n = length stk2;
 				val tos =
 					if n = 0
 					then "."
 					else ": new top of stack:\n" ^
-						PolyML.makestring (hd stk3);
+						PolyML.makestring (hd stk2);
 			in
-				diag_line (msg ^ ": new stack length: " ^
+				diag_line ("cmd" ^ ": new stack length: " ^
 						string_of_int n ^ tos)
 			end
 		else	());
@@ -1051,7 +1178,7 @@ fun €vm_diags› (cmd : string)
 						^ ": old stack:");
 				PolyML.print stk1; ())
 		else	());
-		st3
+		st2
 	end
 );
 =TEX
@@ -1079,7 +1206,7 @@ fun €do_command› (cmd : string) (st : WM_STATE) : WM_STATE = (
 	|	"def" =>  do_def st
 	|	"defineConst" =>  do_define_const st
 	|	"defineTypeOp" =>  do_define_type_op st
-	|	"diag" =>  st
+	|	"diag" => do_diag st
 	|	"eqMp" =>  do_eq_mp st
 	|	"nil" =>  do_nil st
 	|	"opType" =>  do_op_type st
@@ -1123,12 +1250,47 @@ fun €open_theory_vm› (interface : IMPORT_INTERFACE)
 );
 =TEX
 \subsubsection{OpenTheory Interface}
+We set up a context suitable for the parts of the OpenTheory vocabulary
+that are to be supported.
 =SML
 val _ = open_theory "basic_hol";
 val _ = new_theory "open-theory-base";
 val _ = new_parent "one";
 val _ = new_parent "combin";
 val _ = set_merge_pcs ["basic_hol1", "'one"];
+=TEX
+The OpenTheory interface also includes some special support for {\Product} and HOL4
+type definitions.
+To export type definitions, we have to presuppose the existence of the constant
+{\em TypeDefn} satisfying the following theorem in the target environment.
+=SML
+val €type_defn_thm› = tac_proof(
+	([¨µr∑phi r § ((rep : 'a ≠ 'r) (abs r) = r)Æ,
+		¨µa∑ abs((rep : 'a ≠ 'r) a) = aÆ],
+			¨∂f:'a ≠ 'r∑ TypeDefn phi fÆ),
+	∂_tac¨repÆ THEN rewrite_tac[type_defn_def, one_one_def]
+	THEN REPEAT strip_tac
+	THEN_LIST [
+		LEMMA_T
+			¨(abs : 'r ≠ 'a)((rep : 'a ≠ 'r) x1) = abs(rep x2)Æ
+				ante_tac
+			THEN_LIST [
+				POP_ASM_T rewrite_thm_tac,
+				POP_ASM_T discard_tac THEN asm_rewrite_tac[]
+			],
+		∂_tac¨(abs : 'r ≠ 'a) xÆ
+			THEN POP_ASM_T ante_tac THEN asm_rewrite_tac[]
+				THEN STRIP_T rewrite_thm_tac,
+		asm_rewrite_tac[]
+	]);
+=TEX
+To import type definitions from HOL4, we need to recognise the definition
+it uses for its equivalent of {\em TypeDefn}.
+=SML
+val €hol4_type_definition_def› =
+	(conv_rule (eq_sym_conv THEN_C
+		RIGHT_C (rewrite_conv[type_defn_def, one_one_def])) o
+				µ_elim ¨TypeDefnÆ) »_axiom;
 =TEX
 =SML
 val €ot_t_def› : THM = t_def;
@@ -1206,7 +1368,7 @@ fun €get_ot_def› (n : string) (rhs : TERM) : THM = (
 );
 =TEX
 =SML
-fun €convert_name›
+fun €import_name›
 	(interp : (NAME * string) list) ( n as (cxt, base) : NAME )
 		: string = (
 	lassoc3 interp n
@@ -1230,9 +1392,7 @@ val €ot_axioms› : THM list = [
 	ot_≈_axiom,
 	ot_infinity_axiom];
 =TEX
-The following does not allow for renaming in the assumptions of the theorem.
-(since that is not needed for dealing with the axioms of the Gilith Open Theory Repo base package).
-It does allow for renaming of free variables in the conclusion and it also allows for the
+The following allows for renaming of free variables in the conclusion and it also allows for the
 conclusion of the wanted theorem to contain $\beta$-redexes.
 =SML
 fun €mk_instance› (wanted : TERM) (thm : THM) : THM = (
@@ -1240,18 +1400,19 @@ fun €mk_instance› (wanted : TERM) (thm : THM) : THM = (
 		val wanted1 = (fst o dest_eq o concl) thm1;
 		val c = concl thm;
 		val (tysubs, tmsubs) = term_match wanted1 c;
-		val thm2 = inst_term_rule tmsubs (inst_type_rule tysubs thm);
+		val thm2 = asm_inst_term_rule tmsubs (inst_type_rule tysubs thm);
 		val thm3 = §_mp_rule thm1 thm2;
 	in	thm3
 	end
 );
 =TEX
 =SML
+val €all_ot_axioms› = ±_def :: ∂_def :: ∂â1_def :: ot_axioms @ map snd ot_defs;
 fun €get_ot_axiom› (tm : TERM) : THM OPT = (
 	let	fun aux [] = Nil
 		|   aux (thm::more) =
 			Value (mk_instance tm thm) handle Fail _ => aux more;
-	in	aux ot_axioms
+	in	aux all_ot_axioms
 	end
 );
 =TEX
@@ -1332,14 +1493,15 @@ fun €define_hol_const› ({name, def_rhs} : CONST_DEFN_INFO) : THM = (
 );
 =TEX
 =SML
-fun €axiomatic_hol_interface›
+fun €mk_import_interface›
 	({type_map, const_map} : NAME_MAPS)
 		: IMPORT_INTERFACE = {
 	declare_axiom = axiom_as_axiom,
 	define_type_op = define_hol_type_op,
 	define_const = define_hol_const,
-	const_name = convert_name const_map,
-	type_name = convert_name type_map 
+	assumptions = [type_defn_thm, hol4_type_definition_def, ≈_axiom, »_axiom],
+	const_name = import_name const_map,
+	type_name = import_name type_map 
 };
 =TEX
 =SML
@@ -1362,6 +1524,7 @@ val €gilith_maps› : NAME_MAPS = {
 		("bool", "BOOL"), ("->", "≠"), ("ind", "IND")
 	],
 	const_map = map (name_of_string ** (fn x => x)) [
+		("HOL4.TYPE_DEFINITION", "TypeDefn"),
 		("select", "≈"),
 		("Data.Bool.T", "T"), ("Data.Bool.F", "F"),
 		("Data.Bool.~", "≥"),
@@ -1389,10 +1552,10 @@ fun €open_theory_import› {file : string, parent : string, theory : string} : uni
 		val strm = open_in file;
 		val _ = line_count := 0;
 		val {theorems, ...} = open_theory_vm
-			(axiomatic_hol_interface gilith_maps)
+			(mk_import_interface gilith_maps)
 			read_instream strm
 			handle ex as Fail _ => (close_in strm; raise ex);
-		val thms = net_flatten theorems;
+		val thms = rev theorems;
 		val names =
 			map (fn n => "thm" ^ string_of_int n)
 				(interval 1 (length thms));
@@ -1407,7 +1570,9 @@ fun €open_theory_import› {file : string, parent : string, theory : string} : uni
 =SML
 type €EXPORT_INTERFACE› = {
 	const_name : string -> NAME,
-	type_name : string -> NAME 
+	type_name : string -> NAME,
+	abs_prefix : string,
+	rep_prefix : string
 };
 =SML
 type €KEY_DICT› = (OBJECT, int) SEARCH_TREE;
@@ -1496,20 +1661,20 @@ fun €next_key› (() : unit) : int = (
 \subsubsection{Building Types and Terms}
 =SML
 fun €export_type_name› (x : string) : NAME = (
-	let	val pfx = [ (* get_type_theory x *) ] handle Fail _ => [];
-	in	(pfx, x)
-	end
+	rassoc3 (#type_map gilith_maps) x
+	handle Fail _ => ([], x)
 );
 fun €export_const_name› (x : string) : NAME = (
-	let	val pfx = [ (* get_const_theory x *) ] handle Fail _ => [];
-	in	(pfx, x)
-	end
+	rassoc3 (#const_map gilith_maps) x
+	handle Fail _ => ([], x)
 );
 =TEX
 =SML
 val €export_interface› : EXPORT_INTERFACE ref = ref {
 	type_name = export_type_name,
-	const_name = export_const_name
+	const_name = export_const_name,
+	abs_prefix = "__abs_",
+	rep_prefix = "__rep_"
 };
 =TEX
 =SML
@@ -1544,6 +1709,7 @@ val €log_num› : int -> unit = log_cmd o string_of_int;
 fun €log_name› ((pfx, sfx) : NAME) :unit = (
 	let	fun esc1 "." = "\\."
 		|   esc1 "\"" = "\\\""
+		|   esc1 "\\" = "\\\\"
 		|   esc1 c = c;
 		val escape = implode o map esc1 o explode;
 	in	log_cmd("\"" ^ format_list escape (pfx @ [sfx]) "." ^ "\"")
@@ -1612,10 +1778,15 @@ fun €store_and_drop› (x : OBJECT) : unit = (
 fun €log_type_var› (tyv : string)  = log_name([], tyv);
 =TEX
 =SML
+fun €log_type_name› (x : string) = (
+	log_name (#type_name(!export_interface) x)
+);
+=TEX
+=SML
 fun €log_type_op› (x : string) = (
 	let	val obj = OTypeOp x;
 	in	try_stored obj handle Fail _ => (
-			log_name (#type_name(!export_interface) x);
+			log_type_name x;
 			log_cmd "typeOp";
 			store obj; ()
 		)
@@ -1761,7 +1932,8 @@ fun €log_prove_asm› (():unit) : unit = (
 		log_num k2;
 		log_cmd "def";
 		log_num k1;
-		log_cmd "ref";			
+		log_cmd "ref";			(* 1. á Ù A *)		
+						(* 2. Ñ, A Ù B *)
 		log_cmd "deductAntisym";	(* 1. á, Ñ Ù A = B *)
 		log_num k2;
 		log_cmd "remove";		(* 2. á Ù A *)
@@ -2424,7 +2596,54 @@ val €log_µ_intro_lemma› : unit -> unit = (
 		)
 	end
 );
-
+=TEX
+The following function supports both the rule
+=INLINEFT
+simple_µ_intro
+=TEX
+\ and
+=INLINEFT
+new_type_defn
+=TEX
+, which has to take the universal closure of
+the defining properties of the abstraction
+and representation functions introduced by
+=INLINEFT
+defineType
+=TEX
+.
+The parameters are a term giving the bound variable,
+a term giving the conclusion of the input theorem and a function
+to generate the commands to stack the input theorem.
+=SML
+fun €log_µ_intro› (v : TERM, cnc : TERM, thm_cmds : unit -> unit)
+		: unit = (
+	let	val x = dest_var v;
+		val ty = snd x;
+		val µ = mk_simple_µ(v, cnc);
+	in	log_subst_params ([(ty, alpha)], []);
+		log_antecedent ot_µ_def;
+		log_cmd"subst";
+				(* 1. Ù $µ = (Ã P∑ P = (Ã x∑T)) *)
+		log_var x;
+		thm_cmds();
+				(* 2. á Ù A *)
+		log_subst_params([], [(cnc, a_prop)]);
+		log_§_t_intro_thm();
+		log_cmd"subst";
+		log_prove_asm();
+				(* 2. á Ù A § T *)
+		log_cmd"absThm";
+				(* 2. á Ù (Ãx∑A) § (Ãx∑T) *)
+		log_cmd"appThm";
+				(* 1. á Ù (µx∑A) § (ÃP∑ P = (Ã x∑T))(Ãx∑T) *)
+		log_subst_params([(ty, alpha)], [(µ, a_prop)]);
+		log_µ_intro_lemma();
+		log_cmd"subst";
+				(* 2. (µx∑A) § (ÃP∑P = (Ãx∑T))(Ãx∑T) Ù µx∑A *)
+		log_prove_asm()
+	end
+);
 =TEX
 Now the actual {\Product} built-ins
 =SML
@@ -2686,37 +2905,11 @@ fun €log_simple_µ_intro›
 		: unit = (
 	let	val obj = OThm res;
 	in	check_stored obj handle Fail _ => (
-			let	val a = concl thrm;
-				val x = dest_var tm;
-				val ty = snd x;
-				val µ = concl res;
-			in	log_subst_params ([(ty, alpha)], []);
-				log_antecedent ot_µ_def;
-				log_cmd"subst";
-					(* 1. Ù $µ = (Ã P∑ P = (Ã x∑T)) *)
-				log_var x;
-				log_antecedent thrm;
-					(* 2. á Ù A *)
-				log_subst_params([], [(a, a_prop)]);
-				log_§_t_intro_thm();
-				log_cmd"subst";
-				log_prove_asm();
-					(* 2. á Ù A § T *)
-				log_cmd"absThm";
-					(* 2. á Ù (Ãx∑A) § (Ãx∑T) *)
-				log_cmd"appThm";
-					(* 1. á Ù (µx∑A) § (ÃP∑ P = (Ã x∑T))(Ãx∑T) *)
-				log_subst_params([(ty, alpha)], [(µ, a_prop)]);
-				log_µ_intro_lemma();
-				log_cmd"subst";
-					(* 2. (µx∑A) § (ÃP∑P = (Ãx∑T))(Ãx∑T) Ù µx∑A *)
-				log_prove_asm();
-				store_and_drop obj; ()
-			end
+			log_µ_intro (tm, concl thrm, fn () => log_antecedent thrm);
+			store_and_drop obj; ()
 		)
 	end
 );
-
 =TEX
 =SML
 fun €log_inst_term_rule›
@@ -2773,8 +2966,7 @@ fun €logging_checks› (ki : KERNEL_INFERENCE) (f : 'a -> unit) (x : 'a) : unit = 
 		diag_line "*** Logging function failed:";
 		(diag_line o string_of_exn) ex;
 		raise ex
-	);
-	log_diag (kernel_inference_name ki)
+	)
 );
 =TEX
 =SML
@@ -2858,10 +3050,11 @@ fun €log_simple_new_defn› (n : string, t : TERM) : unit = (
 );
 =TEX
 Note that we must ensure
-that each constant is defined before proving theorems that contain it.
+that each constant is defined before proving theorems that contain it
+(systems other than {\Product} may require this).
 =SML
 fun €log_new_spec› (ndefs : int, thm : THM) : unit = (
-	let			fun aux2 0 thm0 = thm0
+	let	fun aux2 0 thm0 = thm0
 		|   aux2 i thm0 = (
 			let	val (n, ty) = (dest_var o fst o dest_∂ o concl) thm0;
 				val c = mk_const(n, ty);
@@ -2876,7 +3069,6 @@ fun €log_new_spec› (ndefs : int, thm : THM) : unit = (
 		);
 		fun aux3 0 = ()
 		|   aux3 i = (
-log_diag "calling prove_asm";
 			log_prove_asm();
 			aux3 (i-1)
 		);
@@ -2888,7 +3080,79 @@ log_diag "calling prove_asm";
 				(* 1. Ù p[c1/v1, ...] *)
 	end
 );
-=IGN
+=TEX
+In the following, the prefix ``i'' stands for ``instance''.
+=SML
+local
+	val [ra_eq, ar_eq] = (map (snd o dest_µ) o fst o dest_thm) type_defn_thm;
+	val phi = (fst o dest_app o fst o dest_eq) ra_eq;
+	val abs = (fst o dest_app o fst o dest_eq) ar_eq;
+	val rep = (fst o dest_app o snd o dest_app o fst o dest_eq) ar_eq;
+	val [abs_ty, rep_ty] = (snd o dest_ctype o type_of) rep;
+in
+fun €log_new_type_defn›
+	(name : string, typars : string list, thm : THM)
+		: unit = (
+	let	val thm1 = ∂_≈_rule thm;
+		val i_abs_name = #abs_prefix(!export_interface) ^ name;
+		val i_rep_name = #rep_prefix(!export_interface) ^ name;
+		val i_abs_ty = mk_ctype(name, map mk_vartype typars);
+		val i_rep_ty = (type_of o fst o dest_∂ o concl) thm;
+		val ty_subs = [(i_abs_ty, abs_ty), (i_rep_ty, rep_ty)];
+		val i_abs = mk_const(i_abs_name, mk_≠_type(i_rep_ty, i_abs_ty));
+		val i_rep = mk_const(i_rep_name, mk_≠_type(i_abs_ty, i_rep_ty));
+		val i_phi = (fst o dest_app o concl) thm1;
+		val tm_subs = [(i_abs, inst [] ty_subs abs),
+			(i_rep, inst [] ty_subs rep),
+			(i_phi, inst [] ty_subs phi)];
+		val a = mk_var("a", i_abs_ty);
+		val r = mk_var("r", i_rep_ty);
+		val i_ra_eq = (subst tm_subs o inst [] ty_subs) ra_eq;
+		val i_ar_eq = (subst tm_subs o inst [] ty_subs) ar_eq;
+		val k_ra = next_key();
+		val k_ar = next_key();
+		fun log_fetch k = (log_num k; log_cmd "ref");
+	in	log_type_name name;
+		log_const_name i_abs_name;
+		log_const_name i_rep_name;
+		log_list log_type_var typars;
+		log_antecedent thm1;
+		log_cmd "defineTypeOp";
+				(* 1. OTypeOp name *)
+				(* 2. OConst i_abs *)
+				(* 3. OConst i_rep *)
+				(* 4. Ù i_abs(i_rep a) = a *)
+				(* 5. Ù ∆ r § i_rep(i_abs r) = r *)
+		log_num k_ra;
+		log_cmd "def";
+		log_cmd "pop";
+		log_num k_ar;
+		log_cmd "def";
+		log_cmd "pop";
+		log_cmd "pop";
+		log_cmd "pop";
+		log_cmd "pop";
+		log_µ_intro(a, i_ar_eq, fn () => log_fetch k_ar);
+				(* 1. Ù µr∑ ∆ r § i_rep(i_abs r) = r *)
+		log_µ_intro(r, i_ra_eq, fn () => log_fetch k_ra);
+				(* 2. Ù µa∑ i_abs(i_rep a) = a *)
+		log_subst_params(ty_subs, tm_subs);
+		log_antecedent type_defn_thm;
+				(* 3. µa∑ =abs(rep a) = a,
+					µr∑ ∆ r § rep(abs r) = r
+						Ù ∂ f∑ TypeDefn p f *)
+		log_cmd "subst";
+				(* 3. µa∑ i_abs(i_rep a) = a,
+					µr∑ ∆ r § i_rep(i_abs r) = r
+						Ù ∂ f∑ TypeDefn p f *)
+		log_prove_asm();
+				(* 2. µr∑ ∆ r § i_rep(i_abs r) = r
+						Ù ∂ f∑ TypeDefn p f *)
+		log_prove_asm()
+				(* 2. Ù ∂ f∑ TypeDefn p f *)
+	end
+);
+end;
 =TEX
 =SML
 fun €log_state_change› (SaveThm (_, thm)) =
@@ -2899,14 +3163,11 @@ fun €log_state_change› (SaveThm (_, thm)) =
 	log_new_axiom tm
 |   log_state_change (SimpleNewDefn ((_, n, tm), _)) =
 	log_simple_new_defn(n, tm)
-(*
-|   log_state_change (NewTypeDefn (_, name, typars, thm), _)) =
+|   log_state_change (NewTypeDefn ((_, name, typars, thm), _)) =
 	log_new_type_defn (name, typars, thm)
-*)
 |   log_state_change (NewSpec ((_, ndefs, thm), _)) =
 	log_new_spec (ndefs, thm)
 |   log_state_change _ = ();
-
 =TEX
 \subsubsection{Interface}
 =TEX
@@ -3058,22 +3319,21 @@ log_diag "end of test";
 stop_logging();
 close_log();
 
-val thm1 = tac_proof (([], ¨∂a:Ó∑  a < 10Æ),
-	∂_tac ¨1Æ THEN PC_T1 "basic_hol1" REPEAT strip_tac
-);
 
 open_log "t.art";
 reset_km_state();
 start_logging();
-val _ = new_spec (["a"], 1, thm1);
+val thm1 = tac_proof (([], ¨∂is_const∑µf∑ is_const f § µx y∑f x = f yÆ),
+	prove_∂_tac
+);
+val _ = new_spec (["f"], 1, thm1);
 stop_logging();
 log_diag "end of test";
 close_log();
 
 
-
 val thm2 = tac_proof (([], ¨∂a b c:Ó∑  a < b ± b < cÆ),
-	∂_tac ¨1Æ THEN ∂_tac ¨2Æ THEN ∂_tac ¨3Æ THEN PC_T1 "basic_hol1" REPEAT strip_tac
+	∂_tac ¨1Æ THEN ∂_tac ¨2Æ THEN ∂_tac ¨3Æ THEN PC_T1 "basic_hol1" rewrite_tac[]
 );
 
 open_log "t.art";
@@ -3092,7 +3352,70 @@ stop_logging();
 log_diag "end of test";
 close_log();
 
-vm_diagnostics := 0;
 
-val _ = open_theory_import{file = "t.art", parent = "open-theory-base", theory = "t"}; 
+val thm3 = tac_proof (([], ¨∂x:Ó∑ (Ãx∑ ∂y∑ ≥x = y) xÆ),
+	∂_tac ¨1Æ THEN conv_tac ¬_conv THEN ∂_tac ¨2Æ THEN PC_T1 "basic_hol1" rewrite_tac[]
+);
+
+open_log "t.art";
+reset_km_state();
+start_logging();
+val two_or_more_def = new_type_defn (["a"], "TWO_OR_MORE", [], thm3);
+stop_logging();
+log_diag "end of test";
+close_log();
+
+
+val thm4 = tac_proof (([], ¨∂f:'a ≠ 'b∑ (Ãf∑ µx y∑ f x = f y) fÆ),
+	∂_tac ¨(Ãx∑ y) : 'a ≠ 'bÆ THEN PC_T1 "basic_hol1" rewrite_tac[]
+);
+
+open_log "t.art";
+reset_km_state();
+start_logging();
+val thm4 = tac_proof (([], ¨∂f:'a ≠ 'b∑ (Ãf∑ µx y∑ f x = f y) fÆ),
+	∂_tac ¨(Ãx∑ y) : 'a ≠ 'bÆ THEN PC_T1 "basic_hol1" rewrite_tac[]
+);
+save_thm("banana", thm4);
+stop_logging();
+close_log();
+
+
+open_log "t.art";
+reset_km_state();
+start_logging();
+val is_const_exists_thm = tac_proof (([], ¨∂is_const∑µf: 'a ≠ 'b∑ is_const f § µx y∑f x = f yÆ),
+	∂_tac ¨Ãf: 'a ≠ 'b∑ µx y∑ f x = f yÆ THEN PC_T1 "basic_hol1" rewrite_tac[]
+);
+val is_const_def = new_spec (["f"], 1, is_const_exists_thm);
+val const_funs_exist_thm = tac_proof (([], ¨∂f:'a ≠ 'b∑ is_const fÆ),
+	∂_tac ¨(Ãx∑ y) : 'a ≠ 'bÆ THEN PC_T1 "basic_hol1" rewrite_tac[is_const_def]
+);
+val const_fun_def = new_type_defn (["CONST_FUN"], "CONST_FUN", ["'a", "'b"], const_funs_exist_thm);
+stop_logging();
+close_log();
+
+
+vm_diagnostics := 4;
+
+
+val _ = open_theory_import{file = "t.art", parent = "open-theory-base", theory = "t"};
+
+val _ = open_theory_import{file = "base.art", parent = "open-theory-base", theory = "t"};
+
+val _ = open_theory_import{file = "condef.art", parent = "open-theory-base", theory = "t"};
+
+val _ = open_theory_import{file = "tydef.art", parent = "open-theory-base", theory = "t"};
+
+val _ = open_theory_import{file = "fundef.art", parent = "open-theory-base", theory = "t"};
+
+val _ = open_theory_import{file = "const_fun_def.art", parent = "open-theory-base", theory = "t"};
+
+rewrite_rule [one_one_def] type_defn_def;
+»_axiom;
+
+(flat o map get_axioms o get_ancestors) "basic_hol";
+
+
+PC_C1 "predicates" rewrite_conv[] ¨ µ t1 t2∑ (Ã x∑ t1) t2 = t1Æ;
 
