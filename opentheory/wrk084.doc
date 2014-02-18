@@ -9,7 +9,7 @@ See the file LICENSE for your rights to use and change this file.
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-% $Id: wrk084.doc,v 1.4 2014/02/15 16:52:36 rda Exp rda $
+% $Id: wrk084.doc,v 1.5 2014/02/17 17:37:26 rda Exp rda $
 =TEX
 %%%%% YOU MAY WANT TO CHANGE POINT SIZE IN THE FOLLOWING:
 \documentclass[a4paper,12pt]{article}
@@ -17,7 +17,7 @@ Contact: Rob Arthan < rda@lemma-one.com >
 \usepackage{A4}
 \usepackage{Lemma1}
 \usepackage{ProofPower}
-\usepackage{epsf}
+\usepackage{url}
 \makeindex
 \ftlinepenalty=9999
 
@@ -27,8 +27,11 @@ Contact: Rob Arthan < rda@lemma-one.com >
 
 \def\Abstract{\begin{center}
 {\bf Abstract}\par\parbox{0.7\hsize}
-{\small This document discusses an experimental implementation
-of OpenTheory for {\Product}.}
+{ This document discusses the transfer of specifications and proofs
+between {\Product} and other members of the HOL family of interactive theorem provers
+via OpenTheory. It includes a literate script providing an experimental implementation
+of an OpenTheory reader and an OpenTheory writer for {\Product}.
+}
 \end{center}}
 
 \def\Reference{LEMMA1/QCZ/WRK084}
@@ -54,9 +57,9 @@ of OpenTheory for {\Product}.}
 
 %%%%% THE FOLLOWING DEFAULTS WILL GENERALLY BE RIGHT:
 
-\def\Version{$Revision: 1.4 $%
+\def\Version{$Revision: 1.5 $%
 }
-\def\Date{\FormatDate{$Date: 2014/02/15 16:52:36 $%
+\def\Date{\FormatDate{$Date: 2014/02/17 17:37:26 $%
 }}
 
 %%%%% NOW BEGIN THE DOCUMENT AND MAKE THE FRONT PAGE
@@ -70,31 +73,37 @@ of OpenTheory for {\Product}.}
 
 %%%%% CONTENTS:
 
+%%%% %%%% %%%% %%%%
 \subsection{Contents}
+%%%% %%%% %%%% %%%%
+
 
 \tableofcontents
 
 %%%%% REFERENCES:
 
 \newpage
+%%%% %%%% %%%% %%%%
 \subsection{References}
+%%%% %%%% %%%% %%%%
+
 
 \bibliographystyle{fmu}
 
 %%%%% CHANGE THE FOLLOWING AS NECESSARY (E.G., TO PICK UP daz.bib):
 {\raggedright
-\bibliography{fmu}
+\bibliography{daz}
 }
 
 %%%%% CHANGES HISTORY:
-\subsection{Changes History}
-\begin{description}
-\item[Issues 1.1] Initial draft.
-\end{description}
+%\subsection{Changes History}
+%\begin{description}
+%\item[Issues 1.1] Initial draft.
+%\end{description}
 
 %%%%%  CHANGES FORECAST:
 
-\subsection{Changes Forecast}
+%\subsection{Changes Forecast}
  
 %%%%% DISTRIBUTION LIST
 
@@ -108,39 +117,49 @@ of OpenTheory for {\Product}.}
 %%%%% NOW THE CREATIVE BIT:
 \newpage
 
+%%%% %%%% %%%% %%%%
 \section{INTRODUCTION}
+%%%% %%%% %%%% %%%%
+
 {\Product} is an interactive theorem prover in the HOL family, that {\it inter alia}
 provides proof support for the Z notation and is used as the proof engine for
 Z in D-RisQ's CLawZ toolset \cite{OHalloran13}.
+HOL4 is another system in the HOL family that is widely used in academia.
+In particular, HOL4 is the platform for the work of Myreen {\it et al.}
+on decompiling object code into logic
+\cite{myreen-et-al12}.
+D-RisQ are interested in combining the capabilities of the CLawZ and decompilation into logic.
 
 OpenTheory \cite{hurd11} is an initiative to develop a concept of {\em theory engineering} for the
 development and management of large bodies of formal specifications and proofs, analogous to the
 concept of {\em software engineering} that arose in the 1960s for the development and management
 of large software systems.
-OpenTheory defines an {\em article} format that can be used to transfer
+OpenTheory defines a file format that can be used to transfer
 definitions and theorems from one theorem proving system in the HOL
 family to another. This is
 supported by the {\tt opentheory} tool which provides a number of useful
 services for grouping articles into packages and for managing a set of packages.
 
-In order to provide some level of inter-operability between {\Product} and
-other implementations of HOL, specifically to allow specifications to
-be transferred between the two systems. As part of a research programme
+As part of a research programme
 funded by DSTL, D-RisQ have commissioned
-an experimental implementation of OpenTheory  in {\Product}.
+an experimental implementation of OpenTheory in {\Product},
+in order to provide some level of inter-operability between {\Product} and
+other implementations of HOL, specifically to allow specification to
+be transferred betweem HOL4 and {\Product}. 
 This document is a {\Product} literate script that contains this
-implemementation and some discussion of its capabilities and of further work
-that could be done in this area.
+implemementation and some discussion of its design.
 
 The OpenTheory interface provided here comprises a {\em reader} for importing
 OpenTheory articles and a {\em writer} for exporting them.
-Both these interfaces are experimental and are likely to need further customisation
-but they serve the basic goal of transferring specifications between HOL4 and {\Product}.
+Both these interfaces are experimental and are likely to need further customisation.
+However, transfer of specifications and proofs in both direction between HOL4 and {\Product}
+has been demonstrated.
 
 The remainder of this document is structured as follows:
 \begin{description}
 \item[Section~\ref{sec:discussion}] discusses OpenTheory and the present
 implementation of it in {\Product}.
+\item[Section~\ref{sec:examples}] shows examples of transfer from HOL4 to {\Product} and {\it vice versa}.
 \item[Section~\ref{sec:structure}] documents the interfaces provided in
 the style of the {\Product} reference manual.
 \item[Appendix~\ref{sec:implementation}] is the {\Product} literate script that
@@ -149,8 +168,14 @@ the document.)
 \end{description}
 
 \newpage
+%%%% %%%% %%%% %%%%
 \section{DISCUSSION}\label{sec:discussion}
+%%%% %%%% %%%% %%%%
+
+%%%% %%%% %%%% %%%%
 \subsection{Overview of OpenTheory}
+%%%% %%%% %%%% %%%%
+
 The goal of OpenTheory is to allow proofs and the specifications on which
 those proofs depend to be shared between different
 implementations higher-order logic (HOL) theorem provers, specifically,
@@ -183,21 +208,27 @@ However, it turned out to be very useful both as a source of test material
 and in defining a common vocabulary that is used by the HOL4 implementation
 of an OpenTheory writer.
 
+%%%% %%%% %%%% %%%%
 \subsection{{\Product} OpenTheory Reader}
-The OpenTheory reader is based on a generic implementation
+%%%% %%%% %%%% %%%%
+
+The {\Product} OpenTheory reader is based on a generic implementation
 of the OpenTheory virtual machine with parameters defining the
 mapping of the vocabulary and definitions in the input to
 {\Product} vocabulary and extension mechanisms.
 This has then been instantiated to accept the vocabulary and
 definitions used by the Gilith OpenTheory Repo and the HOL4 OpenTheory writer.
 
-There is an issue with the packaging of the base theory package in the Gilith OpenTheory Repo
-that is under discussion. The issue is that the package currently gives concrete constructions of
+The base theory package in the Gilith OpenTheory Repo has been imported into {\Product}.
+However, the level of integration with the native {\Product} vocabulary is limited.
+This is due to an issue with the level of abstraction in the base theory package as currently
+distributed.The issue is that the package currently gives concrete constructions of
 types rather than abstract specifications. This results in certain constants appearing in the
 name space that are not actually part of the documented interface. For this reason,
 the {\Product} reader currently only maps the basic logical vocabulary to native {\Product}
 vocabulary. Vocabulary relating to defined types, such as lists or numbers, is
 defined afresh when the base theory article is imported.
+Options for repackaging the base theory package are under discussion.
 
 Once the mapping of vocabulary is settled importing proofs is relatively straightforward
 since one has all the capabilities of {\Product} available to implement the OpenTheory
@@ -205,13 +236,22 @@ inference rules as derived rules.
 The mapping of the definitional principle of OpenTheory is also straightforward, but slightly
 complicated in the present implementation to support the handling of the basic logical
 vocabulary of the base theory package in the Gilith OpenTheory Repo. This is done by
-recognising the OpenTheory definitions of the logical operators and substituting
-a theorem derived from the {\Product} definitions.
+recognising the OpenTheory definitions of the logical operators and simulating the
+definitions using theorems derived from the {\Product} definitions. Extending this
+approach to deal with the types defined in the base theory package is not
+practical without some more detailed analysis of the base theory package internals.
+The approach will be revisited when the outcome of ongoing discussions
+about the packaging of the base theory is known.
+
+%%%% %%%% %%%% %%%%
 \subsection{{\Product} OpenTheory Writer}
-The OpenTheory writers for HOL4 and HOL Light use a special version of the logical
+%%%% %%%% %%%% %%%%
+
+The OpenTheory writers for HOL4 and HOL Light are implemented with
+a special version of the logical
 kernel that includes a proof tree in the representation of a theorem. 
-{\Product} enables functions that monitor logical kernel operations to be registered
-and the {\Product} OpenTheory writer uses this facility to export a trace
+{\Product} enables functions that monitor logical kernel operations to be registered.
+The {\Product} OpenTheory writer uses this facility to export a log
 of the kernel operations as an OpenTheory article. The process is parametrized
 by functions that map type and constant names to the desired external form.
 
@@ -220,7 +260,6 @@ does not provide high-level facilities for programming proofs. (This is intended
 since it makes the OpenTheory kernel small, simple and dependable.)
 The writer is implemented as a library of functions that output the command sequences
 for tasks such as building a term or carrying out an inference step.
-
 
 OpenTheory only supports constant definitions of the form $c = t$ where $c$ is
 the constant being defined, whereas {\Product} and HOL4 both support
@@ -239,17 +278,199 @@ but this is inevitable. It is hoped that a more general mechanism for
 constant definitions will be added to OpenTheory.
 
 Type definitions in OpenTheory follow HOL Light in introducing constants
-for the abstraction and representation functions for the new type as well
-as just the new type. In contrast, the new type definition mechanism in
+for the abstraction and representation functions for the new type.
+In contrast, the new type definition mechanism in
 in {\Product} and HOL4 returns a theorem that implies the abstraction
 and representation functions exist, but does not actually make the
 constant definitions. The translation of type definitions involves
 deducing the existence theorem from the defining properties of the
 new constants.
+The writer also has to invent names for the new constants, which will
+only be used in the proof of the existence theorem.
 
+An issue with the chosen implementation approach is that theorems
+that have been proved when logging is not turned on will appear as
+assumptions in the article file if they are used in a proof that is exported.
+Typically such theorems will be lemmas used in derived inference rules.
+One solution to this would be to record some or all of the inferences made when the
+system is built, so that the proofs of these lemmas can be recreated.
 
 \newpage
+%%%% %%%% %%%% %%%%
+\section{EXAMPLES}\label{sec:examples}
+%%%% %%%% %%%% %%%%
+
+{\vertbarfalse
+
+Time has not permitted evaluation of the {\Product} OpenTheory implementation on
+large-scale examples during the preparation of this document.
+In this section we give small examples of transfer in
+both directions between HOL5 and {\Product}.
+These examples are intended to illustrate the various mappings that are applied during transfer
+of a theory and give an idea of what information is transferred and
+what information is lost.
+
+%%%% %%%% %%%% %%%%
+\subsection{Import from HOL4}
+%%%% %%%% %%%% %%%%
+
+A theory was constructed in HOL4 containing the definition
+of a predicate {\em is\_non\_const\_fun} that is true
+of non-constant functions and used to define a type
+in one-to-one correspondence with the non-constant
+one-argument propositional functions.
+=GFT HOL4 Theory Listing
+	Theory: OpenTheoryEg
+
+	Parents:
+	    string
+
+	Type constants:
+	    non_const_fun 0
+
+	Term constants:
+	    is_non_const   :('a -> 'b) -> bool
+
+	Definitions:
+	    is_non_const_def
+	      |- !f. is_non_const f <=> ?x y. f x <> f y
+	    non_const_fun_TY_DEF
+	      |- ?rep. TYPE_DEFINITION is_non_const rep
+=TEX
+(For technical reasons, it is not possible to typeset Unicode
+symbols in this document, so HOL4 listings have to be given in
+the ASCII format.)
+
+The defining property of the type was exported into
+an article file (which also causes the definition
+of {\em is\_non\_const\_fun} to be exported, since the
+type definition depends on it).
+The article file was then imported into {\Product}.
+
+=GFT ProofPower Theory Listing
+	=== The theory open-theory-eg1 ===
+
+	--- Parents ---
+
+			open-theory-base
+
+	--- Constants ---
+
+	is_non_const	('A ≠ 'B) ≠ BOOL
+	non_const_fun_rep
+			non_const_fun ≠ BOOL ≠ BOOL
+	non_const_fun_abs
+			(BOOL ≠ BOOL) ≠ non_const_fun
+
+	--- Types ---
+
+	non_const_fun
+
+	--- Definitions ---
+
+	const_spec1	Ù is_non_const = (Ã f∑ ∂ x y∑ ≥ f x = f y)
+	type_defn1	Ù ∂ f∑ TypeDefn is_non_const f
+	abs_rep1	Ù (µ a∑ non_const_fun_abs (non_const_fun_rep a) = a)
+			    ± (µ r∑ is_non_const r §
+				non_const_fun_rep (non_const_fun_abs r) = r)
+
+	--- Theorems ---
+
+	thm1		Ù ∂ rep∑ TypeDefn is_non_const rep
+
+	=== End of listing of theory open-theory-eg1 ===
+=TEX
+Note that the type variable names are in upper case in the imported theory.
+This is because the HOL4 OpenTheory writer maps the names to follow
+the Gilith OpenTheory repo conventions, so $'a$ becomes $A$. The {\Product} reader
+then makes the names conform with {\Product} (and HOL4) convention that
+type variable names begin with a prime character.
+Since {\Product} and HOL4 have essentially the same conventions for type variable names,
+it would be desirable if their OpenTheory readers and writers used the same mappings.
+This is a point for discussion, since the mapping has to be one-to-one,
+but the mappings currently used are only one-to-one subject to some assumptions
+on the input.
+
+The type name {\em bool} has been converted to upper case by the {\Product}
+OpenTheory reader to match the {\Product} case conventions.
+The reader has converted the HOL4 function {\em TYPE\_DEFINITION} into the
+{\Product} equivalent {\em TypeDefn}.
+The extra constants {\em non\_const\_fun\_rep} and {\em non\_const\_fun\_abs}
+introduced by the OpenTheory type definition mechanism
+have names invented by the HOL4 writer.
+
+The idea that a theory includes a database of named definitions is implementation-specific:
+HOL4 and {\Product} have this feature, but HOL Light does not. 
+Consequently, the HOL4 database keys ({\em is\_non\_const\_def} etc.) are not represented
+in the OpenTheory article file and the {\Product} database keys ({\em const\_spec1} etc.)
+are invented by the {\Product} OpenTheory reader.
+
+%%%% %%%% %%%% %%%%
+\subsection{Export to HOL4}
+%%%% %%%% %%%% %%%%
+
+A theory was constructed in {\Product} containing the definition
+of a predicate {\em is\_const\_fun} that is true
+of constant functions and used to define a polymorphic
+type of constant functions.
+=GFT ProofPower Theory Listing
+	=== The theory open-theory-eg2 ===
+
+	--- Parents ---
+
+			open-theory-base
+
+	--- Constants ---
+
+	is_const	('a ≠ 'b) ≠ BOOL
+
+	--- Types ---
+
+	('1, '2) CONST_FUN
+
+	--- Definitions ---
+
+	is_const_def	Ù µ f∑ is_const f § (µ x y∑ f x = f y)
+	CONST_FUN	Ù ∂ f∑ TypeDefn is_const f
+
+	=== End of listing of theory open-theory-eg2 ===
+=TEX
+The {\Product} theory was constructed with OpenTheory logging switched
+on resulting in an article file, which was then imported into HOL4.
+=GFT HOL4 Theory Listing
+	Theory: OpenTheoryEg
+
+	Parents:
+	    string
+
+	Type constants:
+	    CONST_FUN 2
+
+	Term constants:
+	    CONST_FUN_abs_   :('a -> 'b) -> ('a, 'b) CONST_FUN
+	    CONST_FUN_rep_   :('a, 'b) CONST_FUN -> 'a -> 'b
+	    is_const         :('a -> 'b) -> bool
+
+	Definitions:
+	    CONST_FUN_TY_DEF
+	      |- ?rep. TYPE_DEFINITION is_const rep
+	    CONST_FUN_bij
+	      |- (!a. CONST_FUN_abs_ (CONST_FUN_rep_ a) = a) /\
+	         !r. is_const r <=> (CONST_FUN_rep_ (CONST_FUN_abs_ r) = r)
+	    is_const_def
+	      |- is_const = @is_const. !f. is_const f <=> !x y. f x = f y
+=TEX
+The names of the extra constants {\em CONST\_FUN\_abs\_}
+and {\em CONST\_FUN\_rep\_} have been invented by the {\Product} writer,
+while the definition keys {\em CONST\_FUN\_DEF} have been invented by the
+HOL4 reader.
+} %\vertbarfalse
+
+\newpage
+%%%% %%%% %%%% %%%%
 \section{THE STRUCTURE OpenTheory}\label{sec:structure}
+%%%% %%%% %%%% %%%%
+
 The OpenTheory implementation is packaged in a structure (i.e., a Standard ML module)
 with the following signature.
 (As usual in {\Product} we document a structure by annotating its
@@ -258,9 +479,15 @@ signature with narrative describing the intended implementation.)
 signature €OpenTheory› = sig
 =TEX
 
+%%%% %%%% %%%% %%%%
 \subsection{The Reader}\label{sec:reader}
+%%%% %%%% %%%% %%%%
 
+
+%%%% %%%% %%%% %%%%
 \subsubsection{Command Interface}
+%%%% %%%% %%%% %%%%
+
 
 =DOC
 val €open_theory_import› : {file : string, parent : string, theory : string} -> unit;
@@ -276,7 +503,10 @@ The theory is created as a child of the indicated parent theory and
 the theory ``open-theory-base'' is made a parent if it is not an ancestor
 of the specified parent.
 =ENDDOC
+%%%% %%%% %%%% %%%%
 \subsubsection{Programmatic Interface}
+%%%% %%%% %%%% %%%%
+
 For experimental purposes, the core functionality of the OpenTheory reader
 is presented as a programmable interface to the OpenTheory
 virtual machine.
@@ -368,6 +598,9 @@ The state of the virtual machine includes a dictionary mapping integers
 to objects:
 =SML
 type €OBJECT_DICT› = (int, OBJECT) SEARCH_TREE;
+=TEX
+The stack and 
+=SML
 type €WM_STATE› = {
 	interface : IMPORT_INTERFACE,
 	stack : OBJECT list,
@@ -391,29 +624,54 @@ The second parameter represents the input stream.
 val €open_theory_vm› : IMPORT_INTERFACE -> 
 	('s -> (string * 's) OPT) -> 's -> WM_STATE;
 =TEX
+%%%% %%%% %%%% %%%%
 \subsection{The Writer}\label{sec:writer}
+%%%% %%%% %%%% %%%%
+
+%%%% %%%% %%%% %%%%
 \subsubsection{Parameters}
+%%%% %%%% %%%% %%%%
+
 The writer is parametrized by functions that map type and constant names to
-OpenTheory names and by strings used as prefixes for the abstraction and representation
+OpenTheory names and by strings used as suffixes for the abstraction and representation
 functions for new types. 
 =TEX
 =SML
-type EXPORT_INTERFACE = {
+type €EXPORT_INTERFACE› = {
 	type_name : string -> NAME,
 	const_name : string -> NAME,
-	abs_prefix : string,
-	rep_prefix : string};
+	abs_suffix : string,
+	rep_suffix : string};
 =TEX
 =SML
-val export_interface : EXPORT_INTERFACE ref;
+val €export_interface› : EXPORT_INTERFACE ref;
 =TEX
+%%%% %%%% %%%% %%%%
 \subsubsection{Interface}
+%%%% %%%% %%%% %%%%
+
+=DOC
+val €begin_open_theory_export› : string -> unit;
+val €end_open_theory_export› : unit -> unit;
+=DESCRIBE
+These functions control the OpenTheory writer enabling definitions and proofs to
+be exported in the OpenTheory article format.
+{\em begin\_open\_theory\_export file} reinitialises the writer state and
+initiates exporting into the specified article file.
+The article file is overwritten if it already exists.
+
+{\em end\_open\_theory\_export} closes the current article file and terminates logging.
+=SEEALSO
+{\em proof\_to\_article, term\_to\_article}
+=ENDDOC
 =DOC
 val €proof_to_article› : {file: string, prf_fun: 'a -> THM list} -> 'a -> unit;
 =DESCRIBE
-This function generates an OpenTheory article from a function that proves
+{\em proof\_to\_article} generates an OpenTheory article from a function that proves
  a list of theorems. This provides a simple mechanism for
 transferring proofs from {\Product} to another HOL system or to the Gilith OpenTheory Repository.
+=SEEALSO
+{\em term\_to\_article, begin\_open\_theory\_export, end\_open\_theory\_export}
 =ENDDOC
 =DOC
 val €term_to_article› : {tm: TERM, file: string} -> unit;
@@ -421,11 +679,16 @@ val €term_to_article› : {tm: TERM, file: string} -> unit;
 This function generates an OpenTheory article from a term, $t$.
 The article proves the theorem $t = t$. This provides a simple mechanism for
 transferring terms from {\Product} to another HOL system.
+=SEEALSO
+{\em proof\_to\_article, begin\_open\_theory\_export, end\_open\_theory\_export}
 =ENDDOC
 =SML
 end (* of signature OpenTheory *);
 =TEX
+%%%% %%%% %%%% %%%%
 \subsection{Errors}
+%%%% %%%% %%%% %%%%
+
 The OpenTheory interfaces define the following error messages.
 =FAILURE
 122001	invalid stack. Expected ?0
@@ -443,10 +706,12 @@ The OpenTheory interfaces define the following error messages.
 122013	Cannot define ?0 = ?1 (?0 clashes with an existing constant,
 	original exception: ?2)
 =TEX
-
 \newpage
 \appendix
+%%%% %%%% %%%% %%%%
 \section{IMPLEMENTATION}\label{sec:implementation}
+%%%% %%%% %%%% %%%%
+
 =TEX
 =SML
 structure €OpenTheoryInternals› = struct 
@@ -456,7 +721,10 @@ val _ = open_theory "basic_hol";
 val _ = set_merge_pcs ["basic_hol1"];
 =TEX
 
+%%%% %%%% %%%% %%%%
 \subsection{Interface Types}
+%%%% %%%% %%%% %%%%
+
 
 =SML
 type €NAME› = string list * string;
@@ -493,12 +761,18 @@ datatype €OBJECT› =
 	|	€OTerm› of TERM			(* A higher order logic term *)
 	|	€OThm› of THM			(* A higher order logic theorem *);
 =TEX
+%%%% %%%% %%%% %%%%
 \subsection{Reader}
+%%%% %%%% %%%% %%%%
+
 =TEX
 =SML
 val €vm_diagnostics› : int ref = ref 0;
 =TEX
+%%%% %%%% %%%% %%%%
 \subsubsection{Virtual Machine Types}
+%%%% %%%% %%%% %%%%
+
 =SML
 type €OBJECT_DICT› = (int, OBJECT) SEARCH_TREE;
 type €WM_STATE› = {
@@ -508,7 +782,10 @@ type €WM_STATE› = {
 	assumptions : THM NET,
 	theorems : THM list};
 =TEX
+%%%% %%%% %%%% %%%%
 \subsubsection{State Access Functions}
+%%%% %%%% %%%% %%%%
+
 =TEX
 =SML
 fun €convert_var_name› ( ([], base) : NAME ) : string = (
@@ -738,7 +1015,10 @@ fun €set_theorems› (thms: THM list)
 			theorems = thms }
 );
 =TEX
+%%%% %%%% %%%% %%%%
 \subsubsection{Heuristics for Assumptions}
+%%%% %%%% %%%% %%%%
+
 If an assumption is a formula of propositional logic then it better be a tautology.
 =SML
 fun €is_propositional› (tm : TERM) : bool = (
@@ -811,7 +1091,10 @@ fun €heuristics› (st : WM_STATE) (seq : SEQ) : THM OPT = (
 	end
 );
 =TEX
+%%%% %%%% %%%% %%%%
 \subsubsection{Command Functions}
+%%%% %%%% %%%% %%%%
+
 =TEX
 =SML
 fun €try_decimal_integer› (cmd : string) (st : WM_STATE) : WM_STATE OPT = (
@@ -1128,7 +1411,10 @@ fun €do_var_type› (st : WM_STATE) : WM_STATE = (
 	end
 );
 =TEX
+%%%% %%%% %%%% %%%%
 \subsubsection {Command Interpreter}
+%%%% %%%% %%%% %%%%
+
 =SML
 fun €illegal_command› (s : string) = fail "open-theory-reader" 122012 [];
 =TEX
@@ -1232,7 +1518,10 @@ fun €do_command› (cmd : string) (st : WM_STATE) : WM_STATE = (
 );
 =TEX
 =TEX
+%%%% %%%% %%%% %%%%
 \subsubsection {Generic Virtual Machine}
+%%%% %%%% %%%% %%%%
+
 =SML
 fun €open_theory_vm› (interface : IMPORT_INTERFACE)
 	(read : 's -> (string * 's) OPT) (src : 's) : WM_STATE = (
@@ -1249,7 +1538,10 @@ fun €open_theory_vm› (interface : IMPORT_INTERFACE)
 	end
 );
 =TEX
+%%%% %%%% %%%% %%%%
 \subsubsection{OpenTheory Interface}
+%%%% %%%% %%%% %%%%
+
 We set up a context suitable for the parts of the OpenTheory vocabulary
 that are to be supported.
 =SML
@@ -1541,7 +1833,10 @@ val €gilith_maps› : NAME_MAPS = {
 	]
 };
 =TEX
-\subsubsection{Entry Point}
+%%%% %%%% %%%% %%%%
+\subsubsection{User Interface}
+%%%% %%%% %%%% %%%%
+
 =SML
 fun €open_theory_import› {file : string, parent : string, theory : string} : unit = (
 	let	val _ = force_delete_theory theory handle Fail _ => ();
@@ -1563,21 +1858,30 @@ fun €open_theory_import› {file : string, parent : string, theory : string} : uni
 	end
 );
 =TEX
+%%%% %%%% %%%% %%%%
 \subsection{Writer}
+%%%% %%%% %%%% %%%%
+
 =TEX
+%%%% %%%% %%%% %%%%
 \subsubsection{Writer Types}
+%%%% %%%% %%%% %%%%
+
 =TEX
 =SML
 type €EXPORT_INTERFACE› = {
 	const_name : string -> NAME,
 	type_name : string -> NAME,
-	abs_prefix : string,
-	rep_prefix : string
+	abs_suffix : string,
+	rep_suffix : string
 };
 =SML
 type €KEY_DICT› = (OBJECT, int) SEARCH_TREE;
 =TEX
+%%%% %%%% %%%% %%%%
 \subsubsection{Managing Keys}
+%%%% %%%% %%%% %%%%
+
 =SML
 val €name_order› : NAME ORDER = pair_order (list_order string_order) string_order;
 val €seq_order› : SEQ ORDER = pair_order (list_order term_order) term_order;
@@ -1658,7 +1962,10 @@ fun €next_key› (() : unit) : int = (
 	end
 );
 =TEX
+%%%% %%%% %%%% %%%%
 \subsubsection{Building Types and Terms}
+%%%% %%%% %%%% %%%%
+
 =SML
 fun €export_type_name› (x : string) : NAME = (
 	rassoc3 (#type_map gilith_maps) x
@@ -1673,8 +1980,8 @@ fun €export_const_name› (x : string) : NAME = (
 val €export_interface› : EXPORT_INTERFACE ref = ref {
 	type_name = export_type_name,
 	const_name = export_const_name,
-	abs_prefix = "__abs_",
-	rep_prefix = "__rep_"
+	abs_suffix = "_abs_",
+	rep_suffix = "_rep_"
 };
 =TEX
 =SML
@@ -1871,7 +2178,10 @@ fun €log_term› (x : TERM) = (
 );
 =TEX
 =TEX
+%%%% %%%% %%%% %%%%
 \subsubsection{Logging Proofs}
+%%%% %%%% %%%% %%%%
+
 {\em log\_antecedent} is used to derive an antecedent of an inference rule application.
 If the antecedent isn't in the database, it makes it an axiom.
 =SML
@@ -3094,8 +3404,8 @@ fun €log_new_type_defn›
 	(name : string, typars : string list, thm : THM)
 		: unit = (
 	let	val thm1 = ∂_≈_rule thm;
-		val i_abs_name = #abs_prefix(!export_interface) ^ name;
-		val i_rep_name = #rep_prefix(!export_interface) ^ name;
+		val i_abs_name = name ^ #abs_suffix(!export_interface);
+		val i_rep_name = name ^ #rep_suffix(!export_interface);
 		val i_abs_ty = mk_ctype(name, map mk_vartype typars);
 		val i_rep_ty = (type_of o fst o dest_∂ o concl) thm;
 		val ty_subs = [(i_abs_ty, abs_ty), (i_rep_ty, rep_ty)];
@@ -3169,7 +3479,10 @@ fun €log_state_change› (SaveThm (_, thm)) =
 	log_new_spec (ndefs, thm)
 |   log_state_change _ = ();
 =TEX
-\subsubsection{Interface}
+%%%% %%%% %%%% %%%%
+\subsubsection{User Interface}
+%%%% %%%% %%%% %%%%
+
 =TEX
 =SML
 val €ki_key› : KI_KEY ref = ref (on_kernel_inference log_inference);
@@ -3178,7 +3491,9 @@ val _ = delete_kernel_inference_fun (!ki_key);
 val _ = delete_on_kernel_state_change_fun (!oksc_key);
 =TEX
 =SML
-fun €start_logging› (() : unit) : unit = (
+fun €begin_open_theory_export› (file : string) : unit = (
+	reset_km_state ();
+	open_log file;
 	(delete_kernel_inference_fun (!ki_key) handle Fail _ => ());
 	ki_key := on_kernel_inference log_inference;
 	(delete_on_kernel_state_change_fun (!oksc_key) handle Fail _ => ());
@@ -3186,19 +3501,17 @@ fun €start_logging› (() : unit) : unit = (
 );
 =TEX
 =SML
-fun €stop_logging› (() : unit) : unit = (
+fun €end_open_theory_export› (() : unit) : unit = (
 	delete_kernel_inference_fun (!ki_key) handle Fail _ => ();
-	delete_on_kernel_state_change_fun (!oksc_key) handle Fail _ => ()
+	delete_on_kernel_state_change_fun (!oksc_key) handle Fail _ => ();
+	close_log()
 );
 =TEX
 =SML
 fun €proof_to_article› {file : string, prf_fun : 'a -> THM list} (x : 'a) : unit = (
-	reset_km_state ();
-	open_log file;
-	start_logging ();
+	begin_open_theory_export file;
 	app log_thm (prf_fun x);
-	stop_logging ();
-	close_log();
+	end_open_theory_export ();
 	()
 );
 =TEX
@@ -3208,196 +3521,174 @@ fun €term_to_article› {file : string, tm : TERM} : unit = (
 );
 =SML
 =TEX
+%%%% %%%% %%%% %%%%
 \subsection{Epilogue}
+%%%% %%%% %%%% %%%%
+
 =SML
 end (* of structure OpenTheoryInternals *);
 structure OpenTheory : OpenTheory = OpenTheoryInternals;
 open OpenTheory;
-open OpenTheoryInternals; (* TODO: remove this and following *)
-val _ = logging_diagnostics := true;
 =TEX
 
+%%%% %%%% %%%% %%%%
 \twocolumn[\section*{INDEX}]
+%%%% %%%% %%%% %%%%
+
 \small
 \printindex
-
 \end{document}
 =IGN
+fun €ki_result›(ki as KISubstRule (_, _, _, thm)) = thm
+|   ki_result(ki as KISimpleÃEqRule (_, _, thm)) = thm
+|   ki_result(ki as KIInstTypeRule (_, _, thm)) = thm
+|   ki_result(ki as KI¥Intro (_, _, thm)) = thm
+|   ki_result(ki as KI¥Elim (_, _, thm)) = thm
+|   ki_result(ki as KIAsmRule (_, thm)) = thm
+|   ki_result(ki as KIReflConv (_, thm)) = thm
+|   ki_result(ki as KISimple¬Conv (_, thm)) = thm
+|   ki_result(ki as KISucConv (_, thm)) = thm
+|   ki_result(ki as KIStringConv (_, thm)) = thm
+|   ki_result(ki as KICharConv (_, thm)) = thm
+|   ki_result(ki as KIEqSymRule (_, thm)) = thm
+|   ki_result(ki as KIListSimpleµElim (_, _, thm)) = thm
+|   ki_result(ki as KIEqTransRule (_, _, thm)) = thm
+|   ki_result(ki as KIMkAppRule (_, _, thm)) = thm
+|   ki_result(ki as KI§MPRule (_, _, thm)) = thm
+|   ki_result(ki as KISimpleµIntro (_, _, thm)) = thm
+|   ki_result(ki as KIInstTermRule (_, _, thm)) = thm
+|   ki_result(ki as KIPlusConv (_, thm)) = thm;
+
 
 val th1 = pc_rule1 "lin_arith" prove_rule[] ¨2 < x ¥ 1 < xÆ;
 val th2 = asm_rule ¨2 < xÆ;
-open_log "t.art";
-reset_km_state();
-start_logging();
+begin_open_theory_export "t.art";
 ¥_elim th1 th2;
 log_diag "end of test";
-stop_logging();
-close_log();
+end_open_theory_export();
 
-open_log "t.art";
-reset_km_state();
-start_logging();
+begin_open_theory_export "t.art";
 ¥_intro ¨1 < xÆ th2;
-stop_logging();
 log_diag "end of test";
-close_log();
+end_open_theory_export();
 
 val th3 = (undisch_rule o undisch_rule o pc_rule1 "lin_arith" prove_rule[])
 		¨2 < x ¥ x < y ¥ 1 < xÆ;
-open_log "t.art";
-reset_km_state();
-start_logging();
+begin_open_theory_export "t.art";
 ¥_intro ¨2 < xÆ th3;
 log_diag "end of test";
-stop_logging();
-close_log();
+end_open_theory_export();
 
-open_log "t.art";
-reset_km_state();
-start_logging();
+begin_open_theory_export "t.art";
 ¥_elim (¥_intro ¨2 < xÆ t_thm) (asm_rule ¨2 < xÆ);
 log_diag "end of test";
-stop_logging();
-close_log();
+end_open_theory_export();
 
-open_log "t.art";
-reset_km_state();
-start_logging();
+begin_open_theory_export "t.art";
 ¥_elim  th3a th3b;
 log_diag "end of test";
-stop_logging();
-close_log();
+end_open_theory_export();
 
 val th4 = pc_rule1 "lin_arith" prove_rule[]
 		¨2 < x ¥ x < y ¥ 1 < xÆ;
-open_log "t.art";
-reset_km_state();
-start_logging();
+begin_open_theory_export "t.art";
 val res = simple_µ_intro ¨x:ÓÆ th4;
 log_diag "end of test";
-stop_logging();
-close_log();
+end_open_theory_export();
 
 
 val th5 = times_assoc_thm;
 
-open_log "t.art";
-reset_km_state();
-start_logging();
+begin_open_theory_export "t.art";
 val res = list_simple_µ_elim [¨x+1Æ, ¨v2+27Æ] th5;
 log_diag "end of test";
-stop_logging();
-close_log();
+end_open_theory_export();
 
 val th6 = µ_intro ¨i:ÓÆ times_assoc_thm;
 
-open_log "t.art";
-reset_km_state();
-start_logging();
+begin_open_theory_export "t.art";
 val res = list_simple_µ_elim [¨x+1Æ, ¨v2+27Æ] th6;
 log_diag "end of test";
-stop_logging();
-close_log();
+end_open_theory_export();
 
 
 val th7 = map_def;
 
-open_log "t.art";
-reset_km_state();
-start_logging();
+begin_open_theory_export "t.art";
 val res = inst_type_rule [(îÓÆ, î'aÆ)] th7;
 log_diag "end of test";
-stop_logging();
-close_log();
+end_open_theory_export();
 
 
-open_log "t.art";
-reset_km_state();
-start_logging();
+begin_open_theory_export "t.art";
 val res = refl_conv ¨xÆ;
 log_diag "end of test";
-stop_logging();
-close_log();
+end_open_theory_export();
 
 
-open_log "t.art";
-reset_km_state();
-start_logging();
+begin_open_theory_export "t.art";
 val thm1 = tac_proof (([], ¨∂is_const∑µf∑ is_const f § µx y∑f x = f yÆ),
 	prove_∂_tac
 );
 val _ = new_spec (["f"], 1, thm1);
-stop_logging();
 log_diag "end of test";
-close_log();
+end_open_theory_export();
 
 
 val thm2 = tac_proof (([], ¨∂a b c:Ó∑  a < b ± b < cÆ),
 	∂_tac ¨1Æ THEN ∂_tac ¨2Æ THEN ∂_tac ¨3Æ THEN PC_T1 "basic_hol1" rewrite_tac[]
 );
 
-open_log "t.art";
-reset_km_state();
-start_logging();
+begin_open_theory_export "t.art";
 val _ = new_spec (["a", "b"], 2, thm2);
-stop_logging();
 log_diag "end of test";
-close_log();
+end_open_theory_export();
 
-open_log "t.art";
-reset_km_state();
-start_logging();
+begin_open_theory_export "t.art";
 val _ = simple_new_defn (["a"], "xyz", mk_t);
-stop_logging();
 log_diag "end of test";
-close_log();
+cend_open_theory_export();
+lose_log();
 
 
 val thm3 = tac_proof (([], ¨∂x:Ó∑ (Ãx∑ ∂y∑ ≥x = y) xÆ),
 	∂_tac ¨1Æ THEN conv_tac ¬_conv THEN ∂_tac ¨2Æ THEN PC_T1 "basic_hol1" rewrite_tac[]
 );
 
-open_log "t.art";
-reset_km_state();
-start_logging();
+begin_open_theory_export "t.art";
 val two_or_more_def = new_type_defn (["a"], "TWO_OR_MORE", [], thm3);
-stop_logging();
 log_diag "end of test";
-close_log();
+end_open_theory_export();
 
 
 val thm4 = tac_proof (([], ¨∂f:'a ≠ 'b∑ (Ãf∑ µx y∑ f x = f y) fÆ),
 	∂_tac ¨(Ãx∑ y) : 'a ≠ 'bÆ THEN PC_T1 "basic_hol1" rewrite_tac[]
 );
 
-open_log "t.art";
-reset_km_state();
-start_logging();
+begin_open_theory_export "t.art";
 val thm4 = tac_proof (([], ¨∂f:'a ≠ 'b∑ (Ãf∑ µx y∑ f x = f y) fÆ),
 	∂_tac ¨(Ãx∑ y) : 'a ≠ 'bÆ THEN PC_T1 "basic_hol1" rewrite_tac[]
 );
 save_thm("banana", thm4);
-stop_logging();
-close_log();
+end_open_theory_export();
 
 
-open_log "t.art";
-reset_km_state();
-start_logging();
-val is_const_exists_thm = tac_proof (([], ¨∂is_const∑µf: 'a ≠ 'b∑ is_const f § µx y∑f x = f yÆ),
-	∂_tac ¨Ãf: 'a ≠ 'b∑ µx y∑ f x = f yÆ THEN PC_T1 "basic_hol1" rewrite_tac[]
+begin_open_theory_export "t.art";
+new_theory "open-theory-eg2";
+val is_const_exists_thm = tac_proof (([], ¨∂is_const∑µf: 'x ≠ 'y∑ is_const f § µx y∑f x = f yÆ),
+	∂_tac ¨Ãf: 'x ≠ 'y∑ µx y∑ f x = f yÆ THEN PC_T1 "basic_hol1" rewrite_tac[]
 );
-val is_const_def = new_spec (["f"], 1, is_const_exists_thm);
-val const_funs_exist_thm = tac_proof (([], ¨∂f:'a ≠ 'b∑ is_const fÆ),
-	∂_tac ¨(Ãx∑ y) : 'a ≠ 'bÆ THEN PC_T1 "basic_hol1" rewrite_tac[is_const_def]
+val is_const_def = new_spec (["is_const_def"], 1, is_const_exists_thm);
+val const_funs_exist_thm = tac_proof (([], ¨∂f:'x ≠ 'y∑ is_const fÆ),
+	∂_tac ¨(Ãx∑ y) : 'x ≠ 'yÆ THEN PC_T1 "basic_hol1" rewrite_tac[is_const_def]
 );
-val const_fun_def = new_type_defn (["CONST_FUN"], "CONST_FUN", ["'a", "'b"], const_funs_exist_thm);
-stop_logging();
-close_log();
+val const_fun_def = new_type_defn (["CONST_FUN"], "CONST_FUN", ["'x", "'y"], const_funs_exist_thm);
+end_open_theory_export();
 
 
+(*
 vm_diagnostics := 4;
-
+*)
 
 val _ = open_theory_import{file = "t.art", parent = "open-theory-base", theory = "t"};
 
@@ -3409,7 +3700,7 @@ val _ = open_theory_import{file = "tydef.art", parent = "open-theory-base", theo
 
 val _ = open_theory_import{file = "fundef.art", parent = "open-theory-base", theory = "t"};
 
-val _ = open_theory_import{file = "const_fun_def.art", parent = "open-theory-base", theory = "t"};
+val _ = open_theory_import{file = "non_const_fun_def.art", parent = "open-theory-base", theory = "open_theory-eg1"};
 
 rewrite_rule [one_one_def] type_defn_def;
 »_axiom;
