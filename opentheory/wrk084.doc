@@ -9,7 +9,7 @@ See the file LICENSE for your rights to use and change this file.
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-% $Id: wrk084.doc,v 1.6 2014/02/18 17:43:44 rda Exp rda $
+% $Id: wrk084.doc,v 1.7 2014/02/19 13:13:58 rda Exp rda $
 =TEX
 %%%%% YOU MAY WANT TO CHANGE POINT SIZE IN THE FOLLOWING:
 \documentclass[a4paper,12pt]{article}
@@ -57,9 +57,9 @@ of an OpenTheory reader and an OpenTheory writer for {\Product}.
 
 %%%%% THE FOLLOWING DEFAULTS WILL GENERALLY BE RIGHT:
 
-\def\Version{$Revision: 1.6 $%
+\def\Version{$Revision: 1.7 $%
 }
-\def\Date{\FormatDate{$Date: 2014/02/18 17:43:44 $%
+\def\Date{\FormatDate{$Date: 2014/02/19 13:13:58 $%
 }}
 
 %%%%% NOW BEGIN THE DOCUMENT AND MAKE THE FRONT PAGE
@@ -604,16 +604,32 @@ The stack and
 =SML
 type €WM_STATE› = {
 	interface : IMPORT_INTERFACE,
+	command_count : int,
 	stack : OBJECT list,
 	dictionary : OBJECT_DICT,
 	assumptions : THM NET,
 	theorems : THM list};
 =TEX
-{\em vm\_diagnostics} can be set to give various levels of diagnostic
-output.
 =SML
 val €vm_diagnostics› : int ref;
 =TEX
+{\em vm\_diagnostics} can be set to give various levels of diagnostic
+output. It is checked after each command is executed resulting in output
+as follows:
+
+\begin{center}
+\begin{tabular}{|r|p{5in}|}\hline
+${} < 0$ & All diagnostic output is suppressed.\\\hline
+$0$ & The {\em diag} command will output its operand. \\\hline
+$1$ & The {\em diag} command will output its operand and the number of commands executed (including this {\em diag} command). \\\hline
+$2$ & The {\em diag} command will cause its operand, the number of commands executed, the new top of stack and the old stack to be printed. \\\hline
+$3$ & The command and the number of commands executed are printed. The {\em diag} command does not output its operand. \\\hline
+$4$ & The command, the number of commands executed and the new top of stack are printed if the command has inferred a theorem or fetched a theorem from the dictionary. The {\em diag} command outputs its operand. \\\hline
+$5$ & The command, the number of commands executed, the new top of stack and the old stack are printed if the command has inferred a theorem or fetched a theorem from the dictionary. The {\em diag} command outputs its operand. \\\hline
+${} > 5$ & The command, the number of commands executed, the new top of stack and the old stack are printed unconditionally. The {\em diag} command outputs its operand. \\\hline
+\end{tabular}
+\end{center}
+
 The virtual machine records its current state in the variable {\em diag\_state}.
 =SML
 val €diag_state› : WM_STATE OPT ref;
@@ -778,6 +794,7 @@ val €vm_diagnostics› : int ref = ref 0;
 type €OBJECT_DICT› = (int, OBJECT) SEARCH_TREE;
 type €WM_STATE› = {
 	interface : IMPORT_INTERFACE,
+	command_count : int,
 	stack : OBJECT list,
 	dictionary : OBJECT_DICT,
 	assumptions : THM NET,
@@ -803,6 +820,7 @@ fun €convert_tyvar_name› ( ([], base) : NAME ) : string = (
 =SML
 fun €initial_vm_state› (interface : IMPORT_INTERFACE) : WM_STATE = ({
 	interface = interface,
+	command_count = 0,
 	stack = [],
 	dictionary = initial_search_tree int_order,
 	assumptions =
@@ -814,9 +832,10 @@ fun €initial_vm_state› (interface : IMPORT_INTERFACE) : WM_STATE = ({
 =TEX
 =SML
 fun €push_object› (ob : OBJECT)
-	({interface, stack, dictionary, assumptions, theorems} : WM_STATE)
+	({interface, command_count, stack, dictionary, assumptions, theorems} : WM_STATE)
 		: WM_STATE = (
 	{	interface = interface,
+		command_count = command_count,
 		stack = ob::stack,
 		dictionary = dictionary,
 		assumptions = assumptions,
@@ -825,12 +844,13 @@ fun €push_object› (ob : OBJECT)
 =TEX
 =SML
 fun €pop_object›
-	({interface, stack, dictionary, assumptions, theorems} : WM_STATE)
+	({interface, stack, command_count, dictionary, assumptions, theorems} : WM_STATE)
 		: OBJECT * WM_STATE = (
 	case stack of
 		h::t =>
 		(h,
 		{	interface = interface,
+			command_count = command_count,
 			stack = t,
 			dictionary = dictionary,
 			assumptions = assumptions,
@@ -984,10 +1004,23 @@ fun €pop_subst_info› (st : WM_STATE) :
 );
 =TEX
 =SML
-fun €set_dictionary› (dict : OBJECT_DICT)
-	({interface, stack, assumptions, theorems, ...} : WM_STATE)
+fun €inc_command_count›
+	({interface, command_count, stack, assumptions, theorems, dictionary} : WM_STATE)
 		: WM_STATE = (
 		{	interface = interface,
+			command_count = command_count + 1,
+			stack = stack,
+			dictionary = dictionary,
+			assumptions = assumptions,
+			theorems = theorems }
+);
+=TEX
+=SML
+fun €set_dictionary› (dict : OBJECT_DICT)
+	({interface, command_count, stack, assumptions, theorems, ...} : WM_STATE)
+		: WM_STATE = (
+		{	interface = interface,
+			command_count = command_count,
 			stack = stack,
 			dictionary = dict,
 			assumptions = assumptions,
@@ -996,9 +1029,10 @@ fun €set_dictionary› (dict : OBJECT_DICT)
 =TEX
 =SML
 fun €set_assumptions› (asms: THM NET)
-	({interface, stack, dictionary, theorems, ...} : WM_STATE)
+	({interface, command_count, stack, dictionary, theorems, ...} : WM_STATE)
 		: WM_STATE = (
 		{	interface = interface,
+			command_count = command_count,
 			stack = stack,
 			dictionary = dictionary,
 			assumptions = asms,
@@ -1007,9 +1041,10 @@ fun €set_assumptions› (asms: THM NET)
 =TEX
 =SML
 fun €set_theorems› (thms: THM list)
-	({interface, stack, dictionary, assumptions, ...} : WM_STATE)
+	({interface, command_count, stack, dictionary, assumptions, ...} : WM_STATE)
 		: WM_STATE = (
 		{	interface = interface,
+			command_count = command_count,
 			stack = stack,
 			dictionary = dictionary,
 			assumptions = assumptions,
@@ -1292,11 +1327,19 @@ fun €do_define_type_op›
 =TEX
 =SML
 fun €do_diag› (st : WM_STATE) : WM_STATE = (
-	let	val ((_, msg), st' as {stack = stk, ...}) = pop_name st;
-	in	diag_line("diag: " ^ msg ^
-			": current stack length: "
-				^ string_of_int(length stk) ^ ":");
-		PolyML.print stk;
+	let	val ((sl, s), st' as {stack = stk, command_count, ...}) = pop_name st
+			handle Fail _ => (([], "unexpected object"), snd(pop_object st));
+	in	(if !vm_diagnostics >= 0 andalso !vm_diagnostics <> 3
+		 then
+			let	val msg = format_list (fn x => x) (sl @ [s]) ".";
+				val cc =
+					if !vm_diagnostics = 1
+					then "command count: " ^
+						string_of_int (command_count + 1) ^ ": "
+					else "";
+			in	diag_line("diag: " ^ cc ^ msg)
+			end
+		  else ());
 		st'
 	end
 );
@@ -1442,13 +1485,18 @@ val €vm_fetch_cmds› : string list =  ["ref", "remove"];
 =SML
 fun €vm_diags› (cmd : string)
 	(st1 as {stack = stk1, ...} : WM_STATE)
-	(st2 as {stack = stk2, ...} : WM_STATE) : WM_STATE = (
-	let	val show_old_stack =
-			(!vm_diagnostics >= 1 andalso
-			(cmd mem vm_inference_cmds orelse 
+	(st2 as {stack = stk2, command_count, ...} : WM_STATE) : WM_STATE = (
+	let	val is_thm_command = 
+			cmd mem vm_inference_cmds orelse 
 				((case stk2 of (OThm _::_) => true | _ => false) andalso
-					cmd mem vm_fetch_cmds)));
-	in	(if	!vm_diagnostics > 2 orelse show_old_stack
+					cmd mem vm_fetch_cmds);
+		val show_old_stack = !vm_diagnostics > 5 orelse
+			(!vm_diagnostics = 2 andalso cmd = "diag") orelse
+			(!vm_diagnostics = 5 andalso is_thm_command);
+		val cmd_num =  cmd ^ ": command number: " ^ string_of_int command_count;
+	in	(if	!vm_diagnostics = 3
+		then	diag_line cmd_num
+		else if	!vm_diagnostics > 2 orelse show_old_stack
 		then	let	val n = length stk2;
 				val tos =
 					if n = 0
@@ -1456,7 +1504,7 @@ fun €vm_diags› (cmd : string)
 					else ": new top of stack:\n" ^
 						PolyML.makestring (hd stk2);
 			in
-				diag_line ("cmd" ^ ": new stack length: " ^
+				diag_line (cmd_num ^ ": new stack length: " ^
 						string_of_int n ^ tos)
 			end
 		else	());
@@ -1472,7 +1520,7 @@ fun €vm_diags› (cmd : string)
 =SML
 fun €do_command› (cmd : string) (st : WM_STATE) : WM_STATE = (
 	vm_diags cmd st
-	((case try_decimal_integer cmd st of
+	(inc_command_count (case try_decimal_integer cmd st of
 		Value st' => st'
 	|	Nil =>
 	case try_quoted_string cmd st of
@@ -1855,7 +1903,8 @@ fun €open_theory_import› {file : string, parent : string, theory : string} : uni
 		val names =
 			map (fn n => "thm" ^ string_of_int n)
 				(interval 1 (length thms));
-	in	map save_thm (combine names thms); ()
+		fun save name_thm = (save_thm name_thm; ());
+	in	app save (combine names thms)
 	end
 );
 =TEX
@@ -2613,7 +2662,7 @@ A ± B Ù B
 =TEX
 =SML
 val €log_±_right_elim_thm› : unit -> unit = (
-	let	val obj = (OThm o undisch_rule o taut_rule) ¨A ± B ¥ AÆ;
+	let	val obj = (OThm o undisch_rule o taut_rule) ¨A ± B ¥ BÆ;
 		val a_±_b = mk_±(a_prop, b_prop);
 		val conj_def = ¨Ã p q∑ (Ã f∑ f p q:BOOL) = (Ã f∑ f T T)Æ;
 		val conj_def_a_b = list_mk_app(conj_def, [a_prop, b_prop]);
@@ -2736,7 +2785,7 @@ log_¥_elim_them ()
 =TEX
 \ pushes the following theorem onto the stack:
 =GFT
-A, A § B Ù B
+A, A ¥ B Ù B
 =TEX
 =SML
 val €log_¥_elim_thm› : unit -> unit = (
@@ -3272,6 +3321,7 @@ val €kernel_inference_name› : KERNEL_INFERENCE -> string = (fn
 );
 val €log_failures› : KERNEL_INFERENCE list ref = ref [];
 fun €logging_checks› (ki : KERNEL_INFERENCE) (f : 'a -> unit) (x : 'a) : unit = (
+	(log_diag o kernel_inference_name) ki;
 	f x handle ex as Fail _ => (
 		log_failures := ki :: !log_failures;
 		diag_line "*** Logging function failed:";
@@ -3559,7 +3609,9 @@ fun €ki_result›(ki as KISubstRule (_, _, _, thm)) = thm
 |   ki_result(ki as KISimpleµIntro (_, _, thm)) = thm
 |   ki_result(ki as KIInstTermRule (_, _, thm)) = thm
 |   ki_result(ki as KIPlusConv (_, thm)) = thm;
-
+=IGN
+open OpenTheoryInternals;
+logging_diagnostics := true;
 
 val th1 = pc_rule1 "lin_arith" prove_rule[] ¨2 < x ¥ 1 < xÆ;
 val th2 = asm_rule ¨2 < xÆ;
@@ -3688,7 +3740,22 @@ end_open_theory_export();
 
 
 (*
+vm_diagnostics := ~1;
+val _ = open_theory_import{file = "t.art", parent = "open-theory-base", theory = "t"};
+vm_diagnostics := 0;
+val _ = open_theory_import{file = "t.art", parent = "open-theory-base", theory = "t"};
+vm_diagnostics := 1;
+val _ = open_theory_import{file = "t.art", parent = "open-theory-base", theory = "t"};
+vm_diagnostics := 2;
+val _ = open_theory_import{file = "t.art", parent = "open-theory-base", theory = "t"};
+vm_diagnostics := 3;
+val _ = open_theory_import{file = "t.art", parent = "open-theory-base", theory = "t"};
 vm_diagnostics := 4;
+val _ = open_theory_import{file = "t.art", parent = "open-theory-base", theory = "t"};
+vm_diagnostics := 5;
+val _ = open_theory_import{file = "t.art", parent = "open-theory-base", theory = "t"};
+vm_diagnostics := 6;
+val _ = open_theory_import{file = "t.art", parent = "open-theory-base", theory = "t"};
 *)
 
 val _ = open_theory_import{file = "t.art", parent = "open-theory-base", theory = "t"};
@@ -3710,4 +3777,7 @@ rewrite_rule [one_one_def] type_defn_def;
 
 
 PC_C1 "predicates" rewrite_conv[] ¨ µ t1 t2∑ (Ã x∑ t1) t2 = t1Æ;
+
+
+val _ = open_theory_import{file = "../egs/maths_egs.art", parent = "open-theory-base", theory = "maths_egs"};
 
