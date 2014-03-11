@@ -9,7 +9,7 @@ See the file LICENSE for your rights to use and change this file.
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-% $Id: wrk084.doc,v 1.7 2014/02/19 13:13:58 rda Exp rda $
+% $Id: wrk084.doc,v 1.8 2014/03/10 17:43:48 rda Exp rda $
 =TEX
 %%%%% YOU MAY WANT TO CHANGE POINT SIZE IN THE FOLLOWING:
 \documentclass[a4paper,12pt]{article}
@@ -57,9 +57,9 @@ of an OpenTheory reader and an OpenTheory writer for {\Product}.
 
 %%%%% THE FOLLOWING DEFAULTS WILL GENERALLY BE RIGHT:
 
-\def\Version{$Revision: 1.7 $%
+\def\Version{$Revision: 1.8 $%
 }
-\def\Date{\FormatDate{$Date: 2014/02/19 13:13:58 $%
+\def\Date{\FormatDate{$Date: 2014/03/10 17:43:48 $%
 }}
 
 %%%%% NOW BEGIN THE DOCUMENT AND MAKE THE FRONT PAGE
@@ -3319,11 +3319,13 @@ val Ûkernel_inference_nameÝ : KERNEL_INFERENCE -> string = (fn
 	|	KIInstTermRule _ => "KIInstTermRule"
 	|	KIPlusConv _ => "KIPlusConv"
 );
-val Ûlog_failuresÝ : KERNEL_INFERENCE list ref = ref [];
-fun Ûlogging_checksÝ (ki : KERNEL_INFERENCE) (f : 'a -> unit) (x : 'a) : unit = (
+=TEX
+=SML
+val Ûlog_inference_failuresÝ : KERNEL_INFERENCE list ref = ref [];
+fun Ûinference_checksÝ (ki : KERNEL_INFERENCE) (f : 'a -> unit) (x : 'a) : unit = (
 	(log_diag o kernel_inference_name) ki;
 	f x handle ex as Fail _ => (
-		log_failures := ki :: !log_failures;
+		log_inference_failures := ki :: !log_inference_failures;
 		diag_line "*** Logging function failed:";
 		(diag_line o string_of_exn) ex;
 		raise ex
@@ -3332,43 +3334,43 @@ fun Ûlogging_checksÝ (ki : KERNEL_INFERENCE) (f : 'a -> unit) (x : 'a) : unit = 
 =TEX
 =SML
 fun Ûlog_inferenceÝ(ki as KISubstRule par) =
-	logging_checks ki log_subst_rule par
+	inference_checks ki log_subst_rule par
 |   log_inference(ki as KISimpleÌEqRule par) =
-	logging_checks ki log_simple_Ì_eq_rule par
+	inference_checks ki log_simple_Ì_eq_rule par
 |   log_inference(ki as KIInstTypeRule par) =
-	logging_checks ki log_inst_type_rule par
+	inference_checks ki log_inst_type_rule par
 |   log_inference(ki as KI´Intro par) =
-	logging_checks ki log_´_intro par
+	inference_checks ki log_´_intro par
 |   log_inference(ki as KI´Elim par) =
-	logging_checks ki log_´_elim par
+	inference_checks ki log_´_elim par
 |   log_inference(ki as KIAsmRule par) =
-	logging_checks ki log_asm_rule par
+	inference_checks ki log_asm_rule par
 |   log_inference(ki as KIReflConv par) =
-	logging_checks ki log_refl_conv par
+	inference_checks ki log_refl_conv par
 |   log_inference(ki as KISimpleÂConv par) =
-	logging_checks ki log_simple_Â_conv par
+	inference_checks ki log_simple_Â_conv par
 |   log_inference(ki as KISucConv par) =
-	logging_checks ki log_suc_conv par
+	inference_checks ki log_suc_conv par
 |   log_inference(ki as KIStringConv par) =
-	logging_checks ki log_string_conv par
+	inference_checks ki log_string_conv par
 |   log_inference(ki as KICharConv par) =
-	logging_checks ki log_char_conv par
+	inference_checks ki log_char_conv par
 |   log_inference(ki as KIEqSymRule par) =
-	logging_checks ki log_eq_sym_rule par
+	inference_checks ki log_eq_sym_rule par
 |   log_inference(ki as KIListSimpleµElim par) =
-	logging_checks ki log_list_simple_µ_elim par
+	inference_checks ki log_list_simple_µ_elim par
 |   log_inference(ki as KIEqTransRule par) =
-	logging_checks ki log_eq_trans_rule par
+	inference_checks ki log_eq_trans_rule par
 |   log_inference(ki as KIMkAppRule par) =
-	logging_checks ki log_mk_app_rule par
+	inference_checks ki log_mk_app_rule par
 |   log_inference(ki as KI¤MPRule par) =
-	logging_checks ki log_¤_mp_rule par
+	inference_checks ki log_¤_mp_rule par
 |   log_inference(ki as KISimpleµIntro par) =
-	logging_checks ki log_simple_µ_intro par
+	inference_checks ki log_simple_µ_intro par
 |   log_inference(ki as KIInstTermRule par) =
-	logging_checks ki log_inst_term_rule par
+	inference_checks ki log_inst_term_rule par
 |   log_inference(ki as KIPlusConv par) =
-	logging_checks ki log_plus_conv par;
+	inference_checks ki log_plus_conv par;
 =TEX
 To log a theorem, {\em log\_antecedent} will generate the commands to prove
 and stack the theorem.
@@ -3516,18 +3518,41 @@ fun Ûlog_new_type_defnÝ
 end;
 =TEX
 =SML
-fun Ûlog_state_changeÝ (SaveThm (_, thm)) =
-	log_thm thm
-|   log_state_change (ListSaveThm (_, thm)) =
-	log_thm thm
-|   log_state_change (NewAxiom ((_, tm), _)) =
-	log_new_axiom tm
-|   log_state_change (SimpleNewDefn ((_, n, tm), _)) =
-	log_simple_new_defn(n, tm)
-|   log_state_change (NewTypeDefn ((_, name, typars, thm), _)) =
-	log_new_type_defn (name, typars, thm)
-|   log_state_change (NewSpec ((_, ndefs, thm), _)) =
-	log_new_spec (ndefs, thm)
+fun Ûkernel_state_change_nameÝ (SaveThm (n, _)) = n
+|   kernel_state_change_name (ListSaveThm (ns, thm)) = hd ns
+|   kernel_state_change_name (NewAxiom ((ns, tm), thm)) = hd ns
+|   kernel_state_change_name (SimpleNewDefn ((ns, n, tm), thm)) = hd ns
+|   kernel_state_change_name (NewTypeDefn ((ns, name, typars, thm), _)) = hd ns
+|   kernel_state_change_name (NewSpec ((ns, ndefs, thm), _)) = hd ns
+|   kernel_state_change_name (NewConst(n, _)) = n
+|   kernel_state_change_name (NewType(n, _)) = n
+|   kernel_state_change_name _ = "<other>";
+=TEX
+=SML
+val Ûlog_state_change_failuresÝ : KERNEL_STATE_CHANGE list ref = ref [];
+fun Ûstate_change_checksÝ (ksc : KERNEL_STATE_CHANGE) (f : 'a -> unit) (x : 'a) : unit = (
+	(log_diag o kernel_state_change_name) ksc;
+	f x handle ex as Fail _ => (
+		log_state_change_failures := ksc :: !log_state_change_failures;
+		diag_line "*** Logging function failed:";
+		(diag_line o string_of_exn) ex;
+		raise ex
+	)
+);
+=TEX
+=SML
+fun Ûlog_state_changeÝ (ksc as SaveThm (_, thm)) =
+	state_change_checks ksc log_thm thm
+|   log_state_change (ksc as ListSaveThm (_, thm)) =
+	state_change_checks ksc log_thm thm
+|   log_state_change (ksc as NewAxiom ((_, tm), _)) =
+	state_change_checks ksc log_new_axiom tm
+|   log_state_change (ksc as SimpleNewDefn ((_, n, tm), _)) =
+	state_change_checks ksc log_simple_new_defn(n, tm)
+|   log_state_change (ksc as NewTypeDefn ((_, name, typars, thm), _)) =
+	state_change_checks ksc log_new_type_defn (name, typars, thm)
+|   log_state_change (ksc as NewSpec ((_, ndefs, thm), _)) =
+	state_change_checks ksc log_new_spec (ndefs, thm)
 |   log_state_change _ = ();
 =TEX
 %%%% %%%% %%%% %%%%
@@ -3700,8 +3725,7 @@ end_open_theory_export();
 begin_open_theory_export "t.art";
 val _ = simple_new_defn (["a"], "xyz", mk_t);
 log_diag "end of test";
-cend_open_theory_export();
-lose_log();
+end_open_theory_export();
 
 
 val thm3 = tac_proof (([], ¬¶x:î· (Ìx· ¶y· ³x = y) x®),
