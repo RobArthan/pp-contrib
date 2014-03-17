@@ -9,7 +9,7 @@ See the file LICENSE for your rights to use and change this file.
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-% $Id: wrk084.doc,v 1.8 2014/03/10 17:43:48 rda Exp rda $
+% $Id: wrk084.doc,v 1.9 2014/03/11 10:17:46 rda Exp rda $
 =TEX
 %%%%% YOU MAY WANT TO CHANGE POINT SIZE IN THE FOLLOWING:
 \documentclass[a4paper,12pt]{article}
@@ -57,9 +57,9 @@ of an OpenTheory reader and an OpenTheory writer for {\Product}.
 
 %%%%% THE FOLLOWING DEFAULTS WILL GENERALLY BE RIGHT:
 
-\def\Version{$Revision: 1.8 $%
+\def\Version{$Revision: 1.9 $%
 }
-\def\Date{\FormatDate{$Date: 2014/03/10 17:43:48 $%
+\def\Date{\FormatDate{$Date: 2014/03/11 10:17:46 $%
 }}
 
 %%%%% NOW BEGIN THE DOCUMENT AND MAKE THE FRONT PAGE
@@ -620,13 +620,13 @@ as follows:
 \begin{center}
 \begin{tabular}{|r|p{5in}|}\hline
 ${} < 0$ & All diagnostic output is suppressed.\\\hline
-$0$ & The {\em diag} command will output its operand. \\\hline
-$1$ & The {\em diag} command will output its operand and the number of commands executed (including this {\em diag} command). \\\hline
-$2$ & The {\em diag} command will cause its operand, the number of commands executed, the new top of stack and the old stack to be printed. \\\hline
-$3$ & The command and the number of commands executed are printed. The {\em diag} command does not output its operand. \\\hline
-$4$ & The command, the number of commands executed and the new top of stack are printed if the command has inferred a theorem or fetched a theorem from the dictionary. The {\em diag} command outputs its operand. \\\hline
-$5$ & The command, the number of commands executed, the new top of stack and the old stack are printed if the command has inferred a theorem or fetched a theorem from the dictionary. The {\em diag} command outputs its operand. \\\hline
-${} > 5$ & The command, the number of commands executed, the new top of stack and the old stack are printed unconditionally. The {\em diag} command outputs its operand. \\\hline
+$0$ & A progress pragma command will output its operand. \\\hline
+$1$ & A progress pragma command will output its operand and the number of commands executed (including this command). \\\hline
+$2$ & A progress pragma command will cause its operand, the number of commands executed, the new top of stack and the old stack to be printed. \\\hline
+$3$ & The command and the number of commands executed are printed. A progress pragma command does not output its operand. \\\hline
+$4$ & The command, the number of commands executed and the new top of stack are printed if the command has inferred a theorem or fetched a theorem from the dictionary. A progress pragma command outputs its operand. \\\hline
+$5$ & The command, the number of commands executed, the new top of stack and the old stack are printed if the command has inferred a theorem or fetched a theorem from the dictionary. A progress pragma command outputs its operand. \\\hline
+${} > 5$ & The command, the number of commands executed, the new top of stack and the old stack are printed unconditionally. A progress pragma command outputs its operand. \\\hline
 \end{tabular}
 \end{center}
 
@@ -1326,25 +1326,6 @@ fun €do_define_type_op›
 );
 =TEX
 =SML
-fun €do_diag› (st : WM_STATE) : WM_STATE = (
-	let	val ((sl, s), st' as {stack = stk, command_count, ...}) = pop_name st
-			handle Fail _ => (([], "unexpected object"), snd(pop_object st));
-	in	(if !vm_diagnostics >= 0 andalso !vm_diagnostics <> 3
-		 then
-			let	val msg = format_list (fn x => x) (sl @ [s]) ".";
-				val cc =
-					if !vm_diagnostics = 1
-					then "command count: " ^
-						string_of_int (command_count + 1) ^ ": "
-					else "";
-			in	diag_line("diag: " ^ cc ^ msg)
-			end
-		  else ());
-		st'
-	end
-);
-=TEX
-=SML
 fun €do_eq_mp› (st : WM_STATE) : WM_STATE = (
 	let	val (thm1, st') = pop_thm st;
 		val (thm2, st'') = pop_thm st';
@@ -1370,6 +1351,33 @@ fun €do_op_type› (st : WM_STATE) : WM_STATE = (
 =SML
 fun €do_pop› (st : WM_STATE) : WM_STATE = (
 	(snd o pop_object) st
+);
+=TEX
+=SML
+fun €progress› ((sl, s) : NAME, command_count : int) : unit = (
+	if !vm_diagnostics >= 0 andalso !vm_diagnostics <> 3
+	then	let	val msg = format_list (fn x => x) (sl @ [s]) ".";
+			val cc =
+				if !vm_diagnostics = 1
+				then "command count: " ^
+					string_of_int (command_count + 1) ^ ": "
+				else "";
+		in	diag_line("progress: " ^ cc ^ msg)
+		end
+	else ()
+);
+=TEX
+The only kind of pragma currently supported is a debug/progress message.
+=SML
+fun €do_pragma› (st : WM_STATE) : WM_STATE = (
+	let	val (obj, st' as {command_count, ...}) = pop_object st;
+	in	(case obj of
+			OList [OName([], "debug"), OName([], "progress"),
+				OName msg] => progress (msg, command_count)
+		|	_ => progress(([], "unsupported pragma"), command_count)
+		);
+		st'
+	end
 );
 =TEX
 =SML
@@ -1486,12 +1494,15 @@ val €vm_fetch_cmds› : string list =  ["ref", "remove"];
 fun €vm_diags› (cmd : string)
 	(st1 as {stack = stk1, ...} : WM_STATE)
 	(st2 as {stack = stk2, command_count, ...} : WM_STATE) : WM_STATE = (
-	let	val is_thm_command = 
+	let	fun is_progress "pragma"
+			(OList (OName ([], "debug") :: OName ([], "progress") :: _) :: _) = true
+		|   is_progress _ _ = false;
+		val is_thm_command = 
 			cmd mem vm_inference_cmds orelse 
 				((case stk2 of (OThm _::_) => true | _ => false) andalso
 					cmd mem vm_fetch_cmds);
 		val show_old_stack = !vm_diagnostics > 5 orelse
-			(!vm_diagnostics = 2 andalso cmd = "diag") orelse
+			(!vm_diagnostics = 2 andalso is_progress cmd stk1) orelse
 			(!vm_diagnostics = 5 andalso is_thm_command);
 		val cmd_num =  cmd ^ ": command number: " ^ string_of_int command_count;
 	in	(if	!vm_diagnostics = 3
@@ -1541,11 +1552,11 @@ fun €do_command› (cmd : string) (st : WM_STATE) : WM_STATE = (
 	|	"def" =>  do_def st
 	|	"defineConst" =>  do_define_const st
 	|	"defineTypeOp" =>  do_define_type_op st
-	|	"diag" => do_diag st
 	|	"eqMp" =>  do_eq_mp st
 	|	"nil" =>  do_nil st
 	|	"opType" =>  do_op_type st
 	|	"pop" =>  do_pop st
+	|	"pragma" => do_pragma st
 	|	"ref" =>  do_ref st
 	|	"refl" =>  do_refl st
 	|	"remove" =>  do_remove st
@@ -2073,17 +2084,6 @@ fun €log_name› ((pfx, sfx) : NAME) :unit = (
 	end
 );
 =TEX
-Diagnostics: must be turned off when exporting to a system other than {\Product}.
-=SML
-val €logging_diagnostics› : bool ref = ref false;
-fun €log_diag› (msg : string) = (
-	if !logging_diagnostics
-	then	(
-		log_name ([], msg);
-		log_cmd "diag"
-	) else ()
-);
-=TEX
 =SML
 fun €log_nil› (() : unit) : unit = log_cmd "nil";
 fun €log_cons› (() : unit) : unit = log_cmd "cons";
@@ -2095,6 +2095,16 @@ fun €log_pair› (log_x : 'a -> unit, log_y : 'b -> unit) ((x, y) : 'a * 'b) : uni
 	log_nil();
 	log_cons();
 	log_cons()
+);
+=TEX
+=SML
+val €logging_progress› : bool ref = ref false;
+fun €log_progress› (msg : string) = (
+	if !logging_progress
+	then	(
+		log_list (fn s => log_name([], s)) ["debug", "progress", msg];
+		log_cmd "pragma"
+	) else ()
 );
 =TEX
 The following two functions raise {\em Fail} if the object does not have a stored key.
@@ -3323,7 +3333,7 @@ val €kernel_inference_name› : KERNEL_INFERENCE -> string = (fn
 =SML
 val €log_inference_failures› : KERNEL_INFERENCE list ref = ref [];
 fun €inference_checks› (ki : KERNEL_INFERENCE) (f : 'a -> unit) (x : 'a) : unit = (
-	(log_diag o kernel_inference_name) ki;
+	(log_progress o kernel_inference_name) ki;
 	f x handle ex as Fail _ => (
 		log_inference_failures := ki :: !log_inference_failures;
 		diag_line "*** Logging function failed:";
@@ -3531,7 +3541,7 @@ fun €kernel_state_change_name› (SaveThm (n, _)) = n
 =SML
 val €log_state_change_failures› : KERNEL_STATE_CHANGE list ref = ref [];
 fun €state_change_checks› (ksc : KERNEL_STATE_CHANGE) (f : 'a -> unit) (x : 'a) : unit = (
-	(log_diag o kernel_state_change_name) ksc;
+	(log_progress o kernel_state_change_name) ksc;
 	f x handle ex as Fail _ => (
 		log_state_change_failures := ksc :: !log_state_change_failures;
 		diag_line "*** Logging function failed:";
@@ -3636,42 +3646,42 @@ fun €ki_result›(ki as KISubstRule (_, _, _, thm)) = thm
 |   ki_result(ki as KIPlusConv (_, thm)) = thm;
 =IGN
 open OpenTheoryInternals;
-logging_diagnostics := true;
+logging_progress := true;
 
 val th1 = pc_rule1 "lin_arith" prove_rule[] ¨2 < x ¥ 1 < xÆ;
 val th2 = asm_rule ¨2 < xÆ;
 begin_open_theory_export "t.art";
 ¥_elim th1 th2;
-log_diag "end of test";
+log_progress "end of test";
 end_open_theory_export();
 
 begin_open_theory_export "t.art";
 ¥_intro ¨1 < xÆ th2;
-log_diag "end of test";
+log_progress "end of test";
 end_open_theory_export();
 
 val th3 = (undisch_rule o undisch_rule o pc_rule1 "lin_arith" prove_rule[])
 		¨2 < x ¥ x < y ¥ 1 < xÆ;
 begin_open_theory_export "t.art";
 ¥_intro ¨2 < xÆ th3;
-log_diag "end of test";
+log_progress "end of test";
 end_open_theory_export();
 
 begin_open_theory_export "t.art";
 ¥_elim (¥_intro ¨2 < xÆ t_thm) (asm_rule ¨2 < xÆ);
-log_diag "end of test";
+log_progress "end of test";
 end_open_theory_export();
 
 begin_open_theory_export "t.art";
 ¥_elim  th3a th3b;
-log_diag "end of test";
+log_progress "end of test";
 end_open_theory_export();
 
 val th4 = pc_rule1 "lin_arith" prove_rule[]
 		¨2 < x ¥ x < y ¥ 1 < xÆ;
 begin_open_theory_export "t.art";
 val res = simple_µ_intro ¨x:ÓÆ th4;
-log_diag "end of test";
+log_progress "end of test";
 end_open_theory_export();
 
 
@@ -3679,14 +3689,14 @@ val th5 = times_assoc_thm;
 
 begin_open_theory_export "t.art";
 val res = list_simple_µ_elim [¨x+1Æ, ¨v2+27Æ] th5;
-log_diag "end of test";
+log_progress "end of test";
 end_open_theory_export();
 
 val th6 = µ_intro ¨i:ÓÆ times_assoc_thm;
 
 begin_open_theory_export "t.art";
 val res = list_simple_µ_elim [¨x+1Æ, ¨v2+27Æ] th6;
-log_diag "end of test";
+log_progress "end of test";
 end_open_theory_export();
 
 
@@ -3694,13 +3704,13 @@ val th7 = map_def;
 
 begin_open_theory_export "t.art";
 val res = inst_type_rule [(îÓÆ, î'aÆ)] th7;
-log_diag "end of test";
+log_progress "end of test";
 end_open_theory_export();
 
 
 begin_open_theory_export "t.art";
 val res = refl_conv ¨xÆ;
-log_diag "end of test";
+log_progress "end of test";
 end_open_theory_export();
 
 
@@ -3709,7 +3719,7 @@ val thm1 = tac_proof (([], ¨∂is_const∑µf∑ is_const f § µx y∑f x = f yÆ),
 	prove_∂_tac
 );
 val _ = new_spec (["f"], 1, thm1);
-log_diag "end of test";
+log_progress "end of test";
 end_open_theory_export();
 
 
@@ -3719,12 +3729,12 @@ val thm2 = tac_proof (([], ¨∂a b c:Ó∑  a < b ± b < cÆ),
 
 begin_open_theory_export "t.art";
 val _ = new_spec (["a", "b"], 2, thm2);
-log_diag "end of test";
+log_progress "end of test";
 end_open_theory_export();
 
 begin_open_theory_export "t.art";
 val _ = simple_new_defn (["a"], "xyz", mk_t);
-log_diag "end of test";
+log_progress "end of test";
 end_open_theory_export();
 
 
@@ -3734,7 +3744,7 @@ val thm3 = tac_proof (([], ¨∂x:Ó∑ (Ãx∑ ∂y∑ ≥x = y) xÆ),
 
 begin_open_theory_export "t.art";
 val two_or_more_def = new_type_defn (["a"], "TWO_OR_MORE", [], thm3);
-log_diag "end of test";
+log_progress "end of test";
 end_open_theory_export();
 
 
@@ -3764,6 +3774,7 @@ end_open_theory_export();
 
 
 (*
+open OpenTheoryInternals;
 vm_diagnostics := ~1;
 val _ = open_theory_import{file = "t.art", parent = "open-theory-base", theory = "t"};
 vm_diagnostics := 0;
@@ -3803,5 +3814,6 @@ rewrite_rule [one_one_def] type_defn_def;
 PC_C1 "predicates" rewrite_conv[] ¨ µ t1 t2∑ (Ã x∑ t1) t2 = t1Æ;
 
 
-val _ = open_theory_import{file = "../egs/maths_egs.art", parent = "open-theory-base", theory = "maths_egs"};
+val _ = open_theory_import{file = "function-def.art", parent = "open-theory-base", theory = "t"};
+val _ = open_theory_import{file = "natural-def.art", parent = "t", theory = "u"};
 
