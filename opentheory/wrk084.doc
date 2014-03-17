@@ -9,7 +9,7 @@ See the file LICENSE for your rights to use and change this file.
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-% $Id: wrk084.doc,v 1.9 2014/03/11 10:17:46 rda Exp rda $
+% $Id: wrk084.doc,v 1.10 2014/03/17 14:46:14 rda Exp rda $
 =TEX
 %%%%% YOU MAY WANT TO CHANGE POINT SIZE IN THE FOLLOWING:
 \documentclass[a4paper,12pt]{article}
@@ -57,9 +57,9 @@ of an OpenTheory reader and an OpenTheory writer for {\Product}.
 
 %%%%% THE FOLLOWING DEFAULTS WILL GENERALLY BE RIGHT:
 
-\def\Version{$Revision: 1.9 $%
+\def\Version{$Revision: 1.10 $%
 }
-\def\Date{\FormatDate{$Date: 2014/03/11 10:17:46 $%
+\def\Date{\FormatDate{$Date: 2014/03/17 14:46:14 $%
 }}
 
 %%%%% NOW BEGIN THE DOCUMENT AND MAKE THE FRONT PAGE
@@ -1335,6 +1335,14 @@ fun €do_eq_mp› (st : WM_STATE) : WM_STATE = (
 );
 =TEX
 =SML
+fun €do_hd_tl› (st : WM_STATE) : WM_STATE = (
+	let	val (objl, st') = pop_list st;
+		val st'' = push_object (hd objl) st';
+	in	push_list (tl objl) st''
+	end
+);
+=TEX
+=SML
 fun €do_nil› (st : WM_STATE) : WM_STATE = (
 	push_list [] st
 );
@@ -1381,6 +1389,15 @@ fun €do_pragma› (st : WM_STATE) : WM_STATE = (
 );
 =TEX
 =SML
+fun €do_prove_hyp› (st : WM_STATE) : WM_STATE = (
+	let	val (thm1, st') = pop_thm st;
+		val (thm2, st'') = pop_thm st';
+		val thm3 = prove_asm_rule thm2 thm1;
+	in	push_thm thm3 st''
+	end
+);
+=TEX
+=SML
 fun €do_ref› (st as {dictionary, ...} : WM_STATE) : WM_STATE = (
 	let	val (k, st') = pop_num st;
 		val obj = force_value (st_lookup k dictionary)
@@ -1407,7 +1424,6 @@ fun €do_remove› (st as {dictionary, ...} : WM_STATE) : WM_STATE = (
 	end
 );
 =TEX
-=IGN
 =SML
 fun €do_subst› (st : WM_STATE) : WM_STATE = (
 	let	val (thm1, st') = pop_thm st;
@@ -1415,6 +1431,13 @@ fun €do_subst› (st : WM_STATE) : WM_STATE = (
 		val thm2 = (asm_inst_term_rule tmsubs o
 				asm_inst_type_rule tysubs) thm1;
 	in	push_thm thm2 st''
+	end
+);
+=SML
+fun €do_sym› (st : WM_STATE) : WM_STATE = (
+	let	val (thm1, st') = pop_thm st;
+		val thm2 = eq_sym_rule thm1;
+	in	push_thm thm2 st'
 	end
 );
 =TEX
@@ -1425,6 +1448,15 @@ fun €do_thm› (st as {theorems, ...} : WM_STATE) : WM_STATE = (
 		val thm2 = tac_proof(seq, accept_tac thm1);
 		val theorems' = thm2 :: theorems;
 	in	(set_theorems theorems' o push_thm thm2) st''
+	end
+);
+=TEX
+=SML
+fun €do_trans› (st : WM_STATE) : WM_STATE = (
+	let	val (thm1, st') = pop_thm st;
+		val (thm2, st'') = pop_thm st';
+		val thm3 = eq_trans_rule thm2 thm1;
+	in	push_thm thm3 st''
 	end
 );
 =TEX
@@ -1463,6 +1495,14 @@ fun €do_var_type› (st : WM_STATE) : WM_STATE = (
 	end
 );
 =TEX
+We currently make no use of the format version (as there have been no backwards incompatible changes).
+=SML
+fun €do_version› (st : WM_STATE) : WM_STATE = (
+	let	val (verno, st') = pop_num st;
+	in	st'
+	end
+);
+=TEX
 %%%% %%%% %%%% %%%%
 \subsubsection {Command Interpreter}
 %%%% %%%% %%%% %%%%
@@ -1484,9 +1524,12 @@ val €vm_inference_cmds› : string list =  [
 	"defineConst",
 	"defineTypeOp",
 	"eqMp",
+	"proveHyp",
 	"refl",
 	"subst",
-	"thm"];
+	"sym",
+	"thm",
+	"trans"];
 val €vm_fetch_cmds› : string list =  ["ref", "remove"];
 
 =TEX
@@ -1504,10 +1547,12 @@ fun €vm_diags› (cmd : string)
 		val show_old_stack = !vm_diagnostics > 5 orelse
 			(!vm_diagnostics = 2 andalso is_progress cmd stk1) orelse
 			(!vm_diagnostics = 5 andalso is_thm_command);
+		val show_new_top_of_stack = show_old_stack orelse
+				(!vm_diagnostics = 4 andalso is_thm_command);
 		val cmd_num =  cmd ^ ": command number: " ^ string_of_int command_count;
 	in	(if	!vm_diagnostics = 3
 		then	diag_line cmd_num
-		else if	!vm_diagnostics > 2 orelse show_old_stack
+		else if	show_new_top_of_stack
 		then	let	val n = length stk2;
 				val tos =
 					if n = 0
@@ -1538,34 +1583,39 @@ fun €do_command› (cmd : string) (st : WM_STATE) : WM_STATE = (
 		Value st' => st'
 	|	Nil =>
 	case cmd of
-		"absTerm" =>  do_abs_term st
-	|	"absThm" =>  do_abs_thm st
-	|	"appTerm" =>  do_app_term st
-	|	"appThm" =>  do_app_thm st
-	|	"assume" =>  do_assume st
-	|	"axiom" =>  do_axiom st
-	|	"betaConv" =>  do_beta_conv st
-	|	"cons" =>  do_cons st
-	|	"const" =>  do_const st
-	|	"constTerm" =>  do_const_term st
-	|	"deductAntisym" =>  do_deduct_antisym st
-	|	"def" =>  do_def st
-	|	"defineConst" =>  do_define_const st
-	|	"defineTypeOp" =>  do_define_type_op st
-	|	"eqMp" =>  do_eq_mp st
-	|	"nil" =>  do_nil st
-	|	"opType" =>  do_op_type st
-	|	"pop" =>  do_pop st
+		"absTerm" => do_abs_term st
+	|	"absThm" => do_abs_thm st
+	|	"appTerm" => do_app_term st
+	|	"appThm" => do_app_thm st
+	|	"assume" => do_assume st
+	|	"axiom" => do_axiom st
+	|	"betaConv" => do_beta_conv st
+	|	"cons" => do_cons st
+	|	"const" => do_const st
+	|	"constTerm" => do_const_term st
+	|	"deductAntisym" => do_deduct_antisym st
+	|	"def" => do_def st
+	|	"defineConst" => do_define_const st
+	|	"defineTypeOp" => do_define_type_op st
+	|	"eqMp" => do_eq_mp st
+	|	"hdTl" => do_hd_tl st
+	|	"nil" => do_nil st
+	|	"opType" => do_op_type st
+	|	"pop" => do_pop st
 	|	"pragma" => do_pragma st
-	|	"ref" =>  do_ref st
-	|	"refl" =>  do_refl st
-	|	"remove" =>  do_remove st
-	|	"subst" =>  do_subst st
-	|	"thm" =>  do_thm st
-	|	"typeOp" =>  do_type_op st
-	|	"var" =>  do_var st
-	|	"varTerm" =>  do_var_term st
-	|	"varType" =>  do_var_type st
+	|	"proveHyp" => do_prove_hyp st
+	|	"ref" => do_ref st
+	|	"refl" => do_refl st
+	|	"remove" => do_remove st
+	|	"subst" => do_subst st
+	|	"sym" => do_sym st
+	|	"thm" => do_thm st
+	|	"trans" => do_trans st
+	|	"typeOp" => do_type_op st
+	|	"var" => do_var st
+	|	"varTerm" => do_var_term st
+	|	"varType" => do_var_type st
+	|	"version" => do_version st
 	|	_ => (
 			if	size cmd = 0 orelse substring(cmd, 0, 1) = "#"
 			then	st
@@ -2390,12 +2440,23 @@ val €log_eq_trans_thm› : unit -> unit = (
 	end
 );
 =TEX
-{\em log\_eq\_sym\_thm (a, b)} pushes the following theorem onto the stack:
-=GFT
-a = b Ù b = a
+{\em log\_eq\_sym (a, b)}infers
+=INLINEFT
+á Ù b = a
 =TEX
+\ from
+=INLINEFT
+á Ù a = b
+=TEX
+.
+The stack is expected to be as in the comments on entry.
+The following auxiliary function pushes an instance of
+=INLINEFT
+x = y Ù y = x
+=TEX
+\ onto the stack and is used elsewhere.
 =SML
-fun €log_eq_sym› (a : TERM, b : TERM) : unit = (
+fun €log_eq_sym_aux› (a : TERM, b : TERM) : unit = (
 	let	val ty_subs = [(type_of a, alpha)];
 		val tm_subs = [(a, inst [] ty_subs x_var), (b, inst [] ty_subs y_var)];
 	in	log_subst_params (ty_subs, tm_subs);
@@ -2403,10 +2464,27 @@ fun €log_eq_sym› (a : TERM, b : TERM) : unit = (
 		log_cmd"subst"		(* 1. a = b Ù b = a *)
 	end
 );
+=SML
+fun €log_eq_sym› (a : TERM, b : TERM) : unit = (
+					(* 1. á Ù a = b *)
+		log_eq_sym_aux (a, b);	(* 2. a = b Ù b = a *)
+		log_prove_asm()		(* 1. á Ù b = a *)
+);
 =TEX
-{\em log\_eq\_trans\_thm (a, b. c)} pushes the following theorem onto the stack:
-=GFT
-a = b, b = c Ù a = c
+{\em log\_eq\_trans (a, b. c)} infers
+=INLINEFT
+á, Ñ Ù a = c
+=TEX
+\ from
+=INLINEFT
+á Ù a = b
+=TEX
+\ and
+=INLINEFT
+Ñ Ù b = c
+=TEX
+.
+The stack is expected to be as in the comments on entry.
 =TEX
 =SML
 fun €log_eq_trans› (a : TERM, b : TERM, c : TERM) : unit = (
@@ -2414,9 +2492,13 @@ fun €log_eq_trans› (a : TERM, b : TERM, c : TERM) : unit = (
 		val tm_subs = [(a, inst [] ty_subs x_var),
 				(b, inst [] ty_subs y_var),
 				(c, inst [] ty_subs z_var)];
-	in	log_subst_params (ty_subs, tm_subs);
-		log_eq_trans_thm ();	(* 1. x = y, y = z Ù x = z *)
-		log_cmd"subst"		(* 1. a = b, b = c Ù a = c *)
+	in				(* 1. á Ù a = b *)
+					(* 2. Ñ Ù b = c *)
+		log_subst_params (ty_subs, tm_subs);
+		log_eq_trans_thm ();	(* 3. x = y, y = z Ù x = z *)
+		log_cmd"subst";		(* 3. a = b, b = c Ù a = c *)
+		log_prove_asm();	(* 2. Ñ, a = b Ù a = c *)
+		log_prove_asm()		(* 1. á, Ñ Ù a = c *)
 	end
 );
 =TEX
@@ -2432,7 +2514,7 @@ fun €log_t_thm› (():unit) : unit = (
 			log_antecedent ot_t_def;
 						(* 1. Ù T § (Ãx∑x) = (Ãx∑x) *)
 			log_eq_sym(mk_t, q);
-			log_prove_asm();	(* 1. Ù  (Ãx∑x) = (Ãx∑x) § T *)
+						(* 1. Ù  (Ãx∑x) = (Ãx∑x) § T *)
 			(log_refl o fst o dest_eq o snd o dest_eq o concl) ot_t_def;
 						(* 2. Ù (Ãx∑x) = (Ãx∑x) *)
 			log_cmd "eqMp";		(* 1. Ù T *)
@@ -2457,7 +2539,7 @@ A Ù A § T
 val €log_§_t_intro_thm› : unit -> unit = (
 	let	val obj = OThm (undisch_rule (taut_rule ¨A ¥ (A § T)Æ));
 	in	fn () => try_stored obj handle Fail _ => (
-			log_eq_sym (a_prop, mk_t);
+			log_eq_sym_aux (a_prop, mk_t);
 						(* 1. A § T Ù T § A *)
 			log_t_thm();		(* 2. Ù T *)
 			log_cmd"eqMp";		(* 1. A § T Ù A *)
@@ -2484,7 +2566,7 @@ val €log_§_t_elim_thm› : unit -> unit = (
 			log_assume a_prop;	(* 1. A Ù A *)
 			log_t_thm();		(* 2. Ù T *)
 			log_cmd"deductAntisym";	(* 1. A Ù A § T *)
-			log_eq_sym(a_prop, mk_t);
+			log_eq_sym_aux(a_prop, mk_t);
 						(* 2. A § T Ù T § A *)
 			log_t_thm();		(* 3. Ù T *)
 			log_cmd"eqMp";		(* 2. A § T Ù A *)
@@ -2528,9 +2610,8 @@ fun €log_¬_¬_conv› (tm : TERM) : unit = (
 		log_refl t;		(* 2. Ù t = t *)
 		log_cmd"appThm";	(* 1. Ù (Ãv w∑b) s t = (Ãw∑b)[s/v] t *)
 		log_¬_conv rhs1;	(* 2. Ù (Ãw∑b)[s/v] t = b[s/v,t/w] *)
-		log_eq_trans(tm, rhs1, rhs2);
-		log_prove_asm();
-		log_prove_asm()		(* 1. Ù (Ãv w∑b) s t = [s/v,t/v] *)
+		log_eq_trans(tm, rhs1, rhs2)
+					(* 1. Ù (Ãv w∑b) s t = [s/v,t/v] *)
 	end
 );
 
@@ -2561,10 +2642,9 @@ val €log_±_intro_thm› : unit -> unit = (
 			log_¬_¬_conv conj_def_a_b;
 						(* 2. Ù (Ãp q∑Q[p/A,q/B]) A B § Q *)
 			log_eq_trans(a_±_b, conj_def_a_b, q);
-			log_prove_asm();
-			log_prove_asm();	(* 1. Ù A ± B § Q *)
+						(* 1. Ù A ± B § Q *)
 			log_eq_sym(a_±_b, q);
-			log_prove_asm();	(* 1. Ù Q § A ± B *)
+						(* 1. Ù Q § A ± B *)
 			log_var (dest_var f);
 			log_refl f;		(* 2. Ù f = f *)
 			log_§_t_intro_thm();	(* 3. A Ù A § T *)
@@ -2612,8 +2692,6 @@ val €log_±_left_elim_thm› : unit -> unit = (
 			log_¬_¬_conv conj_def_a_b;
 					(* 2. Ù (Ãp q∑Q[p/A,q/B]) A B § Q *)
 			log_eq_trans(a_±_b, conj_def_a_b, q);
-			log_prove_asm();
-			log_prove_asm();
 					(* 1. Ù A ± B § Q *)
 			log_assume a_±_b;
 					(* 2. Ù A ± B Ù A ± B *)
@@ -2626,32 +2704,22 @@ val €log_±_left_elim_thm› : unit -> unit = (
 			log_¬_conv sp1;
 					(* 2. Ù s (Ãp q∑p) = (Ãp q∑p) A B *)
 			log_eq_sym(sp1, p1ab);
-			log_prove_asm();
 					(* 2. Ù (Ãp q∑p) A B = s (Ãp q∑p) *)
 			log_eq_trans(p1ab, sp1, tp1);
-			log_prove_asm();
-			log_prove_asm();
 					(* 1. A ± B Ù (Ãp q∑p) A B = t (Ãp q∑ p) *)
 			log_¬_conv tp1;
 					(* Ù t(Ãp q∑p) = (Ãp q∑p) T T *)
 			log_eq_trans(p1ab, tp1, p1tt);
-			log_prove_asm();
-			log_prove_asm();
 					(* 1. A ± B Ù (Ãp q∑p) A B = (Ãp q∑p) T T *)
 			log_¬_¬_conv p1tt;
 					(* 2. Ù (Ãp q∑p) T T = T *)
 			log_eq_trans(p1ab, p1tt, mk_t);
-			log_prove_asm();
-			log_prove_asm();
 					(* 1. A ± B Ù (Ãp q∑p) A B = T *)
 			log_¬_¬_conv p1ab;
 					(* 2. Ù (Ãp q∑p) A B = A *)
 			log_eq_sym(p1ab, a_prop);
-			log_prove_asm();
 					(* 2. Ù A = (Ãp q∑p) A B *)
 			log_eq_trans(a_prop, p1ab, mk_t);
-			log_prove_asm();
-			log_prove_asm();
 					(* 1. A ± B Ù A § T *)
 			log_§_t_elim_thm();
 					(* 2. A § T Ù A *)
@@ -2694,8 +2762,6 @@ val €log_±_right_elim_thm› : unit -> unit = (
 			log_¬_¬_conv conj_def_a_b;
 						(* 2. Ù (Ãp q∑Q[p/A,q/B]) A B § Q *)
 			log_eq_trans(a_±_b, conj_def_a_b, q);
-			log_prove_asm();
-			log_prove_asm();
 					(* 1. Ù A ± B § Q *)
 			log_assume a_±_b;
 					(* 2. Ù A ± B Ù A ± B *)
@@ -2708,32 +2774,22 @@ val €log_±_right_elim_thm› : unit -> unit = (
 			log_¬_conv sp2;
 					(* 2. Ù s (Ãp q∑q) = (Ãp q∑q) A B *)
 			log_eq_sym(sp2, p2ab);
-			log_prove_asm();
 					(* 2. Ù (Ãp q∑q) A B = s (Ãp q∑q) *)
 			log_eq_trans(p2ab, sp2, tp2);
-			log_prove_asm();
-			log_prove_asm();
 					(* 1. A ± B Ù (Ãp q∑q) A B = t (Ãp q∑ q) *)
 			log_¬_conv tp2;
 					(* Ù t(Ãp q∑q) = (Ãp q∑q) T T *)
 			log_eq_trans(p2ab, tp2, p2tt);
-			log_prove_asm();
-			log_prove_asm();
 					(* 1. A ± B Ù (Ãp q∑q) A B = (Ãp q∑p) T T *)
 			log_¬_¬_conv p2tt;
 					(* 2. Ù (Ãp q∑q) T T = T *)
 			log_eq_trans(p2ab, p2tt, mk_t);
-			log_prove_asm();
-			log_prove_asm();
 					(* 1. A ± B Ù (Ãp q∑q) A B = T *)
 			log_¬_¬_conv p2ab;
 					(* 2. Ù (Ãp q∑q) A B = B *)
 			log_eq_sym(p2ab, b_prop);
-			log_prove_asm();
 					(* 2. Ù B = (Ãp q∑q) A B *)
 			log_eq_trans(b_prop, p2ab, mk_t);
-			log_prove_asm();
-			log_prove_asm();
 					(* 1. A ± B Ù B § T *)
 			log_subst_params ([], [(b_prop, a_prop)]);
 			log_§_t_elim_thm();
@@ -2774,11 +2830,8 @@ val €log_¥_intro_lemma› : unit -> unit = (
 			log_¬_¬_conv imp_def_a_b;
 				(* 2. Ù (Ãp q∑p ± q § p) A B § (A ± B § A) *)
 			log_eq_trans(a_¥_b, imp_def_a_b, r);
-			log_prove_asm();
-			log_prove_asm();
 				(* 1. Ù (A ¥ B) § (A ± B ¥ A) *)
 			log_eq_sym(a_¥_b, r);
-			log_prove_asm();
 				(* 1. Ù (A ± B ¥ A) § (A ¥ B) *)
 			log_assume r;	
 				(* 2. A ± B § A Ù A ± B § A *)
@@ -2816,15 +2869,12 @@ val €log_¥_elim_thm› : unit -> unit = (
 			log_¬_¬_conv imp_def_a_b;
 				(* 2. Ù (Ãp q∑p ± q § p) A B § (A ± B § A) *)
 			log_eq_trans(a_¥_b, imp_def_a_b, r);
-			log_prove_asm();
-			log_prove_asm();
 				(* 1. Ù (A ¥ B) § (A ± B ¥ A) *)
 			log_assume a_¥_b;
 				(* 2. A ¥ B Ù A ¥ B *)
 			log_cmd"eqMp";	
 				(* 1. A ¥ B Ù A ± B = A *)
 			log_eq_sym(mk_±(a_prop, b_prop), a_prop);
-			log_prove_asm();
 				(* 1. A ¥ B Ù A = A ± B *)
 			log_assume a_prop;
 				(* 2. A Ù A *)
@@ -2879,8 +2929,6 @@ val €log_µ_elim_thm› : unit -> unit = (
 			log_¬_conv t;
 				(* 2. Ù (Ãx∑ T) x § T *)
 			log_eq_trans(px, t, mk_t);
-			log_prove_asm();
-			log_prove_asm();
 				(* 1. $µ P Ù P x § T *)
 			log_subst_params([], [(px, a_prop)]);
 			log_§_t_elim_thm();
@@ -2952,12 +3000,10 @@ val €log_µ_intro_lemma› : unit -> unit = (
 			log_assume a_§_r;	
 (* 1. (A § (ÃP∑ P = (Ãx∑ T))(Ãx∑ T)) Ù (A § (ÃP∑ P = (Ãx∑ T))(Ãx∑ T)) *)
 			log_¬_conv r;
+(* 2, Ù (ÃP∑ P = (Ãx:'a∑ T))(Ãx∑ T) § (Ãx:'a∑T) = (Ãx∑T) *)
 			log_eq_trans(a_prop, r, Ã_eq_Ã);
-			log_prove_asm();
-			log_prove_asm();	
 (* 1. (A § (ÃP∑ P = (Ãx∑ T))(Ãx∑ T)) Ù A § ((Ãx∑T) = (Ãx∑T)) *)
 			log_eq_sym(a_prop, Ã_eq_Ã);
-			log_prove_asm();
 (* 1. (A § (ÃP∑ P = (Ãx∑ T))(Ãx∑ T)) Ù ((Ãx∑T) = (Ãx∑T)) § A *)
 			log_refl Ã;
 			log_cmd "eqMp";
@@ -3189,7 +3235,6 @@ fun €log_eq_sym_rule›
 	in	check_stored obj handle Fail _ => (
 			log_antecedent thrm;
 			log_eq_sym(a, b);
-			log_prove_asm();
 			store_and_drop obj; ()
 		)
 	end
@@ -3234,8 +3279,6 @@ fun €log_eq_trans_rule›
 			log_antecedent thrm1;
 			log_antecedent thrm2;
 			log_eq_trans(a, b, c);
-			log_prove_asm();
-			log_prove_asm();
 			store_and_drop obj; ()
 		)
 	end
@@ -3647,6 +3690,25 @@ fun €ki_result›(ki as KISubstRule (_, _, _, thm)) = thm
 =IGN
 open OpenTheoryInternals;
 logging_progress := true;
+
+
+begin_open_theory_export "t.art";
+(*
+log_t_thm();
+log_eq_sym_thm();
+log_eq_trans_thm();
+log_§_t_intro_thm();
+log_§_t_elim_thm();
+log_±_intro_thm();
+log_±_left_elim_thm();
+log_±_right_elim_thm();
+log_¥_elim_thm();
+log_µ_elim_thm();
+log_¥_intro_lemma();
+*)
+log_µ_intro_lemma();
+log_progress "end of test";
+end_open_theory_export();
 
 val th1 = pc_rule1 "lin_arith" prove_rule[] ¨2 < x ¥ 1 < xÆ;
 val th2 = asm_rule ¨2 < xÆ;
