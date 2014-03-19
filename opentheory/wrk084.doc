@@ -9,7 +9,7 @@ See the file LICENSE for your rights to use and change this file.
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-% $Id: wrk084.doc,v 1.11 2014/03/17 17:21:43 rda Exp rda $
+% $Id: wrk084.doc,v 1.12 2014/03/18 16:43:38 rda Exp rda $
 =TEX
 %%%%% YOU MAY WANT TO CHANGE POINT SIZE IN THE FOLLOWING:
 \documentclass[a4paper,12pt]{article}
@@ -57,9 +57,9 @@ of an OpenTheory reader and an OpenTheory writer for {\Product}.
 
 %%%%% THE FOLLOWING DEFAULTS WILL GENERALLY BE RIGHT:
 
-\def\Version{$Revision: 1.11 $%
+\def\Version{$Revision: 1.12 $%
 }
-\def\Date{\FormatDate{$Date: 2014/03/17 17:21:43 $%
+\def\Date{\FormatDate{$Date: 2014/03/18 16:43:38 $%
 }}
 
 %%%%% NOW BEGIN THE DOCUMENT AND MAKE THE FRONT PAGE
@@ -491,14 +491,14 @@ signature ÛOpenTheoryÝ = sig
 
 
 =DOC
-val Ûopen_theory_importÝ : {file : string, parent : string, theory : string} -> unit;
+val Ûopen_theory_importÝ : {files : string list, parent : string, theory : string} -> unit;
 =DESCRIBE
 This function provides a simple interface to the OpenTheory reader to
-import a single article file into a {\Product} theory.
+import one or more article files into a {\Product} theory.
 It expects the article to use the naming conventions and definitions
 of the Gilith OpenTheory Repo, but also supports the forms of
 type definition implemented in HOL4 and {\Product}.
-The article file is loaded into the named theory, which is newly created
+The article files are loaded into the named theory, which is newly created
 for the purpose (any existing theory of that name is deleted).
 The theory is created as a child of the indicated parent theory and
 the theory ``open-theory-base'' is made a parent if it is not an ancestor
@@ -602,7 +602,7 @@ type ÛOBJECT_DICTÝ = (int, OBJECT) SEARCH_TREE;
 =TEX
 The stack and 
 =SML
-type ÛWM_STATEÝ = {
+type ÛVM_STATEÝ = {
 	interface : IMPORT_INTERFACE,
 	command_count : int,
 	stack : OBJECT list,
@@ -632,14 +632,14 @@ ${} > 5$ & The command, the number of commands executed, the new top of stack an
 
 The virtual machine records its current state in the variable {\em diag\_state}.
 =SML
-val Ûdiag_stateÝ : WM_STATE OPT ref;
+val Ûdiag_stateÝ : VM_STATE OPT ref;
 =TEX
 The programmatic interface to the virtual machine is the following
 function.
 The second parameter represents the input stream.
 =SML
 val Ûopen_theory_vmÝ : IMPORT_INTERFACE -> 
-	('s -> (string * 's) OPT) -> 's -> WM_STATE;
+	('s -> (string * 's) OPT) -> 's -> VM_STATE;
 =TEX
 %%%% %%%% %%%% %%%%
 \subsection{The Writer}\label{sec:writer}
@@ -792,7 +792,7 @@ val Ûvm_diagnosticsÝ : int ref = ref 0;
 
 =SML
 type ÛOBJECT_DICTÝ = (int, OBJECT) SEARCH_TREE;
-type ÛWM_STATEÝ = {
+type ÛVM_STATEÝ = {
 	interface : IMPORT_INTERFACE,
 	command_count : int,
 	stack : OBJECT list,
@@ -818,7 +818,7 @@ fun Ûconvert_tyvar_nameÝ ( ([], base) : NAME ) : string = (
 ) | convert_tyvar_name _ = fail "open-theory-reader" 122007 [];
 =TEX
 =SML
-fun Ûinitial_vm_stateÝ (interface : IMPORT_INTERFACE) : WM_STATE = ({
+fun Ûinitial_vm_stateÝ (interface : IMPORT_INTERFACE) : VM_STATE = ({
 	interface = interface,
 	command_count = 0,
 	stack = [],
@@ -832,8 +832,8 @@ fun Ûinitial_vm_stateÝ (interface : IMPORT_INTERFACE) : WM_STATE = ({
 =TEX
 =SML
 fun Ûpush_objectÝ (ob : OBJECT)
-	({interface, command_count, stack, dictionary, assumptions, theorems} : WM_STATE)
-		: WM_STATE = (
+	({interface, command_count, stack, dictionary, assumptions, theorems} : VM_STATE)
+		: VM_STATE = (
 	{	interface = interface,
 		command_count = command_count,
 		stack = ob::stack,
@@ -844,8 +844,8 @@ fun Ûpush_objectÝ (ob : OBJECT)
 =TEX
 =SML
 fun Ûpop_objectÝ
-	({interface, stack, command_count, dictionary, assumptions, theorems} : WM_STATE)
-		: OBJECT * WM_STATE = (
+	({interface, stack, command_count, dictionary, assumptions, theorems} : VM_STATE)
+		: OBJECT * VM_STATE = (
 	case stack of
 		h::t =>
 		(h,
@@ -859,83 +859,83 @@ fun Ûpop_objectÝ
 );
 =TEX
 =SML
-fun Ûpush_numÝ (x : INTEGER) (st : WM_STATE) : WM_STATE =
+fun Ûpush_numÝ (x : INTEGER) (st : VM_STATE) : VM_STATE =
 	push_object (ONum x) st;
-fun Ûpush_nameÝ (x : NAME) (st : WM_STATE) : WM_STATE =
+fun Ûpush_nameÝ (x : NAME) (st : VM_STATE) : VM_STATE =
 	push_object (OName x) st;
-fun Ûpush_listÝ (x : OBJECT list) (st : WM_STATE) : WM_STATE =
+fun Ûpush_listÝ (x : OBJECT list) (st : VM_STATE) : VM_STATE =
 	push_object (OList x) st;
-fun Ûpush_type_opÝ (x : string) (st : WM_STATE) : WM_STATE =
+fun Ûpush_type_opÝ (x : string) (st : VM_STATE) : VM_STATE =
 	push_object (OTypeOp x) st;
-fun Ûpush_typeÝ (x : TYPE) (st : WM_STATE) : WM_STATE =
+fun Ûpush_typeÝ (x : TYPE) (st : VM_STATE) : VM_STATE =
 	push_object (OType x) st;
-fun Ûpush_constÝ (x : NAME) (st : WM_STATE) : WM_STATE =
+fun Ûpush_constÝ (x : NAME) (st : VM_STATE) : VM_STATE =
 	push_object (OConst x) st;
-fun Ûpush_varÝ (x : string * TYPE) (st : WM_STATE) : WM_STATE =
+fun Ûpush_varÝ (x : string * TYPE) (st : VM_STATE) : VM_STATE =
 	push_object (OVar x) st;
-fun Ûpush_termÝ (x : TERM) (st : WM_STATE) : WM_STATE =
+fun Ûpush_termÝ (x : TERM) (st : VM_STATE) : VM_STATE =
 	push_object (OTerm x) st;
-fun Ûpush_thmÝ (x : THM) (st : WM_STATE) : WM_STATE =
+fun Ûpush_thmÝ (x : THM) (st : VM_STATE) : VM_STATE =
 	push_object (OThm x) st;
 =TEX
 =SML
-fun Ûpop_numÝ (st : WM_STATE) : INTEGER * WM_STATE = (
+fun Ûpop_numÝ (st : VM_STATE) : INTEGER * VM_STATE = (
 	case pop_object st of
 		(ONum x, st') => (x, st')
 	|	_ => fail "open-theory-reader" 122001 [fn _ => "an integer"]
 );
 =TEX
 =SML
-fun Ûpop_nameÝ (st : WM_STATE) : NAME * WM_STATE = (
+fun Ûpop_nameÝ (st : VM_STATE) : NAME * VM_STATE = (
 	case pop_object st of
 		(OName x, st') => (x, st')
 	|	_ => fail "open-theory-reader" 122001 [fn _ => "a name"]
 );
 =TEX
 =SML
-fun Ûpop_listÝ (st : WM_STATE) : OBJECT list * WM_STATE = (
+fun Ûpop_listÝ (st : VM_STATE) : OBJECT list * VM_STATE = (
 	case pop_object st of
 		(OList x, st') => (x, st')
 	|	_ => fail "open-theory-reader" 122001 [fn _ => "a list"]
 );
 =TEX
 =SML
-fun Ûpop_type_opÝ (st : WM_STATE) : string * WM_STATE = (
+fun Ûpop_type_opÝ (st : VM_STATE) : string * VM_STATE = (
 	case pop_object st of
 		(OTypeOp x, st') => (x, st')
 	|	_ => fail "open-theory-reader" 122001 [fn _ => "a type operator"]
 );
 =TEX
 =SML
-fun Ûpop_typeÝ (st : WM_STATE) : TYPE * WM_STATE = (
+fun Ûpop_typeÝ (st : VM_STATE) : TYPE * VM_STATE = (
 	case pop_object st of
 		(OType x, st') => (x, st')
 	|	_ => fail "open-theory-reader" 122001 [fn _ => "a type"]
 );
 =TEX
 =SML
-fun Ûpop_constÝ (st : WM_STATE) : NAME * WM_STATE = (
+fun Ûpop_constÝ (st : VM_STATE) : NAME * VM_STATE = (
 	case pop_object st of
 		(OConst x, st') => (x, st')
 	|	_ => fail "open-theory-reader" 122001 [fn _ => "a constant name"]
 );
 =TEX
 =SML
-fun Ûpop_varÝ (st : WM_STATE) : (string * TYPE) * WM_STATE = (
+fun Ûpop_varÝ (st : VM_STATE) : (string * TYPE) * VM_STATE = (
 	case pop_object st of
 		(OVar x, st') => (x, st')
 	|	_ => fail "open-theory-reader" 122001 [fn _ => "a variable"]
 );
 =TEX
 =SML
-fun Ûpop_termÝ (st : WM_STATE) : TERM * WM_STATE = (
+fun Ûpop_termÝ (st : VM_STATE) : TERM * VM_STATE = (
 	case pop_object st of
 		(OTerm x, st') => (x, st')
 	|	_ => fail "open-theory-reader" 122001 [fn _ => "a term"]
 );
 =TEX
 =SML
-fun Ûpop_thmÝ (st : WM_STATE) : THM * WM_STATE = (
+fun Ûpop_thmÝ (st : VM_STATE) : THM * VM_STATE = (
 	case pop_object st of
 		(OThm x, st') => (x, st')
 	|	_ => fail "open-theory-reader" 122001 [fn _ => "a theorem"]
@@ -943,32 +943,32 @@ fun Ûpop_thmÝ (st : WM_STATE) : THM * WM_STATE = (
 =TEX
 =SML
 fun Ûpop_item_listÝ
-	(proj : OBJECT -> 'a) (st : WM_STATE) : 'a list * WM_STATE = (
+	(proj : OBJECT -> 'a) (st : VM_STATE) : 'a list * VM_STATE = (
 	let	val (objs, st') = pop_list st;
 	in	(map proj objs, st')
 	end
 );
 =TEX
 =SML
-val Ûpop_term_listÝ : WM_STATE -> TERM list * WM_STATE = pop_item_list (fn
+val Ûpop_term_listÝ : VM_STATE -> TERM list * VM_STATE = pop_item_list (fn
 		OTerm x => x
 	|	_ => fail "open-theory-reader" 122008 []
 );
 =TEX
 =SML
-val Ûpop_name_listÝ : WM_STATE -> NAME list * WM_STATE = pop_item_list (fn
+val Ûpop_name_listÝ : VM_STATE -> NAME list * VM_STATE = pop_item_list (fn
 		OName x => x
 	|	_ => fail "open-theory-reader" 122008 []
 );
 =TEX
 =SML
-val Ûpop_type_listÝ : WM_STATE -> TYPE list * WM_STATE = pop_item_list (fn
+val Ûpop_type_listÝ : VM_STATE -> TYPE list * VM_STATE = pop_item_list (fn
 		OType x => x
 	|	_ => fail "open-theory-reader" 122008 []
 );
 =TEX
 =SML
-fun Ûpop_sequentÝ (st : WM_STATE) : SEQ * WM_STATE = (
+fun Ûpop_sequentÝ (st : VM_STATE) : SEQ * VM_STATE = (
 	let 	val (cncl, st') = pop_term st;
 		val (asms, st'') = pop_term_list st';
 		fun check t = 
@@ -981,8 +981,8 @@ fun Ûpop_sequentÝ (st : WM_STATE) : SEQ * WM_STATE = (
 );
 =TEX
 =SML
-fun Ûpop_subst_infoÝ (st : WM_STATE) :
-	((TYPE * TYPE) list * (TERM * TERM) list) * WM_STATE = (
+fun Ûpop_subst_infoÝ (st : VM_STATE) :
+	((TYPE * TYPE) list * (TERM * TERM) list) * VM_STATE = (
 	let	fun moan () = fail "open-theory-reader" 12011 [];
 		fun get_pairs acc [] = rev acc
 		|   get_pairs acc (OList [x, y]::more) = get_pairs ((x, y)::acc) more
@@ -1005,8 +1005,8 @@ fun Ûpop_subst_infoÝ (st : WM_STATE) :
 =TEX
 =SML
 fun Ûinc_command_countÝ
-	({interface, command_count, stack, assumptions, theorems, dictionary} : WM_STATE)
-		: WM_STATE = (
+	({interface, command_count, stack, assumptions, theorems, dictionary} : VM_STATE)
+		: VM_STATE = (
 		{	interface = interface,
 			command_count = command_count + 1,
 			stack = stack,
@@ -1017,8 +1017,8 @@ fun Ûinc_command_countÝ
 =TEX
 =SML
 fun Ûset_dictionaryÝ (dict : OBJECT_DICT)
-	({interface, command_count, stack, assumptions, theorems, ...} : WM_STATE)
-		: WM_STATE = (
+	({interface, command_count, stack, assumptions, theorems, ...} : VM_STATE)
+		: VM_STATE = (
 		{	interface = interface,
 			command_count = command_count,
 			stack = stack,
@@ -1029,8 +1029,8 @@ fun Ûset_dictionaryÝ (dict : OBJECT_DICT)
 =TEX
 =SML
 fun Ûset_assumptionsÝ (asms: THM NET)
-	({interface, command_count, stack, dictionary, theorems, ...} : WM_STATE)
-		: WM_STATE = (
+	({interface, command_count, stack, dictionary, theorems, ...} : VM_STATE)
+		: VM_STATE = (
 		{	interface = interface,
 			command_count = command_count,
 			stack = stack,
@@ -1041,8 +1041,8 @@ fun Ûset_assumptionsÝ (asms: THM NET)
 =TEX
 =SML
 fun Ûset_theoremsÝ (thms: THM list)
-	({interface, command_count, stack, dictionary, assumptions, ...} : WM_STATE)
-		: WM_STATE = (
+	({interface, command_count, stack, dictionary, assumptions, ...} : VM_STATE)
+		: VM_STATE = (
 		{	interface = interface,
 			command_count = command_count,
 			stack = stack,
@@ -1095,7 +1095,7 @@ and an assumption will be sufficient to determine the correct instantation
 of the assumption.
 =SML
 fun Ûtry_assumptionsÝ
-	(st as {assumptions, ...} : WM_STATE)
+	(st as {assumptions, ...} : VM_STATE)
 		(seq as (_, conc): SEQ)
 			: THM OPT = (
 	let	val thms = net_lookup assumptions conc;
@@ -1113,7 +1113,7 @@ fun Ûtry_assumptionsÝ
 );
 =TEX
 =SML
-fun ÛheuristicsÝ (st : WM_STATE) (seq : SEQ) : THM OPT = (
+fun ÛheuristicsÝ (st : VM_STATE) (seq : SEQ) : THM OPT = (
 	let	fun first [] = Nil
 		|   first (t::ts) = (
 			case t seq of
@@ -1133,7 +1133,7 @@ fun ÛheuristicsÝ (st : WM_STATE) (seq : SEQ) : THM OPT = (
 
 =TEX
 =SML
-fun Ûtry_decimal_integerÝ (cmd : string) (st : WM_STATE) : WM_STATE OPT = (
+fun Ûtry_decimal_integerÝ (cmd : string) (st : VM_STATE) : VM_STATE OPT = (
 	Value (push_num (integer_of_string cmd) st) handle Fail _ => Nil	
 );
 =TEX
@@ -1169,14 +1169,14 @@ fun Ûname_of_quoted_stringÝ (chars : string) : NAME OPT = (
 );
 =TEX
 =SML
-fun Ûtry_quoted_stringÝ (chars : string) (st : WM_STATE) : WM_STATE OPT = (
+fun Ûtry_quoted_stringÝ (chars : string) (st : VM_STATE) : VM_STATE OPT = (
 	case name_of_quoted_string chars of
 		Value n => Value(push_name n st)
 	|	Nil => Nil
 );
 =TEX
 =SML
-fun Ûdo_abs_termÝ (st : WM_STATE) : WM_STATE = (
+fun Ûdo_abs_termÝ (st : VM_STATE) : VM_STATE = (
 	let	val (b, st') = pop_term st;
 		val (v, st'') = pop_var st';
 		val abs = mk_simple_Ì(mk_var v, b);
@@ -1185,7 +1185,7 @@ fun Ûdo_abs_termÝ (st : WM_STATE) : WM_STATE = (
 );
 =TEX
 =SML
-fun Ûdo_abs_thmÝ (st : WM_STATE) : WM_STATE = (
+fun Ûdo_abs_thmÝ (st : VM_STATE) : VM_STATE = (
 	let	val (thm, st') = pop_thm st;
 		val (v, st'') = pop_var st';
 		val thm' = simple_Ì_eq_rule (mk_var v) thm;
@@ -1194,7 +1194,7 @@ fun Ûdo_abs_thmÝ (st : WM_STATE) : WM_STATE = (
 );
 =TEX
 =SML
-fun Ûdo_app_termÝ (st : WM_STATE) : WM_STATE = (
+fun Ûdo_app_termÝ (st : VM_STATE) : VM_STATE = (
 	let	val (x, st') = pop_term st;
 		val (f, st'') = pop_term st';
 		val app = mk_app(f, x)
@@ -1203,7 +1203,7 @@ fun Ûdo_app_termÝ (st : WM_STATE) : WM_STATE = (
 );
 =TEX
 =SML
-fun Ûdo_app_thmÝ (st : WM_STATE) : WM_STATE = (
+fun Ûdo_app_thmÝ (st : VM_STATE) : VM_STATE = (
 	let	val (rand_thm, st') = pop_thm st;
 		val (rator_thm, st'') = pop_thm st';
 		val thm = mk_app_rule rator_thm rand_thm;
@@ -1212,7 +1212,7 @@ fun Ûdo_app_thmÝ (st : WM_STATE) : WM_STATE = (
 );
 =TEX
 =SML
-fun Ûdo_assumeÝ (st : WM_STATE) : WM_STATE = (
+fun Ûdo_assumeÝ (st : VM_STATE) : VM_STATE = (
 	let	val (phi, st') = pop_term st;
 		val thm = asm_rule phi;
 	in	push_thm thm st'
@@ -1221,8 +1221,8 @@ fun Ûdo_assumeÝ (st : WM_STATE) : WM_STATE = (
 =TEX
 =SML
 fun Ûdo_axiomÝ
-	(st as {interface = {declare_axiom, ...}, assumptions, ...} : WM_STATE)
-		: WM_STATE = (
+	(st as {interface = {declare_axiom, ...}, assumptions, ...} : VM_STATE)
+		: VM_STATE = (
 	let	val (seq, st') = pop_sequent st;
 		val (new, thm) = 
 			case heuristics st' seq of
@@ -1237,7 +1237,7 @@ fun Ûdo_axiomÝ
 );
 =TEX
 =SML
-fun Ûdo_beta_convÝ (st : WM_STATE) : WM_STATE = (
+fun Ûdo_beta_convÝ (st : VM_STATE) : VM_STATE = (
 	let	val (t, st') = pop_term st;
 		val thm = simple_Â_conv t;
 	in	push_thm thm st'
@@ -1245,7 +1245,7 @@ fun Ûdo_beta_convÝ (st : WM_STATE) : WM_STATE = (
 );
 =TEX
 =SML
-fun Ûdo_consÝ (st : WM_STATE) : WM_STATE = (
+fun Ûdo_consÝ (st : VM_STATE) : VM_STATE = (
 	let	val (t, st') = pop_list st;
 		val (h, st'') = pop_object st';
 	in	push_list (h::t) st''
@@ -1253,7 +1253,7 @@ fun Ûdo_consÝ (st : WM_STATE) : WM_STATE = (
 );
 =TEX
 =SML
-fun Ûdo_constÝ (st : WM_STATE) : WM_STATE = (
+fun Ûdo_constÝ (st : VM_STATE) : VM_STATE = (
 	let	val (n, st') = pop_name st;
 	in	push_const n st'
 	end
@@ -1261,8 +1261,8 @@ fun Ûdo_constÝ (st : WM_STATE) : WM_STATE = (
 =TEX
 =SML
 fun Ûdo_const_termÝ
-	(st as {interface = {const_name, ...}, ...} : WM_STATE)
-		: WM_STATE = (
+	(st as {interface = {const_name, ...}, ...} : VM_STATE)
+		: VM_STATE = (
 	let	val (ty, st') = pop_type st;
 		val (c, st'') = pop_const st';
 		val ctm = mk_const(const_name c, ty);
@@ -1271,7 +1271,7 @@ fun Ûdo_const_termÝ
 );
 =TEX
 =SML
-fun Ûdo_deduct_antisymÝ (st : WM_STATE) : WM_STATE = (
+fun Ûdo_deduct_antisymÝ (st : VM_STATE) : VM_STATE = (
 	let	val (thm1, st') = pop_thm st;
 		val (thm2, st'') = pop_thm st';
 		val conc1 = concl thm1;
@@ -1284,7 +1284,7 @@ fun Ûdo_deduct_antisymÝ (st : WM_STATE) : WM_STATE = (
 );
 =TEX
 =SML
-fun Ûdo_defÝ (st as {dictionary, ...} : WM_STATE) : WM_STATE = (
+fun Ûdo_defÝ (st as {dictionary, ...} : VM_STATE) : VM_STATE = (
 	let	val (k, st') = pop_num st;
 		val (x, _) = pop_object st';
 		val dictionary' = st_enter k x dictionary;
@@ -1294,8 +1294,8 @@ fun Ûdo_defÝ (st as {dictionary, ...} : WM_STATE) : WM_STATE = (
 =TEX
 =SML
 fun Ûdo_define_constÝ
-	(st as {interface = {define_const, const_name, ...}, ...} : WM_STATE)
-		: WM_STATE = (
+	(st as {interface = {define_const, const_name, ...}, ...} : VM_STATE)
+		: VM_STATE = (
 	let	val (t, st') = pop_term st;
 		val (c, st'') = pop_name st';
 		val thm = define_const {name = const_name c, def_rhs = t};
@@ -1306,7 +1306,7 @@ fun Ûdo_define_constÝ
 =SML
 fun Ûdo_define_type_opÝ
 	(st as {interface = {define_type_op, type_name, const_name, ...}, ...}
-		: WM_STATE) : WM_STATE = (
+		: VM_STATE) : VM_STATE = (
 	let	val (thm, st') = pop_thm st;
 		val (pars, st'') = pop_name_list st';
 		val (rep, st''') = pop_name st'';
@@ -1326,7 +1326,7 @@ fun Ûdo_define_type_opÝ
 );
 =TEX
 =SML
-fun Ûdo_eq_mpÝ (st : WM_STATE) : WM_STATE = (
+fun Ûdo_eq_mpÝ (st : VM_STATE) : VM_STATE = (
 	let	val (thm1, st') = pop_thm st;
 		val (thm2, st'') = pop_thm st';
 		val thm3 = ¤_mp_rule thm2 thm1;
@@ -1335,7 +1335,7 @@ fun Ûdo_eq_mpÝ (st : WM_STATE) : WM_STATE = (
 );
 =TEX
 =SML
-fun Ûdo_hd_tlÝ (st : WM_STATE) : WM_STATE = (
+fun Ûdo_hd_tlÝ (st : VM_STATE) : VM_STATE = (
 	let	val (objl, st') = pop_list st;
 		val st'' = push_object (hd objl) st';
 	in	push_list (tl objl) st''
@@ -1343,12 +1343,12 @@ fun Ûdo_hd_tlÝ (st : WM_STATE) : WM_STATE = (
 );
 =TEX
 =SML
-fun Ûdo_nilÝ (st : WM_STATE) : WM_STATE = (
+fun Ûdo_nilÝ (st : VM_STATE) : VM_STATE = (
 	push_list [] st
 );
 =TEX
 =SML
-fun Ûdo_op_typeÝ (st : WM_STATE) : WM_STATE = (
+fun Ûdo_op_typeÝ (st : VM_STATE) : VM_STATE = (
 	let	val (pars, st') = pop_type_list st;
 		val (opn, st'') = pop_type_op st';
 		val ty = mk_ctype(opn, pars);
@@ -1357,7 +1357,7 @@ fun Ûdo_op_typeÝ (st : WM_STATE) : WM_STATE = (
 );
 =TEX
 =SML
-fun Ûdo_popÝ (st : WM_STATE) : WM_STATE = (
+fun Ûdo_popÝ (st : VM_STATE) : VM_STATE = (
 	(snd o pop_object) st
 );
 =TEX
@@ -1377,7 +1377,7 @@ fun ÛprogressÝ ((sl, s) : NAME, command_count : int) : unit = (
 =TEX
 The only kind of pragma currently supported is a debug/progress message.
 =SML
-fun Ûdo_pragmaÝ (st : WM_STATE) : WM_STATE = (
+fun Ûdo_pragmaÝ (st : VM_STATE) : VM_STATE = (
 	let	val (obj, st' as {command_count, ...}) = pop_object st;
 	in	(case obj of
 			OList [OName([], "debug"), OName([], "progress"),
@@ -1389,7 +1389,7 @@ fun Ûdo_pragmaÝ (st : WM_STATE) : WM_STATE = (
 );
 =TEX
 =SML
-fun Ûdo_prove_hypÝ (st : WM_STATE) : WM_STATE = (
+fun Ûdo_prove_hypÝ (st : VM_STATE) : VM_STATE = (
 	let	val (thm1, st') = pop_thm st;
 		val (thm2, st'') = pop_thm st';
 		val thm3 = prove_asm_rule thm2 thm1;
@@ -1398,7 +1398,7 @@ fun Ûdo_prove_hypÝ (st : WM_STATE) : WM_STATE = (
 );
 =TEX
 =SML
-fun Ûdo_refÝ (st as {dictionary, ...} : WM_STATE) : WM_STATE = (
+fun Ûdo_refÝ (st as {dictionary, ...} : VM_STATE) : VM_STATE = (
 	let	val (k, st') = pop_num st;
 		val obj = force_value (st_lookup k dictionary)
 			handle Fail _ => fail "open-theory-reader" 122010 [];
@@ -1407,7 +1407,7 @@ fun Ûdo_refÝ (st as {dictionary, ...} : WM_STATE) : WM_STATE = (
 );
 =TEX
 =SML
-fun Ûdo_reflÝ (st : WM_STATE) : WM_STATE = (
+fun Ûdo_reflÝ (st : VM_STATE) : VM_STATE = (
 	let	val (t, st') = pop_term st;
 		val thm = refl_conv t;
 	in	push_thm thm st'
@@ -1415,7 +1415,7 @@ fun Ûdo_reflÝ (st : WM_STATE) : WM_STATE = (
 );
 =TEX
 =SML
-fun Ûdo_removeÝ (st as {dictionary, ...} : WM_STATE) : WM_STATE = (
+fun Ûdo_removeÝ (st as {dictionary, ...} : VM_STATE) : VM_STATE = (
 	let	val (k, st') = pop_num st;
 		val obj = force_value (st_lookup k dictionary)
 			handle Fail _ => fail "open-theory-reader" 122010 [];
@@ -1425,7 +1425,7 @@ fun Ûdo_removeÝ (st as {dictionary, ...} : WM_STATE) : WM_STATE = (
 );
 =TEX
 =SML
-fun Ûdo_substÝ (st : WM_STATE) : WM_STATE = (
+fun Ûdo_substÝ (st : VM_STATE) : VM_STATE = (
 	let	val (thm1, st') = pop_thm st;
 		val ((tysubs, tmsubs), st'') = pop_subst_info st';
 		val thm2 = (asm_inst_term_rule tmsubs o
@@ -1434,7 +1434,7 @@ fun Ûdo_substÝ (st : WM_STATE) : WM_STATE = (
 	end
 );
 =SML
-fun Ûdo_symÝ (st : WM_STATE) : WM_STATE = (
+fun Ûdo_symÝ (st : VM_STATE) : VM_STATE = (
 	let	val (thm1, st') = pop_thm st;
 		val thm2 = eq_sym_rule thm1;
 	in	push_thm thm2 st'
@@ -1442,7 +1442,7 @@ fun Ûdo_symÝ (st : WM_STATE) : WM_STATE = (
 );
 =TEX
 =SML
-fun Ûdo_thmÝ (st as {theorems, ...} : WM_STATE) : WM_STATE = (
+fun Ûdo_thmÝ (st as {theorems, ...} : VM_STATE) : VM_STATE = (
 	let	val (seq as (_, conc), st') = pop_sequent st;
 		val (thm1, st'') = pop_thm st';
 		val thm2 = tac_proof(seq, accept_tac thm1);
@@ -1452,7 +1452,7 @@ fun Ûdo_thmÝ (st as {theorems, ...} : WM_STATE) : WM_STATE = (
 );
 =TEX
 =SML
-fun Ûdo_transÝ (st : WM_STATE) : WM_STATE = (
+fun Ûdo_transÝ (st : VM_STATE) : VM_STATE = (
 	let	val (thm1, st') = pop_thm st;
 		val (thm2, st'') = pop_thm st';
 		val thm3 = eq_trans_rule thm2 thm1;
@@ -1462,8 +1462,8 @@ fun Ûdo_transÝ (st : WM_STATE) : WM_STATE = (
 =TEX
 =SML
 fun Ûdo_type_opÝ
-	(st as {interface = {type_name, ...}, ...} : WM_STATE)
-		: WM_STATE = (
+	(st as {interface = {type_name, ...}, ...} : VM_STATE)
+		: VM_STATE = (
 	let	val (n, st') = pop_name st;
 		val opn = type_name n;
 	in	push_type_op opn st'
@@ -1471,7 +1471,7 @@ fun Ûdo_type_opÝ
 );
 =TEX
 =SML
-fun Ûdo_varÝ (st : WM_STATE) : WM_STATE = (
+fun Ûdo_varÝ (st : VM_STATE) : VM_STATE = (
 	let	val (ty, st') = pop_type st;
 		val (n, st'') = pop_name st';
 		val v = (convert_var_name n, ty);
@@ -1479,7 +1479,7 @@ fun Ûdo_varÝ (st : WM_STATE) : WM_STATE = (
 	end
 );
 =SML
-fun Ûdo_var_termÝ (st : WM_STATE) : WM_STATE =  (
+fun Ûdo_var_termÝ (st : VM_STATE) : VM_STATE =  (
 	let	val (v, st') = pop_var st;
 		val t = mk_var v;
 	in	push_term t st'
@@ -1488,7 +1488,7 @@ fun Ûdo_var_termÝ (st : WM_STATE) : WM_STATE =  (
 );
 =TEX
 =SML
-fun Ûdo_var_typeÝ (st : WM_STATE) : WM_STATE = (
+fun Ûdo_var_typeÝ (st : VM_STATE) : VM_STATE = (
 	let	val (n, st') = pop_name st;
 		val ty = (mk_vartype o convert_tyvar_name) n;
 	in	push_type ty st'
@@ -1497,7 +1497,7 @@ fun Ûdo_var_typeÝ (st : WM_STATE) : WM_STATE = (
 =TEX
 We currently make no use of the format version (as there have been no backwards incompatible changes).
 =SML
-fun Ûdo_versionÝ (st : WM_STATE) : WM_STATE = (
+fun Ûdo_versionÝ (st : VM_STATE) : VM_STATE = (
 	let	val (verno, st') = pop_num st;
 	in	st'
 	end
@@ -1511,7 +1511,7 @@ fun Ûdo_versionÝ (st : WM_STATE) : WM_STATE = (
 fun Ûillegal_commandÝ (s : string) = fail "open-theory-reader" 122012 [];
 =TEX
 =SML
-val Ûdiag_stateÝ : WM_STATE OPT ref = ref Nil;
+val Ûdiag_stateÝ : VM_STATE OPT ref = ref Nil;
 =TEX
 =SML
 val Ûvm_inference_cmdsÝ : string list =  [
@@ -1535,8 +1535,8 @@ val Ûvm_fetch_cmdsÝ : string list =  ["ref", "remove"];
 =TEX
 =SML
 fun Ûvm_diagsÝ (cmd : string)
-	(st1 as {stack = stk1, ...} : WM_STATE)
-	(st2 as {stack = stk2, command_count, ...} : WM_STATE) : WM_STATE = (
+	(st1 as {stack = stk1, ...} : VM_STATE)
+	(st2 as {stack = stk2, command_count, ...} : VM_STATE) : VM_STATE = (
 	let	fun is_progress "pragma"
 			(OList (OName ([], "debug") :: OName ([], "progress") :: _) :: _) = true
 		|   is_progress _ _ = false;
@@ -1574,7 +1574,7 @@ fun Ûvm_diagsÝ (cmd : string)
 );
 =TEX
 =SML
-fun Ûdo_commandÝ (cmd : string) (st : WM_STATE) : WM_STATE = (
+fun Ûdo_commandÝ (cmd : string) (st : VM_STATE) : VM_STATE = (
 	vm_diags cmd st
 	(inc_command_count (case try_decimal_integer cmd st of
 		Value st' => st'
@@ -1634,7 +1634,7 @@ fun Ûdo_commandÝ (cmd : string) (st : WM_STATE) : WM_STATE = (
 
 =SML
 fun Ûopen_theory_vmÝ (interface : IMPORT_INTERFACE)
-	(read : 's -> (string * 's) OPT) (src : 's) : WM_STATE = (
+	(read : 's -> (string * 's) OPT) (src : 's) : VM_STATE = (
 	let	fun go Nil st = st
 		|   go (Value (cmd, more)) st = (
 			let	val st' = do_command cmd st;
@@ -1659,7 +1659,74 @@ val _ = open_theory "basic_hol";
 val _ = new_theory "open-theory-base";
 val _ = new_parent "one";
 val _ = new_parent "combin";
+val _ = new_parent "sum";
 val _ = set_merge_pcs ["basic_hol1", "'one"];
+=TEX
+We need to define the C and W combinators.
+=SML
+val _ = 
+¹HOLCONST
+Ü ÛCombCÝ : ('a ­ 'b ­ 'c) ­ 'b ­ 'a ­ 'c
+÷üüüüüü
+Ü µf x y· CombC f x y = f y x
+°
+=SML
+val _ = 
+¹HOLCONST
+Ü ÛCombWÝ : ('a ­ 'a ­ 'b) ­ 'a ­ 'b
+÷üüüüüü
+Ü µf x· CombW f x = f x x
+°
+=SML
+val Ûcomb_w_defÝ = get_spec ¬CombW®;
+=TEX
+We need to define the constants that support numeric literals in the Gilith OpenTheory Repo.
+=SML
+val _ = 
+¹HOLCONST
+Ü ÛBit0Ý : î ­ î
+÷üüüüüü
+Ü µn· Bit0 n = 2*n
+°
+=TEX
+=SML
+val Ûbit0Ý : TERM = ¬Bit0®;
+val Ûbit0_defÝ : THM = get_spec bit0;
+val _ = 
+¹HOLCONST
+Ü ÛBit1Ý : î ­ î
+÷üüüüüü
+Ü µn· Bit1 n = 2*n + 1
+°
+=TEX
+=SML
+val Ûbit1Ý : TERM = ¬Bit1®;
+val Ûbit1_defÝ : THM = get_spec bit1;
+val two = @@"2";
+val tm = ¬1®;
+val Ûbit0_convÝ : CONV = eq_match_conv bit0_def THEN_C times_conv;
+val Ûbit1_convÝ : CONV = eq_match_conv bit1_def THEN_C LEFT_C times_conv THEN_C plus_conv;
+val rec Ûbit_rep_convÝ : CONV = (fn tm =>
+	let	val n = dest_î tm;
+	in	if	n = zero
+		then	refl_conv tm
+		else	let	val d = mk_î(n idiv two);
+				val r = n imod two;
+				val thm1 = bit_rep_conv d;
+			in	if	r = zero
+				then	let	val bit0_d = mk_app(bit0, d);
+						val thm2 = (eq_sym_rule o bit0_conv) bit0_d;
+						val thm3 = conv_rule ((RAND_C o RAND_C o eq_match_conv) thm1) thm2;
+					in	thm3
+					end
+				else	let	val bit1_d = mk_app(bit1, d);
+						val thm2 = (eq_sym_rule o bit1_conv) bit1_d;
+						val thm3 = conv_rule ((RAND_C o RAND_C o eq_match_conv) thm1) thm2;
+					in	thm3
+					end
+			end
+	end
+);
 =TEX
 The OpenTheory interface also includes some special support for {\Product} and HOL4
 type definitions.
@@ -1740,19 +1807,25 @@ val Ûot_one_one_defÝ : THM = one_one_def;
 val Ûot_onto_defÝ : THM = onto_def;
 val Ûot_o_defÝ : THM = tac_proof(([], ¬$o = Ìf g x·f(g x)®),
 	rewrite_tac[get_spec ¬$o®]);
+val Ûot_comb_c_defÝ : THM = tac_proof(([], ¬CombC = Ìf x y· f y x®),
+	rewrite_tac[get_spec ¬CombC®]);
 val Ûot_comb_i_defÝ : THM = tac_proof(([], ¬CombI = Ìx· x®),
 	rewrite_tac[get_spec ¬CombI®]);
 val Ûot_comb_k_defÝ : THM = tac_proof(([], ¬CombK = Ìx y· x®),
 	rewrite_tac[get_spec ¬CombK®]);
 val Ûot_comb_s_defÝ : THM = tac_proof(([], ¬CombS = Ìf g x· f x (g x)®),
 	rewrite_tac[get_spec ¬CombS®]);
+val Ûot_comb_w_defÝ : THM = tac_proof(([], ¬CombW = Ìf x· f x x®),
+	rewrite_tac[get_spec ¬CombW®]);
 val Ûot_function_defsÝ : THM list = [
 	ot_one_one_def,
 	ot_onto_def,
 	ot_o_def,
+	ot_comb_c_def,
 	ot_comb_i_def,
 	ot_comb_k_def,
-	ot_comb_s_def];
+	ot_comb_s_def,
+	ot_comb_w_def];
 =TEX
 =SML
 val Ûot_defsÝ : (string * THM) list = 
@@ -1776,9 +1849,7 @@ fun Ûimport_nameÝ
 	lassoc3 interp n
 	handle Fail _ => format_list (fn s => s) (cxt @ [base]) "_"
 );
-=IGN
-new_theory "temp";
-set_pc "basic_hol1";
+=TEX
 =SML
 val Ûot_È_axiomÝ : THM =
 	(conv_rule (MAP_C Â_conv) o
@@ -1886,8 +1957,9 @@ fun Ûdefine_hol_constÝ ({name, def_rhs} : CONST_DEFN_INFO) : THM = (
 		val thm2 = new_spec([n], 1, thm1);
 	in	thm2
 	end	handle ex as (Fail _) => (
-			get_ot_def name def_rhs
-			handle Fail _ => fail "open-theory-reader" 122013 [
+			(* get_ot_def name def_rhs
+				handle Fail _ => *)
+			fail "open-theory-reader" 122013 [
 				fn _ => name,
 				fn _ => string_of_term def_rhs, 
 				fn _ => string_of_exn ex]
@@ -1901,15 +1973,13 @@ fun Ûmk_import_interfaceÝ
 	declare_axiom = axiom_as_axiom,
 	define_type_op = define_hol_type_op,
 	define_const = define_hol_const,
-	assumptions = [type_defn_thm, hol4_type_definition_def, Å_axiom, È_axiom],
+	assumptions = [type_defn_thm, hol4_type_definition_def, Å_axiom, È_axiom] @ map snd ot_defs,
 	const_name = import_name const_map,
 	type_name = import_name type_map 
 };
 =TEX
 =SML
-val Ûline_countÝ : int ref = ref 0;
 fun Ûread_instreamÝ (strm : instream) = (
-	line_count := !line_count + 1;
 	case ExtendedIO.input_line strm of 
 		"" => (close_in strm; Nil)
 	|	s => Value(substring(s, 0, size s - 1), strm)
@@ -1939,7 +2009,10 @@ val Ûgilith_mapsÝ : NAME_MAPS = {
 		("Function.K", "CombK"),
 		("Function.S", "CombS"),
 		("Function.C", "CombC"),
-		("Function.W", "CombW")
+		("Function.W", "CombW"),
+		("Function.o", "o"),
+		("Function.injective", "OneOne"),
+		("Function.surjective", "Onto")
 	]
 };
 =TEX
@@ -1948,24 +2021,30 @@ val Ûgilith_mapsÝ : NAME_MAPS = {
 %%%% %%%% %%%% %%%%
 
 =SML
-fun Ûopen_theory_importÝ {file : string, parent : string, theory : string} : unit = (
+fun Ûopen_theory_importÝ {files : string list, parent : string, theory : string} : unit = (
 	let	val _ = force_delete_theory theory handle Fail _ => ();
 		val _ = open_theory parent;
 		val _ = new_theory theory;
 		val _ = if "open-theory-base" mem get_ancestors "-" then ()
 			else new_parent "open-theory-base";
-		val strm = open_in file;
-		val _ = line_count := 0;
-		val {theorems, ...} = open_theory_vm
-			(mk_import_interface gilith_maps)
-			read_instream strm
-			handle ex as Fail _ => (close_in strm; raise ex);
-		val thms = rev theorems;
-		val names =
-			map (fn n => "thm" ^ string_of_int n)
-				(interval 1 (length thms));
-		fun save name_thm = (save_thm name_thm; ());
-	in	app save (combine names thms)
+		fun import_files [] _ = ()
+		|   import_files (file::more) first_thm_num = (
+			let	val strm = open_in file;
+				val {theorems, ...} = open_theory_vm
+					(mk_import_interface gilith_maps)
+						read_instream strm
+					handle ex as Fail _ => (close_in strm; raise ex);
+				val thms = rev theorems;
+				val last_thm_num = first_thm_num + length thms - 1;
+				val names =
+					map (fn n => "thm" ^ string_of_int n)
+						(interval first_thm_num last_thm_num);
+				fun save name_thm = (save_thm name_thm; ());
+				val _ = app save (combine names thms);
+			in	import_files more (last_thm_num + 1)
+			end
+		);
+	in	import_files files 1
 	end
 );
 =TEX
@@ -3838,24 +3917,24 @@ end_open_theory_export();
 (*
 open OpenTheoryInternals;
 vm_diagnostics := ~1;
-val _ = open_theory_import{file = "t.art", parent = "open-theory-base", theory = "t"};
+val _ = open_theory_import{files = ["t.art"], parent = "open-theory-base", theory = "t"};
 vm_diagnostics := 0;
-val _ = open_theory_import{file = "t.art", parent = "open-theory-base", theory = "t"};
+val _ = open_theory_import{files = ["t.art"], parent = "open-theory-base", theory = "t"};
 vm_diagnostics := 1;
-val _ = open_theory_import{file = "t.art", parent = "open-theory-base", theory = "t"};
+val _ = open_theory_import{files = ["t.art"], parent = "open-theory-base", theory = "t"};
 vm_diagnostics := 2;
-val _ = open_theory_import{file = "t.art", parent = "open-theory-base", theory = "t"};
+val _ = open_theory_import{files = ["t.art"], parent = "open-theory-base", theory = "t"};
 vm_diagnostics := 3;
-val _ = open_theory_import{file = "t.art", parent = "open-theory-base", theory = "t"};
+val _ = open_theory_import{files = ["t.art"], parent = "open-theory-base", theory = "t"};
 vm_diagnostics := 4;
-val _ = open_theory_import{file = "t.art", parent = "open-theory-base", theory = "t"};
+val _ = open_theory_import{files = ["t.art"], parent = "open-theory-base", theory = "t"};
 vm_diagnostics := 5;
-val _ = open_theory_import{file = "t.art", parent = "open-theory-base", theory = "t"};
+val _ = open_theory_import{files = ["t.art"], parent = "open-theory-base", theory = "t"};
 vm_diagnostics := 6;
-val _ = open_theory_import{file = "t.art", parent = "open-theory-base", theory = "t"};
+val _ = open_theory_import{files = ["t.art"], parent = "open-theory-base", theory = "t"};
 *)
 
-val _ = open_theory_import{file = "t.art", parent = "open-theory-base", theory = "t"};
+val _ = open_theory_import{files = ["t.art"], parent = "open-theory-base", theory = "t"};
 
 val _ = open_theory_import{file = "base.art", parent = "open-theory-base", theory = "t"};
 
@@ -3876,6 +3955,4 @@ rewrite_rule [one_one_def] type_defn_def;
 PC_C1 "predicates" rewrite_conv[] ¬ µ t1 t2· (Ì x· t1) t2 = t1®;
 
 
-val _ = open_theory_import{file = "base-1.132.art", parent = "open-theory-base", theory = "base"};
-val _ = open_theory_import{file = "natural-def.art", parent = "t", theory = "u"};
-
+val _ = open_theory_import{files = ["Defs/02axiom-extensionality.art"], parent = "open-theory-base", theory = "t"};
