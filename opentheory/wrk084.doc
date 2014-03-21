@@ -9,7 +9,7 @@ See the file LICENSE for your rights to use and change this file.
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-% $Id: wrk084.doc,v 1.12 2014/03/18 16:43:38 rda Exp rda $
+% $Id: wrk084.doc,v 1.13 2014/03/19 17:18:41 rda Exp rda $
 =TEX
 %%%%% YOU MAY WANT TO CHANGE POINT SIZE IN THE FOLLOWING:
 \documentclass[a4paper,12pt]{article}
@@ -57,9 +57,9 @@ of an OpenTheory reader and an OpenTheory writer for {\Product}.
 
 %%%%% THE FOLLOWING DEFAULTS WILL GENERALLY BE RIGHT:
 
-\def\Version{$Revision: 1.12 $%
+\def\Version{$Revision: 1.13 $%
 }
-\def\Date{\FormatDate{$Date: 2014/03/18 16:43:38 $%
+\def\Date{\FormatDate{$Date: 2014/03/19 17:18:41 $%
 }}
 
 %%%%% NOW BEGIN THE DOCUMENT AND MAKE THE FRONT PAGE
@@ -552,7 +552,7 @@ The import interface then comprises
 {\em(iii)} a function {\em define\_const} to handle the {\em defineConst} command,
 {\em(iv)} a function {\em const\_name} to map OpenTheory names to constant names,
 {\em(v)} a function {\em type\_name} to map OpenTheory names to type names
-and {\em(vi)} a an initial set of assumptions.
+and {\em(vi)} an initial set of assumptions.
 =SML
 type ÛIMPORT_INTERFACEÝ = {
 	declare_axiom : SEQ -> THM,
@@ -573,13 +573,13 @@ type ÛNAME_MAPSÝ = {
 };
 =TEX
 The function {\em mk\_import\_interface} sets up an import interface
-from name map tables given as a parameter.
+from name map tables and a list of assumptions given as parameters.
 The functions {\em declare\_axiom}, {\em define\_type\_op} and
 {\em define\_const} it constructs map to the corresponding {\Product}
 operations or use the Gilith OpenTheory Repo definitions (proved
 as theorems using existing {\Product} definitions for the relevant operators).
 =SML
-val mk_import_interface : NAME_MAPS -> IMPORT_INTERFACE;
+val mk_import_interface : NAME_MAPS -> THM list -> IMPORT_INTERFACE;
 =SML
 =TEX
 The objects that the virtual machine deals with range over the type {\em OBJECT}:
@@ -600,15 +600,16 @@ to objects:
 =SML
 type ÛOBJECT_DICTÝ = (int, OBJECT) SEARCH_TREE;
 =TEX
-The stack and 
+The state includes a cache giving fast access to the assumptions and theorems. 
 =SML
 type ÛVM_STATEÝ = {
 	interface : IMPORT_INTERFACE,
 	command_count : int,
 	stack : OBJECT list,
 	dictionary : OBJECT_DICT,
-	assumptions : THM NET,
-	theorems : THM list};
+	assumptions : THM list,
+	theorems : THM list,
+	cache : THM NET};
 =TEX
 =SML
 val Ûvm_diagnosticsÝ : int ref;
@@ -632,7 +633,7 @@ ${} > 5$ & The command, the number of commands executed, the new top of stack an
 
 The virtual machine records its current state in the variable {\em diag\_state}.
 =SML
-val Ûdiag_stateÝ : VM_STATE OPT ref;
+val Ûdiag_vm_stateÝ : VM_STATE OPT ref;
 =TEX
 The programmatic interface to the virtual machine is the following
 function.
@@ -797,8 +798,9 @@ type ÛVM_STATEÝ = {
 	command_count : int,
 	stack : OBJECT list,
 	dictionary : OBJECT_DICT,
-	assumptions : THM NET,
-	theorems : THM list};
+	assumptions : THM list,
+	theorems : THM list,
+	cache : THM NET};
 =TEX
 %%%% %%%% %%%% %%%%
 \subsubsection{State Access Functions}
@@ -823,28 +825,29 @@ fun Ûinitial_vm_stateÝ (interface : IMPORT_INTERFACE) : VM_STATE = ({
 	command_count = 0,
 	stack = [],
 	dictionary = initial_search_tree int_order,
-	assumptions =
-		list_net_enter
+	assumptions = #assumptions interface,
+	theorems = [],
+	cache = list_net_enter
 			(map (fn th => (concl th, th)) (#assumptions interface))
-				empty_net,
-	theorems = []}
+				empty_net}
 );
 =TEX
 =SML
 fun Ûpush_objectÝ (ob : OBJECT)
-	({interface, command_count, stack, dictionary, assumptions, theorems} : VM_STATE)
+	({interface, command_count, stack, dictionary, assumptions, theorems, cache} : VM_STATE)
 		: VM_STATE = (
 	{	interface = interface,
 		command_count = command_count,
 		stack = ob::stack,
 		dictionary = dictionary,
 		assumptions = assumptions,
-		theorems = theorems }
+		theorems = theorems,
+		cache = cache }
 );
 =TEX
 =SML
 fun Ûpop_objectÝ
-	({interface, stack, command_count, dictionary, assumptions, theorems} : VM_STATE)
+	({interface, stack, command_count, dictionary, assumptions, theorems, cache} : VM_STATE)
 		: OBJECT * VM_STATE = (
 	case stack of
 		h::t =>
@@ -854,7 +857,8 @@ fun Ûpop_objectÝ
 			stack = t,
 			dictionary = dictionary,
 			assumptions = assumptions,
-			theorems = theorems })
+			theorems = theorems,
+			cache = cache })
 	|	[] => fail "open-theory-reader" 122002 []
 );
 =TEX
@@ -934,8 +938,13 @@ fun Ûpop_termÝ (st : VM_STATE) : TERM * VM_STATE = (
 	|	_ => fail "open-theory-reader" 122001 [fn _ => "a term"]
 );
 =TEX
+The name
+=INLINEFT
+pop_thm
+=TEX
+\ is taken already (by the subgoal package function).
 =SML
-fun Ûpop_thmÝ (st : VM_STATE) : THM * VM_STATE = (
+fun Ûpop_othmÝ (st : VM_STATE) : THM * VM_STATE = (
 	case pop_object st of
 		(OThm x, st') => (x, st')
 	|	_ => fail "open-theory-reader" 122001 [fn _ => "a theorem"]
@@ -1005,50 +1014,54 @@ fun Ûpop_subst_infoÝ (st : VM_STATE) :
 =TEX
 =SML
 fun Ûinc_command_countÝ
-	({interface, command_count, stack, assumptions, theorems, dictionary} : VM_STATE)
+	({interface, command_count, stack, assumptions, theorems, dictionary, cache} : VM_STATE)
 		: VM_STATE = (
 		{	interface = interface,
 			command_count = command_count + 1,
 			stack = stack,
 			dictionary = dictionary,
 			assumptions = assumptions,
-			theorems = theorems }
+			theorems = theorems,
+			cache = cache }
 );
 =TEX
 =SML
 fun Ûset_dictionaryÝ (dict : OBJECT_DICT)
-	({interface, command_count, stack, assumptions, theorems, ...} : VM_STATE)
+	({interface, command_count, stack, assumptions, theorems, cache, ...} : VM_STATE)
 		: VM_STATE = (
 		{	interface = interface,
 			command_count = command_count,
 			stack = stack,
 			dictionary = dict,
 			assumptions = assumptions,
-			theorems = theorems }
+			theorems = theorems,
+			cache = cache }
 );
 =TEX
 =SML
-fun Ûset_assumptionsÝ (asms: THM NET)
-	({interface, command_count, stack, dictionary, theorems, ...} : VM_STATE)
+fun Ûadd_assumptionÝ (asm : THM)
+	({interface, command_count, stack, dictionary, assumptions,theorems,  cache} : VM_STATE)
 		: VM_STATE = (
 		{	interface = interface,
 			command_count = command_count,
 			stack = stack,
 			dictionary = dictionary,
-			assumptions = asms,
-			theorems = theorems }
+			assumptions = asm :: assumptions,
+			theorems = theorems,
+			cache = net_enter (concl asm, asm) cache }
 );
 =TEX
 =SML
-fun Ûset_theoremsÝ (thms: THM list)
-	({interface, command_count, stack, dictionary, assumptions, ...} : VM_STATE)
+fun Ûadd_theoremÝ (thm : THM)
+	({interface, command_count, stack, dictionary, assumptions, theorems, cache} : VM_STATE)
 		: VM_STATE = (
 		{	interface = interface,
 			command_count = command_count,
 			stack = stack,
 			dictionary = dictionary,
 			assumptions = assumptions,
-			theorems = thms }
+			theorems = thm :: theorems,
+			cache = net_enter (concl thm, thm) cache }
 );
 =TEX
 %%%% %%%% %%%% %%%%
@@ -1088,17 +1101,17 @@ fun Ûtry_pred_rewritesÝ (([], conc) : SEQ) : THM OPT = (
 		handle Fail _ => Nil
 ) | try_pred_rewrites _ = Nil;
 =TEX
-If an assumption is an instance of an existing assumption, then we
+If an assumption is an instance of an existing cached theorem, then we
 can just instantiate that.
 In the following, we assume that the types in the conclusiom of the sequent
 and an assumption will be sufficient to determine the correct instantation
 of the assumption.
 =SML
-fun Ûtry_assumptionsÝ
-	(st as {assumptions, ...} : VM_STATE)
+fun Ûtry_cachesÝ
+	(st as {cache, ...} : VM_STATE)
 		(seq as (_, conc): SEQ)
 			: THM OPT = (
-	let	val thms = net_lookup assumptions conc;
+	let	val thms = net_lookup cache conc;
 		fun aux (th :: more) = (
 			let	val (tym, tmm) = term_match conc (concl th);
 				val th' = (asm_inst_term_rule tmm o
@@ -1121,7 +1134,7 @@ fun ÛheuristicsÝ (st : VM_STATE) (seq : SEQ) : THM OPT = (
 			|	Nil => first ts
 		);
 	in	first [
-			try_assumptions st,
+			try_caches st,
 			try_taut_rule,
 			try_pred_rewrites]
 	end
@@ -1186,7 +1199,7 @@ fun Ûdo_abs_termÝ (st : VM_STATE) : VM_STATE = (
 =TEX
 =SML
 fun Ûdo_abs_thmÝ (st : VM_STATE) : VM_STATE = (
-	let	val (thm, st') = pop_thm st;
+	let	val (thm, st') = pop_othm st;
 		val (v, st'') = pop_var st';
 		val thm' = simple_Ì_eq_rule (mk_var v) thm;
 	in	push_thm thm' st''
@@ -1204,8 +1217,8 @@ fun Ûdo_app_termÝ (st : VM_STATE) : VM_STATE = (
 =TEX
 =SML
 fun Ûdo_app_thmÝ (st : VM_STATE) : VM_STATE = (
-	let	val (rand_thm, st') = pop_thm st;
-		val (rator_thm, st'') = pop_thm st';
+	let	val (rand_thm, st') = pop_othm st;
+		val (rator_thm, st'') = pop_othm st';
 		val thm = mk_app_rule rator_thm rand_thm;
 	in	push_thm thm st''
 	end
@@ -1221,18 +1234,14 @@ fun Ûdo_assumeÝ (st : VM_STATE) : VM_STATE = (
 =TEX
 =SML
 fun Ûdo_axiomÝ
-	(st as {interface = {declare_axiom, ...}, assumptions, ...} : VM_STATE)
+	(st as {interface = {declare_axiom, ...}, ...} : VM_STATE)
 		: VM_STATE = (
 	let	val (seq, st') = pop_sequent st;
 		val (new, thm) = 
 			case heuristics st' seq of
 				Value thm => (false, thm)
 			|	Nil => (true, declare_axiom seq);
-		val assumptions' =
-			if new
-			then net_enter (concl thm, thm) assumptions
-			else assumptions;
-	in	(set_assumptions assumptions' o push_thm thm) st'
+	in	(add_assumption thm o push_thm thm) st'
 	end
 );
 =TEX
@@ -1272,8 +1281,8 @@ fun Ûdo_const_termÝ
 =TEX
 =SML
 fun Ûdo_deduct_antisymÝ (st : VM_STATE) : VM_STATE = (
-	let	val (thm1, st') = pop_thm st;
-		val (thm2, st'') = pop_thm st';
+	let	val (thm1, st') = pop_othm st;
+		val (thm2, st'') = pop_othm st';
 		val conc1 = concl thm1;
 		val conc2 = concl thm2;
 		val thm3 = ´_intro conc2 thm1;
@@ -1307,7 +1316,7 @@ fun Ûdo_define_constÝ
 fun Ûdo_define_type_opÝ
 	(st as {interface = {define_type_op, type_name, const_name, ...}, ...}
 		: VM_STATE) : VM_STATE = (
-	let	val (thm, st') = pop_thm st;
+	let	val (thm, st') = pop_othm st;
 		val (pars, st'') = pop_name_list st';
 		val (rep, st''') = pop_name st'';
 		val (abs, st'''') = pop_name st''';
@@ -1327,8 +1336,8 @@ fun Ûdo_define_type_opÝ
 =TEX
 =SML
 fun Ûdo_eq_mpÝ (st : VM_STATE) : VM_STATE = (
-	let	val (thm1, st') = pop_thm st;
-		val (thm2, st'') = pop_thm st';
+	let	val (thm1, st') = pop_othm st;
+		val (thm2, st'') = pop_othm st';
 		val thm3 = ¤_mp_rule thm2 thm1;
 	in	push_thm thm3 st''
 	end
@@ -1390,8 +1399,8 @@ fun Ûdo_pragmaÝ (st : VM_STATE) : VM_STATE = (
 =TEX
 =SML
 fun Ûdo_prove_hypÝ (st : VM_STATE) : VM_STATE = (
-	let	val (thm1, st') = pop_thm st;
-		val (thm2, st'') = pop_thm st';
+	let	val (thm1, st') = pop_othm st;
+		val (thm2, st'') = pop_othm st';
 		val thm3 = prove_asm_rule thm2 thm1;
 	in	push_thm thm3 st''
 	end
@@ -1426,7 +1435,7 @@ fun Ûdo_removeÝ (st as {dictionary, ...} : VM_STATE) : VM_STATE = (
 =TEX
 =SML
 fun Ûdo_substÝ (st : VM_STATE) : VM_STATE = (
-	let	val (thm1, st') = pop_thm st;
+	let	val (thm1, st') = pop_othm st;
 		val ((tysubs, tmsubs), st'') = pop_subst_info st';
 		val thm2 = (asm_inst_term_rule tmsubs o
 				asm_inst_type_rule tysubs) thm1;
@@ -1435,26 +1444,25 @@ fun Ûdo_substÝ (st : VM_STATE) : VM_STATE = (
 );
 =SML
 fun Ûdo_symÝ (st : VM_STATE) : VM_STATE = (
-	let	val (thm1, st') = pop_thm st;
+	let	val (thm1, st') = pop_othm st;
 		val thm2 = eq_sym_rule thm1;
 	in	push_thm thm2 st'
 	end
 );
 =TEX
 =SML
-fun Ûdo_thmÝ (st as {theorems, ...} : VM_STATE) : VM_STATE = (
+fun Ûdo_thmÝ (st : VM_STATE) : VM_STATE = (
 	let	val (seq as (_, conc), st') = pop_sequent st;
-		val (thm1, st'') = pop_thm st';
+		val (thm1, st'') = pop_othm st';
 		val thm2 = tac_proof(seq, accept_tac thm1);
-		val theorems' = thm2 :: theorems;
-	in	(set_theorems theorems' o push_thm thm2) st''
+	in	(add_theorem thm2 o push_thm thm2) st''
 	end
 );
 =TEX
 =SML
 fun Ûdo_transÝ (st : VM_STATE) : VM_STATE = (
-	let	val (thm1, st') = pop_thm st;
-		val (thm2, st'') = pop_thm st';
+	let	val (thm1, st') = pop_othm st;
+		val (thm2, st'') = pop_othm st';
 		val thm3 = eq_trans_rule thm2 thm1;
 	in	push_thm thm3 st''
 	end
@@ -1511,7 +1519,7 @@ fun Ûdo_versionÝ (st : VM_STATE) : VM_STATE = (
 fun Ûillegal_commandÝ (s : string) = fail "open-theory-reader" 122012 [];
 =TEX
 =SML
-val Ûdiag_stateÝ : VM_STATE OPT ref = ref Nil;
+val Ûdiag_vm_stateÝ : VM_STATE OPT ref = ref Nil;
 =TEX
 =SML
 val Ûvm_inference_cmdsÝ : string list =  [
@@ -1621,7 +1629,7 @@ fun Ûdo_commandÝ (cmd : string) (st : VM_STATE) : VM_STATE = (
 			then	st
 			else	illegal_command cmd
 	))	handle ex as Fail _ => (
-			diag_state := Value st;
+			diag_vm_state := Value st;
 			diag_line ("Could not execute \"" ^ cmd ^ "\"");
 			raise ex
 		))
@@ -1641,9 +1649,9 @@ fun Ûopen_theory_vmÝ (interface : IMPORT_INTERFACE)
 			in	go (read more) st'
 			end
 		);
-		val _ = diag_state := Nil;
+		val _ = diag_vm_state := Nil;
 		val final_state = go (read src) (initial_vm_state interface);
-		val _ = diag_state := Value final_state;
+		val _ = diag_vm_state := Value final_state;
 	in	final_state	
 	end
 );
@@ -1660,7 +1668,9 @@ val _ = new_theory "open-theory-base";
 val _ = new_parent "one";
 val _ = new_parent "combin";
 val _ = new_parent "sum";
-val _ = set_merge_pcs ["basic_hol1", "'one"];
+val _ = new_parent "sets";
+val _ = new_parent "¯";
+val _ = set_merge_pcs ["basic_hol1", "'one", "'sum", "'¯"];
 =TEX
 We need to define the C and W combinators.
 =SML
@@ -1681,6 +1691,146 @@ val _ =
 val Ûcomb_w_defÝ = get_spec ¬CombW®;
 =TEX
 We need to define the constants that support numeric literals in the Gilith OpenTheory Repo.
+=SML
+=TEX
+We need to define the option type and associated constants.
+=TEX
+=SML
+val Ûoption_defÝ = new_type_defn(["OPTION", "option_def"], "OPTION", ["'a"],
+	(¤_t_elim o (BINDER_C Â_conv THEN_C prove_¶_conv)) ¬¶x:'a + ONE· (Ìx· T) x®);
+val _ = set_merge_pcs["basic_hol1", "'one", "'sum"];
+=TEX
+=SML
+val _ =
+¹HOLCONST
+Ü ÛSomeÝ : 'a ­ 'a OPTION;
+Ü ÛNoneÝ : 'a OPTION
+÷üüüüüü
+Ü 	(µx y· Some x = Some y ¤ x = y)
+Ü±	(µu· u = None ² ¶x· u = Some x)
+Ü±	(µx· ³ Some x = None)
+°
+=TEX
+=SML
+val _ = save_consistency_thm ¬Some® (
+push_consistency_goal¬Some®;
+a((strip_asm_tac o rewrite_rule[]) (´_match_mp_rule type_lemmas_thm (get_defn "-" "OPTION")));
+a(¶_tac¬((Ìx· abs(InL x)), abs(InR One))® THEN rewrite_tac[] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(LEMMA_T ¬rep(abs(InL x)) = rep(abs(InL y))® ante_tac THEN1 POP_ASM_T rewrite_thm_tac);
+a(POP_ASM_T discard_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(asm_rewrite_tac[]);
+(* *** Goal "3" *** *)
+a(strip_asm_tac (µ_elim¬rep u® sum_cases_thm));
+(* *** Goal "3.1" *** *)
+a(¶_tac¬y® THEN POP_ASM_T (asm_rewrite_thm_tac o eq_sym_rule));
+(* *** Goal "3.2" *** *)
+a(i_contr_tac THEN POP_ASM_T ante_tac);
+a(LEMMA_T ¬z = One® rewrite_thm_tac THEN1 rewrite_tac[]);
+a(swap_nth_asm_concl_tac 1);
+a(POP_ASM_T (asm_rewrite_thm_tac o eq_sym_rule));
+(* *** Goal "4" *** *)
+a(contr_tac THEN LEMMA_T ¬rep(abs(InL x)) = rep(abs(InR One))® ante_tac
+	THEN1 POP_ASM_T (TRY o rewrite_thm_tac));
+a(POP_ASM_T discard_tac THEN asm_rewrite_tac[]);
+pop_thm());
+=TEX
+=SML
+val Ûsome_defÝ = get_spec ¬Some®;
+val Ûnone_defÝ = get_spec ¬None®;
+=TEX
+=SML
+val Ûsome_none_clausesÝ = save_thm("some_none_clauses", (
+set_goal([], ¬
+	(µ x y· Some x = Some y ¤ x = y)
+±	(µ x· ³ Some x = None)
+±	(µ x· ³ None = Some x)
+®);
+a(rewrite_tac [some_def]);
+a(conv_tac (ONCE_MAP_C eq_sym_conv) THEN rewrite_tac[some_def]);
+pop_thm()
+));
+=TEX
+=SML
+=TEX
+=SML
+val Ûoption_prim_rec_thmÝ = save_thm("option_prim_rec_thm", (
+set_goal([], ¬µn s· ¶‰1 f· f None = n ± µx· f (Some x) = s x®);
+a(REPEAT strip_tac);
+a(¶‰1_tac¬Ìu· Åy· u = None ± y = n ² ¶x· u = Some x ± y = s x®
+	THEN rewrite_tac[some_none_clauses] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_Å_tac THEN prove_¶_tac);
+(* *** Goal "2" *** *)
+a(all_Å_tac THEN1 prove_¶_tac);
+a(all_var_elim_asm_tac THEN strip_tac);
+(* *** Goal "3" *** *)
+a(all_Å_tac THEN1 prove_¶_tac);
+(* *** Goal "3.1" *** *)
+a(rewrite_tac[some_def]);
+(* *** Goal "3.2" *** *)
+a(all_var_elim_asm_tac1 THEN asm_rewrite_tac[]);
+(* *** Goal "3.3" *** *)
+a(all_var_elim_asm_tac1);
+a(POP_ASM_T ante_tac THEN asm_rewrite_tac[some_def]);
+a(REPEAT strip_tac THEN asm_rewrite_tac[]);
+pop_thm()
+));
+=TEX
+To define the discriminator functions etc., we set up a component proof context for the option type and begin to populate it:
+=SML
+val _ = new_pc "'option";
+val _ = set_¶_cd_thms [option_prim_rec_thm] "'option";
+val _ = set_pr_tac basic_prove_tac "'option";
+val _ = set_pr_conv basic_prove_conv "'option";
+val _ = set_merge_pcs["basic_hol1", "'one", "'sum", "'option"];
+=TEX
+=SML
+val Ûis_some_defÝ =
+¹HOLCONST
+Ü ÛIsSomeÝ : 'a OPTION ­ BOOL
+÷üüüüüü
+Ü 	³IsSome None
+Ü ±	µx· IsSome(Some x)
+°
+=TEX
+=SML
+val Ûis_none_defÝ =
+¹HOLCONST
+Ü ÛIsNoneÝ : 'a OPTION ­ BOOL
+÷üüüüüü
+Ü 	³IsNone None
+Ü ±	µx· ³IsNone(Some x)
+°
+=TEX
+=SML
+val Ûoption_case_defÝ =
+¹HOLCONST
+Ü ÛOptionCaseÝ : 'b ­ ('a ­ 'b) ­ 'a OPTION ­ 'b
+÷üüüüüü
+Ü 	(µy f· OptionCase y f None = y)
+Ü ±	(µy f x· OptionCase y f (Some x) = f x)
+°
+=TEX
+=SML
+val Ûoption_map_defÝ =
+¹HOLCONST
+Ü ÛOptionMapÝ : ('a ­ 'b) ­ 'a OPTION ­ 'b OPTION
+÷üüüüüü
+Ü 	(µf· OptionMap f None = None)
+Ü ±	(µf x· OptionMap f (Some x) = Some(f x))
+°
+=TEX
+Now we can complete filling in the attributes of the proof context.
+=SML
+val Ûthms_to_eqn_cxtÝ :THM list -> EQN_CXT = (flat o map (cthm_eqn_cxt initial_rw_canon));
+val _ = set_rw_eqn_cxt (thms_to_eqn_cxt [some_none_clauses, is_some_def, is_none_def,
+		option_case_def, option_map_def]) "'option";
+val _ = set_st_eqn_cxt (thms_to_eqn_cxt[some_none_clauses, is_some_def, is_none_def]) "'option";
+val _ = set_sc_eqn_cxt (thms_to_eqn_cxt[some_none_clauses, is_some_def, is_none_def]) "'option";
+val _ = commit_pc "'option";
+
 =SML
 val _ = 
 ¹HOLCONST
@@ -1728,6 +1878,182 @@ val rec Ûbit_rep_convÝ : CONV = (fn tm =>
 	end
 );
 =TEX
+We need binary maximum and minimum functions:
+=SML
+val _ = 
+¹HOLCONST
+Ü ÛMax2Ý : î ­ î ­ î
+÷üüüüüü
+Ü µm n· Max2 m n = if m ¼ n then n else m
+°
+=SML
+val _ = 
+¹HOLCONST
+Ü ÛMin2Ý : î ­ î ­ î
+÷üüüüüü
+Ü µm n· Min2 m n = if m ¼ n then m else n
+°
+=TEX
+=SML
+val Ûmax2_defÝ = get_spec¬Max2®;
+val Ûmin2_defÝ = get_spec¬Min2®;
+=TEX
+We need the operator minimal.
+=SML
+val _ = declare_binder "Minimal";
+val _ = 
+¹HOLCONST
+Ü $ÛMinimalÝ : (î ­ BOOL) ­ î
+÷üüüüüü
+Ü µp· (¶n· p n) ¤ p($Minimal p) ± µm· m < $Minimal p ´ ³p m
+°
+=TEX
+=SML
+val _ = save_consistency_thm ¬$Minimal® (
+push_consistency_goal¬$Minimal®;
+a(prove_¶_tac THEN strip_tac);
+a(CASES_T ¬¶n· p' n® (fn th => rewrite_tac[th] THEN strip_asm_tac th));
+a(POP_ASM_T ante_tac THEN intro_µ_tac1¬p'® THEN induction_tac¬n® THEN REPEAT strip_tac);
+a(¶_tac ¬0® THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(cases_tac¬p' 0 ® THEN1 (¶_tac ¬0® THEN asm_rewrite_tac[]));
+a(DROP_NTH_ASM_T 3 (strip_asm_tac o rewrite_rule[] o µ_elim¬Ìi· p' (i + 1)®));
+a(¶_tac¬Minimal'' + 1® THEN REPEAT strip_tac);
+a((strip_asm_tac o µ_elim¬m®) î_cases_thm THEN all_var_elim_asm_tac1);
+a(all_asm_fc_tac[]);
+pop_thm());
+val Ûminimal_defÝ = get_spec¬$Minimal®;
+=TEX
+We need the predecessor function.
+=SML
+val _ = 
+¹HOLCONST
+Ü $ÛPreÝ : î ­ î
+÷üüüüüü
+Ü µn· Pre n = n - 1
+°
+=SML
+val Ûpre_defÝ = get_spec¬Pre®;
+=TEX
+We need the distance function.
+=SML
+val _ = 
+¹HOLCONST
+Ü $ÛDistanceÝ : î ­ î ­ î
+÷üüüüüü
+Ü µm n· Distance m n = if m ¼ n then n - m else m - n
+°
+=SML
+val Ûdistance_defÝ = get_spec¬Distance®;
+=TEX
+We need the even and odd functions.
+=SML
+val _ = 
+¹HOLCONST
+Ü $ÛEvenÝ : î ­ BOOL
+÷üüüüüü
+Ü µm· Even m ¤ m Mod 2 = 0
+°
+=SML
+val _ = 
+¹HOLCONST
+Ü $ÛOddÝ : î ­ BOOL
+÷üüüüüü
+Ü µm· Odd m ¤ m Mod 2 = 1
+°
+=SML
+val Ûeven_defÝ = get_spec¬Even®;
+val Ûodd_defÝ = get_spec¬Odd®;
+=TEX
+We need the natural number logarithm function:
+=SML
+val _ = 
+¹HOLCONST
+Ü $ÛNatLogÝ : î ­ î ­ î
+÷üüüüüü
+Ü µk n m : î· k ^ m ¼ n ± n < k ^ (m + 1) ´ NatLog k n = m
+°
+=TEX
+=SML
+val Ûnat_log_lemma1Ý = (
+set_goal([], ¬µf : î ­ î· (µm·f m ¼ f (m + 1)) ± i ¼ j ´ f i ¼ f j ®);
+a(REPEAT strip_tac THEN POP_ASM_T (strip_asm_tac o rewrite_rule[¼_def]));
+a(all_var_elim_asm_tac1 THEN induction_tac¬i'® THEN1 asm_rewrite_tac[]);
+a(bc_thm_tac ¼_trans_thm THEN ¶_tac ¬f(i + i')® THEN asm_rewrite_tac[plus_assoc_thm1]);
+pop_thm()
+);
+=TEX
+=SML
+val Ûnat_log_lemma2Ý = (
+set_goal([], ¬µf : î ­ î; i j n·
+	(µm·f m ¼ f (m + 1)) ± f i ¼ n ± n < f (i + 1) ± f j ¼ n ± n < f(j + 1) ´ i = j®);
+a(REPEAT strip_tac);
+a(strip_asm_tac(list_µ_elim[¬i®, ¬j®] less_cases_thm));
+(* *** Goal "1" *** *)
+a(lemma_tac ¬f(i + 1) ¼ f j® THEN1
+	(bc_thm_tac nat_log_lemma1 THEN asm_rewrite_tac[])
+		THEN PC_T1 "lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(lemma_tac ¬f(j + 1) ¼ f i® THEN1
+	(bc_thm_tac nat_log_lemma1 THEN asm_rewrite_tac[])
+		THEN PC_T1 "lin_arith" asm_prove_tac[]);
+pop_thm());
+=TEX
+=SML
+val Ûnat_log_lemma3Ý = (
+set_goal([], ¬µn i· 0 < n ´ n ^ i ¼ n ^ (i + 1)®);
+a(REPEAT strip_tac THEN POP_ASM_T (strip_asm_tac o rewrite_rule[less_def, ¼_def]));
+a(rewrite_tac[get_spec¬1^0®] THEN all_var_elim_asm_tac1);
+a(PC_T1 "lin_arith" prove_tac[]);
+pop_thm());
+=TEX
+=SML
+val Ûnat_log_lemma4Ý = (
+set_goal([], ¬µi· 0 ^ (i + 1) ¼ 0 ^ i®);
+a(REPEAT strip_tac THEN rewrite_tac[get_spec¬1^0®]);
+pop_thm());
+=TEX
+=SML
+val _ = save_consistency_thm ¬$NatLog® (
+push_consistency_goal¬$NatLog®;
+a(prove_¶_tac THEN REPEAT strip_tac);
+a(cases_tac¬¶m· k' ^ m ¼ n' ± n' < k' ^ (m + 1)® THEN_TRY asm_rewrite_tac[]);
+a(¶_tac¬m® THEN REPEAT strip_tac);
+(* *** Goal "" *** *)
+a(strip_asm_tac (list_µ_elim[¬k'®, ¬0®] less_cases_thm) THEN1 all_var_elim_asm_tac1);
+a(LEMMA_T ¬ ³ 0 ^ (m + 1) ¼ 0 ^ m ® ante_tac THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(rewrite_tac[nat_log_lemma4]);
+(* *** Goal "2" *** *)
+a(bc_thm_tac nat_log_lemma2);
+a(¶_tac¬n'® THEN ¶_tac¬$^ k'®);
+a(ALL_FC_T asm_rewrite_tac[nat_log_lemma3]);
+pop_thm());
+val Ûnat_log_defÝ = get_spec¬$NatLog®;
+=TEX
+We need the factorial function:
+=SML
+val _ = 
+¹HOLCONST
+Ü $ÛFactorialÝ : î ­ î
+÷üüüüüü
+Ü 	Factorial 0 = 1 
+Ü±	µn· Factorial (n + 1) = (n + 1) * Factorial n
+°
+=SML
+val Ûfactorial_defÝ = get_spec¬Factorial®;
+=TEX
+We need the functional power (iteration) function:
+=SML
+val _ = 
+¹HOLCONST
+Ü $ÛIterateÝ : ('a ­ 'a) ­ î ­ 'a ­'a
+÷üüüüüü
+Ü 	(µf· Iterate f 0 = CombI)
+Ü±	(µf n· Iterate f (n + 1) = f o Iterate f n)
+°
+=SML
+val Ûiterate_defÝ = get_spec¬Iterate®;
+=TEX
 The OpenTheory interface also includes some special support for {\Product} and HOL4
 type definitions.
 To export type definitions, we have to presuppose the existence of the constant
@@ -1761,25 +2087,28 @@ val Ûhol4_type_definition_defÝ =
 		RIGHT_C (rewrite_conv[type_defn_def, one_one_def])) o
 				µ_elim ¬TypeDefn®) È_axiom;
 =TEX
+We now do the various packages that make up the Gilith OpenTheory Repo base package.
+
+Package bool:
 =SML
-val Ûot_t_defÝ : THM = t_def;
-val Ûot_f_defÝ : THM = f_def;
-val Ûot_³_defÝ : THM = ³_def;
-val Ûot_µ_defÝ : THM = µ_def;
-val Ûot_±_defÝ : THM = tac_proof(([],
+val Ûot_t_defÝ = t_def;
+val Ûot_f_defÝ = f_def;
+val Ûot_³_defÝ = ³_def;
+val Ûot_µ_defÝ = µ_def;
+val Ûot_±_defÝ = tac_proof(([],
 		¬$± = Ìp q·(Ìf·f p q : BOOL) = (Ìf·f T T)®),
 	rewrite_tac[] THEN REPEAT_UNTIL is_´ strip_tac THEN1
 		(strip_tac THEN asm_rewrite_tac[]) THEN
 			STRIP_T (ante_tac o µ_elim¬Ìa b·a ± b®) THEN rewrite_tac[]);
-val Ûot_´_defÝ : THM = tac_proof(([], ¬$´ = Ìp q·p ± q ¤ p®), rewrite_tac[]
+val Ûot_´_defÝ = tac_proof(([], ¬$´ = Ìp q·p ± q ¤ p®), rewrite_tac[]
 	THEN taut_tac);
-val Ûot_¶_defÝ : THM = tac_proof(([], ¬$¶ = Ìp·µq· (µx: 'a·p x ´ q) ´ q®),
+val Ûot_¶_defÝ = tac_proof(([], ¬$¶ = Ìp·µq· (µx: 'a·p x ´ q) ´ q®),
 	rewrite_tac[] THEN µ_tac THEN
 		pure_once_rewrite_tac
 			[(conv_rule eq_sym_conv o µ_elim¬x: 'a ­ BOOL®)È_axiom]
 				THEN rewrite_tac[] THEN prove_tac[]);
-val Ûot_²_defÝ : THM = ²_def;
-val Ûot_¶‰1_defÝ : THM = tac_proof(([],
+val Ûot_²_defÝ = ²_def;
+val Ûot_¶‰1_defÝ = tac_proof(([],
 		¬$¶‰1 = ÌP· $¶ P ± (µx y:'a·P x ± P y ´ x = y)®),
 	rewrite_tac[¶‰1_def] THEN µ_tac THEN 
 		pure_once_rewrite_tac [prove_rule[È_axiom] ¬x = Ìt·x t®]
@@ -1787,10 +2116,10 @@ val Ûot_¶‰1_defÝ : THM = tac_proof(([],
 			[asm_prove_tac[],
 			 contr_tac THEN all_asm_fc_tac[] THEN all_var_elim_asm_tac,
 			 ¶_tac¬t : 'a® THEN contr_tac THEN all_asm_fc_tac[]]);
-val Ûot_cond_defÝ : THM = cond_def;
+val Ûot_cond_defÝ = cond_def;
 =TEX
 =SML
-val Ûot_bool_defsÝ : THM list = [
+val Ûot_bool_defsÝ = [
 	ot_t_def,
 	ot_f_def,
 	ot_³_def,
@@ -1802,9 +2131,12 @@ val Ûot_bool_defsÝ : THM list = [
 	ot_¶‰1_def,
 	ot_cond_def];
 =TEX
+Package function:
 =SML
-val Ûot_one_one_defÝ : THM = one_one_def;
-val Ûot_onto_defÝ : THM = onto_def;
+val Ûot_one_one_defÝ : THM = tac_proof(([], ¬µ f· OneOne f ¤ (µ x1 x2· f x1 = f x2 ´ x1 = x2)®),
+	rewrite_tac[one_one_def]);
+val Ûot_onto_defÝ : THM =  tac_proof(([], ¬µ f· Onto f ¤ (µ y· ¶ x· y = f x)®),
+	rewrite_tac[onto_def]);
 val Ûot_o_defÝ : THM = tac_proof(([], ¬$o = Ìf g x·f(g x)®),
 	rewrite_tac[get_spec ¬$o®]);
 val Ûot_comb_c_defÝ : THM = tac_proof(([], ¬CombC = Ìf x y· f y x®),
@@ -1817,7 +2149,7 @@ val Ûot_comb_s_defÝ : THM = tac_proof(([], ¬CombS = Ìf g x· f x (g x)®),
 	rewrite_tac[get_spec ¬CombS®]);
 val Ûot_comb_w_defÝ : THM = tac_proof(([], ¬CombW = Ìf x· f x x®),
 	rewrite_tac[get_spec ¬CombW®]);
-val Ûot_function_defsÝ : THM list = [
+val Ûot_function_defsÝ = [
 	ot_one_one_def,
 	ot_onto_def,
 	ot_o_def,
@@ -1827,20 +2159,139 @@ val Ûot_function_defsÝ : THM list = [
 	ot_comb_s_def,
 	ot_comb_w_def];
 =TEX
+Package unit:
 =SML
-val Ûot_defsÝ : (string * THM) list = 
-	map (fn th => ((fst o dest_const o fst o dest_eq o concl) th, th))
-		(	ot_bool_defs @
-			ot_function_defs );
+val Ûot_unit_defsÝ = [one_def];
+=TEX
+Package pair:
+=SML
+val Ûot_fst_defÝ : THM = tac_proof(([], ¬µ x y· Fst (x, y) = x®),
+	rewrite_tac[pair_ops_def]);
+val Ûot_snd_defÝ : THM = tac_proof(([], ¬µ x y· Snd (x, y) = y®),
+	rewrite_tac[pair_ops_def]);
+val Ûot_comma_onto_thmÝ : THM = tac_proof(([], ¬µ p· ¶x y· p = (x, y)®),
+	REPEAT strip_tac THEN ¶_tac¬Fst p® THEN ¶_tac¬Snd p® THEN rewrite_tac[pair_ops_def]);
+val Ûot_comma_one_one_thmÝ : THM = tac_proof(([], ¬µx1 y1 x2 y2· (x1, y1) = (x2, y2) ¤ x1 = x2 ± y1 = y2®),
+	rewrite_tac[pair_ops_def]);
+val Ûot_pair_defsÝ = [ot_fst_def, ot_snd_def, ot_comma_onto_thm, ot_comma_one_one_thm];
+=TEX
+Package natural:
+
+=SML
+val Ûone_one_equiv_defÝ : THM = tac_proof(([], ¬µf· OneOne f ¤ µ x1 x2· f x1 = f x2 ¤ x1 = x2®),
+	rewrite_tac[one_one_def] THEN
+	REPEAT strip_tac THEN_TRY (all_var_elim_asm_tac THEN strip_tac)
+	THEN all_asm_fc_tac[]);
+val Ûot_zero_suc_defsÝ = 
+	(strip_±_rule o 
+		rewrite_rule[one_one_equiv_def,
+			(eq_sym_rule o pp'Kernel.pp'suc_conv)¬0®]) zero_suc_def;
+
+
+val Ûbit0_0_thmÝ : THM = tac_proof(([], ¬Bit0 0 = 0®),
+	rewrite_tac[bit0_def]);
+val Ûbit0_suc_thmÝ : THM = tac_proof(([], ¬µm· Bit0 (Suc m) = Suc(Suc(Bit0 m))®),
+	strip_tac THEN rewrite_tac[bit0_def, plus_def] THEN PC_T1 "lin_arith" prove_tac[]);
+val Ûbit1_suc_thmÝ : THM = tac_proof(([], ¬µm· Bit1 m = Suc(Bit0 m)®),
+	strip_tac THEN rewrite_tac[bit0_def, bit1_def, plus_def] THEN PC_T1 "lin_arith" prove_tac[]);
+val Ûot_bit0_bit1_defsÝ = [bit0_0_thm, bit0_suc_thm, bit1_suc_thm];
+
+val Ûot_pre_defÝ : THM = tac_proof(([], ¬µm· Pre(Suc m) = m®),
+	rewrite_tac[plus_def, pre_def, minus_def]);
+
+val (Ûot_additive_ops_defsÝ, Ûplus_1_to_suc_thmÝ) =
+	let	val [thm1, thm2, thm3] =
+			(map all_µ_intro o strip_±_rule o list_µ_elim[¬m:î®, ¬n:î®]) plus_def;
+		val thm4 = conv_rule(BINDER_C eq_sym_conv) thm3;
+	in	([thm1, pure_rewrite_rule[thm4] thm2, minus_def, ot_pre_def, distance_def], thm4)
+	end;
+
+val Ûot_order_defsÝ = 
+	let	fun pr t = tac_proof(([], t),
+			REPEAT µ_tac THEN_TRY rewrite_tac[plus_def]
+				THEN PC_T1 "lin_arith" prove_tac[]);
+	in	map pr [¬µ m· ³ m < 0®,
+			¬µ m· m ¼ 0 ¤ m = 0®,
+			¬µ m n· m < Suc n ¤ m = n ² m < n®,
+			¬µ m n : î· m ¼ Suc n ¤ m = Suc n ² m ¼ n®,
+			¬µ m n : î· m ¾ n ¤ n ¼ m®,
+			¬µ m n : î· m > n ¤ n < m®]
+	end;
+
+val Ûot_min_max_defsÝ = [min2_def, max2_def, minimal_def];
+
+
+val Ûot_times_defsÝ =
+	let	val [thm1, thm2] =
+			(map all_µ_intro o strip_±_rule o list_µ_elim[¬m:î®, ¬n:î®]) times_def;
+	in	[thm1, pure_rewrite_rule[plus_1_to_suc_thm] thm2]
+	end;
+
+val Ûot_div_mod_defsÝ =
+	let	val rw_thm = pc_rule1"lin_arith" prove_rule[]¬µn·0 < n ¤ ³(n = 0)®;
+	in	map (rewrite_rule[rw_thm]) [mod_less_thm,
+			conv_rule (ONCE_MAP_C eq_sym_conv) div_mod_thm]
+	end;
+
+val Ûmod2_lemma0Ý = tac_proof(([], ¬µm· m Mod 2 = 0 ´ (m + 1) Mod 2 = 1®),
+	REPEAT strip_tac THEN asm_rewrite_tac[(rewrite_rule[] o list_µ_elim[¬m:î®, ¬2®]) mod_def]);
+
+val Ûmod2_lemma1Ý = tac_proof(([], ¬µm· m Mod 2 = 1 ´ (m + 1) Mod 2 = 0®),
+	REPEAT strip_tac THEN asm_rewrite_tac[(rewrite_rule[] o list_µ_elim[¬m:î®, ¬2®]) mod_def]);
+			
+val Ûot_odd_even_0_defsÝ = 
+	let	fun pr1 t = tac_proof(([], t),rewrite_tac[odd_def, even_def]);
+		fun pr2 t = tac_proof(([], t),
+		µ_tac THEN rewrite_tac[odd_def, even_def, plus_def,
+				(rewrite_rule[] o list_µ_elim[¬n:î®, ¬2®]) mod_def]
+		THEN (strip_asm_tac o rewrite_rule[] o list_µ_elim[¬n:î®, ¬2®]) mod_less_thm
+		THEN if_cases_tac THEN asm_rewrite_tac[] THEN_TRY PC_T1 "lin_arith" asm_prove_tac[]);
+	in	map pr1 [¬³ Odd 0®,
+			¬Even 0®] @
+		map pr2 [¬µ n· Odd (Suc n) ¤ ³ Odd n®,
+			¬µ n· Even (Suc n) ¤ ³ Even n®]
+	end;
+
+val Ûot_exp_defsÝ = (strip_±_rule o pure_rewrite_rule[plus_1_to_suc_thm] o get_spec) ¬1^0®;
+
+val Ûot_nat_log_defsÝ = [nat_log_def];
+
+val Ûot_factorial_defsÝ = (strip_±_rule o pure_rewrite_rule[plus_1_to_suc_thm]) factorial_def;
+
+val Ûot_iterate_defsÝ = (strip_±_rule o pure_rewrite_rule[plus_1_to_suc_thm]) iterate_def;
+
+val Ûot_option_map_defsÝ = strip_±_rule option_map_def;
+
+val Ûot_option_case_defsÝ = strip_±_rule option_case_def;
+
+val Ûot_option_defsÝ = ot_option_map_defs @ ot_option_case_defs;
+
+val Ûot_nat_defsÝ = map ((conv_rule o TRY_C o ONCE_MAP_C) bit_rep_conv)
+	(ot_zero_suc_defs @
+	ot_bit0_bit1_defs @
+	ot_additive_ops_defs @
+	ot_order_defs @
+	ot_min_max_defs @
+	ot_times_defs @
+	ot_div_mod_defs @
+	ot_odd_even_0_defs @
+	ot_exp_defs @
+	ot_nat_log_defs @
+	ot_factorial_defs @
+	ot_iterate_defs @
+	ot_option_defs);
 =TEX
 =SML
-fun Ûget_ot_defÝ (n : string) (rhs : TERM) : THM = (
-	let	val thm1 = lassoc3 ot_defs n;
-		val rhs1 = (snd o dest_eq o concl) thm1;
-		val (tysubs, _) = term_match rhs rhs1;
-	in	inst_type_rule tysubs thm1
-	end
-);
+
+
+=TEX
+=SML
+val Ûot_defsÝ = 
+		ot_bool_defs @
+		ot_function_defs @
+		ot_unit_defs @
+		ot_pair_defs @
+		ot_nat_defs;
 =TEX
 =SML
 fun Ûimport_nameÝ
@@ -1880,7 +2331,7 @@ fun Ûmk_instanceÝ (wanted : TERM) (thm : THM) : THM = (
 );
 =TEX
 =SML
-val Ûall_ot_axiomsÝ = ±_def :: ¶_def :: ¶‰1_def :: ot_axioms @ map snd ot_defs;
+val Ûall_ot_axiomsÝ = ±_def :: ¶_def :: ¶‰1_def :: ot_axioms @ ot_defs;
 fun Ûget_ot_axiomÝ (tm : TERM) : THM OPT = (
 	let	fun aux [] = Nil
 		|   aux (thm::more) =
@@ -1957,8 +2408,6 @@ fun Ûdefine_hol_constÝ ({name, def_rhs} : CONST_DEFN_INFO) : THM = (
 		val thm2 = new_spec([n], 1, thm1);
 	in	thm2
 	end	handle ex as (Fail _) => (
-			(* get_ot_def name def_rhs
-				handle Fail _ => *)
 			fail "open-theory-reader" 122013 [
 				fn _ => name,
 				fn _ => string_of_term def_rhs, 
@@ -1969,11 +2418,12 @@ fun Ûdefine_hol_constÝ ({name, def_rhs} : CONST_DEFN_INFO) : THM = (
 =SML
 fun Ûmk_import_interfaceÝ
 	({type_map, const_map} : NAME_MAPS)
+	(assumptions : THM list)
 		: IMPORT_INTERFACE = {
 	declare_axiom = axiom_as_axiom,
 	define_type_op = define_hol_type_op,
 	define_const = define_hol_const,
-	assumptions = [type_defn_thm, hol4_type_definition_def, Å_axiom, È_axiom] @ map snd ot_defs,
+	assumptions = assumptions,
 	const_name = import_name const_map,
 	type_name = import_name type_map 
 };
@@ -1993,7 +2443,11 @@ The following translates the Gilith Open Theory Repo namespace to ProofPower:
 =SML
 val Ûgilith_mapsÝ : NAME_MAPS = {
 	type_map = map (name_of_string ** (fn x => x)) [
-		("bool", "BOOL"), ("->", "­"), ("ind", "IND")
+		("bool", "BOOL"), ("->", "­"), ("ind", "IND"),
+		("Data.Unit.unit", "ONE"),
+		("Data.Pair.*", "¸"),
+		("Number.Natural.natural", "î"),
+		("Data.Option.option", "OPTION")
 	],
 	const_map = map (name_of_string ** (fn x => x)) [
 		("HOL4.TYPE_DEFINITION", "TypeDefn"),
@@ -2005,6 +2459,16 @@ val Ûgilith_mapsÝ : NAME_MAPS = {
 		("Data.Bool.!", "µ"),
 		("Data.Bool.?", "¶"), ("Data.Bool.?!", "¶‰1"),
 		("Data.Bool.cond", "Cond"),
+		("Data.Unit.()", "One"),
+		("Data.Pair.,", ","),
+		("Data.Pair.fst", "Fst"),
+		("Data.Pair.snd", "Snd"),
+		("Data.Option.none", "None"),
+		("Data.Option.some", "Some"),
+		("Data.Option.isnone", "IsNone"),
+		("Data.Option.issome", "IsSome"),
+		("Data.Option.case.none.some", "OptionCase"),
+		("Data.Option.map", "OptionMap"),
 		("Function.id", "CombI"),
 		("Function.K", "CombK"),
 		("Function.S", "CombS"),
@@ -2012,7 +2476,30 @@ val Ûgilith_mapsÝ : NAME_MAPS = {
 		("Function.W", "CombW"),
 		("Function.o", "o"),
 		("Function.injective", "OneOne"),
-		("Function.surjective", "Onto")
+		("Function.surjective", "Onto"),
+		("Function.^", "Iterate"),
+		("Number.Natural.zero", "0"),
+		("Number.Natural.suc", "Suc"),
+		("Number.Natural.bit0", "Bit0"),
+		("Number.Natural.bit1", "Bit1"),
+		("Number.Natural.+", "+"),
+		("Number.Natural.-", "-"),
+		("Number.Natural.pre", "Pre"),
+		("Number.Natural.distance", "Distance"),
+		("Number.Natural.<", "<"),
+		("Number.Natural.>", ">"),
+		("Number.Natural.<=", "¼"),
+		("Number.Natural.min", "Min2"),
+		("Number.Natural.max", "Max2"),
+		("Number.Natural.minimal", "Minimal"),
+		("Number.Natural.*", "*"),
+		("Number.Natural.even", "Even"),
+		("Number.Natural.odd", "Odd"),
+		("Number.Natural.div", "Div"),
+		("Number.Natural.mod", "Mod"),
+		("Number.Natural.^", "^"),
+		("Number.Natural.log", "NatLog"),
+		("Number.Natural.factorial", "Factorial")
 	]
 };
 =TEX
@@ -2027,11 +2514,17 @@ fun Ûopen_theory_importÝ {files : string list, parent : string, theory : string}
 		val _ = new_theory theory;
 		val _ = if "open-theory-base" mem get_ancestors "-" then ()
 			else new_parent "open-theory-base";
+		val _ = axiom_count := 0;
+		val _ = type_defn_count := 0;
+		val _ = const_spec_count := 0;
 		fun import_files [] _ = ()
 		|   import_files (file::more) first_thm_num = (
 			let	val strm = open_in file;
+				val _ = diag_line("open_theory_import: reading: " ^ file);
 				val {theorems, ...} = open_theory_vm
-					(mk_import_interface gilith_maps)
+					(mk_import_interface gilith_maps
+					([type_defn_thm, hol4_type_definition_def, Å_axiom, È_axiom]
+						@ ot_defs @ map snd (get_thms "-")))
 						read_instream strm
 					handle ex as Fail _ => (close_in strm; raise ex);
 				val thms = rev theorems;
