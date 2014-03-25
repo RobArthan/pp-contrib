@@ -9,7 +9,7 @@ See the file LICENSE for your rights to use and change this file.
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-% $Id: wrk084.doc,v 1.13 2014/03/19 17:18:41 rda Exp rda $
+% $Id: wrk084.doc,v 1.14 2014/03/21 17:37:06 rda Exp rda $
 =TEX
 %%%%% YOU MAY WANT TO CHANGE POINT SIZE IN THE FOLLOWING:
 \documentclass[a4paper,12pt]{article}
@@ -57,9 +57,9 @@ of an OpenTheory reader and an OpenTheory writer for {\Product}.
 
 %%%%% THE FOLLOWING DEFAULTS WILL GENERALLY BE RIGHT:
 
-\def\Version{$Revision: 1.13 $%
+\def\Version{$Revision: 1.14 $%
 }
-\def\Date{\FormatDate{$Date: 2014/03/19 17:18:41 $%
+\def\Date{\FormatDate{$Date: 2014/03/21 17:37:06 $%
 }}
 
 %%%%% NOW BEGIN THE DOCUMENT AND MAKE THE FRONT PAGE
@@ -1384,14 +1384,16 @@ fun €progress› ((sl, s) : NAME, command_count : int) : unit = (
 	else ()
 );
 =TEX
-The only kind of pragma currently supported is a debug/progress message.
+The pragmas currently supported are one that provokes debug/progress message and one that causes a script to be run.
 =SML
 fun €do_pragma› (st : VM_STATE) : VM_STATE = (
 	let	val (obj, st' as {command_count, ...}) = pop_object st;
 	in	(case obj of
-			OList [OName([], "debug"), OName([], "progress"),
-				OName msg] => progress (msg, command_count)
-		|	_ => progress(([], "unsupported pragma"), command_count)
+			OList [OName([], "debug"), OName([], "progress"), OName msg] => (
+				progress (msg, command_count)
+		) |	OList [OName([], "runScript"), OName(ss, s)] => (
+				use_file (format_list (fn x => x) (ss @ [s]) ".")
+		) |	_ => progress(([], "unsupported pragma"), command_count)
 		);
 		st'
 	end
@@ -1669,8 +1671,10 @@ val _ = new_parent "one";
 val _ = new_parent "combin";
 val _ = new_parent "sum";
 val _ = new_parent "sets";
+val _ = new_parent "bin_rel";
+val _ = new_parent "fin_set";
 val _ = new_parent "Ø";
-val _ = set_merge_pcs ["basic_hol1", "'one", "'sum", "'Ø"];
+val _ = set_merge_pcs ["basic_hol1", "'sets_alg", "'one", "'sum", "'Ø"];
 =TEX
 We need to define the C and W combinators.
 =SML
@@ -1784,7 +1788,7 @@ val _ = new_pc "'option";
 val _ = set_∂_cd_thms [option_prim_rec_thm] "'option";
 val _ = set_pr_tac basic_prove_tac "'option";
 val _ = set_pr_conv basic_prove_conv "'option";
-val _ = set_merge_pcs["basic_hol1", "'one", "'sum", "'option"];
+val _ = set_merge_pcs["basic_hol1", "'sets_alg", "'one", "'sum", "'option"];
 =TEX
 =SML
 val €is_some_def› =
@@ -1831,6 +1835,15 @@ val _ = set_st_eqn_cxt (thms_to_eqn_cxt[some_none_clauses, is_some_def, is_none_
 val _ = set_sc_eqn_cxt (thms_to_eqn_cxt[some_none_clauses, is_some_def, is_none_def]) "'option";
 val _ = commit_pc "'option";
 
+=TEX
+=SML
+val €option_induction_thm› = save_thm("option_induction_thm", (
+set_goal([], ¨µ p∑ p None ± (µ a∑ p (Some a)) ¥ (µ x∑ p x)Æ);
+a(REPEAT strip_tac);
+a(cases_tac¨x = NoneÆ THEN1 asm_rewrite_tac[]);
+a(all_fc_tac[some_def] THEN all_var_elim_asm_tac1 THEN asm_rewrite_tac[]);
+pop_thm()
+));
 =SML
 val _ = 
 πHOLCONST
@@ -2014,8 +2027,8 @@ a(REPEAT strip_tac THEN rewrite_tac[get_spec¨1^0Æ]);
 pop_thm());
 =TEX
 =SML
-val _ = save_consistency_thm ¨$NatLogÆ (
-push_consistency_goal¨$NatLogÆ;
+val _ = save_consistency_thm ¨NatLogÆ (
+push_consistency_goal¨NatLogÆ;
 a(prove_∂_tac THEN REPEAT strip_tac);
 a(cases_tac¨∂m∑ k' ^ m º n' ± n' < k' ^ (m + 1)Æ THEN_TRY asm_rewrite_tac[]);
 a(∂_tac¨mÆ THEN REPEAT strip_tac);
@@ -2028,13 +2041,13 @@ a(bc_thm_tac nat_log_lemma2);
 a(∂_tac¨n'Æ THEN ∂_tac¨$^ k'Æ);
 a(ALL_FC_T asm_rewrite_tac[nat_log_lemma3]);
 pop_thm());
-val €nat_log_def› = get_spec¨$NatLogÆ;
+val €nat_log_def› = get_spec¨NatLogÆ;
 =TEX
 We need the factorial function:
 =SML
 val _ = 
 πHOLCONST
-‹ $€Factorial› : Ó ≠ Ó
+‹ €Factorial› : Ó ≠ Ó
 ˜¸¸¸¸¸¸
 ‹ 	Factorial 0 = 1 
 ‹±	µn∑ Factorial (n + 1) = (n + 1) * Factorial n
@@ -2042,7 +2055,7 @@ val _ =
 =SML
 val €factorial_def› = get_spec¨FactorialÆ;
 =TEX
-We need the functional power (iteration) function:
+We need the function iteration functional:
 =SML
 val _ = 
 πHOLCONST
@@ -2053,6 +2066,549 @@ val _ =
 ∞
 =SML
 val €iterate_def› = get_spec¨IterateÆ;
+=TEX
+We need various extra functions involving sets:
+=SML
+val _ = 
+πHOLCONST
+‹ €Disjoint› : 'a SET ≠ 'a SET ≠ BOOL
+˜¸¸¸¸¸¸
+‹  µa b∑ Disjoint a b § a ° b = {}
+∞
+=SML
+val €disjoint_def› = get_spec¨DisjointÆ;
+=TEX
+=SML
+val _ = 
+πHOLCONST
+‹ €Delete› : 'a SET ≠ 'a ≠ 'a SET 
+˜¸¸¸¸¸¸
+‹  µa x∑ Delete a x = a \ {x}
+∞
+=SML
+val €delete_def› = get_spec¨DeleteÆ;
+=SML
+val _ = 
+πHOLCONST
+‹ €IsSingleton› : 'a SET ≠ BOOL
+˜¸¸¸¸¸¸
+‹  µa∑ IsSingleton a § ∂x∑ a = {x}
+∞
+=SML
+val €is_singleton_def› = get_spec¨IsSingletonÆ;
+=TEX
+The name ``Image'' is in use for something else.
+=SML
+val _ = 
+πHOLCONST
+‹ €Img› : ('a ≠ 'b) ≠ 'a SET ≠ 'b SET
+˜¸¸¸¸¸¸
+‹  µf a∑ Img f a = {y | ∂x∑ x ç a ± y = f x }
+∞
+=SML
+val €img_def› = get_spec¨ImgÆ;
+=TEX
+=SML
+val _ = 
+πHOLCONST
+‹ €Surjections› : 'a SET ≠ 'b SET ≠ ('a ≠ 'b) SET
+˜¸¸¸¸¸¸
+‹  µa b∑ Surjections a b = {f | (µx∑ x ç a ¥ f x ç b) ± (µy∑ y ç b ¥ ∂x∑ x ç a ± f x = y) }
+∞
+=SML
+val €surjections_def› = get_spec¨SurjectionsÆ;
+=TEX
+=SML
+val _ = 
+πHOLCONST
+‹ €Injections› : 'a SET ≠ 'b SET ≠ ('a ≠ 'b) SET
+˜¸¸¸¸¸¸
+‹  µa b∑ Injections a b = {f | (µx∑ x ç a ¥ f x ç b) ± (µx y∑ x ç a ± y ç a ± f x = f y ¥ x = y) }
+∞
+=SML
+val €injections_def› = get_spec¨InjectionsÆ;
+=TEX
+=SML
+val _ = 
+πHOLCONST
+‹ €Bijections› : 'a SET ≠ 'b SET ≠ ('a ≠ 'b) SET
+˜¸¸¸¸¸¸
+‹  µa b∑ Bijections a b = Injections a b ° Surjections a b
+∞
+=SML
+val €bijections_def› = get_spec¨BijectionsÆ;
+=TEX
+=SML
+val _ = 
+πHOLCONST
+‹ €Choice› : 'a SET ≠ 'a
+˜¸¸¸¸¸¸
+‹  µa∑ ≥a = {} ¥ Choice a ç a
+∞
+=TEX
+=SML
+val _ = save_consistency_thm ¨ChoiceÆ (
+push_consistency_goal¨ChoiceÆ;
+a(prove_∂_tac THEN REPEAT strip_tac);
+a(cases_tac¨a' = {}Æ THEN asm_rewrite_tac[]);
+a(PC_T1 "sets_ext1" asm_prove_tac[]);
+pop_thm());
+val €choice_def› = get_spec¨ChoiceÆ;
+=TEX
+=SML
+val _ = 
+πHOLCONST
+‹ €Rest› : 'a SET ≠ 'a SET
+˜¸¸¸¸¸¸
+‹  µa∑ Rest a = Delete a (Choice a)
+∞
+=SML
+val €rest_def› = get_spec¨RestÆ;
+=TEX
+=SML
+val _ = 
+πHOLCONST
+‹ €IsFinite› : 'a SET ≠ BOOL
+˜¸¸¸¸¸¸
+‹  µa∑ IsFinite a § a ç Finite
+∞
+=SML
+val €is_finite_def› = get_spec¨IsFiniteÆ;
+=TEX
+=SML
+val _ = 
+πHOLCONST
+‹ €IsInfinite› : 'a SET ≠ BOOL
+˜¸¸¸¸¸¸
+‹  µa∑ IsInfinite a § ≥a ç Finite
+∞
+=SML
+val €is_infinite_def› = get_spec¨IsInfiniteÆ;
+=TEX
+=SML
+val _ = 
+πHOLCONST
+‹ €All› : ('a ≠ BOOL) ≠ 'a LIST ≠ BOOL
+˜¸¸¸¸¸¸
+‹ 	(µp∑ All p [])
+‹ ±	(µp h t∑ All p (Cons h t) § p h ± All p t)
+∞
+=SML
+val €all_def› = get_spec¨AllÆ;
+=TEX
+=SML
+val _ = 
+πHOLCONST
+‹ €Any› : ('a ≠ BOOL) ≠ 'a LIST ≠ BOOL
+˜¸¸¸¸¸¸
+‹ 	(µp∑ ≥Any p [])
+‹ ±	(µp h t∑ Any p (Cons h t) § p h ≤ Any p t)
+∞
+=SML
+val €any_def› = get_spec¨AnyÆ;
+=TEX
+=SML
+val _ = 
+πHOLCONST
+‹ €ListFromSet› : 'a SET ≠ 'a LIST
+˜¸¸¸¸¸¸
+‹ µa∑ a ç Finite ¥ Elems(ListFromSet a) = a ± Length(ListFromSet a) = Size a
+∞
+=SML
+=TEX
+=SML
+val _ = save_consistency_thm ¨ListFromSetÆ (
+push_consistency_goal¨ListFromSetÆ;
+a(prove_∂_tac THEN REPEAT strip_tac);
+a(cases_tac ¨a' ç FiniteÆ THEN asm_rewrite_tac[]);
+a(all_fc_tac[finite_distinct_elems_thm]);
+a(∂_tac¨listÆ THEN REPEAT strip_tac);
+a(ALL_FC_T rewrite_tac[distinct_size_length_thm]);
+pop_thm());
+val €list_from_set_def› = get_spec¨ListFromSetÆ;
+=TEX
+We need the list concatenation function:
+=SML
+val _ = 
+πHOLCONST
+‹ €Concat› : 'a LIST LIST ≠ 'a LIST
+˜¸¸¸¸¸¸
+‹ 	Concat [] = []
+‹±	µx list∑ Concat (Cons x list) = x @ Concat list
+∞
+=SML
+val €concat_def› = get_spec¨ConcatÆ;
+=TEX
+We need the empty list discriminator function:
+=SML
+val _ = 
+πHOLCONST
+‹ €IsNil› : 'a LIST ≠ BOOL
+˜¸¸¸¸¸¸
+‹ 	IsNil []
+‹±	µx list∑ ≥ IsNil (Cons x list)
+∞
+=SML
+val €is_nil_def› = get_spec¨IsNilÆ;
+=TEX
+We need an alternative formulation of this.
+=SML
+val €is_nil_eq_nil_thm› = tac_proof(([], ¨µl∑ IsNil l § l = []Æ),
+	strip_tac THEN (strip_asm_tac o µ_elim¨l : 'a LISTÆ) list_cases_thm
+		THEN asm_rewrite_tac[is_nil_def]);
+=TEX
+We need the list case function:
+=SML
+val _ = 
+πHOLCONST
+‹ €ListCase› : 'b ≠ ('a ≠ 'a LIST ≠ 'b) ≠ 'a LIST ≠ 'b
+˜¸¸¸¸¸¸
+‹ 	(µb f∑ ListCase b f [] = b)
+‹±	(µb f h t∑ ListCase b f (Cons h t) = f h t)
+∞
+=SML
+val €list_case_def› = get_spec¨ListCaseÆ;
+=TEX
+=TEX
+We need the list filter function:
+=SML
+val _ = 
+πHOLCONST
+‹ €Filter› : ('a ≠ BOOL) ≠ 'a LIST ≠ 'a LIST
+˜¸¸¸¸¸¸
+‹ 	(µp∑ Filter p [] = [])
+‹±	(µp h t∑ Filter p (Cons h t) = if p h then Cons h (Filter p t) else Filter p t)
+∞
+=SML
+val €filter_def› = get_spec¨FilterÆ;
+=TEX
+The fold functions in the Gilith OpenTheory Repo take the parameters in a different order from ours.
+=SML
+val _ = 
+πHOLCONST
+‹ €FoldR› : ('a ≠ 'b ≠ 'b) ≠ 'b ≠ 'a LIST ≠ 'b
+˜¸¸¸¸¸¸
+‹ 	(µf e∑ FoldR f e [] = e)
+‹±	(µf e h t∑ FoldR f e (Cons h t) = f h (FoldR f e t))
+∞
+=SML
+val €fold_r_def› = get_spec¨FoldRÆ;
+=TEX
+=SML
+val _ = 
+πHOLCONST
+‹ €FoldL› : ('b ≠ 'a ≠ 'b) ≠ 'b ≠ 'a LIST ≠ 'b
+˜¸¸¸¸¸¸
+‹  µf e l∑ FoldL f e l = FoldR (CombC f) e (Rev l)
+∞
+=SML
+val €fold_l_def› = get_spec¨FoldLÆ;
+=TEX
+The existing nth function uses 1-based indexing.
+=SML
+val _ = 
+πHOLCONST
+‹ €Nth0› : 'a LIST ≠ Ó ≠ 'a
+˜¸¸¸¸¸¸
+‹  µx l n∑ Nth0 (Cons x l) n = if n = 0 then x else Nth0 l (n - 1)
+∞
+=SML
+val €nth_0_def› = get_spec¨Nth0Æ;
+=TEX
+=SML
+val nth_0_thm = tac_proof(([], ¨
+	(µx l∑ Nth0 (Cons x l) 0 = x)
+±	(µx l n∑ n < Length l ¥ Nth0 (Cons x l) (n + 1) = Nth0 l n)
+Æ),
+	rewrite_tac[nth_0_def]);
+=TEX
+(Note that the second parameter of Interval gives the length, not the upper bound.)
+=SML
+val _ = 
+πHOLCONST
+‹ €Interval› : Ó ≠ Ó ≠ Ó LIST
+˜¸¸¸¸¸¸
+‹	(µm∑ Interval m 0 = [])
+‹ ±	(µm n∑ Interval m (n + 1) = Cons m (Interval (m + 1) n))
+∞
+=TEX
+=SML
+val _ = save_consistency_thm ¨IntervalÆ (
+push_consistency_goal¨IntervalÆ;
+a(lemma_tac ¨∂i∑ 
+	(µm∑ i 0 m = [])
+±	(µm n∑ i (n + 1) m = Cons m (i n (m + 1)))Æ THEN1 prove_∂_tac);
+a(∂_tac ¨Ãm n∑i n mÆ THEN asm_rewrite_tac[]);
+pop_thm());
+val €interval_def› = get_spec¨IntervalÆ;
+=TEX
+=SML
+val _ = declare_infix(230, "çâL");
+val _ = 
+πHOLCONST
+‹ $€çâL› : 'a ≠ 'a LIST ≠ BOOL
+˜¸¸¸¸¸¸
+‹	(µx∑ ≥x çâL [])
+‹±	(µx h t∑ x çâL (Cons h t) § x = h ≤ x çâL t)
+∞
+=SML
+val €ç_l_def› = get_spec¨$çâLÆ;
+=TEX
+=SML
+val _ = 
+πHOLCONST
+‹ €NubRev› : 'a LIST ≠ 'a LIST
+˜¸¸¸¸¸¸
+‹	NubRev [] = []
+‹ ±	µh t∑ NubRev (Cons h t) = if h çâL t then NubRev t else Cons h (NubRev t)
+∞
+=SML
+val €nub_rev_def› = get_spec¨NubRevÆ;
+=TEX
+=SML
+val _ = 
+πHOLCONST
+‹ €Nub› : 'a LIST ≠ 'a LIST
+˜¸¸¸¸¸¸
+‹ µl∑ Nub l = Rev(NubRev(Rev l))
+∞
+=SML
+val €nub_def› = get_spec¨NubÆ;
+=TEX
+=SML
+val _ = 
+πHOLCONST
+‹ €Replicate› : 'a ≠ Ó ≠ 'a LIST
+˜¸¸¸¸¸¸
+‹	(µx∑ Replicate x 0 = [])
+‹ ±	(µx n∑ Replicate x (n+1) = Cons x (Replicate x n))
+∞
+=SML
+val €replicate_def› = get_spec¨ReplicateÆ;
+=TEX
+=SML
+val _ = 
+πHOLCONST
+‹ €Take› : Ó ≠ 'a LIST ≠ 'a LIST
+˜¸¸¸¸¸¸
+‹	(µl∑ Take 0 l = [])
+‹ ±	(µn h t∑ Take (n + 1) (Cons h t) = Cons h (Take n t))
+∞
+=SML
+val €take_def› = get_spec¨TakeÆ;
+=TEX
+=SML
+val _ = 
+πHOLCONST
+‹ €Drop› : Ó ≠ 'a LIST ≠ 'a LIST
+˜¸¸¸¸¸¸
+‹	(µl∑ Drop 0 l = l)
+‹ ±	(µn h t∑ Drop (n + 1) (Cons h t) = Drop n t)
+∞
+=SML
+val €drop_def› = get_spec¨DropÆ;
+=TEX
+=SML
+val _ = 
+πHOLCONST
+‹ €ZipWith› : ('a ≠ 'b ≠ 'c) ≠ 'a LIST ≠ 'b LIST ≠ 'c LIST
+˜¸¸¸¸¸¸
+‹	(µf∑ ZipWith f [] [] = [])
+‹ ±	(µf h1 h2 t1 t2∑ ZipWith f (Cons h1 t1) (Cons h2 t2) = Cons (f h1 h2) (ZipWith f t1 t2))
+∞
+=SML
+val €zip_with_def› = get_spec¨ZipWithÆ;
+=TEX
+=SML
+val _ = 
+πHOLCONST
+‹ €Zip› : 'a LIST ≠ 'b LIST ≠ ('a ∏ 'b) LIST
+˜¸¸¸¸¸¸
+‹	µl1 l2∑ Zip l1 l2 = ZipWith $, l1 l2
+∞
+=SML
+val €zip_def› = get_spec¨ZipÆ;
+=TEX
+=SML
+val _ = 
+πHOLCONST
+‹ €Max2âR› : Ø ≠ Ø ≠ Ø
+˜¸¸¸¸¸¸
+‹	µx y∑ Max2âR x y = if x º y then y else x
+∞
+=SML
+val €max2_Ø_def› = get_spec¨Max2âRÆ;
+=TEX
+=SML
+val _ = 
+πHOLCONST
+‹ €Min2âR› : Ø ≠ Ø ≠ Ø
+˜¸¸¸¸¸¸
+‹	µx y∑ Min2âR x y = if x º y then x else y
+∞
+=SML
+val €min2_Ø_def› = get_spec¨Min2âRÆ;
+=TEX
+We need the various operations on binary relations.
+=SML
+val _ = 
+πHOLCONST
+‹ €FromSetâB› : ('a ∏ 'b) SET ≠ ('a ≠ 'b ≠ BOOL)
+˜¸¸¸¸¸¸
+‹	µa x y∑ FromSetâB a x y = (x, y) ç a
+∞
+=SML
+val €bin_rel_from_set_def› = get_spec¨FromSetâBÆ;
+=TEX
+
+=SML
+val _ = 
+πHOLCONST
+‹ €ToSetâB› : ('a ≠ 'b ≠ BOOL) ≠ ('a ∏ 'b) SET
+˜¸¸¸¸¸¸
+‹	µr∑ ToSetâB r = { (x, y) | r x y }
+∞
+=SML
+val €bin_rel_to_set_def› = get_spec¨ToSetâBÆ;
+=SML
+val _ = 
+πHOLCONST
+‹ €öâB› : ('a ≠ 'b ≠ BOOL)
+˜¸¸¸¸¸¸
+‹	öâB = FromSetâB {}
+∞
+=SML
+val €ö_bin_rel_def› = get_spec¨öâBÆ;
+=SML
+val _ = 
+πHOLCONST
+‹ €ÉâB› : ('a ≠ 'b ≠ BOOL)
+˜¸¸¸¸¸¸
+‹	ÉâB = FromSetâB Universe
+∞
+=SML
+val €É_bin_rel_def› = get_spec¨ÉâBÆ;
+=TEX
+=SML
+val _ = declare_infix(260, "¿âB");
+val _ = 
+πHOLCONST
+‹ $€¿âB› : ('a ≠ 'b ≠ BOOL) ≠ ('a ≠ 'b ≠ BOOL) ≠ ('a ≠ 'b ≠ BOOL)
+˜¸¸¸¸¸¸
+‹ µr1 r2∑ r1 ¿âB r2 = FromSetâB(ToSetâB r1 ¿ ToSetâB r2)
+∞
+=SML
+val €¿_bin_rel_def› = get_spec¨r1 ¿âB r2Æ;
+=TEX
+=SML
+val _ = declare_infix(270, "°âB");
+val _ = 
+πHOLCONST
+‹ $€°âB› : ('a ≠ 'b ≠ BOOL) ≠ ('a ≠ 'b ≠ BOOL) ≠ ('a ≠ 'b ≠ BOOL)
+˜¸¸¸¸¸¸
+‹ µr1 r2∑ r1 °âB r2 = FromSetâB(ToSetâB r1 ° ToSetâB r2)
+∞
+=SML
+val €°_bin_rel_def› = get_spec¨r1 °âB r2Æ;
+=TEX
+=SML
+val _ = 
+πHOLCONST
+‹ $€ﬁâB› : ('a ≠ 'b ≠ BOOL) SET ≠ ('a ≠ 'b ≠ BOOL)
+˜¸¸¸¸¸¸
+‹ µu∑ ﬁâB u = FromSetâB(ﬁ(Img ToSetâB u))
+∞
+=SML
+val €ﬁ_bin_rel_def› = get_spec¨ﬁâBÆ;
+=TEX
+=SML
+val _ = 
+πHOLCONST
+‹ $€•âB› : ('a ≠ 'b ≠ BOOL) SET ≠ ('a ≠ 'b ≠ BOOL)
+˜¸¸¸¸¸¸
+‹ µu∑ •âB u = FromSetâB(•(Img ToSetâB u))
+∞
+=SML
+val €•_bin_rel_def› = get_spec¨•âBÆ;
+=TEX
+=SML
+val _ = declare_infix(230, "ÄâB");
+val _ = 
+πHOLCONST
+‹ $€ÄâB› : ('a ≠ 'b ≠ BOOL) ≠ ('a ≠ 'b ≠ BOOL) ≠ BOOL
+˜¸¸¸¸¸¸
+‹ µr1 r2∑ r1 ÄâB r2 § ToSetâB r1 Ä ToSetâB r2
+∞
+=SML
+val €Ä_bin_rel_def› = get_spec¨$ÄâBÆ;
+=TEX
+=SML
+val _ = 
+πHOLCONST
+‹ $€ReflâB› : ('a ≠ 'a ≠ BOOL) ≠ BOOL
+˜¸¸¸¸¸¸
+‹ µr∑ ReflâB r § µx∑ r x x
+∞
+=SML
+val €refl_bin_rel_def› = get_spec¨ReflâBÆ;
+=TEX
+=SML
+val _ = 
+πHOLCONST
+‹ $€IrreflâB› : ('a ≠ 'a ≠ BOOL) ≠ BOOL
+˜¸¸¸¸¸¸
+‹ µr∑ IrreflâB r § µx∑ ≥r x x
+∞
+=SML
+val €irrefl_bin_rel_def› = get_spec¨IrreflâBÆ;
+=TEX
+=SML
+val _ = 
+πHOLCONST
+‹ $€TransâB› : ('a ≠ 'a ≠ BOOL) ≠ BOOL
+˜¸¸¸¸¸¸
+‹ µr∑ TransâB r § µx y z∑ r x y ± r y z ¥ r x z
+∞
+=SML
+val €trans_bin_rel_def› = get_spec¨TransâBÆ;
+=TEX
+=SML
+val _ = declare_postfix(320, "õ*");
+val _ = 
+πHOLCONST
+‹ $€õ*› : ('a ≠ 'a ≠ BOOL) ≠ ('a ≠ 'a ≠ BOOL)
+˜¸¸¸¸¸¸
+‹ µr∑ r õ* = •âB {s | r ÄâB s ± TransâB s}
+∞
+=SML
+val €trans_closure_def› = get_spec¨$õ*Æ;
+=SML
+val _ = 
+πHOLCONST
+‹ €WellFoundedâB› : ('a ≠ 'a ≠ BOOL) ≠ BOOL
+˜¸¸¸¸¸¸
+‹ µr∑ WellFoundedâB r § µp∑ (∂x∑ p x) ¥ (∂x∑ p x ± (µy∑ r y x ¥ ≥p y))
+∞
+=SML
+val €bin_rel_well_founded_def› = get_spec¨WellFoundedâBÆ;
+=SML
+val _ = 
+πHOLCONST
+‹ €Precedes› : Ó ≠ Ó ≠ BOOL
+˜¸¸¸¸¸¸
+‹ µm n∑ Precedes m n § Suc m = n
+∞
+=SML
+val €precedes_def› = get_spec¨PrecedesÆ;
+=SML
+val _ = 
+πHOLCONST
+‹ €MeasureâB› : ('a ≠ Ó) ≠ ('a ≠ 'a ≠ BOOL)
+˜¸¸¸¸¸¸
+‹ µm x y∑ MeasureâB m x y § m x < m y
+∞
+=SML
+val €bin_rel_measure_def› = get_spec¨MeasureâBÆ;
 =TEX
 The OpenTheory interface also includes some special support for {\Product} and HOL4
 type definitions.
@@ -2102,7 +2658,7 @@ val €ot_±_def› = tac_proof(([],
 			STRIP_T (ante_tac o µ_elim¨Ãa b∑a ± bÆ) THEN rewrite_tac[]);
 val €ot_¥_def› = tac_proof(([], ¨$¥ = Ãp q∑p ± q § pÆ), rewrite_tac[]
 	THEN taut_tac);
-val €ot_∂_def› = tac_proof(([], ¨$∂ = Ãp∑µq∑ (µx: 'a∑p x ¥ q) ¥ qÆ),
+val €ot_∂_def› = tac_proof(([], ¨$∂ = Ãp∑ µq∑ (µx: 'a∑p x ¥ q) ¥ qÆ),
 	rewrite_tac[] THEN µ_tac THEN
 		pure_once_rewrite_tac
 			[(conv_rule eq_sym_conv o µ_elim¨x: 'a ≠ BOOLÆ)»_axiom]
@@ -2138,7 +2694,7 @@ val €ot_one_one_def› : THM = tac_proof(([], ¨µ f∑ OneOne f § (µ x1 x2∑ f x1 = f 
 val €ot_onto_def› : THM =  tac_proof(([], ¨µ f∑ Onto f § (µ y∑ ∂ x∑ y = f x)Æ),
 	rewrite_tac[onto_def]);
 val €ot_o_def› : THM = tac_proof(([], ¨$o = Ãf g x∑f(g x)Æ),
-	rewrite_tac[get_spec ¨$oÆ]);
+	rewrite_tac[o_def]);
 val €ot_comb_c_def› : THM = tac_proof(([], ¨CombC = Ãf x y∑ f y xÆ),
 	rewrite_tac[get_spec ¨CombCÆ]);
 val €ot_comb_i_def› : THM = tac_proof(([], ¨CombI = Ãx∑ xÆ),
@@ -2159,11 +2715,15 @@ val €ot_function_defs› = [
 	ot_comb_s_def,
 	ot_comb_w_def];
 =TEX
+
 Package unit:
+
 =SML
 val €ot_unit_defs› = [one_def];
 =TEX
+
 Package pair:
+
 =SML
 val €ot_fst_def› : THM = tac_proof(([], ¨µ x y∑ Fst (x, y) = xÆ),
 	rewrite_tac[pair_ops_def]);
@@ -2175,6 +2735,7 @@ val €ot_comma_one_one_thm› : THM = tac_proof(([], ¨µx1 y1 x2 y2∑ (x1, y1) = (x2,
 	rewrite_tac[pair_ops_def]);
 val €ot_pair_defs› = [ot_fst_def, ot_snd_def, ot_comma_onto_thm, ot_comma_one_one_thm];
 =TEX
+
 Package natural:
 
 =SML
@@ -2260,14 +2821,8 @@ val €ot_factorial_defs› = (strip_±_rule o pure_rewrite_rule[plus_1_to_suc_thm]) 
 
 val €ot_iterate_defs› = (strip_±_rule o pure_rewrite_rule[plus_1_to_suc_thm]) iterate_def;
 
-val €ot_option_map_defs› = strip_±_rule option_map_def;
-
-val €ot_option_case_defs› = strip_±_rule option_case_def;
-
-val €ot_option_defs› = ot_option_map_defs @ ot_option_case_defs;
-
-val €ot_nat_defs› = map ((conv_rule o TRY_C o ONCE_MAP_C) bit_rep_conv)
-	(ot_zero_suc_defs @
+val €ot_nat_defs› =
+	ot_zero_suc_defs @
 	ot_bit0_bit1_defs @
 	ot_additive_ops_defs @
 	ot_order_defs @
@@ -2278,20 +2833,338 @@ val €ot_nat_defs› = map ((conv_rule o TRY_C o ONCE_MAP_C) bit_rep_conv)
 	ot_exp_defs @
 	ot_nat_log_defs @
 	ot_factorial_defs @
-	ot_iterate_defs @
-	ot_option_defs);
+	ot_iterate_defs;
 =TEX
+
+Package option:
+
+=SML
+val €ot_option_map_defs› = strip_±_rule option_map_def;
+
+val €ot_option_case_defs› = strip_±_rule option_case_def;
+
+=TEX
+The following really ought to be in {\ProductHOL} already.
+=SML
+val €∂â1_thm1› = (
+set_goal([], ¨µp∑ (∂â1 x∑ p x) § (∂ x∑ p x) ± (µx y∑ p x ± p y ¥ x = y)Æ);
+a(rewrite_tac[∂â1_thm] THEN REPEAT strip_tac THEN_LIST [∂_tac¨t:'aÆ, id_tac, ∂_tac¨x:'aÆ]
+		THEN REPEAT strip_tac THEN all_asm_fc_tac[] THEN all_var_elim_asm_tac
+			THEN REPEAT strip_tac);
+pop_thm());
+=TEX
+=SML
+val €ot_option_ind_rec_thms› = 
+	[option_induction_thm,
+	 (all_µ_intro o ±_left_elim o
+		extend_pc_rule1 "'sho_rw" rewrite_rule[∂â1_thm1] o all_µ_elim)
+			option_prim_rec_thm];
+
+val €ot_option_defs› = ot_option_map_defs @ ot_option_case_defs @ ot_option_ind_rec_thms;
+
+=TEX
+
+Package: set
+
+=SML
+
+val €ot_∏_def› = tac_proof (([], ¨µ s t∑ (s ∏ t) = {v|∂ x y∑ v = (x, y) ± x ç s ± y ç t}Æ),
+	rewrite_tac[∏_def] THEN PC_T1 "sets_ext1" rewrite_tac[] THEN rewrite_tac[]
+		THEN REPEAT strip_tac THEN_TRY all_var_elim_asm_tac THEN REPEAT strip_tac THEN 
+	rewrite_tac[taut_rule¨µa b c∑ (a ± b) ± c § b ± a ± cÆ] THEN
+	conv_tac (ONCE_MAP_C eq_sym_conv THEN_C
+		BINDER_C simple_one_point_conv THEN_C simple_one_point_conv)
+			THEN REPEAT strip_tac);
+
+val €ot_set_comp_def› = tac_proof (([], ¨µ p x∑ x ç $SetComp p § p xÆ),
+	rewrite_tac[pc_rule1 "predicates" rewrite_rule[»_axiom] set_comp_def]);
+
+
+val €hol_light_set_comp_thm› = pc_rule1"sets_ext1" prove_rule[]¨µp∑ {x | p x} = {x | ∂y∑ x = y ± p y}Æ;
+
+
+val €ot_other_set_defs› = map (pc_rule1"sets_ext1" prove_rule[delete_def, img_def]) [
+	¨µ s t∑ s † t § s Ä t ± ≥ s = tÆ,
+	¨µ x s∑ Insert x s = {v|∂ y∑ v = y ± (y = x ≤ y ç s)}Æ,
+	¨µ s∑ • s = {v|∂ x∑ v = x ± (µ u∑ u ç s ¥ x ç u)}Æ,
+	¨µ s∑ ﬁ s = {v|∂ x∑ v = x ± (∂ u∑ u ç s ± x ç u)}Æ,
+	¨µ s t∑ s \ t = {v|∂ x∑ v = x ± x ç s ± ≥ x ç t}Æ,
+	¨µ s t∑ s ° t = {v|∂ x∑ v = x ± x ç s ± x ç t}Æ,
+	¨µ s t∑ s ¿ t = {v|∂ x∑ v = x ± (x ç s ≤ x ç t)}Æ,
+	¨Universe = {v|∂ x∑ v = x ± T}Æ,
+	¨{} = {v|∂ x∑ v = x ± F}Æ,
+	¨µ s x∑ Delete s x = {v|∂ y∑ v = y ± y ç s ± ≥ y = x}Æ,
+	¨µ f s∑ Img f s = {v|∂ y∑ v = y ± (∂ x∑ x ç s ± y = f x)}Æ,
+	¨µ s t∑ (µ x∑ x ç s § x ç t) ¥ s = tÆ];
+
+val €ot_finite_defs› = [
+	tac_proof(([], ¨µ p∑ p {} ± (µ x s∑ p s ¥ p (Insert x s)) ¥ (µ a∑ IsFinite a ¥ p a)Æ),
+		once_rewrite_tac[pc_rule1"sets_ext1" prove_rule[]¨µx a∑ Insert x a = {x} ¿ aÆ] THEN
+		rewrite_tac[is_finite_def, finite_def] THEN PC_T1 "sets_ext1" REPEAT strip_tac THEN
+		POP_ASM_T (ante_tac o µ_elim¨{x : 'a SET | p x}Æ) THEN  asm_rewrite_tac[]),
+	prove_rule[is_finite_def, is_infinite_def] ¨µ s∑ IsInfinite s § ≥ IsFinite sÆ,
+	rewrite_rule[conv_rule(BINDER_C eq_sym_conv) is_finite_def] empty_finite_thm,
+	(list_µ_intro [¨x:'aÆ, ¨a:'a SETÆ]o list_µ_elim[¨a:'a SETÆ, ¨x:'aÆ] o
+	rewrite_rule[conv_rule(BINDER_C eq_sym_conv) is_finite_def,
+		pc_rule1"sets_ext1" prove_rule[]¨µx a∑ {x} ¿ a = Insert x aÆ]) singleton_¿_finite_thm];
+
+
+
+val €ot_set_defs› = [
+	ot_∏_def,
+	disjoint_def,
+	ot_∏_def,
+	rest_def,
+	Ä_def,
+	ot_set_comp_def] @
+	ot_other_set_defs @
+	ot_finite_defs;
+
+=TEX
+
+Package list:
+
 =SML
 
 
+val €ot_list_induction_thm› = tac_proof(([],
+	¨µ p∑ p [] ± (µx list∑ p list ¥ p (Cons x list)) ¥ (µ list∑ p list)Æ),
+	REPEAT strip_tac THEN list_induction_tac¨list : 'a LISTÆ THEN REPEAT strip_tac
+	THEN ASM_FC_T rewrite_tac[]);
+
+val €ot_list_prim_rec_thm› = tac_proof(([],
+	¨µ b f∑ ∂ fn∑ fn [] = b ± (µ h t∑ fn (Cons h t) = f h t (fn t))Æ),
+		REPEAT strip_tac THEN prove_∂_tac);
+
+val €ot_list_type_defs› = [ot_list_induction_thm, ot_list_prim_rec_thm];
+
+val €ot_append_defs› = [
+	±_left_elim append_def,
+	prove_rule[append_def]¨µl h t∑ Cons h t @ l = Cons h (t @ l)Æ] @
+	strip_±_rule concat_def;
+
+val €ot_list_dest_defs› = (flat o map strip_±_rule) [is_nil_def, list_case_def] @ [hd_def, tl_def];
+
+val €ot_list_length_defs› = (strip_±_rule o rewrite_rule[plus_1_to_suc_thm]) length_def;
+
+val €insert_rw_thm› = pc_rule1 "sets_ext1" prove_rule[]¨µx a∑ {x} ¿ a = Insert x aÆ;
+
+val €ot_list_set_defs› = list_from_set_def ::
+	(flat o map strip_±_rule) [all_def, any_def, rewrite_rule[insert_rw_thm] elems_def, ç_l_def];
+
+val €ot_list_map_defs› =  [
+	±_left_elim map_def,
+	prove_rule[map_def]¨µf h t∑ Map f (Cons h t) = Cons (f h) (Map f t)Æ];
+
+val €ot_list_filter_defs› = strip_±_rule filter_def;
+
+val €ot_list_reverse_defs› = strip_±_rule rev_def;
+
+val €ot_list_fold_defs› = fold_l_def ::strip_±_rule fold_r_def;
+
+val €ot_last_defs› = [prove_rule[last_def, is_nil_eq_nil_thm] 
+	¨µ x l∑ Last (Cons x l) = (if IsNil l then x else Last l)Æ];
+
+val €ot_nth_defs› = (strip_±_rule o rewrite_rule[plus_1_to_suc_thm]) nth_0_thm;
+
+val €ot_interval_defs› = (strip_±_rule o rewrite_rule[plus_1_to_suc_thm]) interval_def;
+
+val €ot_nub_defs› = nub_def :: strip_±_rule nub_rev_def;
+
+val €ot_replicate_defs› = (strip_±_rule o rewrite_rule[plus_1_to_suc_thm]) replicate_def;
+
+val €ot_take_drop_defs› =  [
+			±_left_elim drop_def,
+		±_left_elim take_def]
+	@ map (rewrite_rule[plus_1_to_suc_thm]) [
+		prove_rule[drop_def]
+			¨µ n h t∑ n º Length t ¥ Drop (n + 1) (Cons h t) = Drop n tÆ,
+		prove_rule[take_def]
+			¨µ n h t∑ n º Length t ¥ Take (n + 1) (Cons h t) = Cons h (Take n t)Æ];
+
+val €ot_zip_defs› = zip_def ::  [
+		±_left_elim zip_with_def,
+		prove_rule[zip_with_def]
+			¨µ f h1 h2 t1 t2∑ Length t1 = Length t2 ¥
+				ZipWith f (Cons h1 t1) (Cons h2 t2) =
+					Cons (f h1 h2) (ZipWith f t1 t2)Æ];
+
+
+val €ot_list_defs› =
+	ot_list_type_defs @
+	ot_list_set_defs @
+	ot_append_defs @ 
+	ot_list_dest_defs @
+	ot_list_length_defs @
+	ot_list_map_defs @
+	ot_list_filter_defs @
+	ot_list_reverse_defs @
+	ot_list_fold_defs @
+	ot_last_defs @
+	ot_nth_defs @
+	ot_interval_defs @
+	ot_nub_defs @
+	ot_replicate_defs @
+	ot_take_drop_defs @
+	ot_zip_defs;
+
+=TEX
+
+Package real:
+
+=SML
+val €ot_sup_defs› = [
+	(set_goal([],
+   		¨µ s m∑ ≥ s = {} ± (∂ m∑ µ x∑ x ç s ¥ x º m) ± (µ x∑ x ç s ¥ x º m) ¥ Sup s º mÆ);
+		a(REPEAT strip_tac THEN bc_thm_tac Ø_sup_º_bc_thm THEN asm_rewrite_tac[]);
+		a(∂_tac¨mÆ THEN asm_rewrite_tac[]);
+	pop_thm()),
+	(set_goal([], ¨µ s x∑ ≥ s = {} ± (∂ m∑ µ x∑ x ç s ¥ x º m) ± x ç s ¥ x º Sup sÆ);
+		a(REPEAT strip_tac THEN bc_thm_tac Ø_º_sup_bc_thm THEN asm_rewrite_tac[]);
+		a(REPEAT strip_tac THEN1 (∂_tac¨mÆ THEN asm_rewrite_tac[]));
+		a(all_asm_fc_tac[]);
+	pop_thm())];
+
 =TEX
 =SML
-val €ot_defs› = 
+val €ot_real_ring_thms› =
+	let	val thms = [bit1_def, max2_Ø_def, min2_Ø_def, ÓØ_one_one_thm,
+			ÓØ_plus_homomorphism_thm, ÓØ_times_homomorphism_thm, ÓØ_º_thm,
+			Ø_abs_def, Ø_0_º_0_º_times_thm, plus_def];
+		val conv = rewrite_conv thms AND_OR_C PC_C1 "Ø_lin_arith" prove_conv [];
+		val pr = (§_t_elim o conv);
+	in	[
+			pr ¨µ x y : Ø∑ x + y = y + xÆ,
+			pr ¨µ x y z : Ø∑ x + y + z = (x + y) + zÆ,
+			pr ¨µ x : Ø∑ 0. + x = xÆ,
+			pr ¨µ x : Ø∑ ~ x + x = 0.Æ,
+			pr ¨µ x y : Ø∑ x * y = y * xÆ,
+			pr ¨µ x y z : Ø∑ x * y * z = (x * y) * zÆ,
+			pr ¨µ x : Ø∑ ÓØ (Bit1 0) * x = xÆ,
+			pr ¨µ x y z : Ø∑ x * (y + z) = x * y + x * zÆ,
+			pr ¨µ x : Ø∑ x º xÆ,
+			pr ¨µ x y : Ø∑ x º y ± y º x § x = yÆ,
+			pr ¨µ x y z : Ø∑ x º y ± y º z ¥ x º zÆ,
+			pr ¨µ x y : Ø∑ x º y ≤ y º xÆ,
+			pr ¨µ x y z : Ø∑ y º z ¥ x + y º x + zÆ,
+			pr ¨µ x y : Ø∑ 0. º x ± 0. º y ¥ 0. º x * yÆ,
+			pr ¨µ m n∑ ÓØ m = ÓØ n § m = nÆ,
+			pr ¨µ m n∑ ÓØ m º ÓØ n § m º nÆ,
+			pr ¨µ m n∑ ÓØ m + ÓØ n = ÓØ (m + n)Æ,
+			pr ¨µ m n∑ ÓØ m * ÓØ n = ÓØ (m * n)Æ,
+			pr ¨µ x y : Ø∑ x - y = x + ~ yÆ,
+			pr ¨µ x y : Ø∑ x < y § ≥ y º xÆ,
+			pr ¨µ x y : Ø∑ x æ y § y º xÆ,
+			pr ¨µ x y : Ø∑ x > y § y < xÆ,
+			pr ¨µ x : Ø∑ Abs x = (if 0. º x then x else ~ x)Æ,
+			pr ¨µ x : Ø;  n∑ x ^ Suc n = x * x ^ nÆ,
+			pr ¨µ x : Ø∑ x ^ 0 = ÓØ (Bit1 0)Æ,
+			pr ¨µ m n∑ Max2âR m n = (if m º n then n else m)Æ,
+			pr ¨µ m n∑ Min2âR m n = (if m º n then m else n)Æ
+		]
+	end;
+
+val €ot_real_recip_thm› = tac_proof(([], ¨µ x : Ø∑ ≥ x = 0. ¥ x õ-õ1 * x = ÓØ (Bit1 0)Æ),
+	rewrite_tac[bit1_def] THEN REPEAT strip_tac THEN all_fc_tac[Ø_recip_clauses]);
+
+val €ot_real_over_thm› = tac_proof(([], ¨µ x y : Ø∑ ≥ y = 0. ¥ x / y = x * y õ-õ1Æ),
+	REPEAT strip_tac THEN FC_T rewrite_tac[Ø_over_times_recip_thm]);
+
+=SML
+val €ot_sup_defs› = [
+	(set_goal([],
+   		¨µ s m∑ ≥ s = {} ± (∂ m∑ µ x∑ x ç s ¥ x º m) ± (µ x∑ x ç s ¥ x º m) ¥ Sup s º mÆ);
+		a(REPEAT strip_tac THEN bc_thm_tac Ø_sup_º_bc_thm THEN asm_rewrite_tac[]);
+		a(∂_tac¨mÆ THEN asm_rewrite_tac[]);
+	pop_thm()),
+	(set_goal([], ¨µ s x∑ ≥ s = {} ± (∂ m∑ µ x∑ x ç s ¥ x º m) ± x ç s ¥ x º Sup sÆ);
+		a(REPEAT strip_tac THEN bc_thm_tac Ø_º_sup_bc_thm THEN asm_rewrite_tac[]);
+		a(REPEAT strip_tac THEN1 (∂_tac¨mÆ THEN asm_rewrite_tac[]));
+		a(all_asm_fc_tac[]);
+	pop_thm())];
+
+val €ot_real_defs› =
+	ot_real_recip_thm ::
+	ot_real_over_thm ::
+	ot_real_ring_thms @
+	ot_sup_defs;
+=TEX
+
+Package relation:
+
+=SML
+val €ot_set_comp_thm› = tac_proof(([], ¨µp∑ {x | p x} = {v | ∂ x∑ v = x ± p x}Æ),
+	MERGE_PCS_T1 ["sets_ext1", "'pair"] prove_tac[]);
+
+val €ot_set_comp_pair_thm› = tac_proof(([], ¨µp∑ {(x, y) | p x y} = {v | ∂ x y∑ v = (x, y) ± p x y}Æ),
+	MERGE_PCS_T1 ["sets_ext1", "'pair"] prove_tac[]);
+
+val €ot_bin_rel_to_set_def› =
+	merge_pcs_rule1 ["predicates", "'sho_rw"] rewrite_rule[ot_set_comp_pair_thm]
+		bin_rel_to_set_def;
+
+val €ot_trans_closure_def› =
+	merge_pcs_rule1 ["predicates", "'sho_rw"] once_rewrite_rule[ot_set_comp_thm]
+		trans_closure_def;
+
+val €ot_relation_defs› = [
+	bin_rel_from_set_def,
+	ot_bin_rel_to_set_def,
+	ö_bin_rel_def,
+	É_bin_rel_def,
+	¿_bin_rel_def,
+	°_bin_rel_def,
+	ﬁ_bin_rel_def,
+	•_bin_rel_def,
+	Ä_bin_rel_def,
+	refl_bin_rel_def,
+	irrefl_bin_rel_def,
+	trans_bin_rel_def,
+	ot_trans_closure_def,
+	bin_rel_well_founded_def,
+	precedes_def,
+	bin_rel_measure_def];
+
+=TEX
+
+Package sum:
+
+=SML
+
+
+val €ot_sum_induction_thm› = tac_proof(([],
+	¨µ p : 'a + 'b ≠ BOOL∑ (µ a∑ p (InL a)) ± (µ b∑ p (InR b)) ¥ (µ x∑ p x)Æ),
+	REPEAT strip_tac THEN strip_asm_tac(µ_elim¨x : 'a + 'bÆ sum_cases_thm)
+		THEN all_var_elim_asm_tac1 THEN asm_rewrite_tac[]);
+
+val €ot_sum_prim_rec_thm› = tac_proof(([],
+	¨µ f g∑ ∂ fn∑ (µ a∑ fn (InL a) = f a) ± (µ b∑ fn (InR b) = g b)Æ),
+		REPEAT strip_tac THEN prove_∂_tac);
+
+val €ot_sum_dest_thms› = map (prove_rule[]) [
+	¨µa∑ OutL(InL a) = aÆ,
+	¨µb∑ OutL(InL b) = bÆ];
+
+
+val €ot_sum_defs› = ot_sum_induction_thm :: ot_sum_prim_rec_thm :: ot_sum_dest_thms;
+=TEX
+
+Package base:
+
+=SML
+val €ot_defs› =  map ((conv_rule o TRY_C o ONCE_MAP_C) bit_rep_conv) (
 		ot_bool_defs @
 		ot_function_defs @
 		ot_unit_defs @
 		ot_pair_defs @
-		ot_nat_defs;
+		ot_nat_defs @
+		ot_option_defs @
+		ot_list_defs @
+		ot_set_defs @
+		ot_real_defs @
+		ot_relation_defs @
+		ot_sum_defs
+);
 =TEX
 =SML
 fun €import_name›
@@ -2443,11 +3316,17 @@ The following translates the Gilith Open Theory Repo namespace to ProofPower:
 =SML
 val €gilith_maps› : NAME_MAPS = {
 	type_map = map (name_of_string ** (fn x => x)) [
-		("bool", "BOOL"), ("->", "≠"), ("ind", "IND"),
-		("Data.Unit.unit", "ONE"),
+		("bool", "BOOL"),
+		("->", "≠"),
+		("ind", "IND"),
+		("Data.List.list", "LIST"),
+		("Data.Option.option", "OPTION"),
 		("Data.Pair.*", "∏"),
+		("Data.Unit.unit", "ONE"),
+		("Data.Sum.+", "+"),
 		("Number.Natural.natural", "Ó"),
-		("Data.Option.option", "OPTION")
+		("Number.Real.real", "Ø"),
+		("Set.set", "SET")
 	],
 	const_map = map (name_of_string ** (fn x => x)) [
 		("HOL4.TYPE_DEFINITION", "TypeDefn"),
@@ -2459,24 +3338,53 @@ val €gilith_maps› : NAME_MAPS = {
 		("Data.Bool.!", "µ"),
 		("Data.Bool.?", "∂"), ("Data.Bool.?!", "∂â1"),
 		("Data.Bool.cond", "Cond"),
-		("Data.Unit.()", "One"),
-		("Data.Pair.,", ","),
-		("Data.Pair.fst", "Fst"),
-		("Data.Pair.snd", "Snd"),
+		("Data.List.::", "Cons"),
+		("Data.List.[]", "Nil"),
+		("Data.List.@", "Append"),
+		("Data.List.all", "All"),
+		("Data.List.any", "Any"),
+		("Data.List.case.[].::", "ListCase"),
+		("Data.List.drop", "Drop"),
+		("Data.List.concat", "Concat"),
+		("Data.List.filter", "Filter"),
+		("Data.List.foldr", "FoldR"),
+		("Data.List.foldl", "FoldL"),
+		("Data.List.fromSet", "ListFromSet"),
+		("Data.List.head", "Hd"),
+		("Data.List.interval", "Interval"),
+		("Data.List.last", "Last"),
+		("Data.List.length", "Length"),
+		("Data.List.member", "çâL"),
+		("Data.List.nubReverse", "NubRev"),
+		("Data.List.nub", "Nub"),
+		("Data.List.tail", "Tl"),
+		("Data.List.map", "Map"),
+		("Data.List.nth", "Nth0"),
+		("Data.List.null", "IsNil"),
+		("Data.List.replicate", "Replicate"),
+		("Data.List.reverse", "Rev"),
+		("Data.List.take", "Take"),
+		("Data.List.toSet", "Elems"),
+		("Data.List.zip", "Zip"),
+		("Data.List.zipWith", "ZipWith"),
 		("Data.Option.none", "None"),
 		("Data.Option.some", "Some"),
 		("Data.Option.isnone", "IsNone"),
 		("Data.Option.issome", "IsSome"),
 		("Data.Option.case.none.some", "OptionCase"),
 		("Data.Option.map", "OptionMap"),
-		("Function.id", "CombI"),
-		("Function.K", "CombK"),
-		("Function.S", "CombS"),
+		("Data.Pair.,", ","),
+		("Data.Pair.fst", "Fst"),
+		("Data.Pair.snd", "Snd"),
+		("Data.Unit.()", "One"),
 		("Function.C", "CombC"),
-		("Function.W", "CombW"),
-		("Function.o", "o"),
+		("Function.id", "CombI"),
 		("Function.injective", "OneOne"),
+		("Function.K", "CombK"),
+		("Function.o", "o"),
+		("Function.S", "CombS"),
 		("Function.surjective", "Onto"),
+		("Function.W", "CombW"),
 		("Function.^", "Iterate"),
 		("Number.Natural.zero", "0"),
 		("Number.Natural.suc", "Suc"),
@@ -2499,9 +3407,69 @@ val €gilith_maps› : NAME_MAPS = {
 		("Number.Natural.mod", "Mod"),
 		("Number.Natural.^", "^"),
 		("Number.Natural.log", "NatLog"),
-		("Number.Natural.factorial", "Factorial")
+		("Number.Natural.factorial", "Factorial"),
+		("Number.Natural.isSuc", "Precedes"),
+		("Number.Real.+", "+âR"),
+		("Number.Real.fromNatural", "ÓØ"),
+		("Number.Real.~", "~âR"),
+		("Number.Real.*", "*âR"),
+		("Number.Real.<=", "ºâR"),
+		("Number.Real.inv", "õ-õ1"),
+		("Number.Real.-", "-âR"),
+		("Number.Real.<", "<âR"),
+		("Number.Real.>=", "æâR"),
+		("Number.Real.>", ">âR"),
+		("Number.Real.abs", "AbsâR"),
+		("Number.Real.^", "^âN"),
+		("Number.Real./", "/âR"),
+		("Number.Real.max", "Max2âR"),
+		("Number.Real.min", "Min2âR"),
+		("Number.Real.sup", "Sup"),
+		("Relation.fromSet", "FromSetâB"),
+		("Relation.toSet", "ToSetâB"),
+		("Relation.empty", "öâB"),
+		("Relation.universe", "ÉâB"),
+		("Relation.subrelation", "ÄâB"),
+		("Relation.union", "¿âB"),
+		("Relation.intersect", "°âB"),
+		("Relation.bigUnion", "ﬁâB"),
+		("Relation.bigIntersect", "•âB"),
+		("Relation.reflexive", "ReflâB"),
+		("Relation.irreflexive", "IrreflâB"),
+		("Relation.transitive", "TransâB"),
+		("Relation.transitiveClosure", "õ*"),
+		("Relation.measure", "MeasureâB"),
+		("Relation.wellFounded", "WellFoundedâB"),
+		("Set.member", "ç"),
+		("Set.fromPredicate", "SetComp"),
+		("Set.{}", "Empty"),
+		("Set.finite", "IsFinite"),
+		("Set.infinite", "IsInfinite"),
+		("Set.insert", "Insert"),
+		("Set.universe", "Universe"),
+		("Set.union", "¿"),
+		("Set.bigUnion", "ﬁ"),
+		("Set.intersect", "°"),
+		("Set.bigIntersect", "•"),
+		("Set.difference", "\\"),
+		("Set.delete", "Delete"),
+		("Set.subset", "Ä"),
+		("Set.properSubset", "†"),
+		("Set.disjoint", "Disjoint"),
+		("Set.singleton", "IsSingleton"),
+		("Set.image", "Img"),
+		("Set.injections", "Injections"),
+		("Set.surjections", "Surjections"),
+		("Set.bijections", "Bijections"),
+		("Set.choice", "Choice"),
+		("Set.rest", "Rest"),
+		("Set.cross", "∏"),
+		("Set.fold", "OTSetFold"),
+		("Set.size", "OTSize"),
+		("Set.hasSize", "HasSize")
 	]
 };
+
 =TEX
 %%%% %%%% %%%% %%%%
 \subsubsection{User Interface}
@@ -2524,7 +3492,8 @@ fun €open_theory_import› {files : string list, parent : string, theory : string}
 				val {theorems, ...} = open_theory_vm
 					(mk_import_interface gilith_maps
 					([type_defn_thm, hol4_type_definition_def, ≈_axiom, »_axiom]
-						@ ot_defs @ map snd (get_thms "-")))
+						@ ot_defs @ map snd (get_thms "-")
+						@ map snd (get_axioms "-")))
 						read_instream strm
 					handle ex as Fail _ => (close_in strm; raise ex);
 				val thms = rev theorems;
@@ -4444,8 +5413,17 @@ rewrite_rule [one_one_def] type_defn_def;
 
 (flat o map get_axioms o get_ancestors) "basic_hol";
 
-
 PC_C1 "predicates" rewrite_conv[] ¨ µ t1 t2∑ (Ã x∑ t1) t2 = t1Æ;
 
+val _ = open_theory_import{files = ["temp.art"], parent = "open-theory-base", theory = "t"};
 
-val _ = open_theory_import{files = ["Defs/02axiom-extensionality.art"], parent = "open-theory-base", theory = "t"};
+val file = "temp.art";
+
+val prf_fun =  fn () => map (conv_rule refl_conv o snd) (get_thms"-");
+
+val _ = proof_to_article{file = "temp.art", prf_fun = prf_fun};
+
+	begin_open_theory_export file;
+	app log_thm (prf_fun ());
+	end_open_theory_export ();
+
