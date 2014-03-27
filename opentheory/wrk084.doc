@@ -9,7 +9,7 @@ See the file LICENSE for your rights to use and change this file.
 
 Contact: Rob Arthan < rda@lemma-one.com >
 ********************************************************************************
-% $Id: wrk084.doc,v 1.14 2014/03/21 17:37:06 rda Exp rda $
+% $Id: wrk084.doc,v 1.15 2014/03/25 12:10:32 rda Exp rda $
 =TEX
 %%%%% YOU MAY WANT TO CHANGE POINT SIZE IN THE FOLLOWING:
 \documentclass[a4paper,12pt]{article}
@@ -57,9 +57,9 @@ of an OpenTheory reader and an OpenTheory writer for {\Product}.
 
 %%%%% THE FOLLOWING DEFAULTS WILL GENERALLY BE RIGHT:
 
-\def\Version{$Revision: 1.14 $%
+\def\Version{$Revision: 1.15 $%
 }
-\def\Date{\FormatDate{$Date: 2014/03/21 17:37:06 $%
+\def\Date{\FormatDate{$Date: 2014/03/25 12:10:32 $%
 }}
 
 %%%%% NOW BEGIN THE DOCUMENT AND MAKE THE FRONT PAGE
@@ -2212,9 +2212,8 @@ val _ =
 ¹HOLCONST
 Ü ÛListFromSetÝ : 'a SET ­ 'a LIST
 ÷üüüüüü
-Ü µa· a  Finite ´ Elems(ListFromSet a) = a ± Length(ListFromSet a) = Size a
+Ü µa· a  Finite ´ Elems(ListFromSet a) = a ± #(ListFromSet a) = #a
 °
-=SML
 =TEX
 =SML
 val _ = save_consistency_thm ¬ListFromSet® (
@@ -2226,6 +2225,354 @@ a(¶_tac¬list® THEN REPEAT strip_tac);
 a(ALL_FC_T rewrite_tac[distinct_size_length_thm]);
 pop_thm());
 val Ûlist_from_set_defÝ = get_spec¬ListFromSet®;
+
+=TEX
+=SML
+val Ûlist_from_set_empty_thmÝ = save_thm("list_from_set_empty_thm", (
+set_goal([], ¬ListFromSet {} = []®);
+a(strip_asm_tac empty_finite_thm THEN all_fc_tac [list_from_set_def]);
+a(DROP_NTH_ASM_T 2 ante_tac);
+a(strip_asm_tac (µ_elim¬ListFromSet{}® list_cases_thm)
+	THEN asm_rewrite_tac[elems_def]);
+a(PC_T1 "sets_ext1" prove_tac[]);
+pop_thm())
+);
+
+=TEX
+=SML
+val Ûelems_finite_thmÝ = save_thm("elems_finite_thm", (
+set_goal([], ¬µl· Elems l  Finite®);
+a(REPEAT strip_tac);
+a(list_induction_tac ¬l® THEN rewrite_tac[elems_def, empty_finite_thm]);
+a(ALL_FC_T rewrite_tac[singleton_À_finite_thm]);
+pop_thm())
+);
+
+=TEX
+=SML
+val Ûsize_elems_¼_length_thmÝ = save_thm("size_elems_¼_length_thm", (
+set_goal([], ¬µl· #(Elems l) ¼ #l®);
+a(REPEAT strip_tac);
+a(list_induction_tac¬l® THEN rewrite_tac[elems_def, distinct_def, length_def, size_empty_thm]);
+a(REPEAT strip_tac THEN cases_tac¬x  Elems l®);
+(* *** Goal "1" *** *)
+a(ALL_FC_T rewrite_tac [pc_rule1 "sets_ext1" prove_rule[] ¬µx a·x  a ´ {x} À a = a®]);
+a(PC_T1 "lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(lemma_tac¬Elems l  Finite® THEN1 rewrite_tac[elems_finite_thm]);
+a(ALL_FC_T asm_rewrite_tac[size_singleton_À_thm]);
+pop_thm())
+);
+
+=TEX
+=SML
+val Ûsize_eq_length_distinct_thmÝ = save_thm("size_eq_length_distinct_thm", (
+set_goal([], ¬µl· #(Elems l) = #l ¤ l  Distinct®);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(lemma_tac ¬¶n·Length l = n® THEN1 prove_¶_tac);
+a(all_asm_ante_tac THEN intro_µ_tac1 ¬l® THEN induction_tac¬n® THEN strip_tac);
+(* *** Goal "1.1" *** *)
+a(strip_asm_tac(µ_elim¬l® list_cases_thm) THEN all_var_elim_asm_tac1
+	THEN rewrite_tac[length_def, distinct_def]);
+(* *** Goal "1.2" *** *)
+a(strip_asm_tac(µ_elim¬l® list_cases_thm) THEN all_var_elim_asm_tac1
+	THEN rewrite_tac[length_def, distinct_def, elems_def]);
+a(REPEAT ´_tac THEN cases_tac¬x  Elems list2®);
+(* *** Goal "1.2.1" *** *)
+a(i_contr_tac THEN DROP_NTH_ASM_T 3 ante_tac);
+a(LEMMA_T ¬{x} À Elems list2 = Elems list2® rewrite_thm_tac THEN1 PC_T1 "sets_ext1" asm_prove_tac[]);
+a(ante_tac(µ_elim¬list2®size_elems_¼_length_thm) THEN PC_T1 "lin_arith" prove_tac[]);
+(* *** Goal "1.2.2" *** *)
+a(REPEAT strip_tac THEN DROP_NTH_ASM_T 3 ante_tac);
+(* *** Goal "1.2.2" *** *)
+a(strip_asm_tac(µ_elim¬list2® elems_finite_thm) THEN ALL_FC_T rewrite_tac[size_singleton_À_thm]);
+a(REPEAT strip_tac THEN all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(bc_thm_tac distinct_size_length_thm THEN REPEAT strip_tac);
+pop_thm())
+);
+
+=TEX
+=SML
+val Ûlist_from_set_distinct_thmÝ = save_thm("list_from_et_distinct_thm", (
+set_goal([], ¬µa· a  Finite ´ ListFromSet a  Distinct®);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(rewrite_tac[conv_rule(BINDER_C eq_sym_conv) size_eq_length_distinct_thm]);
+a(ALL_FC_T rewrite_tac [list_from_set_def]);
+pop_thm())
+);
+
+=TEX
+=SML
+val _ = 
+¹HOLCONST
+Ü ÛOTSetFoldÝ : ('a ­ 'b ­ 'b) ­ 'b ­ 'a SET ­ 'b
+÷üüüüüü
+Ü µf e·
+Ü	(µx y a· ³x = y ´ f x (f y a) = f y (f x a))
+Ü ´	OTSetFold f e {} = e
+Ü ±	(µx a·	a  Finite
+Ü	´	OTSetFold f e ({x} À a) =
+Ü		if x  a then OTSetFold f e a else f x (OTSetFold f e a))
+°
+
+
+=TEX
+%%%%
+%%%%
+=SML
+val Ûlist_finite_size_thm1Ý = save_thm ( "list_finite_size_thm1", (
+set_goal([], ¬µa·
+	 a  Finite
+¤	¶list·list  Distinct ± Elems list = a ± #list = #a®);
+a(REPEAT_UNTIL is_± strip_tac THEN strip_tac);
+(* *** Goal "1" *** *)
+a(REPEAT strip_tac THEN all_fc_tac[finite_distinct_elems_thm]);
+a(¶_tac¬list® THEN REPEAT strip_tac);
+a(ALL_FC_T rewrite_tac[distinct_size_length_thm]);
+(* *** Goal "2" *** *)
+a(strip_tac THEN all_var_elim_asm_tac1 THEN rewrite_tac[elems_finite_thm]);
+pop_thm()
+));
+
+=TEX
+%%%%
+%%%%
+=SML
+val Ûlist_finite_size_thmÝ = save_thm ( "list_finite_size_thm", (
+set_goal([], ¬µa m·
+	 a  Finite ± #a = m
+¤	¶list·list  Distinct ± Elems list = a ± #list = m®);
+a(REPEAT_UNTIL is_± strip_tac THEN strip_tac);
+(* *** Goal "1" *** *)
+a(REPEAT strip_tac THEN all_var_elim_asm_tac1 THEN POP_ASM_T ante_tac);
+a(rewrite_tac[list_finite_size_thm1]);
+(* *** Goal "2" *** *)
+a(strip_tac THEN all_fc_tac[distinct_size_length_thm]
+	THEN all_var_elim_asm_tac1
+	THEN asm_rewrite_tac[elems_finite_thm]);
+pop_thm()
+));
+
+=TEX
+%%%%
+%%%%
+=SML
+val Ûot_set_fold_consistent_lemma1Ý = save_thm ( "ot_set_fold_consistent_lemma1", (
+set_goal([], ¬µx list1 n·
+	x  Elems list1 ± list1  Distinct ± #list1 = n + 1 
+´	¶list2· list2  Distinct ± Elems list2 = Elems list1 \ {x}
+	± #list2 = n®);
+a(rewrite_tac[conv_rule(ONCE_MAP_C eq_sym_conv) list_finite_size_thm]);
+a(REPEAT µ_tac THEN ´_tac);
+a(once_rewrite_tac[prove_rule[]¬µp q·p ± q ¤ (p ± (p ´ q))®]
+	THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(bc_thm_tac €_finite_thm);
+a(¶_tac¬Elems list1® THEN rewrite_tac[elems_finite_thm]);
+a(PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "2" *** *)
+a(LEMMA_T¬#(Elems list1) = #list1® ante_tac
+	THEN1 (bc_thm_tac distinct_size_length_thm
+		THEN REPEAT strip_tac));
+a(LEMMA_T¬Elems list1 = {x} À Elems list1 \ {x}® (fn th => conv_tac(LEFT_C(once_rewrite_conv[th])))
+	THEN1 PC_T1 "sets_ext1" prove_tac[]);
+a(LEMMA_T¬³x  Elems list1 \ {x}® asm_tac
+	THEN1 PC_T1 "sets_ext1" prove_tac[]);
+a(ALL_FC_T rewrite_tac[size_singleton_À_thm]);
+a(asm_rewrite_tac[]);
+pop_thm()
+));
+
+=TEX
+%%%%
+%%%%
+=SML
+val Ûot_set_fold_consistent_lemma2Ý = save_thm ( "ot_set_fold_consistent_lemma2", (
+set_goal([], ¬µf e·
+	(µx y a· ³x = y ´ f x (f y a) = f y (f x a))´	µn list1 list2·
+	list1  Distinct ± list2  Distinct
+±	#list1 = n
+±	Elems list1 = Elems list2
+´	Fold f list1 e = Fold f list2 e®);
+a(REPEAT µ_tac THEN ´_tac THEN µ_tac);
+a(induction_tac¬n® THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(LEMMA_T ¬list1 = [] ± list2 = []®
+	(fn th => rewrite_tac[th, fold_def]));
+a(DROP_NTH_ASM_T 2 ante_tac);
+a(strip_asm_tac (µ_elim¬list1® list_cases_thm)
+	THEN asm_rewrite_tac[length_def]
+	THEN all_var_elim_asm_tac1);
+a(POP_ASM_T ante_tac THEN rewrite_tac[elems_def]);
+a(strip_asm_tac (µ_elim¬list2® list_cases_thm)
+	THEN asm_rewrite_tac[elems_def]
+	THEN all_var_elim_asm_tac1);
+a(PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "2" *** *)
+a(LEMMA_T¬#(Elems list1) = #list1® ante_tac
+	THEN1 (bc_thm_tac distinct_size_length_thm
+		THEN REPEAT strip_tac));
+a(TOP_ASM_T rewrite_thm_tac);
+a(LEMMA_T¬#(Elems list2) = #list2® rewrite_thm_tac
+	THEN1 (bc_thm_tac distinct_size_length_thm
+		THEN REPEAT strip_tac));
+a(GET_NTH_ASM_T 2 rewrite_thm_tac THEN strip_tac);
+a(DROP_NTH_ASM_T 3 ante_tac);
+a(strip_asm_tac (µ_elim¬list1® list_cases_thm)
+	THEN all_var_elim_asm_tac1
+	THEN rewrite_tac[length_def]
+	THEN strip_tac);
+a(DROP_NTH_ASM_T 2 ante_tac);
+a(strip_asm_tac (µ_elim¬list2® list_cases_thm)
+	THEN all_var_elim_asm_tac1
+	THEN rewrite_tac[length_def]);
+a(rename_tac[(¬list2'®, "L1"), (¬list2''®, "L2")]
+	THEN strip_tac);
+a(cases_tac¬x' = x® THEN1 all_var_elim_asm_tac);
+(* *** Goal "2.1" *** *)
+a(LIST_DROP_NTH_ASM_T [3, 4]
+	(MAP_EVERY (strip_asm_tac o rewrite_rule[distinct_def])));
+a(DROP_NTH_ASM_T 6 ante_tac);
+a(rewrite_tac[elems_def] THEN REPEAT strip_tac);
+a(LEMMA_T¬µa b·³x  a ± ³ x  b ± {x} À a = {x} À b ´ a = b® (fn th => all_fc_tac[th])
+	THEN1 PC_T1 "sets_ext" REPEAT strip_tac);
+(* *** Goal "2.1.1" *** *)
+a(spec_nth_asm_tac 2 ¬x'® THEN all_var_elim_asm_tac1);
+(* *** Goal "2.1.2" *** *)
+a(spec_nth_asm_tac 2 ¬x'® THEN all_var_elim_asm_tac1);
+(* *** Goal "2.1.3" *** *)
+a(rewrite_tac[fold_def]);
+a(bc_thm_tac(prove_rule [] ¬µa b ·a = b ´ f x a = f x b®));
+a(DROP_NTH_ASM_T 8 bc_thm_tac THEN REPEAT strip_tac);
+(* *** Goal "2.2" *** *)
+a(LIST_DROP_NTH_ASM_T [4, 5]
+	(MAP_EVERY (strip_asm_tac o rewrite_rule[distinct_def])));
+a(LEMMA_T¬x'  Elems(Cons x L1)® ante_tac
+	THEN1 (DROP_NTH_ASM_T 7 rewrite_thm_tac
+		THEN PC_T1 "sets_ext1" rewrite_tac[elems_def]));
+a(PC_T1 "sets_ext1" rewrite_tac[elems_def] THEN REPEAT strip_tac);
+a(lemma_tac¬³#L1 = 0®
+	THEN1 (strip_asm_tac (µ_elim¬L1® list_cases_thm)
+		THEN all_var_elim_asm_tac1
+		THEN all_asm_ante_tac
+		THEN rewrite_tac[length_def, elems_def]));
+a(LEMMA_T¬1 ¼ #L1® (strip_asm_tac o
+	once_rewrite_rule[plus_comm_thm] o
+		rewrite_rule[¼_def])
+	THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+a(POP_ASM_T (strip_asm_tac o eq_sym_rule));
+a(all_fc_tac[ot_set_fold_consistent_lemma1]);
+a(rename_tac[(¬list2®, "T1")] THEN rewrite_tac[fold_def]);
+a(LEMMA_T¬Fold f L1 e = Fold f (Cons x' T1) e® rewrite_thm_tac);
+(* *** Goal "2.2.1" *** *)
+a(DROP_NTH_ASM_T 14 bc_thm_tac);
+a(asm_rewrite_tac[distinct_def, elems_def]);
+a(PC_T1 "sets_ext1" rewrite_tac[]);
+a(REPEAT strip_tac THEN all_var_elim_asm_tac);
+(* *** Goal "2.2.2" *** *)
+a(rewrite_tac[fold_def]);
+a(LIST_GET_NTH_ASM_T [15] all_fc_tac);
+a(POP_ASM_T (rewrite_thm_tac o conv_rule(BINDER_C eq_sym_conv)));
+a(bc_thm_tac(prove_rule [] ¬µa b ·a = b ´ f x' a = f x' b®));
+a(LEMMA_T¬Fold f L2 e = Fold f (Cons x T1) e® (rewrite_thm_tac o rewrite_rule[fold_def]));
+a(DROP_NTH_ASM_T 14 bc_thm_tac);
+a(DROP_NTH_ASM_T 13 ante_tac);
+a(asm_rewrite_tac[distinct_def, elems_def]);
+a(REPEAT strip_tac);
+a(DROP_NTH_ASM_T 12 (strip_asm_tac o conv_rule(RAND_C eq_sym_conv)));
+a(ALL_FC_T rewrite_tac[pc_rule1 "sets_ext1" prove_rule[]
+	¬µx y a· ³x = y ´ {x} À a \ {y} = ({x} À a) \ {y}®]);
+a(asm_rewrite_tac[]);
+a(PC_T1 "sets_ext1" rewrite_tac[]);
+a(contr_tac THEN all_var_elim_asm_tac);
+pop_thm()
+));
+
+=TEX
+%%%%
+%%%%
+=SML
+val _ = save_consistency_thm ¬OTSetFold® (
+push_consistency_goal ¬OTSetFold®;
+a(prove_¶_tac THEN REPEAT strip_tac);
+a(¶_tac ¬Ìa· Fold f' (ListFromSet a) e'®
+	THEN rewrite_tac[list_from_set_empty_thm, fold_def] THEN REPEAT strip_tac);
+a(lemma_tac¬{x} À a  Finite® 
+	THEN1 (bc_thm_tac singleton_À_finite_thm
+		THEN REPEAT strip_tac));
+a(if_cases_tac THEN asm_rewrite_tac[]);
+(* *** Goal "1" *** *)
+a(ALL_FC_T rewrite_tac [pc_rule1 "sets_ext1" prove_rule[] ¬µx a·x  a ´ {x} À a = a®]);
+(* *** Goal "2" *** *)
+a(LEMMA_T¬
+	Fold f' (ListFromSet ({x} À a)) e' =
+	(Fold f' (Cons x (ListFromSet a)) e')®
+	(rewrite_thm_tac o rewrite_rule[fold_def]));
+a(ante_tac(list_µ_elim[¬f'®, ¬e'®]ot_set_fold_consistent_lemma2));
+a(PC_T1 "'propositions" asm_rewrite_tac[]);
+a(STRIP_T bc_thm_tac);
+a(¶_tac¬#a + 1® THEN asm_rewrite_tac[distinct_def, elems_def]);
+a(all_fc_tac[list_from_set_def] THEN asm_rewrite_tac[]);
+a(ALL_FC_T rewrite_tac[size_singleton_À_thm, list_from_set_distinct_thm]);
+pop_thm());
+val Ûot_set_fold_defÝ = save_thm("ot_set_fold_def", get_spec ¬OTSetFold®);
+
+=TEX
+We need the function that gives the size of a finite set expressed using the above set fold operation.
+=SML
+val _ = 
+¹HOLCONST
+Ü ÛOTSizeÝ : 'a SET ­ î
+÷üüüüüü
+Ü OTSize = OTSetFold (Ìx n· n + 1) 0
+°
+=SML
+val Ûot_size_defÝ = get_spec¬OTSize®;
+=TEX
+=SML
+val Ûot_size_size_thmÝ = save_thm("ot_size_size_thm", (
+set_goal([], ¬µa· a  Finite ´ OTSize a = #a®);
+a(REPEAT strip_tac);
+a(ante_tac(list_µ_elim[¬Ìx n· n + 1®, ¬0®] ot_set_fold_def) THEN rewrite_tac[]
+	THEN REPEAT strip_tac);
+a(finite_induction_tac¬a® THEN asm_rewrite_tac[size_empty_thm, ot_size_def]);
+a(ALL_ASM_FC_T asm_rewrite_tac [size_singleton_À_thm]);
+a(DROP_NTH_ASM_T 2 ante_tac THEN rewrite_tac[ot_size_def]);
+pop_thm())
+);
+=TEX
+=SML
+val Ûot_list_from_set_defÝ = save_thm("ot_list_from_set_def", (
+set_goal([], ¬µ s· IsFinite s ´ Elems (ListFromSet s) = s ± # (ListFromSet s) = OTSize s®);
+a(REPEAT µ_tac THEN rewrite_tac[is_finite_def] THEN strip_tac);
+a(ALL_FC_T rewrite_tac[ot_size_size_thm, list_from_set_def]);
+pop_thm())
+);
+
+=TEX
+We need the partial function that gives the size of a finite set represented as a relation:
+=SML
+val _ = 
+¹HOLCONST
+Ü ÛHasSizeÝ : 'a SET ­ î ­ BOOL
+÷üüüüüü
+Ü µa n· HasSize a n ¤ a  Finite ± #a = n
+°
+=SML
+val Ûhas_size_defÝ = get_spec¬HasSize®;
+=TEX
+=SML
+val Ûot_has_size_defÝ = save_thm("ot_has_size_def", (
+set_goal([], ¬µa n· HasSize a n ¤ IsFinite a ± OTSize a = n®);
+a(REPEAT µ_tac THEN rewrite_tac[has_size_def, is_finite_def]);
+a(cases_tac¬a  Finite® THEN asm_rewrite_tac[]);
+a(ALL_FC_T rewrite_tac[ot_size_size_thm]);
+pop_thm())
+);
+
 =TEX
 We need the list concatenation function:
 =SML
@@ -2898,6 +3245,12 @@ val Ûot_other_set_defsÝ = map (pc_rule1"sets_ext1" prove_rule[delete_def, img_de
 	¬µ s t· (µ x· x  s ¤ x  t) ´ s = t®];
 
 val Ûot_finite_defsÝ = [
+	ot_has_size_def,
+	pure_rewrite_rule[plus_1_to_suc_thm] ot_size_def,
+	once_rewrite_rule[
+		conv_rule(BINDER_C eq_sym_conv) is_finite_def,
+		pc_rule1"sets_ext1" prove_rule[]¬µx a· {x} À a = Insert x a®]
+			ot_set_fold_def,
 	tac_proof(([], ¬µ p· p {} ± (µ x s· p s ´ p (Insert x s)) ´ (µ a· IsFinite a ´ p a)®),
 		once_rewrite_tac[pc_rule1"sets_ext1" prove_rule[]¬µx a· Insert x a = {x} À a®] THEN
 		rewrite_tac[is_finite_def, finite_def] THEN PC_T1 "sets_ext1" REPEAT strip_tac THEN
@@ -2949,7 +3302,8 @@ val Ûot_list_length_defsÝ = (strip_±_rule o rewrite_rule[plus_1_to_suc_thm]) len
 
 val Ûinsert_rw_thmÝ = pc_rule1 "sets_ext1" prove_rule[]¬µx a· {x} À a = Insert x a®;
 
-val Ûot_list_set_defsÝ = list_from_set_def ::
+val Ûot_list_set_defsÝ =
+	ot_list_from_set_def ::
 	(flat o map strip_±_rule) [all_def, any_def, rewrite_rule[insert_rw_thm] elems_def, _l_def];
 
 val Ûot_list_map_defsÝ =  [
@@ -3376,6 +3730,10 @@ val Ûgilith_mapsÝ : NAME_MAPS = {
 		("Data.Pair.,", ","),
 		("Data.Pair.fst", "Fst"),
 		("Data.Pair.snd", "Snd"),
+		("Data.Sum.left", "InL"),
+		("Data.Sum.right", "InR"),
+		("Data.Sum.destLeft", "OutL"),
+		("Data.Sum.destRight", "OutR"),
 		("Data.Unit.()", "One"),
 		("Function.C", "CombC"),
 		("Function.id", "CombI"),
@@ -5427,3 +5785,10 @@ val _ = proof_to_article{file = "temp.art", prf_fun = prf_fun};
 	app log_thm (prf_fun ());
 	end_open_theory_export ();
 
+vm_diagnostics := 3;
+val _ = 
+time_app Milliseconds open_theory_import{files = ["thm.art"], parent = "open-theory-base", theory = "t"};
+
+val all_names = map ((fn (sl, s) => format_list (fn x => x) (sl @ [s]) ".") o fst) (#type_map gilith_maps @ #const_map gilith_maps);
+use_file "u";
+val unused = all_names drop (fn x => x mem used_ops);
