@@ -1,51 +1,15 @@
 ######################################################################
-#
-#	$IdL$
-#	maths_egs.mkf
-#	makefile for the mathematical case studies
+#	$Id:$
 ######################################################################
 
 # suffixes known
 .SUFFIXES: .db .doc .dvi .ldd .log .lot .sh .doc .tex .tch
+# default target:
+default: help
 
 # Control for RCS checking out: expand keywords to values only
 # (needed for document dates)
 COFLAGS=-kv
-
-# default make target.  displays a list of more useful targets
-
-default:
-	@echo "This is the make file for PPMathsEgs: a set of mathematical"
-	@echo "case studies for ProofPower."
-	@echo " "
-	@echo "ProofPower version 2.7.3 or later is required."
-	@echo " "
-	@echo "The following are useful for developers:"
-	@echo " "
-	@echo "make -f maths_egs.mkf doc      - builds the document distribution"
-	@echo "make -f maths_egs.mkf rcs      - build the source with RCS"
-	@echo "make -f maths_egs.mkf dist     - build the source without RCS"
-	@echo "make -f maths_egs.mkf desc     - list document refs and descriptions"
-	@echo " "
-	@echo "The following are the three most useful make commands for users:"
-	@echo " "
-	@echo "make -f maths_egs.mkf dvi      - build database; typeset documents as DVI files"
-	@echo "make -f maths_egs.mkf pdf      - build database; typeset documents as PDF files"
-	@echo "make -f maths_egs.mkf bld      - just build database"
-	@echo " "
-	@echo "The make commands that build the database create a new ProofPower database"
-	@echo "called maths_egs and load the documents into it, thus typechecking the"
-	@echo "specifications and replaying the proofs."
-	@echo " "
-	@echo " "
-	@echo "If your ProofPower system is not installed in /usr/local/pp, use for example:"
-	@echo " "
-	@echo "    PPHOME=/opt/pp make -f maths_egs.mkf dvi"
-	@echo " "
-	@echo "ProofPower runs on some systems, e.g., Solaris, that"
-	@echo "do not have the RCS or CVS software installed as standard."
-	@echo "The public download for the examples is therefore supplied"
-	@echo "without the RCS repository."
 
 ######################################################################
 #
@@ -53,17 +17,27 @@ default:
 #
 ######################################################################
 
-PPHOME=$(shell echo $${PPHOME:-/usr/local/pp})
+
 PRODNAME=PPMathsEgs
+PRODDESC=mathematical case studies in ProofPower-HOL
 SHORTNAME=maths_egs
+PPPARENT=hol
+
 VER=$(shell echo $${PPEGSVER:-`cat version 2>/dev/null || date +%y%m%d`})
 PRODUCT=$(PRODNAME)-$(VER)
 CWD=$(shell pwd)
-HAVERCS=$(shell (test -d RCS && echo y ) || echo n)
+YEAR=$(shell date +%Y)
 
-DBNAME=	maths_egs
+USERDB=$(shell echo $$PPDB)
+DBNAME=$(shell echo $${PPDB:-$(SHORTNAME)})
+
+DBCREATED=$(SHORTNAME)_db.ldd
 
 RELDIR=release
+
+# Control for RCS checking out: expand keywords to values only
+# (needed for document dates)
+COFLAGS=-kv
 
 # The documents (keep target desc and the list SMLDOCS in step!)
 desc:
@@ -97,6 +71,19 @@ LDDFILES=	$(SMLDOCS:.doc=.ldd)
 DVIFILES=	$(SMLDOCS:.doc=.dvi)
 PDFFILES=	$(SMLDOCS:.doc=.pdf)
 
+TMPFILES=	$(SMLDOCS:.doc=.aux)
+TMPFILES+=	$(SMLDOCS:.doc=.bbl)
+TMPFILES+=	$(SMLDOCS:.doc=.blg)
+TMPFILES+=	$(SMLDOCS:.doc=.idx)
+TMPFILES+=	$(SMLDOCS:.doc=.log)
+TMPFILES+=	$(SMLDOCS:.doc=.lot)
+TMPFILES+=	$(SMLDOCS:.doc=.sid)
+TMPFILES+=	$(SMLDOCS:.doc=.tex)
+TMPFILES+=	$(SMLDOCS:.doc=.toc)
+TMPFILES+=	$(SMLDOCS:.doc=.th.doc)
+TMPFILES+=	$(SMLDOCS:.doc=.th.tex)
+TMPFILES+=	$(SMLDOCS:.doc=.th.aux)
+
 # packing list for a source release (target src)
 PACKINGLIST=
 PACKINGLIST+= wrk066.doc
@@ -115,12 +102,49 @@ PACKINGLIST+= maths_egs.mkf
 
 DISTPACKINGLIST=$(PACKINGLIST) README.txt
 
+# useful target to print out the names of all the files in the source $(RELDIR)
+packinglist:
+	@echo $(PACKINGLIST)
+
+######################################################################
+#
+#	Display help text
+#
+######################################################################
+
+help:
+	@echo 'This is the make file for ZEgs: a miscellany of case studies'
+	@echo 'in ProofPower-Z.'
+	@echo ''
+	@echo 'The following commands load the specification and proof scripts into a'
+	@echo 'new database called $(SHORTNAME) amd then typeset the documents in DVI or'
+	@echo 'PDF format respectively.'
+	@echo ''
+	@echo '    make -f $(SHORTNAME).mkf dvi'
+	@echo '    make -f $(SHORTNAME).mkf pdf'
+	@echo ''
+	@echo 'The following command loads the specification and proof scripts into an'
+	@echo 'existing database $$HOME/wrk/mydb.'
+	@echo ''
+	@echo '    PPDB=$$HOME/wrk/mydb make -f $(SHORTNAME).mkf load'
+	@echo ''
+	@echo 'The following command removes all the files made by this makefile.'
+	@echo 'Do this between runs of the other commands.'
+	@echo ''
+	@echo '    make -f $(SHORTNAME).mkf clean'
+	@echo ''
+	@echo 'The following command is for developers. It builds the distribution'
+	@echo 'tarball from the source repository.'
+	@echo ''
+	@echo '    make -f $(SHORTNAME).mkf dist'
+
+
 ######################################################################
 #
 # Dependencies - determining the order of compilation
 #
 ######################################################################
-wrk083.ldd: db.ldd
+wrk083.ldd: $(DBCREATED)
 wrk066.ldd: wrk083.ldd
 wrk067.ldd: wrk066.ldd wrk073.ldd wrk078.ldd
 wrk072.ldd: wrk067.ldd
@@ -128,11 +152,10 @@ wrk073.ldd: wrk066.ldd
 wrk068.ldd: wrk073.ldd wrk072.ldd
 wrk074.ldd: wrk073.ldd
 wrk076.ldd: wrk074.ldd
-wrk078.ldd: db.ldd
+wrk078.ldd: $(DBCREATED)
 wrk080.ldd: wrk078.ldd
 wrk081.ldd: wrk080.ldd
 $(DVIFILES): fmu.bib
-README.txt: wrk066.sml
 
 ######################################################################
 #
@@ -140,14 +163,15 @@ README.txt: wrk066.sml
 #
 ######################################################################
 
+load: bld
+
 bld: $(LDDFILES)
 
-db.ldd:
-	pp_make_database -f -p hol $(DBNAME)
-	touch db.ldd
-# useful target to print out the names of all the files in the source $(RELDIR)
-packinglist:
-	@echo $(PACKINGLIST)
+$(DBCREATED):
+ifeq ($(USERDB),)
+	pp_make_database -f -p $(PPPARENT) $(DBNAME)
+endif
+	touch $(DBCREATED)
 
 ######################################################################
 #
@@ -176,10 +200,6 @@ reldir:
 srcdir:	reldir
 	[ -d   $(RELDIR)/src ] || mkdir $(RELDIR)/src
 
-docdir:	reldir
-	[ -d   $(RELDIR)/doc ] || mkdir $(RELDIR)/doc
-
-
 rcsrel:	srcdir
 	[ -d   $(RELDIR)/src/RCS ] || mkdir $(RELDIR)/src/RCS
 	@for f in $(PACKINGLIST); \
@@ -204,15 +224,6 @@ srcrel: srcdir $(DISTPACKINGLIST)
 	chmod -R g-w $(RELDIR)
 	chmod -R u+w $(RELDIR)
 
-docrel: docdir $(DVIFILES)
-	@for f in $(DVIFILES); \
-	do \
-		cp $$f $(RELDIR)/doc/$$f; \
-	done
-	chmod -R a-w $(RELDIR)
-	chmod -R g-w $(RELDIR)
-	chmod -R u+w $(RELDIR)
-
 src:	srcrel
 	cd $(RELDIR) && tar cvf "$(CWD)/$(PRODUCT).tar" ./*
 	cd "$(CWD)" && gzip $(PRODUCT).tar && \
@@ -220,21 +231,37 @@ src:	srcrel
 
 dist:	src
 
-doc:	docrel srcrel
-	cd $(RELDIR) && tar cvf "$(CWD)/$(PRODUCT).doc.tar" ./*
-	cd "$(CWD)" && gzip $(PRODUCT).doc.tar && \
-	mv $(PRODUCT).doc.tar.gz $(PRODUCT).doc.tgz
-
 ######################################################################
 #
-#	Tidying Up
+#	Building the README file.
 #
 ######################################################################
 
-clean:
-	rcsclean
-	rm -f $(SMLFILES) $(LDDFILES)
-	rm -f *.aux *.bbl *.blg *.idx *.log *.lot *.sid *.sml *.tex *.toc db.ldd *.th.doc
+README.txt:
+	for line in \
+	'################################################################################' \
+	'#' \
+	'# $(PRODNAME): $(PRODDESC)' \
+	'#' \
+	'# Use the make file $(SHORTNAME).mkf  to process the scripts.' \
+	'# For instructions on how to do this type:' \
+	'#' \
+	'#     make -f $(SHORTNAME).mkf' \
+	'#' \
+	'# and you will be given some help on using the make file.' \
+	'#' \
+	'# Copyright (c) 2005-$(YEAR) Lemma 1 Ltd.' \
+	'#' \
+	'# This file is supplied under the GNU General Public Licence (GPL) version 2.' \
+	'#' \
+	'# See the file LICENSE supplied with the ProofPower source for the terms' \
+	'# of the GPL or visit the OpenSource web site at http://www.opensource.org/' \
+	'#' \
+	'# Contact: Rob Arthan < rda@lemma-one.com >' \
+	'#' \
+	'################################################################################' ;\
+	do echo $$line ; done >README.txt
+
 
 ######################################################################
 #
@@ -259,9 +286,23 @@ wrk083.tex: wrk083.doc
 	doctex $*
 
 %.dvi: %.tex
-	TEXINPUTS=.:$(PPHOME)/tex: \
-	BSTINPUTS=.:$(PPHOME)/tex: \
-	BIBINPUTS=.:$(PPHOME)/tex: docdvi $*
+	docdvi $*
 
 %.pdf: %.dvi
 	dvipdf -sPAPERSIZE=a4 $*
+
+######################################################################
+#
+#	Tidying Up
+#
+######################################################################
+
+clean:
+	rcsclean || true
+	rm -f $(DBCREATED) $(SHORTNAME).polydb README.txt
+	rm -f $(PRODUCT).tgz $(PRODUCT).rcs.tgz 
+	rm -f $(SMLFILES) $(LDDFILES) $(DVIFILES) $(PDFFILES) $(TMPFILES)
+	rm -rf release
+	rm -f wrk067?.th.aux wrk067?.th.doc wrk067?.th.tex
+	rm -f wrk068?.th.aux wrk068?.th.doc wrk068?.th.tex
+	rm -f wrk081?.th.aux wrk081?.th.doc wrk081?.th.tex
