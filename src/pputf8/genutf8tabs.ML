@@ -1,8 +1,7 @@
 (*
- * T]his file generates a C header file convtab.h
- * containing the definition of a table mapping ProofPower extended characters
- * to UTF-8 encoded Unicode equivalents. It also includes code to convert
- * UTF-8 to ProofPower extended characters but that is not currently used.
+ * This file generates C header files pputf8tab.h utf8pptab.h
+ * containing definitions of tables mapping ProofPower extended characters
+ * to and from UTF-8 encoded Unicode equivalents.
  *)
 local
 structure W = Word;
