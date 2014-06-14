@@ -1,49 +1,95 @@
+######################################################################
+# pputf8.mkf
 #
-# Makefile for pputf8 and utf8pp
+# makefile for utilities for ProofPower and UTF-8
 #
-VERSION=$(shell echo $${VERSION:-`cat version 2>/dev/null || echo X.Y`})
+# (c) Lemma 1 Ltd. 2000-2014
+#
+######################################################################
 
-default: pputf8 utf8pp
+######################################################################
+#
+#	Makefile Definations
+#
+######################################################################
 
-pputf8.o: pputf8tab.h pputf8.c
-	$(CC) -c pputf8.c -DVERSION='"$(VERSION)"' 
+
+# default make target, gives a list of more useful targets
+default:
+	@echo "The following are the generally useful targets:"
+	@echo " "
+	@echo "make -f pputf8.mkf bld          - makes pputf8 and utf8pp binaries"
+	@echo "make -f pputf8.mkf packinglist  - lists the pputf8 source file names"
+	@echo " "
+
+PRODNAME=PPUtf8
+SHORTNAME=pputf8
+VERSION=$(shell echo $${PPUTF8VER:-`cat version  2>/dev/null || date +%Y%m%d`})
+RELDIR=$(shell echo "$${PPTARGETDIR:-release}")
+PRODUCT=$(PRODNAME)-$(VERSION)
+CWD=$(shell pwd)
+OS=$(shell uname -s | dd conv=lcase 2>/dev/null | sed -e '/cygwin/s/.*/cygwin/')
+# Distinctive tag for binary distribution file
+BINTAG=$(shell eval `arch-os`; echo $$ARCH-$$OS | dd conv=lcase 2>/dev/null)
+
+# C source files
+CFILES=		pputf8.c
+CFILES+=	utf8pp.c
+
+
+# documentation files
+
+# RELEASEDOCFILES = TODO
+
+# MANFILES = TODO.1
+
+PACKINGLIST=	pputf8.mkf
+PACKINGLIST+=	pputf8.c
+PACKINGLIST+=	utf8pp.c
+PACKINGLIST+=	genutf8tabs.ML
+
+######################################################################
+#
+#	Rules for making the documentation
+#
+######################################################################
+
+# TODO
+
+######################################################################
+#
+#	Building pputf8 and utf8pp
+#
+######################################################################
+
+bld: pputf8 utf8pp
 
 pputf8: pputf8.o
-	$(CC) -o pputf8 pputf8.o
-
-utf8pp.o: utf8pptab.h utf8pp.c
-	$(CC) -c utf8pp.c -DVERSION='"$(VERSION)"' 
+	$(CC) $(CFLAGS) -o pputf8 pputf8.o
 
 utf8pp: utf8pp.o
-	$(CC) -o utf8pp utf8pp.o
-#
-# CUT-FROM-HERE
-# The above is all you need if the two header files have been generated for you.
-# The rest is concerned with generating the header files and the cutdown
-# makefile etc.
-#
-SRC=utf8pp.c pputf8.c genutf8tabs.ML pputf8.mkf
-RELSRC=utf8pp.c pputf8.c pputf8tab.h utf8pptab.h Makefile
-RELDIR=rel
-VER=$(shell echo ${VER:-`cat version 2>/dev/null | echo X.Y`})
+	$(CC) $(CFLAGS) -o utf8pp utf8pp.o
+
+pputf8.o: pputf8tab.h
+
+utf8pp.o: utf8pptab.h
 
 pputf8tab.h utf8pptab.h: genutf8tabs.ML
-	pp -n -f genutf8tabs.ML -d hol
+	pp -d hol -n -f genutf8tabs.ML
 
-Makefile: pputf8.mkf
-	sed -e '/CUT-FROM-HERE/,$$d' < pputf8.mkf > Makefile
+######################################################################
+#
+#	Utility targets
+#
+######################################################################
 
-tgz: $(SRC)
-	tar cvfz pputf8-src.tgz $(SRC)
+# print the names of all the files in the source release
 
-rel: $(RELSRC)
-	rm -rf $(RELDIR); \
-	mkdir $(RELDIR); \
-	cp $(RELSRC) $(RELDIR); \
-	cd $(RELDIR); \
-	echo $(VER) > version; \
-	chmod u+w $(RELSRC); \
-	tar cvfz ../pputf8-rel.tgz $(RELSRC); \
-	cd .. ; \
-	rm -rf $(RELDIR)
+packinglist:
+	@echo $(PACKINGLIST)
+
+# make a tarball of the sources
+
+tgz: $(PACKINGLIST)
+	tar cvfz pputf8-src-$(VERSION).tgz $(PACKINGLIST)
 
