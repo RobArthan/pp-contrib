@@ -13,7 +13,6 @@
 #
 ######################################################################
 
-
 # default make target, gives a list of more useful targets
 default:
 	@echo "The following are the generally useful targets:"
@@ -21,6 +20,9 @@ default:
 	@echo "make -f pputf8.mkf bld          - makes pputf8 and utf8pp binaries"
 	@echo "make -f pputf8.mkf packinglist  - lists the pputf8 source file names"
 	@echo " "
+
+# suffixes known
+.SUFFIXES: .db .doc .dvi .ldd .log .lot .sh .doc .tex .tch .sml
 
 PRODNAME=PPUtf8
 SHORTNAME=pputf8
@@ -46,7 +48,7 @@ CFILES+=	utf8pp.c
 PACKINGLIST=	pputf8.mkf
 PACKINGLIST+=	pputf8.c
 PACKINGLIST+=	utf8pp.c
-PACKINGLIST+=	genutf8tabs.ML
+PACKINGLIST+=	pputf8.doc
 
 ######################################################################
 #
@@ -74,8 +76,8 @@ pputf8.o: pputf8tab.h
 
 utf8pp.o: utf8pptab.h
 
-pputf8tab.h utf8pptab.h: genutf8tabs.ML
-	pp -d hol -n -f genutf8tabs.ML
+pputf8tab.h utf8pptab.h: pputf8.sml
+	pp -d zed -n -f pputf8.sml
 
 ######################################################################
 #
@@ -93,3 +95,35 @@ packinglist:
 tgz: $(PACKINGLIST)
 	tar cvfz pputf8-src-$(VERSION).tgz $(PACKINGLIST)
 
+######################################################################
+#
+#	Generic Rules
+#
+######################################################################
+
+%.ldd: %.sml
+	@rm -f $@ $*.err 2>/dev/null
+	@echo "Compiling (code)" $<
+	@pp -d $(ZEDDB) -f $< >$*.err
+	@mv $*.err $@
+
+%.ttd: %.sml $(IEDTESTSMLS) $(TESTDB)
+	@rm -f $@ $.err 2>/dev/null
+	@echo "Compiling (test)" $<
+	@echo "use_file \"$<\"; quit();" | \
+		PPDATABASENAME=zed $(RUNML) $(MLDBPFX)$(TESTDB) > $*.err
+	@mv $*.err $@
+
+%.sml: %.doc
+	docsml $*
+
+%.tex: %.doc
+	doctex $*
+
+%.dvi: %.tex
+	texdvi -b $* >/dev/null </dev/null
+	texdvi $* >/dev/null </dev/null
+	texdvi $*
+
+%.tch: %.doc  dtd035.sml imp035.sml
+	doctch $*
