@@ -10,3 +10,19 @@ See the
 [OpenTheory Project web site](http://www.gilith.com/research/opentheory/)
 for more information about OpenTheory.
 
+Use the make file opentheory.mkf to process the scripts.
+For instructions on how to do this type:
+
+make -f opentheory.mkf
+
+and you will be given some help on using the make file.
+
+Copyright (c) 2005-2014 Lemma 1 Ltd.
+
+This file is supplied under the GNU General Public Licence (GPL) version 2.
+
+See the file LICENSE supplied with the ProofPower source for the terms
+of the GPL or visit the OpenSource web site at http://www.opensource.org/
+
+Contact: Rob Arthan < rda@lemma-one.com >
+
