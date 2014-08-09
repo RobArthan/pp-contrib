@@ -98,11 +98,19 @@ of an OpenTheory reader and an OpenTheory writer for {\Product}.
 %%%%% CHANGES HISTORY:
 \subsection{Changes History}
 \begin{description}
-\item[Issues 1.1--1.6] Initial drafts.
-\item[Issue 1.7] First issue for D-RisQ.
-\item[Issues 1.8 --1.15] Work in progress on full support for the OpenTheory base package.
-\item[Issue 1.16] First version that can read the full OpenTheory base package with no hacks.
-\item[Issue 1.7] Final draft for testing prior to first public issue    .
+\item[Issues 1.1 (2014/02/14)--1.6 (2014/02/18)] Initial drafts.
+\item[Issue 1.7 (2014/02/19)] First issue for D-RisQ.
+\item[Issues 1.8 (2014/03/10) --1.15 (2014/03/25)] Work in progress on full support for the OpenTheory base package.
+\item[Issue 1.16 (2014/03/27)] First version that can read the full OpenTheory base package with no hacks.
+\item[Issue 1.17 (2014/04/01)] Final draft for testing prior to first public issue.
+\item[2014/08/09](a)
+Augmented old RCS version numbers in the changes history with dates.
+Dates will be used in place of version numbers in future.
+
+\item[2014/08/09](b)
+First cut of upgrade for compatibility with OpenProofPower 3.1w2.
+
+%%%% END OF CHANGES HISTORY %%%%
 \end{description}
 
 %%%%%  CHANGES FORECAST:
@@ -376,28 +384,33 @@ type €ABS_REP_THMS› = {
 };
 =TEX
 The type {\em CONST\_DEFN\_INFO} represents the inputs of the {\em defineConst}
-command.
+command while {\em CONST\_LIST_DEFN\_INFO} represents the inputs of the {\em defineConstList}
 The virtual machine is parametrized by a function that maps these inputs
-to the desired designing theorem, e.g., by using the defining property of
-an existing constant.
+to the desired designing theorem, e.g., by making the necessary definitions.
 =SML
 type €CONST_DEFN_INFO› = {
 	name : string,
 	def_rhs : TERM
+};
+type €CONST_LIST_DEFN_INFO› = {
+	thm : THM,
+	names : (string * TERM) list
 };
 =TEX
 The import interface then comprises 
 {\em(i)} a function {\em declare\_axiom} to handle the {\em axiom} command,
 {\em(ii)} a function {\em define\_type\_op} to handle the {\em defineTypeOp} command,
 {\em(iii)} a function {\em define\_const} to handle the {\em defineConst} command,
-{\em(iv)} a function {\em const\_name} to map OpenTheory names to constant names,
-{\em(v)} a function {\em type\_name} to map OpenTheory names to type names
-and {\em(vi)} an initial set of assumptions.
+{\em(iv)} a function {\em define\_const\_list} to handle the {\em defineConstList} command,
+{\em(v)} a function {\em const\_name} to map OpenTheory names to constant names,
+{\em(vi)} a function {\em type\_name} to map OpenTheory names to type names
+and {\em(vii)} an initial set of assumptions.
 =SML
 type €IMPORT_INTERFACE› = {
 	declare_axiom : SEQ -> THM,
 	define_type_op : TYPE_DEFN_INFO -> ABS_REP_THMS,
  	define_const : CONST_DEFN_INFO -> THM,
+	define_const_list : CONST_LIST_DEFN_INFO -> THM,
 	const_name : NAME -> string,
 	type_name : NAME -> string,
 	assumptions : THM list
@@ -572,6 +585,9 @@ The OpenTheory interfaces define the following error messages.
 122012	invalid command
 122013	Cannot define ?0 = ?1 (?0 clashes with an existing constant,
 	original exception: ?2)
+122014	ill-formed list of pairs
+122015	ill-formed constant name specifier
+122016	Cannot make definition using ?0 with gen_new_spec (original exception: ?1)
 122101	an OpenTheory export is not in progress
 =TEX
 \newpage
@@ -609,11 +625,13 @@ type €TYPE_DEFN_INFO› =  {
 	tyname : string
 };
 type €CONST_DEFN_INFO› = {name : string, def_rhs : TERM};
+type €CONST_LIST_DEFN_INFO› = {thm : THM, names : (string * TERM) list};
 type €ABS_REP_THMS› = {abs_rep : THM, rep_abs : THM};
 type €IMPORT_INTERFACE› = {
 	declare_axiom : SEQ -> THM,
 	define_type_op : TYPE_DEFN_INFO -> ABS_REP_THMS,
  	define_const : CONST_DEFN_INFO -> THM,
+ 	define_const_list : CONST_LIST_DEFN_INFO -> THM,
 	assumptions : THM list,
 	const_name : NAME -> string,
 	type_name : NAME -> string 
@@ -879,12 +897,29 @@ fun €pop_sequent› (st : VM_STATE) : SEQ * VM_STATE = (
 );
 =TEX
 =SML
-fun €pop_subst_info› (st : VM_STATE) :
-	((TYPE * TYPE) list * (TERM * TERM) list) * VM_STATE = (
-	let	fun moan () = fail "open-theory-reader" 12011 [];
+fun €get_list_of_pairs› (xys : OBJECT list) : (OBJECT * OBJECT) list = (
+	let	fun moan () = fail "open-theory-reader" 122014 [];
 		fun get_pairs acc [] = rev acc
 		|   get_pairs acc (OList [x, y]::more) = get_pairs ((x, y)::acc) more
 		|   get_pairs _ _ = moan();
+	in	get_pairs [] xys
+	end
+);
+=TEX
+=SML
+fun €pop_const_name_info› (st : VM_STATE) :
+	((NAME * TERM) list) * VM_STATE = (
+	let	fun do1_name_pair (OName n, OVar v) = (n, mk_var v)
+		|   do1_name_pair _ = fail "open-theory-reader" 122015 [];
+		val (nvs, st') = pop_list st;
+	in	((map do1_name_pair o get_list_of_pairs) nvs, st')
+	end
+);
+=TEX
+=SML
+fun €pop_subst_info› (st : VM_STATE) :
+	((TYPE * TYPE) list * (TERM * TERM) list) * VM_STATE = (
+	let	fun moan () = fail "open-theory-reader" 122011 [];
 		fun do1_tysubs (OName n, OType ty) =
 			(ty, mk_vartype (convert_tyvar_name n))
 		|   do1_tysubs _ =
@@ -893,12 +928,11 @@ fun €pop_subst_info› (st : VM_STATE) :
 		|   do1_varsubs _ = moan();
 	in	case pop_list st of
 			([OList ntys, OList vtms], st') => (
-				(((map do1_tysubs o get_pairs []) ntys,
-					(map do1_varsubs o get_pairs []) vtms), st')
+				(((map do1_tysubs o get_list_of_pairs) ntys,
+					(map do1_varsubs o get_list_of_pairs) vtms), st')
 			)
 		|	_ => moan()
 	end
-
 );
 =TEX
 =SML
@@ -1215,6 +1249,19 @@ fun €do_define_const›
 );
 =TEX
 =SML
+fun €do_define_const_list›
+	(st as {interface = {define_const_list, const_name, ...}, ...} : VM_STATE)
+		: VM_STATE = (
+	let	val (thm, st') = pop_othm st;
+		val (name_info, st'') = pop_const_name_info st';
+		val thm1 = define_const_list {
+				thm = thm,
+				names = map (fn (n, v) => (const_name n, v)) name_info};
+	in	(push_thm thm1 o push_list (map (OName o fst) name_info)) st''
+	end
+);
+=TEX
+=SML
 fun €do_define_type_op›
 	(st as {interface = {define_type_op, type_name, const_name, ...}, ...}
 		: VM_STATE) : VM_STATE = (
@@ -1434,6 +1481,7 @@ val €vm_inference_cmds› : string list =  [
 	"betaConv",
 	"deductAntisym",
 	"defineConst",
+	"defineConstList",
 	"defineTypeOp",
 	"eqMp",
 	"proveHyp",
@@ -1508,6 +1556,7 @@ fun €do_command› (cmd : string) (st : VM_STATE) : VM_STATE = (
 	|	"deductAntisym" => do_deduct_antisym st
 	|	"def" => do_def st
 	|	"defineConst" => do_define_const st
+	|	"defineConstList" => do_define_const_list st
 	|	"defineTypeOp" => do_define_type_op st
 	|	"eqMp" => do_eq_mp st
 	|	"hdTl" => do_hd_tl st
@@ -3525,7 +3574,6 @@ fun €define_hol_type_op› ({thm, pars, rep, abs, tyname} : TYPE_DEFN_INFO)
 	end
 );
 =TEX
-=IGN
 =SML
 val €const_spec_count› : int ref = ref 0;
 fun €define_hol_const› ({name, def_rhs} : CONST_DEFN_INFO) : THM = (
@@ -3545,6 +3593,20 @@ fun €define_hol_const› ({name, def_rhs} : CONST_DEFN_INFO) : THM = (
 );
 =TEX
 =SML
+fun €define_hol_const_list› {thm : THM, names : (string * TERM) list} : THM = (
+	let	fun mk_subs(n, v) = (mk_var(n, type_of v), v);
+		val thm1 = asm_inst_term_rule (map mk_subs names) thm;
+		val n  = "const_spec" ^ string_of_int(!const_spec_count);
+		val thm2 = gen_new_spec([n], thm1);
+	in	thm2
+	end	handle ex as (Fail _) => (
+			fail "open-theory-reader" 122016 [
+				fn _ => string_of_thm thm, 
+				fn _ => string_of_exn ex]
+		)
+);
+=TEX
+=SML
 fun €mk_import_interface›
 	({type_map, const_map} : NAME_MAPS)
 	(assumptions : THM list)
@@ -3552,6 +3614,7 @@ fun €mk_import_interface›
 	declare_axiom = axiom_as_axiom,
 	define_type_op = define_hol_type_op,
 	define_const = define_hol_const,
+	define_const_list = define_hol_const_list,
 	assumptions = assumptions,
 	const_name = import_name const_map,
 	type_name = import_name type_map 
@@ -5294,7 +5357,7 @@ fun €log_inference›(ki as KISubstRule par) =
 	inference_checks ki log_plus_conv par;
 =TEX
 To log a theorem, {\em log\_antecedent} will generate the commands to prove
-and stack the theorem.
+the theorem (by finding it in the dictionary).
 =SML
 fun €log_thm› (thm : THM) : unit = (
 	let	val (asms, conc) = dest_thm thm;
@@ -5307,43 +5370,67 @@ fun €log_thm› (thm : THM) : unit = (
 );
 =TEX
 =SML
-fun €log_new_axiom› (tm : TERM) : unit = (
+fun €log_new_axiom› (tm : TERM, res_thm : THM) : unit = (
 	log_list log_term [];
 	log_term tm;
-	log_cmd "axiom"
+	log_cmd "axiom";
+	store_and_drop (OThm res_thm)
 );
 =TEX
-For the following, note that {\em defineConst} stacks two things:
-the constant and its defining theorem and that removes pushes
-the object it is removing from the dictionary onto the stack.
+In the following, we have to remove the constant name that {\em defineConstInfo}
+puts on the stack underneath the theorem we are trying to stack.
 =SML
-fun €log_simple_new_defn› (n : string, t : TERM) : unit = (
-	let	val k = next_key();
-	in	log_const_name n;
-		log_term t;
-		log_cmd "defineConst";
-			(* 1. OConst c *)
-			(* 2. Ù c = t *)
-		log_num k;
-		log_cmd "def";
-		log_cmd "pop";
-		log_cmd "pop";
-		log_num k;
-		log_cmd "remove"
+fun €log_gen_new_spec› (thm : THM, res_thm : THM) : unit = (
+	let	fun log_name_info v_eq_t = (
+			let	val v = (dest_var o fst o dest_eq) v_eq_t;
+			in	log_pair (log_const_name o fst, log_var) (v, v)
+			end
+		);
+	in	(log_list log_name_info o asms) thm;
+		log_antecedent thm;
+		log_cmd "defineConstList";
+			(* 1. Thm (|- phi) *)
+			(* 2. List [Const c_1, ...] *)
+		store_and_drop(OThm res_thm);
+			(* 1. List [Const c_1, ...] *)
+		log_cmd "pop"
 	end
 );
 =TEX
 Note that we must ensure
 that each constant is defined before proving theorems that contain it
 (systems other than {\Product} may require this).
+=TEX
+the following is used for some level of backwards compatibility with OpenTheory version 5.
+(More TODO on this).
+Note that {\em remove} stacks the dictionary entry it has removed.
 =SML
-fun €log_new_spec› (ndefs : int, thm : THM) : unit = (
+fun €do_simple_new_defn› (n : string, t : TERM) : unit = (
+	let	val k = next_key();
+	in	log_const_name n;
+		log_term t;
+		log_cmd "defineConst";
+			(* 1. Ù c = t *)
+			(* 2. OConst c *)
+		log_num k;
+		log_cmd "def";
+		log_cmd "pop";
+			(* 1. OConst c *)
+		log_cmd "pop";
+		log_num k;
+		log_cmd "remove"
+			(* 1. Ù c = t *)
+	end
+);
+=TEX
+=SML
+fun €log_new_spec› (ndefs : int, thm : THM, res_thm : THM) : unit = (
 	let	fun aux2 0 thm0 = thm0
 		|   aux2 i thm0 = (
 			let	val (n, ty) = (dest_var o fst o dest_∂ o concl) thm0;
 				val c = mk_const(n, ty);
 				val t = (mk_≈ o dest_∂ o concl) thm0;
-				val _ = log_simple_new_defn (n, t);
+				val _ = do_simple_new_defn (n, t);
 				val thm1 = ∂_≈_rule thm0;
 				val thm2 = (eq_sym_rule o asm_rule o mk_eq) (c, t);
 				val thm3 = pure_once_rewrite_rule [thm2] thm1;
@@ -5360,8 +5447,9 @@ fun €log_new_spec› (ndefs : int, thm : THM) : unit = (
 				(* 1. Ù c1 = ≈c∑p1 *)
 				(* ... *)
 				(* (ndefs+1). c1 = ≈c∑p1, ... Ù p[c1/v1, ...] *)
-		aux3 ndefs
+		aux3 ndefs;
 				(* 1. Ù p[c1/v1, ...] *)
+		store_and_drop (OThm res_thm)
 	end
 );
 =TEX
@@ -5375,7 +5463,7 @@ local
 	val [abs_ty, rep_ty] = (snd o dest_ctype o type_of) rep;
 in
 fun €log_new_type_defn›
-	(name : string, typars : string list, thm : THM)
+	(name : string, typars : string list, thm : THM, res_thm : THM)
 		: unit = (
 	let	val thm1 = ∂_≈_rule thm;
 		val i_abs_name = name ^ #abs_suffix(!export_interface);
@@ -5432,8 +5520,9 @@ fun €log_new_type_defn›
 		log_prove_asm();
 				(* 2. µr∑ ∆ r § i_rep(i_abs r) = r
 						Ù ∂ f∑ TypeDefn p f *)
-		log_prove_asm()
-				(* 2. Ù ∂ f∑ TypeDefn p f *)
+		log_prove_asm();
+				(* 1. Ù ∂ f∑ TypeDefn p f *)
+		store_and_drop(OThm res_thm)
 	end
 );
 end;
@@ -5442,9 +5531,9 @@ end;
 fun €kernel_state_change_name› (SaveThm (n, _)) = n
 |   kernel_state_change_name (ListSaveThm (ns, thm)) = hd ns
 |   kernel_state_change_name (NewAxiom ((ns, tm), thm)) = hd ns
-|   kernel_state_change_name (SimpleNewDefn ((ns, n, tm), thm)) = hd ns
 |   kernel_state_change_name (NewTypeDefn ((ns, name, typars, thm), _)) = hd ns
 |   kernel_state_change_name (NewSpec ((ns, ndefs, thm), _)) = hd ns
+|   kernel_state_change_name (GenNewSpec ((ns, thm), _)) = hd ns
 |   kernel_state_change_name (NewConst(n, _)) = n
 |   kernel_state_change_name (NewType(n, _)) = n
 |   kernel_state_change_name _ = "<other>";
@@ -5466,14 +5555,14 @@ fun €log_state_change› (ksc as SaveThm (_, thm)) =
 	state_change_checks ksc log_thm thm
 |   log_state_change (ksc as ListSaveThm (_, thm)) =
 	state_change_checks ksc log_thm thm
-|   log_state_change (ksc as NewAxiom ((_, tm), _)) =
-	state_change_checks ksc log_new_axiom tm
-|   log_state_change (ksc as SimpleNewDefn ((_, n, tm), _)) =
-	state_change_checks ksc log_simple_new_defn(n, tm)
-|   log_state_change (ksc as NewTypeDefn ((_, name, typars, thm), _)) =
-	state_change_checks ksc log_new_type_defn (name, typars, thm)
-|   log_state_change (ksc as NewSpec ((_, ndefs, thm), _)) =
-	state_change_checks ksc log_new_spec (ndefs, thm)
+|   log_state_change (ksc as NewAxiom ((_, tm), res_thm)) =
+	state_change_checks ksc log_new_axiom (tm, res_thm)
+|   log_state_change (ksc as GenNewSpec ((_, thm), res_thm)) =
+	state_change_checks ksc log_gen_new_spec (thm, res_thm)
+|   log_state_change (ksc as NewTypeDefn ((_, name, typars, thm), res_thm)) =
+	state_change_checks ksc log_new_type_defn (name, typars, thm, res_thm)
+|   log_state_change (ksc as NewSpec ((_, ndefs, thm), res_thm)) =
+	state_change_checks ksc log_new_spec (ndefs, thm, res_thm)
 |   log_state_change _ = ();
 =TEX
 %%%% %%%% %%%% %%%%
@@ -5566,24 +5655,24 @@ logging_progress := true;
 (*
 open OpenTheoryInternals;
 vm_diagnostics := ~1;
-val _ = open_theory_import{files = ["t.art"], parent = "open-theory-base", theory = "t"};
+val _ = open_theory_import{files = ["temp.art"], parent = "open-theory-base", theory = "t"};
 vm_diagnostics := 0;
-val _ = open_theory_import{files = ["t.art"], parent = "open-theory-base", theory = "t"};
+val _ = open_theory_import{files = ["temp.art"], parent = "open-theory-base", theory = "t"};
 vm_diagnostics := 1;
-val _ = open_theory_import{files = ["t.art"], parent = "open-theory-base", theory = "t"};
+val _ = open_theory_import{files = ["temp.art"], parent = "open-theory-base", theory = "t"};
 vm_diagnostics := 2;
-val _ = open_theory_import{files = ["t.art"], parent = "open-theory-base", theory = "t"};
+val _ = open_theory_import{files = ["temp.art"], parent = "open-theory-base", theory = "t"};
 vm_diagnostics := 3;
-val _ = open_theory_import{files = ["t.art"], parent = "open-theory-base", theory = "t"};
+val _ = open_theory_import{files = ["temp.art"], parent = "open-theory-base", theory = "t"};
 vm_diagnostics := 4;
-val _ = open_theory_import{files = ["t.art"], parent = "open-theory-base", theory = "t"};
+val _ = open_theory_import{files = ["temp.art"], parent = "open-theory-base", theory = "t"};
 vm_diagnostics := 5;
-val _ = open_theory_import{files = ["t.art"], parent = "open-theory-base", theory = "t"};
+val _ = open_theory_import{files = ["temp.art"], parent = "open-theory-base", theory = "t"};
 vm_diagnostics := 6;
-val _ = open_theory_import{files = ["t.art"], parent = "open-theory-base", theory = "t"};
+val _ = open_theory_import{files = ["temp.art"], parent = "open-theory-base", theory = "t"};
 *)
 
-val _ = open_theory_import{files = ["t.art"], parent = "open-theory-base", theory = "t"};
+val _ = open_theory_import{files = ["temp.art"], parent = "open-theory-base", theory = "t"};
 
 val _ = open_theory_import{file = "base.art", parent = "open-theory-base", theory = "t"};
 
@@ -5616,4 +5705,16 @@ val _ = proof_to_article{file = "temp.art", prf_fun = prf_fun};
 
 time_app Milliseconds open_theory_import{files = ["thm.art"], parent = "open-theory-base", theory = "t"};
 
-open_theory_import{files = ["t.art"], parent = "t", theory = "u"};
+open_theory_import{files = ["temp.art"], parent = "open-theory-base", theory = "t"};
+print_theory "-";
+fun prf_fun1 () = (
+	let	val witness_thm = tac_proof(
+		([¨f = Ãx:'a; y : 'b∑≈z∑TÆ, ¨g = Ãy:'b; x : 'a∑≈z∑TÆ], ¨µx:'a; y : 'b∑ f x y = g y xÆ),
+			REPEAT strip_tac THEN asm_rewrite_tac[]);
+		val def_thm = gen_new_spec(["n", "f"], witness_thm);
+	in	[def_thm]
+	end
+);
+proof_to_article{file = "temp.art", prf_fun = prf_fun1} ();
+
+get_axiom"-""axiom1";
