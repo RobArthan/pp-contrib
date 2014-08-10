@@ -106,9 +106,10 @@ of an OpenTheory reader and an OpenTheory writer for {\Product}.
 \item[2014/08/09](a)
 Augmented old RCS version numbers in the changes history with dates.
 Dates will be used in place of version numbers in future.
-
 \item[2014/08/09](b)
 First cut of upgrade for compatibility with OpenProofPower 3.1w2.
+\item[2014/08/10]
+Added tests and brought documentation up-to-date.
 
 %%%% END OF CHANGES HISTORY %%%%
 \end{description}
@@ -120,9 +121,7 @@ First cut of upgrade for compatibility with OpenProofPower 3.1w2.
 This implementation is essentially a proof of concept. However, it contains all the key elements needed
 to support interchange of specifications and proofs via OpenTheory. A production version
 will involve significant refactoring: specifically splitting it into separate {\Product} modules
-covering: {\em(i)} types and functions common to the reader and the writer; {\em(ii)} library support for the Gilith OpenTheory Repo; {\em(iii)} reader; {\em(iv)} writer. The precise details of the
-refactoring will depend q the amount of customisation needed to support D-RisQ's
-research work.
+covering: {\em(i)} types and functions common to the reader and the writer; {\em(ii)} library support for the Gilith OpenTheory Repo; {\em(iii)} reader; {\em(iv)} writer. 
  
 %%%%% DISTRIBUTION LIST
 
@@ -234,33 +233,18 @@ mapping of the vocabulary and definitions in the input to
 {\Product} vocabulary and extension mechanisms.
 This has then been instantiated to accept the vocabulary and
 definitions used by the Gilith OpenTheory Repo and the HOL4 OpenTheory writer.
+This is supported by a theory ``open-theory-base'' that provides definitions of
+the types and constants used in the OpenTheory base repo.
 
-
-TODO: update the next two paragraphs.
-
-The base theory package in the Gilith OpenTheory Repo has been imported into {\Product}.
-However, the level of integration with the native {\Product} vocabulary is limited.
-This is due to an issue with the level of abstraction in the base theory package as currently
-distributed.The issue is that the package currently gives concrete constructions of
-types rather than abstract specifications. This results in certain constants appearing in the
-name space that are not actually part of the documented interface. For this reason,
-the {\Product} reader currently only maps the basic logical vocabulary to native {\Product}
-vocabulary. Vocabulary relating to defined types, such as lists or numbers, is
-defined afresh when the base theory article is imported.
-Options for repackaging the base theory package are under discussion.
 
 Once the mapping of vocabulary is settled importing proofs is relatively straightforward
 since one has all the capabilities of {\Product} available to implement the OpenTheory
 inference rules as derived rules.
-The mapping of the definitional principles of OpenTheory is also straightforward, but slightly
-complicated in the present implementation to support the handling of the basic logical
-vocabulary of the base theory package in the Gilith OpenTheory Repo. This is done by
-recognising the OpenTheory definitions of the logical operators and simulating the
-definitions using theorems derived from the {\Product} definitions. Extending this
-approach to deal with the types defined in the base theory package is not
-practical without some more detailed analysis of the base theory package internals.
-The approach will be revisited when the outcome of ongoing discussions
-about the packaging of the base theory is known.
+The base theory package in the Gilith OpenTheory Repo has been imported into {\Product}.
+To do this one needs to separate out the constituent packages that prove theorems
+from those that provide definitions. A script that does this automatically is provided as a test
+in this script.
+
 
 %%%% %%%% %%%% %%%%
 \subsection{{\Product} OpenTheory Writer}
@@ -280,7 +264,7 @@ since it makes the OpenTheory kernel small, simple and dependable.)
 The writer is implemented as a library of functions that output the command sequences
 for tasks such as building a term or carrying out an inference step.
 
-OpenTheory only supports constant definitions of the form $c = t$ where $c$ is
+At version 5 OpenTheory only supported constant definitions of the form $c = t$ where $c$ is
 the constant being defined, whereas {\Product} and HOL4 both support
 a more general mechanism whereby if an existence theorem
 $\vdash \exists x_1, \ldots x_k \bullet \phi(x_1, \ldots, x_k)$ has been
@@ -293,8 +277,14 @@ $c_2 = \epsilon x_2 \bullet  \exists x_3, \ldots x_k \bullet \phi(c_1, x_2, \ldo
 The theorem  $\vdash \phi(c_1, \ldots, c_k)$ can then be inferred from
 the existence theorem and these definitions.
 The resulting translated definition is less abstract than the original
-but this is inevitable. It is expected that a more general mechanism for
-constant definitions will be added to OpenTheory in version 6 of the format.
+but this is inevitable.
+
+A more general mechanism, {\em defineConstList} for
+constant definitions has been added to OpenTheory in draft version 6 of the format.
+This corresponds closely to {\Product}'s {\em gen\_new\_spec}.
+Currently, pending implementation of version 6 in the {\tt opentheory} tool,
+we continue to use Hilbert choice for {\em new\_spec} but use {\em defineConstList}
+for {\em gen\_new\_spec}.
 
 Type definitions in OpenTheory follow HOL Light in introducing constants
 for the abstraction and representation functions for the new type.
@@ -313,6 +303,7 @@ assumptions in the article file if they are used in a proof that is exported.
 Typically such theorems will be lemmas used in derived inference rules.
 One solution to this would be to record some or all of the inferences made when the
 system is built, so that the proofs of these lemmas can be recreated.
+This is a topic for future work.
 
 \newpage
 %%%% %%%% %%%% %%%%
@@ -3596,6 +3587,7 @@ fun Ûdefine_hol_constÝ ({name, def_rhs} : CONST_DEFN_INFO) : THM = (
 fun Ûdefine_hol_const_listÝ {thm : THM, names : (string * TERM) list} : THM = (
 	let	fun mk_subs(n, v) = (mk_var(n, type_of v), v);
 		val thm1 = asm_inst_term_rule (map mk_subs names) thm;
+		val _ = const_spec_count := !const_spec_count + 1;
 		val n  = "const_spec" ^ string_of_int(!const_spec_count);
 		val thm2 = gen_new_spec([n], thm1);
 	in	thm2
@@ -5621,6 +5613,97 @@ open OpenTheory;
 =TEX
 
 %%%% %%%% %%%% %%%%
+\twocolumn[\section{TESTS}]
+%%%% %%%% %%%% %%%%
+\subsection{Importing the OpenTheory base package}
+=DUMP import-base.sh
+#!/bin/sh
+packages=`
+	opentheory list --dependency-order \
+		'(Identity - IncludedBy) (Includes* base)' | \
+	grep -v -- '-def-'`
+rm -r Thms 2>/dev/null
+mkdir Thms
+echo 'val package_files = ' > import-base.sml
+for p in $packages
+do	artfile="Thms/$p.art"
+	echo creating $artfile 1>&2
+	opentheory info --article --output $artfile $p
+	echo '"'"$artfile"'"::'
+done	>> import-base.sml
+echo 'nil;' >>import-base.sml
+echo 'open_theory_import{files = package_files,
+	parent = "open-theory-base",
+	theory = "base-import"};' >> import-base.sml
+pp_list -d open_theory -i import-base.sml base-import > base-import.out && \
+	mv base-import.out base-thms.th.doc
+=TEX
+\subsection{Exporting and Re-importing Theorems and Definitions}
+=DUMP export-test.sml
+set_open_theory_version 6;
+open_theory"open-theory-base";
+delete_theory "export-test" handle Fail _ => ();
+new_theory"export-test";
+begin_open_theory_export "export-test.art";
+val subst_rule_thm = save_thm("subst_rule_thm",
+	subst_rule [(plus_conv ¬1 + 2®, ¬X:î®)] ¬(X : î) = 1 + 2® (refl_conv¬1 + 2®));
+val simple_Ì_eq_rule_thm = save_thm("simple_Ì_eq_rule_thm",
+	simple_Ì_eq_rule ¬x:î® (refl_conv ¬1 + x®));
+val inst_type_rule_thm = save_thm("inst_type_rule_thm",
+	inst_type_rule [(”î®, ”'a®)] (refl_conv¬x®));
+val ´_intro_thm = save_thm("´_intro_thm",
+	´_intro ¬p:BOOL® (asm_rule ¬p:BOOL®));
+val ´_elim_thm = save_thm("´_elim_thm",
+	´_elim (asm_rule ¬1 = 2 ´ F®) (asm_rule¬1 = 2®));
+val asm_rule_thm = save_thm("asm_rule_thm",
+	asm_rule ¬x = y®);
+val refl_conv_thm = save_thm("refl_conv_thm",
+	refl_conv ¬1 + 2®);
+val simple_Â_conv_thm = save_thm("simple_Â_conv_thm",
+	simple_Â_conv ¬(Ìx·f x) (1 + 2)®);
+val suc_conv_thm = save_thm("suc_conv_thm",
+	suc_conv ¬3®);
+val string_conv_thm = save_thm("string_conv_thm",
+	string_conv¬"abc"®);
+val char_conv_thm = save_thm("char_conv_thm",
+	char_conv¬` `®);
+val eq_sym_rule_thm = save_thm("eq_sym_rule_thm",
+	eq_sym_rule (asm_rule¬x = y®));
+val list_simple_µ_elim_thm = save_thm("list_simple_µ_elim_thm",
+	list_simple_µ_elim [¬1®, ¬2®] plus_comm_thm);
+val eq_trans_rule_thm = save_thm("eq_trans_rule_thm",
+	eq_trans_rule (asm_rule ¬x = y®) (asm_rule¬y = z®));
+val mk_app_rule_thm = save_thm("mk_app_rule_thm",
+	mk_app_rule (asm_rule ¬f : 'a ­ 'b = g®) (asm_rule ¬x : 'a = y®));
+val ¤_mp_rule_thm = save_thm("¤_mp_rule_thm",
+	¤_mp_rule (asm_rule ¬1 = 2 ¤ F®) (asm_rule¬1 = 2®));
+val simple_µ_intro_thm = save_thm("simple_µ_intro_thm",
+	simple_µ_intro ¬x® (refl_conv¬x®));
+val inst_term_rule_thm = save_thm("inst_term_rule_thm",
+	inst_term_rule [(¬3®, ¬x:î®)] (refl_conv¬x:î®));
+val plus_conv_thm = save_thm("plus_conv_thm",
+	plus_conv ¬2 + 3®);
+val _ = new_type("NEW_TYPE", 0);
+val _ = new_const("NewConst", ”NEW_TYPE®);
+val new_spec_input_thm = tac_proof (([], ¬¶a b c:î·  a < b ± b < c®),
+	¶_tac ¬1® THEN ¶_tac ¬2® THEN ¶_tac ¬3® THEN PC_T1 "basic_hol1" rewrite_tac[]
+);
+val new_spec_thm = new_spec (["a", "b"], 2, new_spec_input_thm);
+val new_type_defn_input_thm = tac_proof (([], ¬¶x:î· (Ìx· ¶y· ³x = y) x®),
+	¶_tac ¬1® THEN conv_tac Â_conv THEN ¶_tac ¬2® THEN PC_T1 "basic_hol1" rewrite_tac[]
+);
+val new_type_defn_thm = new_type_defn (["TWO_OR_MORE"], "TWO_OR_MORE", [], new_type_defn_input_thm);
+val gen_new_spec_input_thm = tac_proof(
+		([¬fff = Ìx:'a; y : 'b·Åz·T®, ¬ggg = Ìy:'b; x : 'a·Åz·T®], ¬µx:'a; y : 'b· fff x y = ggg y x®),
+			REPEAT strip_tac THEN asm_rewrite_tac[]);
+val gen_new_spec_thm = gen_new_spec(["fff", "ggg"], gen_new_spec_input_thm);
+end_open_theory_export ();
+=TEX
+
+=DUMP reimport-test.sml
+open_theory_import{files = ["export-test.art"], parent = "open-theory-base", theory = "reimport-test"};
+=TEX
+%%%% %%%% %%%% %%%%
 \twocolumn[\section*{INDEX}]
 %%%% %%%% %%%% %%%%
 
@@ -5628,93 +5711,3 @@ open OpenTheory;
 \printindex
 \end{document}
 =IGN
-fun Ûki_resultÝ(ki as KISubstRule (_, _, _, thm)) = thm
-|   ki_result(ki as KISimpleÌEqRule (_, _, thm)) = thm
-|   ki_result(ki as KIInstTypeRule (_, _, thm)) = thm
-|   ki_result(ki as KI´Intro (_, _, thm)) = thm
-|   ki_result(ki as KI´Elim (_, _, thm)) = thm
-|   ki_result(ki as KIAsmRule (_, thm)) = thm
-|   ki_result(ki as KIReflConv (_, thm)) = thm
-|   ki_result(ki as KISimpleÂConv (_, thm)) = thm
-|   ki_result(ki as KISucConv (_, thm)) = thm
-|   ki_result(ki as KIStringConv (_, thm)) = thm
-|   ki_result(ki as KICharConv (_, thm)) = thm
-|   ki_result(ki as KIEqSymRule (_, thm)) = thm
-|   ki_result(ki as KIListSimpleµElim (_, _, thm)) = thm
-|   ki_result(ki as KIEqTransRule (_, _, thm)) = thm
-|   ki_result(ki as KIMkAppRule (_, _, thm)) = thm
-|   ki_result(ki as KI¤MPRule (_, _, thm)) = thm
-|   ki_result(ki as KISimpleµIntro (_, _, thm)) = thm
-|   ki_result(ki as KIInstTermRule (_, _, thm)) = thm
-|   ki_result(ki as KIPlusConv (_, thm)) = thm;
-=IGN
-open OpenTheoryInternals;
-logging_progress := true;
-
-
-(*
-open OpenTheoryInternals;
-vm_diagnostics := ~1;
-val _ = open_theory_import{files = ["temp.art"], parent = "open-theory-base", theory = "t"};
-vm_diagnostics := 0;
-val _ = open_theory_import{files = ["temp.art"], parent = "open-theory-base", theory = "t"};
-vm_diagnostics := 1;
-val _ = open_theory_import{files = ["temp.art"], parent = "open-theory-base", theory = "t"};
-vm_diagnostics := 2;
-val _ = open_theory_import{files = ["temp.art"], parent = "open-theory-base", theory = "t"};
-vm_diagnostics := 3;
-val _ = open_theory_import{files = ["temp.art"], parent = "open-theory-base", theory = "t"};
-vm_diagnostics := 4;
-val _ = open_theory_import{files = ["temp.art"], parent = "open-theory-base", theory = "t"};
-vm_diagnostics := 5;
-val _ = open_theory_import{files = ["temp.art"], parent = "open-theory-base", theory = "t"};
-vm_diagnostics := 6;
-val _ = open_theory_import{files = ["temp.art"], parent = "open-theory-base", theory = "t"};
-*)
-
-val _ = open_theory_import{files = ["temp.art"], parent = "open-theory-base", theory = "t"};
-
-val _ = open_theory_import{file = "base.art", parent = "open-theory-base", theory = "t"};
-
-val _ = open_theory_import{file = "condef.art", parent = "open-theory-base", theory = "t"};
-
-val _ = open_theory_import{file = "tydef.art", parent = "open-theory-base", theory = "t"};
-
-val _ = open_theory_import{file = "fundef.art", parent = "open-theory-base", theory = "t"};
-
-val _ = open_theory_import{file = "non_const_fun_def.art", parent = "open-theory-base", theory = "open_theory-eg1"};
-
-rewrite_rule [one_one_def] type_defn_def;
-È_axiom;
-
-(flat o map get_axioms o get_ancestors) "basic_hol";
-
-PC_C1 "predicates" rewrite_conv[] ¬ µ t1 t2· (Ì x· t1) t2 = t1®;
-
-val _ = open_theory_import{files = ["temp.art"], parent = "open-theory-base", theory = "t"};
-
-val file = "temp.art";
-
-val prf_fun =  fn () => map (conv_rule refl_conv o snd) (get_thms"-");
-
-val _ = proof_to_article{file = "temp.art", prf_fun = prf_fun};
-
-	begin_open_theory_export file;
-	app log_thm (prf_fun ());
-	end_open_theory_export ();
-
-time_app Milliseconds open_theory_import{files = ["thm.art"], parent = "open-theory-base", theory = "t"};
-
-open_theory_import{files = ["temp.art"], parent = "open-theory-base", theory = "t"};
-print_theory "-";
-fun prf_fun1 () = (
-	let	val witness_thm = tac_proof(
-		([¬f = Ìx:'a; y : 'b·Åz·T®, ¬g = Ìy:'b; x : 'a·Åz·T®], ¬µx:'a; y : 'b· f x y = g y x®),
-			REPEAT strip_tac THEN asm_rewrite_tac[]);
-		val def_thm = gen_new_spec(["n", "f"], witness_thm);
-	in	[def_thm]
-	end
-);
-proof_to_article{file = "temp.art", prf_fun = prf_fun1} ();
-
-get_axiom"-""axiom1";

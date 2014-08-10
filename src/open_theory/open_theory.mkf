@@ -15,7 +15,7 @@ default: help
 
 PRODNAME=PPOpenTheory
 PRODDESC=an experimental implementation of OpenTheory reader and writer
-SHORTNAME=opentheory
+SHORTNAME=open_theory
 PPPARENT=hol
 
 VER=$(shell echo $${PPEGSVER:-`cat version 2>/dev/null || date +%y%m%d`})
@@ -214,7 +214,31 @@ wrk084.dvi: wrk084.tex
 	docdvi $*
 
 %.pdf: %.dvi
-	dvipdf -sPAPERSIZE=a4 $*
+	pptexenv dvipdf -sPAPERSIZE=a4 $*
+
+######################################################################
+#
+#	Tests
+#
+######################################################################
+
+import-base.sh: wrk084.sml
+
+base-thms.th.doc: import-base
+	import-base
+
+export-test.sml: wrk084.sml
+
+export-test.art: export-test.sml
+	pp -d open_theory -n -f export-test.sml > export-test.ttd
+
+reimport-test.sml: wrk084.sml
+
+reimport-test.th.doc: reimport-test.sml export-test.art
+	pp_list -d open_theory -i reimport-test.sml reimport-test \
+		> reimport-test.th.doc
+
+test: base-thms.th.doc reimport-test.th.doc
 
 ######################################################################
 #
