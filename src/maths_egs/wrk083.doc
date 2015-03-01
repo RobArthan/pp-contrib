@@ -339,16 +339,15 @@ The derived rule
 all_µ_intro1
 =TEX
 \ gives the universal closure of a theorem but leaving the free variables
-of a specified term free.
+of a specified term that are not included in a supplied list of ``pattern variables'' free.
+
 =SML
-fun Ûall_µ_intro1Ý (tm : TERM) (thm : THM) : THM = (
-	let	val fvs = frees tm;
+fun Ûall_µ_intro1Ý (pat_vars : TERM list) (tm : TERM) (thm : THM) : THM = (
+	let	val fvs = frees tm diff pat_vars;
 		val bvs = thm_frees thm diff fvs;
 	in	list_µ_intro bvs thm
 	end
 );
-
-
 =TEX
 %%%%
 Now
@@ -358,13 +357,13 @@ morphism\_conv
 \ implements our rewrite system.
 =SML
 fun Ûmorphism_convÝ
-	{unary : TERM list, binary : TERM list, parametrized : TERM list}
+	{unary : TERM list, binary : TERM list, parametrized : TERM list, pattern_vars : TERM list}
 	: CONV = (
-	let	val unary_thms = map (fn t => all_µ_intro1 t (gen_µ_elim t unary_rule_thm))
+	let	val unary_thms = map (fn t => all_µ_intro1 pattern_vars t (gen_µ_elim t unary_rule_thm))
 			unary;
-		val binary_thms = map (fn t => all_µ_intro1 t (gen_µ_elim t binary_rule_thm))
+		val binary_thms = map (fn t => all_µ_intro1 pattern_vars t (gen_µ_elim t binary_rule_thm))
 			binary;
-		val binary_thms1 = map (fn t => all_µ_intro1 t (gen_µ_elim t binary_rule_thm1))
+		val binary_thms1 = map (fn t => all_µ_intro1 pattern_vars t (gen_µ_elim t binary_rule_thm1))
 			binary;
 		val parametrized_thms = map (switch gen_µ_elim parametrized_rule_thm)
 			parametrized;
@@ -429,9 +428,14 @@ fun Ûbasic_morphism_tacÝ
 		unary : TERM list,
 		binary : TERM list,
 		parametrized : TERM list,
+		pattern_vars : TERM list,
 		facts : THM list,
 		witness_tac : TACTIC} : THM list -> TACTIC = (
-	let	val m_conv = morphism_conv {unary = unary, binary = binary, parametrized = parametrized};
+	let	val m_conv = morphism_conv {
+			unary = unary,
+			binary = binary,
+			parametrized = parametrized,
+			pattern_vars = pattern_vars};
 		val is_rule = is_´ o snd o strip_µ o concl;
 		val rule_thms = facts drop (not o is_rule);
 		val axiom_thms = facts drop is_rule;
