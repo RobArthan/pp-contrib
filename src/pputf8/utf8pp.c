@@ -8,85 +8,95 @@
 #include <stdlib.h>
 /*
  * The include file utf8pptab.h is automatically generated from some ML
- * code. It contains an array of records each containing a UTF-8
- * string and the corresponding ProofPower character. The array is sorted by
- * the UTF-8 string and we do the associative lookup with bsearch. A UTF-8
- * string comprising a single ASCII character may haver an entry in the array,
- * but, if not, it will be mapped to itself.
+ * code. It contains an array of records each containing a Unicode code
+ * point (represented as a signed int) and the corresponding ProofPower character.
+ * The array is sorted by * the code point and we do the associative lookup
+ * with bsearch.
  */
 #include "utf8pptab.h"
+int utf8pp_error = 0;
+int line;
 
-/*
- * To avoid any possible problems with locales or signed characters
- * we roll our own strcmp.
- */
 int utf8_to_pp_entry_cmp(const void *buf1, const void *buf2)
 {
 	const utf8_to_pp_entry *u1 = buf1, *u2 = buf2;
-	const char *s1 = u1->utf8_string, *s2 = u2->utf8_string;
-	while(*s1 == *s2 && *s1 != 0) {
-		s1 += 1;
-		s2 += 1;
-	}
-	return (((int) *s1) & 0xff) - (((int) *s2) & 0xff);
+	return  u1->code_point - u2->code_point;
 }
 
-const char *map_utf8_to_pp(const char *utf8)
+const char *unicode_to_kw(unicode code_point)
+{
+	static char buf[10];
+	sprintf(buf, "%%x%06X%%", code_point);
+	return buf;
+}
+
+const char *unicode_to_pp(unicode cp)
 {	
 	utf8_to_pp_entry key, *search_result;
-	key.utf8_string = (char*)utf8;
+	key.code_point = cp;
 	search_result = bsearch(&key, utf8_to_pp,
 		UTF8_TO_PP_LEN, sizeof(utf8_to_pp_entry), utf8_to_pp_entry_cmp);
 	return search_result != 0 ?
-		search_result->pp_string : /* Supported UTF-8 */
-		utf8[1] == 0 ? utf8 : /* Length 1: ASCII */
-		"%unsupported_utf8%"; /* Unsupported UTF-8 */
+		search_result->pp_string :
+		unicode_to_kw(cp);
+}
+/*
+ * If invalid UTF-8 is found, output an error message and skip to
+ * the next new line.
+ */
+unicode invalid_utf8(void)
+{
+	int whatgot;
+	fprintf(stderr, "utf8pp: line %d: invalid utf-8 input\n", line);
+	utf8pp_error = 1;
+	whatgot = getchar();
+	while(whatgot != '\n' && whatgot != EOF) {
+		whatgot = getchar();
+	}
+	if(whatgot == '\n') {
+		line += 1;
+	}
+	return whatgot & 0xff;
 }
 
-char *get_utf8_string(void)
+unicode get_code_point(void)
 {
-	int whatgot, i, len;
-	unsigned char c;
-	static char result[7];
+	int whatgot, r, l;
 	whatgot = getchar();
-	if(whatgot == EOF) {
-		return 0;
+	if(whatgot == EOF) { return 0; }
+	if(whatgot == '\n') { line += 1; }
+	r = whatgot & 0xff;
+	if(r <= 0x7f) { return r; }
+	l = 0;
+	while(r & 0x80) {
+		r = (r & 0x7f) << 1;
+		l += 1;
 	}
-	result[0] = c = whatgot;
-	len =	c < 0x80 ?  1 :
-		c < 0xc0 ? -1 :
-		c < 0xe0 ?  2 :
-		c < 0xf0 ?  3 :
-		c < 0xf8 ?  4 :
-		c < 0xfc ?  5 :
-		c < 0xfe ?  6 :
-		-1;
-	if(len < 1) {
-		return "invalid_utf8";
-	}
-	for(i = 1; i < len; i += 1) {
+	if(l > 4) { return invalid_utf8(); }
+	r = r >> l;
+	while(--l) {
 		whatgot = getchar();
 		if(whatgot == EOF || ((whatgot & 0xc0) != 0x80)) {
-			return "invalid_utf8";
+			return invalid_utf8();
 		}
-		result[i] = whatgot;
+		r = (r << 6) | (whatgot & 0x3f);
 	}
-	result[len] = 0;
-	return result;
+	return r;
 }
 
-static void do_utf8_to_pp(void)
+void do_utf8_to_pp(void)
 {
-	const char *utf8_string, *pp_string;
-	utf8_string = get_utf8_string();
-	while(utf8_string != 0) {
-		pp_string =  map_utf8_to_pp(utf8_string);
+	unicode cp;
+	const char *pp_string;
+	cp = get_code_point();
+	while(cp) {
+		pp_string = unicode_to_pp(cp);
 		printf("%s", pp_string);
-		utf8_string = get_utf8_string();
+		cp = get_code_point();
 	}
 }
 
-static void usage(void)
+void usage(void)
 {
 	printf("utf8pp"
 		": convert UTF-8 to ProofPower extended character format\n");
@@ -95,9 +105,10 @@ static void usage(void)
 
 int main (int argc, char *argv[])
 {
+	line = 1;
 	if(argc == 1) {
 		do_utf8_to_pp();
-		return ferror(stdin) || ferror(stdout);
+		return ferror(stdin) || ferror(stdout) || utf8pp_error;
 	} else {
 		usage();
 		return 0;

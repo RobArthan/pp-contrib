@@ -33,6 +33,7 @@ The following is not a Z paragraph, but comprises ML commands to establish
 a theory in which to load the paragraphs.
 =SML
 open_theory "z_library";
+force_delete_theory "zparas" handle Fail _ => ();
 new_theory "zparas";
 set_pc "z_library";
 =TEX
@@ -136,14 +137,19 @@ all the {\Product} extended characters.
 This file generates C header files pputf8tab.h utf8pptab.h
 containing definitions of tables mapping ProofPower extended characters
 to and from UTF-8 encoded Unicode equivalents.
-=SMLLITERAL
+=SML
 structure PPUtf8 = struct
 local
-structure W = Word;
-structure C = SML97BasisLibrary.Char;
-structure S = SML97BasisLibrary.String;
+structure €W› = Word;
+structure €C› = SML97BasisLibrary.Char;
+structure €S› = SML97BasisLibrary.String;
 in
-fun utf8_of_word (w : W.word) : string = (
+(*
+=TEX
+The following implements the full UCS encoding and does not impose the UTF-8 rules.
+=SML
+*)
+fun €utf8_of_word› (w : W.word) : string = (
 	S.implode (map (C.chr o W.toInt) (
 	if	w <= 0wx7f	(* <= 7 bits *)
 	then	[	w]
@@ -172,14 +178,14 @@ fun utf8_of_word (w : W.word) : string = (
 			W.orb(0wx80, W.>>(W.andb(w, 0wxfc0), 0wx6)),
 			W.orb(0wx80, W.andb(w, 0wx3f))]))
 );
-
-
-val byte_string_order : string ORDER = (fn s1 => fn s2 =>
-	lexicographic (fn c1 => fn c2 => ord c1 - ord c2) (explode s1) (explode s2)
-);
-
-val pp_to_utf8_base_translation : ((string * W.word) * string) list = [
-	(("-",	0wx002212 ),	"MINUS SIGN"),
+(*
+=TEX
+\ftlinepenalty=9999
+This is the basic translation table.
+=SML
+*)
+val €pp_to_utf8_basic_translation› : ((string * W.word) * string) list = [
+=SMLLITERAL
 	(("≥",	0wx0000AC ),	"NOT SIGN"),
 	(("∏",	0wx0000d7 ),	"MULTIPLICATION SIGN"),
 	(("á",	0wx000393 ),	"GREEK CAPITAL LETTER GAMMA"),
@@ -306,86 +312,72 @@ val pp_to_utf8_base_translation : ((string * W.word) * string) list = [
 	(("É",	0wx01d54c ),	"MATHEMATICAL DOUBLE-STRUCK CAPITAL U"),
 	(("ı",	0wx00208d ),	"SUBSCRIPT LEFT PARENTHESIS"),
 	(("ˆ",	0wx00208e ),	"SUBSCRIPT RIGHT PARENTHESIS"),
-	(("¯",	0wx00002d ),	"HYPHEN-MINUS")
+	(("¯",	0wx00fe63 ),	"SMALL HYPHEN-MINUS")
 ];
-
-val pp_to_utf8_tab : (string * string) list = 
+(*
+=TEX
+=SML
+*)
+val byte_string_order : string ORDER = (fn s1 => fn s2 =>
+	lexicographic (fn c1 => fn c2 => ord c1 - ord c2) (explode s1) (explode s2)
+);
+val €pp_to_utf8_tab› : (string * string) list = 
 	(sort (pair_order byte_string_order byte_string_order) o
 		map (fn ((c, w), _) => (c, utf8_of_word w))) 
-		pp_to_utf8_base_translation;
+		pp_to_utf8_basic_translation;
+(*
 =TEX
 The following have no Unicode equivalent, but have equivalent
 ProofPower forms that do.
-=SMLLITERAL
-val pp_to_pp_replacement : (string * string) list = 
+=SML
+*)
+val €pp_to_pp_replacement› : (string * string) list = 
 	map (fn (c, s) => (c, implode (map (lassoc1 pp_to_utf8_tab) (explode s)))) [
 	("ã",	"Î/" )	
 ];
-
+(*
 =TEX
-The following Unicode characters used in the ISO Z standard,
-have a suitable ProofPower equivalent that cannot be obtained
-just by inverting the base translation (Note that the standard
-used what seem to be the wrong double angle brackets, so here
-we support both forms).
-=SMLLITERAL
-val utf8_to_pp_replacement_data : ((W.word * string) * (string * string)) list = [
-	((0wx002028,	"πZ" ),
-		("LINE SEPARATOR", "Introduces non-box paragraphs")),
-	((0wx002199,	"Í" ),
-		("SOUTH WEST ARROW", "Terminates superscript")),
-	((0wx002196,	"Í" ),
-		("NORTH WEST ARROW", "Terminates subscript")),
-	((0wx00223c,	"~" ),
-		("TILDE OPERATOR", "Relational inverse")),
-	((0wx0027ea,	"\037<<\037" ),
-		("MATHEMATICAL LEFT DOUBLE ANGLE BRACKET", "Left freetype bracket")),
-	((0wx0027eb,	"\037>>\037" ),
-		("MATHEMATICAL RIGHT DOUBLE ANGLE BRACKET", "Right free type bracket")),
-	((0wx002989,	"(" ),
-		("Z NOTATION LEFT BINDING BRACKET", "See Unicode name")),
-	((0wx00298a,	")" ),
-		("Z NOTATION RIGHT BINDING BRACKET", "See Unicode name")),
-	((0wx0029f9,	"\\" ),
-		("BIG REVERSE SOLIDUS", "Schema hiding")),
-	((0wx00300a,	"\037<<\037" ),
-		("LEFT DOUBLE ANGLE BRACKET", "Left freetype bracket")),
-	((0wx00300b,	"\037>>\037" ),
-		("RIGHT DOUBLE ANGLE BRACKET", " Right free type bracket")),
-	((0wx01d538,	"%bbA%" ),
-		("MATHEMATICAL DOUBLE-STRUCK CAPITAL A", "Arithmos"))
-];
-
-val utf8_to_pp_replacement : (string * string) list =
-	map (fn ((w, c), _) => (utf8_of_word w, c)) utf8_to_pp_replacement_data;
-
-val pp_to_utf8 : string array =
+=SML
+*)
+val €pp_to_utf8› : string array =
 	PPArray.arrayoflist
 		(map (lassoc1 (pp_to_pp_replacement @ pp_to_utf8_tab))
 			(map chr (interval 0 255)));
+(*
+=TEX
+=SML
+*)
+val €word_order› : word ORDER = fn w1 => fn w2 => W.toInt w1 - W.toInt w2;
 
-val utf8_to_pp_tab : (string * string) list =
-	(sort (pair_order byte_string_order byte_string_order)) 
-		(utf8_to_pp_replacement @ map swap pp_to_utf8_tab);
+val €utf8_to_pp_tab› : (word * string) list =
+	(sort (pair_order word_order byte_string_order)) 
+		(map (swap o fst) pp_to_utf8_basic_translation);
+(*
+=TEX
+The rest of the code outputs the two C header files: pputf8tab.h and utf8pptab.h
+=SML
+*)
 
-val hex_of_int : int -> string = Int.fmt StringCvt.HEX;
-
-fun hex_of_char (c : char) : string = (
-	let	val i = C.ord c;
-	in	hex_of_int (i div 16) ^
-		hex_of_int (i mod 16)
+fun €word_to_string› (width : int)  (w : word) : string = (
+	let	fun zeroes i = if i <= 0 then "" else "0" ^ zeroes (i-1);
+		val s = Word.toString w;
+	in	zeroes (width - size s) ^ s
 	end
 );
 
-fun c_hex_char_of_char (c : char) : string = (
-	"\\x" ^ hex_of_char c
+fun €c_hex_char_of_char› (c : char) : string = (
+	"\\x" ^ (word_to_string 2 o W.fromInt o C.ord) c
 );
 
-fun c_hex_string_of_string (s : string) : string = (
+fun €c_hex_string_of_string› (s : string) : string = (
 	implode(map c_hex_char_of_char(S.explode s))
 );
 
-fun c_pp_to_utf8 (outfile : string) : unit = (
+fun €c_hex_int_of_code_point› (w : word) : string = (
+	"0x" ^ word_to_string 6 w
+);
+
+fun €c_pp_to_utf8› (outfile : string) : unit = (
 	let	val strm = open_out outfile;
 		fun say s = output(strm, s);
 		fun aux i = (
@@ -414,15 +406,15 @@ fun c_pp_to_utf8 (outfile : string) : unit = (
 );
 
 
-fun c_utf8_to_pp (outfile : string) : unit = (
+fun €c_utf8_to_pp› (outfile : string) : unit = (
 	let	val strm = open_out outfile;
 		fun say s = output(strm, s);
-		fun aux ((s1, s2) :: more) = (
-			let	val text1 = c_hex_string_of_string s1;
-				val text2 = c_hex_string_of_string s2;
-			in	say "\t{\"";
+		fun aux ((w, s) :: more) = (
+			let	val text1 = c_hex_int_of_code_point w;
+				val text2 = c_hex_string_of_string s;
+			in	say "\t{";
 				say text1;
-				say "\", \"";
+				say ", \"";
 				say text2;
 				(case more of
 				 _ :: _	=> 	(
@@ -439,20 +431,21 @@ fun c_utf8_to_pp (outfile : string) : unit = (
 " * ProofPower extended characters is done by an associative lookup\n" ^
 " * in the following sorted array of records:\n" ^
 " */\n" ^
+"typedef int unicode;\n" ^
 "typedef struct {\n" ^
-"\tconst char *utf8_string;\n" ^
+"\tunicode code_point;\n" ^
 "\tconst char *pp_string;} utf8_to_pp_entry;\n");
 		say "#define UTF8_TO_PP_LEN ";
-		say(string_of_int (length utf8_to_pp_tab));
+		say(string_of_int (128 + length utf8_to_pp_tab));
 		say "\nstatic utf8_to_pp_entry utf8_to_pp [UTF8_TO_PP_LEN] = {\n";
-		aux utf8_to_pp_tab;
+		aux (map (fn i => (W.fromInt i, chr i)) (interval 0 127) @ utf8_to_pp_tab);
 		say "};\n";
 		close_out strm
 	end
 );
 
 val _ =
-	if length utf8_to_pp_tab <> length pp_to_utf8_tab + length utf8_to_pp_replacement
+	if length utf8_to_pp_tab <> length pp_to_utf8_tab
 	then	diag_line "WARNING: duplicate entries lost from utf8_to_pp_tab"
 	else	();
 
