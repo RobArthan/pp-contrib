@@ -2873,71 +2873,27 @@ We analyse the input theorems by matching their conclusions with template terms 
 =SML
 *)
 
-val (unary_v, unary_p) = dest_pair ¬(x, x  (Á, Â) Continuous)®;
-val (binary_v, binary_p) = dest_pair ¬(x, Uncurry x  (Á, Â) Continuous)®;
-val (parametrized_v, parametrized_p) = dest_pair ¬(h, (Ì x· h x p)  (Á, Â) Continuous)®;
-val (object_v, object_p) = dest_pair ¬(Á, Á  Topology)®;
-
-(*
-=TEX
-The following function matches each of a list of theorems with a pattern and extracts lists of known unary, binary and parametrized continuous functions and a list of known topological spaces (objects).
-=SML
-*)
-
-fun Ûget_patternsİ
-	(accs as (acc_u, acc_b, acc_p, acc_o)
-		: TERM list * TERM list * TERM list * (string list * TERM) list)
-	((thm :: more) : THM list)
-	: TERM list * TERM list * TERM list * (string list * TERM) list = (
-	let	val tm = (snd o strip_µ o concl) thm;
-	in	let	val (tym, tmm) = term_match tm binary_p;
-			val bin = subst tmm (inst [] tym binary_v);
-		in	get_patterns (acc_u, bin::acc_b, acc_p, acc_o) more
-		end	handle Fail _ =>
-		let	val (tym, tmm) = term_match tm parametrized_p;
-			val par = subst tmm (inst [] tym parametrized_v);
-		in	get_patterns (acc_u, acc_b, par::acc_p, acc_o) more
-		end	handle Fail _ =>
-		let	val (tym, tmm) = term_match tm unary_p;
-			val un = subst tmm (inst [] tym unary_v);
-		in	get_patterns (un::acc_u, acc_b, acc_p, acc_o) more
-		end	handle Fail _ =>
-		let	val (tym, tmm) = term_match tm object_p;
-			val ob = subst tmm (inst [] tym object_v);
-			val tvs = (list_cup o map term_tyvars o asms) thm;
-		in	get_patterns (acc_u, acc_b, acc_p, (tvs, ob)::acc_o) more
-		end	handle Fail _ => get_patterns accs more
-	end
-) | get_patterns accs [] = accs;
-
 (*
 =TEX
 Now we pull the above pieces together into a function that constructs the parameters needed by the basic morphismhood prover from a list of theorems.
 =SML
 *)
+val Ûcontinuity_patsİ = {
+	object_pat = ¬(Á, Á  Topology)®,
+	unary_pat = ¬(x, x  (Á, Â) Continuous)®,
+	binary_pat = ¬(x, Uncurry x  (Á, Â) Continuous)®,
+	parametrized_pat = ¬(h, (Ì x· h x p)  (Á, Â) Continuous)®};
 
-val Ûfst_constİ : TERM = ¬Fst®;
-val Ûsnd_constİ : TERM = ¬Snd®;
+val Ûfst_sndİ : TERM list = [¬Fst®,  ¬Snd®];
+
 val Ûproduct_t_constİ : TERM = ¬$¸‰T®;
 
-fun continuity_params (thms : THM list) :
-	{unary : TERM list,
-	 binary : TERM list,
-	 parametrized : TERM list,
-	 pattern_vars : TERM list,
-	 facts : THM list,
-	 witness_tac : TACTIC} = (
-	let	val (uns, bins, pars, obs) = get_patterns ([], [], [], []) thms;
-	in
-		{unary = fst_const :: snd_const :: uns,
-		 binary = bins,
-		 parametrized = pars,
-		 pattern_vars = [],
-		 facts = thms @ continuity_fact_thms,
-		 witness_tac = ¶_object_by_type_tac (([], product_t_const) :: obs)}
-	end
-);
-
+val Ûcontinuity_paramsİ = morphism_params
+		continuity_pats
+		fst_snd
+		[([], product_t_const)]
+		¶_object_by_type_tac
+		continuity_fact_thms;
 in
 (*
 =TEX
