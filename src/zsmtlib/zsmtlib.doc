@@ -1,0 +1,890 @@
+=IGN
+********************************************************************************
+%%%%% YOU MAY WANT TO CHANGE THE FOLLOWING, E.G. FOR QCZ:
+blank.doc: this file is part of the ProofPower system
+
+Copyright (c) Lemma 1 Ltd.
+
+See the file LICENSE for your rights to use and change this file.
+
+Contact: Rob Arthan < rda@lemma-one.com >
+********************************************************************************
+% $Id: blank.doc,v 1.1 2014/02/14 13:04:36 rda Exp $
+=TEX
+%%%%% YOU MAY WANT TO CHANGE POINT SIZE IN THE FOLLOWING:
+\documentclass[a4paper,12pt]{article}
+
+%%%%% YOU CAN ADD OTHER PACKAGES AS NEEDED BELOW:
+\usepackage{A4}
+\usepackage{Lemma1}
+\usepackage{ProofPower}
+\usepackage{epsf}
+\usepackage{url}
+\usepackage{amsmath}
+\makeindex
+
+\def\Hide#1{\relax}
+
+\def\Func#1{\mbox{\textsf{#1}}}
+\def\Abs{\Func{abs}}
+\def\Floor#1{\lfloor{#1}\rfloor}
+\def\Mod{\mathop{\Func{mod}}}
+\def\Rem{\mathop{\Func{rem}}}
+\def\Sdiv{\mathop{\Func{sdiv}}}
+\def\Sgn{\Func{sgn}}
+\def\Smod{\mathop{\Func{smod}}}
+\def\Srem{\mathop{\Func{srem}}}
+\def\Udiv{\mathop{\Func{udiv}}}
+\def\Urem{\mathop{\Func{urem}}}
+
+%%%%% YOU WILL WANT TO CHANGE THE FOLLOWING TO SUIT YOU AND YOUR DOCUMENT:
+
+\def\Title{SMT-LIB in Z}
+
+\def\Abstract{\begin{center}
+{\bf Abstract}\par\parbox{0.7\hsize}
+{\small This document specifies models of the theories of SMT-LIB in the Z notation.}
+\end{center}}
+
+\def\Reference{LEMMA1/QCZ/ZSMTLIB/01}
+
+\def\Author{R.D. Arthan}
+
+\def\EMail{{\tt rda@lemma-one.com}}
+
+\def\Phone{+44 7947 030 682}
+
+
+%%%%% YOU MAY WANT TO CHANGE THE FOLLOWING TO GET A NICE FRONT PAGE:
+\def\FrontPageTitle{ {\huge \Title } }
+\def\FrontPageHeader{\raisebox{16ex}{\begin{tabular}[t]{c}
+\bf Copyright \copyright\ : Lemma 1 Ltd \number\year\\\strut\\
+\end{tabular}}}
+\begin{centering}
+
+
+
+\end{centering}
+
+%%%%% THE FOLLOWING DEFAULTS WILL GENERALLY BE RIGHT:
+
+\def\Version{\VCVersion}
+\def\Date{\FormatDate{\VCDate}}
+
+%%%%% NOW BEGIN THE DOCUMENT AND MAKE THE FRONT PAGE
+
+\begin{document}
+\headsep=0mm
+\FrontPage
+\headsep=10mm
+
+%%%%% STANDARD RED-TAPE SECTIONS (MAY WANT TO INTERLEAVE SOME \newpage COMMANDS IN THESE)
+
+%%%%% CONTENTS:
+
+\subsection{Contents}
+
+\tableofcontents
+
+%%%%% REFERENCES:
+\newpage
+Ó
+\subsection{References}
+
+\bibliographystyle{fmu}
+
+%%%%% CHANGE THE FOLLOWING AS NECESSARY (E.G., TO PICK UP daz.bib):
+{\raggedright
+\bibliography{fmu,zsmtlib}
+}
+
+%%%%% CHANGES HISTORY:
+\subsection{Changes History}
+\begin{description}
+\item[2016/04/16] Initial draft.
+\item[2016/05/13] First commit to the ProofPower contrib repository.
+\end{description}
+
+%%%%%  CHANGES FORECAST:
+
+%\subsection{Changes Forecast}
+ 
+%%%%% DISTRIBUTION LIST
+
+\subsection{Distribution}
+\begin{center}
+\begin{tabular}{ll}
+Rob Arthan & Lemma 1\\
+Colin O'Halloran & D-RisQ\\
+ProofPower Repo & \url{https://github.com/RobArthan/pp-contrib}
+\end{tabular}
+\end{center}
+
+%%%%% NOW THE CREATIVE BIT:
+\newpage
+\section{INTRODUCTION}
+This document gives a model written in the Z notation  of each of the theories defined
+by the SMT-LIB standard version 2.5 \cite{BarFT-RR-15,smtlib-theories,smtlib-logics}.
+This model was developed by Lemma 1 primarily to assist D-RisQ in reasoning about
+programming language datatypes that are modelled in Z and mapped into SMT-LIB
+to check assertions using and SMT solver.
+The model is made freely available to the Formal Methods community and comments are invited.
+
+
+%TODO: say something about version 2.0 \cite{BarST-RR-10}
+
+See \cite{DBLP:conf/hvc/BarrettMRST10} for an overview of SMT-LIB and its aims.
+See \cite{Spivey92} for details of the Z notation, but note that the specification in this document
+makes use of features introduced in the ISO Z standard \cite{ISO02}, specifically,
+it uses schemas with empty declaration parts to represent booleans as first-order values.
+
+This document has been prepared using the document preparation tools supplied with {\Product}.
+It includes the ML commands required to type-check the Z and load it into a {\Product}
+database. Some small experimental proofs have been carried out and are included in the source
+of this document, but are omitted from the typeset document.
+
+
+Please note this is work in progress.
+
+
+\section{THE SMT-LIB THEORIES}
+First we give the ML commands that set up the theory hierarchy for the SMT-LIB theories.
+Theory names comprise the SMT-LIB theory name prefixed with {\it ZS\_}.
+The Core theory uses the Z Library up to and including the material on sequences.
+Sequences are used to represent functions that take two or more arguments.
+
+
+\Hide{
+=SML
+force_delete_theory "ZS_Core" handle Fail _ => ();
+open_theory"z_library";
+set_pc"z_library";
+=TEX
+}
+
+The remaining theories depend on the Core theory and (in the case of {\it Reals\_Ints} other SMT-LIB theories).
+The ML coommands to set up the theories are given in the following table.
+
+\begin{center}
+\vertbarfalse
+\makeatletter
+\def\prelim@label#1{\relax}
+\makeatother
+\def\Row#1#2{#1 &
+\small
+\parbox{0.35\hsize}{#2}\\} %\Row
+\begin{tabular}{l|l}
+\Row{Theory}{ML set-up commands}\hline
+\Row{Core}{
+=SML
+open_theory"z_library";
+new_theory"ZS_Core";
+=TEX
+}
+\Row{Integer Numbers}{
+=SML
+open_theory "ZS_Core";
+new_theory "ZS_Ints";
+new_parent "z_numbers";
+=TEX
+}
+\Row{Real Numbers}{
+=SML
+open_theory "ZS_Core";
+new_theory "ZS_Reals";
+new_parent "z_reals";
+=TEX
+}
+\Row{Real and Integer Numbers}{
+=SML
+open_theory "ZS_Core";
+new_theory "ZS_Reals_Ints";
+new_parent "ZS_Reals";
+new_parent "ZS_Ints";
+=TEX
+}
+\Row{Arrays}{
+=SML
+open_theory "ZS_Core";
+new_theory "ZS_ArraysEx";
+=TEX
+}
+\Row{Bit Vectors}{
+=SML
+open_theory "ZS_Core";
+new_theory "ZS_FixedSizeBitVectors";
+=TEX
+}
+\end{tabular}
+\end{center} % also ends \vertbarfalse etc.
+
+\subsection{Core}
+=SML
+open_theory"ZS_Core";
+=TEX
+Standard Z is a form of first-order typed set theory.
+While the {\Product} system that we use to type-check and reason about Z actually
+supports a higher-order extension of Z, we prefer to stay within Standard Z in this specification.
+We will use what turns out to be a very convenient way of representing truth values
+as first-order objects following an idea of Sam Valentine.
+This uses a special case of the labelled record types provided in Z and referred
+to as schema types. The elements of schema types are called bindings.
+Z provides a convenient notation for denoting arbitrary subsets
+of schema types. For example,
+=INLINEFT
+[x, y : ú | x < y]
+=TEX
+\ denotes the set of all bindings $(x == a, y == b)$ where $a < b$.
+In this notation, the declarations to the right of the vertical bar are called the
+signature.
+As a special case,
+=INLINEFT
+[|true]
+=TEX
+\ denotes the total set of the schema type over the empty signature, which has just
+one element.
+The power set of this type then has two elements, which we use to represent the two truth values.
+
+¹Z
+Ü ÛBoolÝ == ð [|true]
+°
+¹Z
+Ü ÛTrueÝ == [|true]
+°
+¹Z
+Ü ÛFalseÝ == [|false]
+°
+Z has built-in operators (referred to collectively
+as the schema calculus) that combine sets of bindings
+by combining the defining properties of the sets with logical connectives.
+This gives us a direct representation of the propositional connectives on our chosen
+representation of truth values.
+
+¹ZAX
+Ü ÛNotÝ : Bool ­ Bool;
+Ü ÛAndÝ, ÛOrÝ, ÛXorÝ, ÛImpliesÝ : Bool ­ Bool ­ Bool
+÷üüüüüü
+Ü µp : Bool· Not p = (³‰s p);
+Ü µp, q : Bool· And p q = (p ±‰s q);
+Ü µp, q : Bool· Or p q = (p ²‰s q);
+Ü µp, q : Bool· Xor p q = (³‰s(p ¤‰s q));
+Ü µp, q : Bool· Implies p q = (p ´‰s q)
+°
+It is now very straightforward to define the chainable equality and pairwise
+distict predicates:
+[A]œœœœœœœœœœœ
+Ü ÛEqualÝ, ÛDistinctÝ : seq A ­ Bool
+÷üüüüüü
+Ü µs : seq A· Equal s = [| µi, j: dom s · s i = s j];
+Ü µs : seq A· Distinct s = [| µi, j : dom s · s i = s j ¤ i = j]
+ˆüüüüüüüüüüüüüü
+We define if-then-else by pattern-matching:
+[A]œœœœœœœœœœœ
+Ü ÛITEÝ : Bool ­ A ­ A ­ A
+÷üüüüüü
+Ü µx, y : A· ITE True x y = x;
+Ü µx, y : A· ITE False x y = y
+ˆüüüüüüüüüüüüüü
+
+=TEX
+\subsection{Integer Numbers}
+The integers from the Z toolkit provide the representation for the theory of Integers.
+=SML
+open_theory "ZS_Ints";
+¹Z
+Ü ÛIntÝ == ú 
+°
+
+Note that (unlike Lisp) addition and multiplication are binary operators not operators on lists.
+Division and modulus are defined the same way in the {\Product} Z toolkit as
+they are in SMT-LIB, but Standard Z offers a different definition
+
+¹ZAX
+Ü ÛINegÝ, ÛIAbsÝ : Int ­ Int;
+Ü ÛISubÝ, ÛIAddÝ, ÛIMulÝ, ÛIDivÝ, ÛIModÝ : Int ­ Int ­ Int
+÷üüüüüü
+Ü µx : Int· INeg x = ~x;
+Ü µx : Int· IAbs x = abs x;
+Ü µx, y : Int· ISub x y = x - y;
+Ü µx, y : Int· IAdd x y = x + y;
+Ü µx, y : Int· IMul x y = x * y;
+Ü µx, y : Int | ³ y = 0· 0 ¼ IMod x y < abs y;
+Ü µx, y : Int | ³ y = 0· x = (IDiv x y) * y + IMod x y
+°
+
+¹ZAX
+Ü ÛILEÝ, ÛILTÝ, ÛIGEÝ, ÛIGTÝ : seq Int ­ Bool
+÷üüüüüü
+Ü µs : seq Int· ILE s = [| µi, j : dom s· i < j ´ s i ¼ s j];
+Ü µs : seq Int· ILT s = [| µi, j : dom s· i < j ´ s i < s j];
+Ü µs : seq Int· IGE s = [| µi, j : dom s· i < j ´ s i ¾ s j];
+Ü µs : seq Int· IGT s = [| µi, j : dom s· i < j ´ s i > s j]
+°
+
+¹ZAX
+Ü ÛDivisibleÝ : î‰1 ­ Int ­ Bool
+÷üüüüüü
+Ü µn, i : Int· Divisible n i = [| ¶q:Int· i = q*n ]
+°
+
+\subsection{Reals}
+The {\ProductZ} library defines the real numbers as a separate type
+with the operators distinguished from those for the integers by a subscript.
+=SML
+open_theory "ZS_Reals";
+¹Z
+Ü ÛRealÝ == ¯
+°
+¹ZAX
+Ü ÛRNegÝ : Real ­ Real;
+Ü ÛRSubÝ, ÛRAddÝ, ÛRMulÝ, ÛRDivÝ : Real ­ Real ­ Real
+÷üüüüüü
+Ü µx : Real· RNeg x = ~‰R x;
+Ü µx, y : Real· RSub x y = x -‰R y;
+Ü µx, y : Real· RAdd x y = x +‰R y;
+Ü µx, y : Real· RMul x y = x *‰R y;
+Ü µx, y : Real· RDiv x y = x /‰R y
+°
+
+
+¹ZAX
+Ü ÛRLEÝ, ÛRLTÝ, ÛRGEÝ, ÛRGTÝ : seq Real ­ Bool
+÷üüüüüü
+Ü µs : seq Real· RLE s = [| µi, j : dom s· i < j ´ s i ¼‰R s j];
+Ü µs : seq Real· RLT s = [| µi, j : dom s· i < j ´ s i <‰R s j];
+Ü µs : seq Real· RGE s = [| µi, j : dom s· i < j ´ s i ¾‰R s j];
+Ü µs : seq Real· RGT s = [| µi, j : dom s· i < j ´ s i >‰R s j]
+°
+
+
+\subsection{Reals\_Ints}
+=SML
+open_theory"ZS_Reals_Ints";
+¹ZAX
+Ü ÛToRealÝ : Int ­ Real
+÷üüüüüü
+Ü ToReal = real
+°
+
+¹ZAX
+Ü ÛToIntÝ : Real ­ Int
+÷üüüüüü
+Ü µ x : Real· let i == real (ToInt x)· i ¼‰R x <‰R i +‰R 1.0
+°
+
+¹ZAX
+Ü ÛIsIntÝ : Real ­ Bool
+÷üüüüüü
+Ü µ x : Real· IsInt x = [| x  ran ToReal ]
+°
+
+
+\subsection{ArraysEx}
+=SML
+open_theory "ZS_ArraysEx";
+=TEX
+¹Z
+Ü Array[X, Y] == X ­ Y
+°
+[X, Y]œœœœœœœœœœœ
+Ü ÛSelectÝ : Array[X, Y] ­ X ­ Y;
+Ü ÛStoreÝ :  Array[X, Y] ­ X ­ Y ­ Array[X, Y]
+÷üüüüüü
+Ü µa : Array[X, Y]; x : X· Select a x = a x;
+Ü µa : Array[X, Y]; x : X; y : Y· Store a x y = a « {x í y}
+ˆüüüüüüüüüüüüüü
+
+\subsection{FixedSizeBitVectors}
+=SML
+open_theory "ZS_FixedSizeBitVectors";
+=TEX
+We represent SMTLIB bit vectors as (non-empty) sequences of bits:
+¹Z
+Ü Bit == {0, 1}
+°
+The bit vectors of lengths $1, 2, \ldots$ partition the set
+of all non-empty bit strings:
+¹Z
+Ü BitString == seq‰1 Bit
+°
+¹ZAX
+Ü ÛBitVecÝ : î‰1 ­ ð BitString
+÷üüüüüü
+Ü µm : î‰1· BitVec m = {b : BitString | #b = m}
+°
+Note that in SMTLIB, the length of a bit vector is always a statically known.
+So SMTLIB can and does impose static restrictions that we will have to
+model in Z by treating
+=INLINEFT
+BitVec
+=TEX
+\ like a dependent subtype constructor.
+
+
+We need some auxiliary functions to assist in defining the
+sequence operations. We need the function that converts a bit string into the natural
+number it represents (in binary, most-significant bit at the left):
+¹ZAX
+Ü ÛBV2NatÝ : BitString ­ î
+÷üüüüüü
+Ü µx : Bit· BV2Nat §x¢ = x;
+Ü µx : Bit; b : BitString· BV2Nat (b ë §x¢) = 2*BV2Nat b + x
+°
+To define the conversion from natural numbers to bit vectors,
+we need natural number powers of integers.
+This may be defined already in later versions of {\Product}.
+The following ML defends against that:
+=SML
+val _ = ñ(_^_)® handle Fail _ => (
+diag_line "Please ignore the above error message.";
+¹Z
+Ü fun 80 rightassoc _ ^ _
+°
+¹ZAX
+Ü Û_ ^ _Ý : ú ¸ î ­ ú
+÷üüüüüü
+Ü µi: ú· i ^ 0 = 1;
+Ü µi: ú; j : î· i ^ (j + 1) = i * i ^ j
+°
+=SML
+mk_t (* conclude val ... handle Fail _ => ( ... *));
+=TEX
+Now we can define the conversion from natural numbers to bit vectors
+of a given length. Note that the restriction
+=INLINEFT
+BitVec m ò BV2Nat
+=TEX
+\ is a bijection between
+=INLINEFT
+BitVec m
+=TEX
+\ and
+=INLINEFT
+0 .. 2^m - 1
+=TEX
+\ for any $m$.
+¹ZAX
+Ü ÛNat2BVÝ : î‰1 ­ î ­ BitString
+÷üüüüüü
+Ü µm : î‰1; n : î· Nat2BV m n = ((BitVec m ò BV2Nat)ç~ê) (n mod 2^m)
+°
+We need the logical operations on bits:
+¹ZAX
+Ü ÛBitNotÝ : Bit ­ Bit;
+Ü ÛBitAndÝ, ÛBitOrÝ : Bit ­ Bit ­ Bit
+÷üüüüüü
+Ü µx : Bit· BitNot x = 1 - x;
+Ü µx, y : Bit· BitAnd x y =  x * y;
+Ü µx, y : Bit· BitOr x y = x + y - x*y
+°
+
+¹ZAX
+Ü ÛConcatÝ : BitString ­ BitString ­ BitString
+÷üüüüüü
+Ü µb1, b2: BitString· Concat b1 b2 = b1 ë b2
+°
+SMTLIB indexes bit vectors from right-to-left starting at $0$.
+Z sequences are indexed left to right starting at $1$. Hence in a bit vector of length $n$,
+SMTLIB index $i$ corresponds to Z index $n-i$.
+¹ZAX
+Ü ÛExtractÝ : î ­ î ­ BitString ß BitString
+÷üüüüüü
+Ü µi, j : î·
+Ü	dom (Extract i j) = {b : BitString | #b > i ¾ j};
+Ü µi, j : î· µb : dom (Extract i j)·
+Ü	Extract i j b = ((#b - i) .. (#b - j)) ì b
+°
+For completeness, we define the binary bitwise logical operations on operands
+of mixed length to give a result that has the same length as the shorter operand.
+Mixed length operands are statically disallowed allowed in SMTLIB.
+¹ZAX
+Ü ÛBVNotÝ : BitString ­ BitString;
+Ü ÛBVAndÝ, ÛBVOrÝ : BitString ­ BitString ­ BitString
+÷üüüüüü
+Ü µs : BitString·
+Ü	dom(BVNot s) = dom s
+Ü ±	(µi : dom s· BVNot s i = BitNot(s i));
+Ü µs, t : BitString·
+Ü	dom(BVAnd s t) = dom s ¡ dom t
+Ü ±	(µi : dom s ¡ dom t· BVAnd s t i = BitAnd (s i) (t i));
+Ü µs, t : BitString·
+Ü	dom(BVOr s t) = dom s ¡ dom t
+Ü ±	(µi : dom s ¡ dom t· BVOr s t i = BitOr (s i) (t i))
+°
+For the binary arithmetic operations on operands of mixed length we take the
+result to have the same length as the longer operand. Again, SMTLIB disallows
+mixed length operands statically. The treatment of zero divisors is just inhereited
+from the Z toolkit.
+¹ZAX
+Ü ÛBVNegÝ : BitString ­ BitString;
+Ü ÛBVAddÝ, ÛBVMulÝ, ÛBVUdivÝ, ÛBVUremÝ : BitString ­ BitString ­ BitString
+÷üüüüüü
+Ü µs : BitString· let m == #s·
+Ü	BVNeg s = Nat2BV m (2^m - BV2Nat s);
+Ü µs, t : BitString· let m == max{#s, #t}·
+Ü	BVAdd s t = Nat2BV m (BV2Nat s + BV2Nat t);
+Ü µs, t : BitString· let m == max{#s, #t}·
+Ü	BVMul s t = Nat2BV m (BV2Nat s * BV2Nat t);
+Ü µs, t : BitString· let m == max{#s, #t}·
+Ü	BVUdiv s t = Nat2BV m (BV2Nat s div BV2Nat t);
+Ü µs, t : BitString· let m == max{#s, #t}·
+Ü	BVUrem s t = Nat2BV m (BV2Nat s mod BV2Nat t)
+°
+For the shift operations on operands of mixed length we take the
+result to have the same length as the first operand. Again, SMTLIB disallows
+mixed length operands statically.
+¹ZAX
+Ü ÛBVShlÝ, ÛBVLshrÝ : BitString ­ BitString ­ BitString
+÷üüüüüü
+Ü µs, t : BitString· let m == #s·
+Ü	BVShl s t = Nat2BV m (BV2Nat s * 2^BV2Nat t);
+Ü µs, t : BitString· let m == #s·
+Ü	BVLshr s t = Nat2BV m (BV2Nat s div 2^BV2Nat t)
+°
+Finally we have the arithmetic comparison operator:
+¹ZAX
+Ü ÛBVULTÝ : BitString ­ BitString ­ Bool
+÷üüüüüü
+Ü µs, t : BitString· BVULT s t = [| BV2Nat s < BV2Nat t]
+°
+\section{THE SMT-LIB LOGICS}
+In this section, we give Z models that support the restrictions and extensions to
+the various theories that are defined tn the SMT-LIB logics.
+
+The ML commands to set up the theories for the logics are given in the following table.
+
+\begin{center}
+\vertbarfalse
+\makeatletter
+\def\prelim@label#1{\relax}
+\makeatother
+\def\Row#1#2{#1 &
+\small
+\parbox{0.35\hsize}{#2}\\} %\Row
+\begin{tabular}{l|l}
+\Row{Theory}{ML set-up commands}\hline
+\Row{Bit Vector Logics}{
+=SML
+open_theory "ZS_FixedSizeBitVectors";
+new_theory "ZS_BV_Extensions";
+=TEX
+}
+\end{tabular}
+\end{center} % also ends \vertbarfalse etc.
+
+\subsection{Bit Vector Extensions}
+=SML
+open_theory "ZS_BV_Extensions";
+=TEX
+
+Note that the family of new constans \verb|(_ bvX n)| for numerals \verb|X| and \verb|n|
+introduced in the BV logic is implemented by the constant {\it Nat2BV} that is
+already defined in our model of the fixed length bit vector  theory.
+
+The four additional bitwise logical operations are defined in terms of basic ones
+just as in the SMT-LIB definition.
+¹ZAX
+Ü ÛBVNandÝ, ÛBVNorÝ, ÛBVXorÝ, ÛBVXnorÝ : BitString ­ BitString ­ BitString
+÷üüüüüü
+Ü µs, t : BitString· BVNand s t = BVNot (BVAnd s t);
+Ü µs, t : BitString· BVNor s t = BVNot (BVOr s t);
+Ü µs, t : BitString· BVXor s t = BVOr (BVAnd s (BVNot t)) (BVAnd (BVNot s) t);
+Ü µs, t : BitString· BVXnor s t = BVOr (BVAnd s t) (BVAnd (BVNot s) (BVNot t))
+°
+We define the comparison operator in terms of equality rather than recursively.
+This extends the operation to operands of non-equal length so as to return \verb|#b0|.
+¹ZAX
+Ü ÛBVCompÝ : BitString ­ BitString ­ BitVec 1
+÷üüüüüü
+Ü µs, t : BitString· BVComp s t = if s = t then §1¢ else §0¢
+°
+Subtraction is defined in terms of addition and 2s complement negation just as in the SMT-LIB definition.
+¹ZAX
+Ü ÛBVSubÝ : BitString ­ BitString ­ BitString
+÷üüüüüü
+Ü µs, t : BitString· BVSub s t = BVAdd s (BVNeg t)
+°
+
+The definitions of the other signed arithmetic operators are a little clearer in Z if
+we extract the sign bit using sequence indexing rather than {\it Extract} and if
+we use Z if-then-else rather than {\it ITE}.
+
+The SMT-LIB $\Sdiv$ operator is 2s-complement signed division truncating towards 0.
+It is defined by cases on the signs of the operands using negation
+and unsigned division. The definition is equivalent to the following:
+$$
+s \Sdiv t = \Sgn(s) \cdot \Sgn(t) \cdot (\Abs(s) \Udiv \Abs(t)).
+$$
+In $m$-bit 2s-complement arithmetic, $s \Sdiv t$ gives the correct signed
+result except {\em(i)} when $t = 0$, in which case the result is unspecified, and {\em(ii)}
+when $s = -2^{m-1}$ and $t = -1$, in which case the result is $-2^{m-1}$ (i.e., the absolute value is  correct, but the sign is wrong).
+
+
+¹ZAX
+Ü ÛBVSdivÝ : BitString ­ BitString ­ BitString
+÷üüüüüü
+Ü µs, t : BitString· BVSdiv s t = 
+Ü	(let msb_s == s 1; msb_t == t 1 ·
+Ü		if	msb_s = 0 ± msb_t = 0
+Ü		then	BVUdiv s t
+Ü		else if	msb_s = 1 ± msb_t = 0
+Ü		then	BVNeg (BVUdiv (BVNeg s) t)
+Ü		else if	msb_s = 0 ± msb_t = 1
+Ü		then	BVNeg (BVUdiv s (BVNeg t))
+Ü		else	BVUdiv (BVNeg s) (BVNeg t))
+°
+The SMT-LIB $\Srem$ operator is  signed remainder with sign following the dividend.
+The definition is equivalent to the following:
+
+$$
+s \Srem t = \Sgn(s) \cdot (\Abs(s) \Urem \Abs(t)).
+$$
+If $T = 0$ this is undefined, otherwise
+when $t$ is an $m$-bit 2s-complement number,
+ $0 \le \Abs(s) \Urem \Abs(t) < \Abs(t) \le 2^{m-1}$,
+hence the multiplication by $\Sgn(s)$ will not overflow in $m$-bit arithmetic.
+
+The operators $\Sdiv$ and $\Srem$ satisfy the following identities:
+\begin{align*}
+\Abs(s \Srem t) \le \Abs(t) &\quad\quad\mbox{provided $t \neq 0$}\\
+s = (s \Sdiv t) * t + s \Srem t &\quad\quad\mbox{provided $t \neq 0$ and $(s, t) \neq (-2^{m-1}, -1)$.}
+\end{align*}
+
+¹ZAX
+Ü ÛBVSremÝ : BitString ­ BitString ­ BitString
+÷üüüüüü
+Ü µs, t : BitString· BVSrem s t = 
+Ü	(let	msb_s == s 1; msb_t == t 1 ·
+Ü		if	msb_s = 0 ± msb_t = 0
+Ü		then	BVUrem s t
+Ü		else if	msb_s = 1 ± msb_t = 0
+Ü		then	BVNeg (BVUrem (BVNeg s) t)
+Ü		else if	msb_s = 0 ± msb_t = 1
+Ü		then	BVUrem s (BVNeg t)
+Ü		else	BVNeg(BVUrem (BVNeg s) (BVNeg t)))
+°
+
+The SMT-LIB $\Smod$ operator is signed remainder with sign following the divisor.
+The definition is equivalent to the following:
+$$
+s \Smod t = s - \Floor{s/t} \cdot t.
+$$
+This is defined by cases in such a way as to give the correct result in 2s-complement arithmetic except when $t = 0$, in which case the result is undefined.
+¹ZAX
+Ü ÛBVSmodÝ : BitString ­ BitString ­ BitString
+÷üüüüüü
+Ü µs, t : BitString· BVSmod s t = 
+Ü	(let	msb_s == s 1; msb_t == t 1 ·
+Ü	 let	abs_s == if msb_s = 0 then s else BVNeg s;
+Ü		abs_t == if msb_t = 0 then t else BVNeg t ·
+Ü	 let	u == BVUrem abs_s abs_t ·
+Ü		if	u = Nat2BV (#s) 0
+Ü		then	u
+Ü		else if	msb_s = 0 ± msb_t = 0
+Ü		then	u
+Ü		else if	msb_s = 1 ± msb_t = 0
+Ü		then	BVAdd (BVNeg u) t
+Ü		else if	msb_s = 0 ± msb_t = 1
+Ü		then	BVAdd u t
+Ü		else	BVNeg u)
+°
+
+¹ZAX
+Ü ÛBVULEÝ, ÛBVUGTÝ, ÛBVUGEÝ : BitString ­ BitString ­ Bool
+÷üüüüüü
+Ü µs, t : BitString· BVULE s t = [| BV2Nat s ¼ BV2Nat t];
+Ü µs, t : BitString· BVULE s t = [| BV2Nat s > BV2Nat t];
+Ü µs, t : BitString· BVULE s t = [| BV2Nat s ¾ BV2Nat t]
+°
+
+¹ZAX
+Ü ÛBVSLTÝ : BitString ­ BitString ­ Bool
+÷üüüüüü
+Ü µs, t : BitString· BVSLT s t = [|
+Ü		s 1 = 1 ± t 1 = 0
+Ü	²	s 1 = t 1 ±  BV2Nat s < BV2Nat t
+Ü	]
+°
+
+
+¹ZAX
+Ü ÛBVSLEÝ : BitString ­ BitString ­ Bool
+÷üüüüüü
+Ü µs, t : BitString· BVSLT s t = [|
+Ü		s 1 = 1 ± t 1 = 0
+Ü	²	s 1 = t 1 ±  BV2Nat s ¼ BV2Nat t
+Ü	]
+°
+
+
+¹ZAX
+Ü ÛBVSGTÝ, ÛBVSGEÝ: BitString ­ BitString ­ Bool
+÷üüüüüü
+Ü µs, t : BitString· BVSGT s t = BVSLT t s;
+Ü µs, t : BitString· BVSGE s t = BVSLE t s
+°
+
+
+¹ZAX
+Ü ÛBVAshrÝ : BitString ­ BitString ­ BitString
+÷üüüüüü
+Ü µs, t : BitString· BVAshr s t = 
+Ü	if s 1 = 0 then BVLshr s t else BVNot (BVLshr (BVNot s) t)
+°
+
+¹ZAX
+Ü ÛBVRepeatÝ : î ­ BitString ­ BitString
+÷üüüüüü
+Ü µj : î; t : BitString· 
+Ü	#(BVRepeat j t) = j * #t
+Ü ±	(µi  : 1 .. j * #t· BVRepeat j t i = t ((i - 1) mod j) + 1)
+°
+
+¹ZAX
+Ü ÛBVZeroExtendÝ : î ­ BitString ­ BitString
+÷üüüüüü
+Ü µi : î; t : BitString· BVZeroExtend i t = ((1 .. i) ¸ {0}) ë t
+°
+
+
+¹ZAX
+Ü ÛBVRotateLeftÝ : î ­ BitString ­ BitString
+÷üüüüüü
+Ü µi : î; t : BitString· BVRotateLeft i t = (((i + 1) .. #t) ì t) ë ((1 .. i) ì t)
+°
+
+¹ZAX
+Ü ÛBVRotateRightÝ : î ­ BitString ­ BitString
+÷üüüüüü
+Ü µi : î; t : BitString· BVRotateRight i t = (((#t - i + 1) .. #t) ì t) ë ((1 .. (#t - i)) ì t)
+°
+
+=TEX
+\twocolumn[\section{INDEX}]
+\small
+\printindex
+%\end{document}   % If this line is commented out, the typeset document includes the proofs
+\onecolumn
+\appendix
+\section{SOME PROOFS}
+=SML
+val _ = open_theory "ZS_Core";
+val _ = set_pc "z_language_ext";
+val Ûzs_bool_defÝ : THM = z_get_specñBool®;
+val Ûzs_true_defÝ : THM = z_get_specñTrue®;
+val Ûzs_false_defÝ : THM = z_get_specñFalse®;
+
+val Ûzs_bool_u_thmÝ = save_thm("zs_bool_u_thm", (
+set_goal([], ñBool = ƒ®);
+a(rewrite_tac[zs_bool_def]);
+pop_thm()
+));
+
+val Ûzs_bool_true_false_thmÝ = save_thm("zs_u_true_false_thm", (
+set_goal([], ñƒ = {true, false}®);
+a(rewrite_tac[zs_true_def, zs_false_def] THEN REPEAT strip_tac THEN taut_tac);
+pop_thm()
+));
+
+val Ûzs_true_neq_false_thmÝ = save_thm("zs_true_neq_false_thm", (
+set_goal([], ñ³true = false®);
+a(rewrite_tac[zs_true_def, zs_false_def]);
+pop_thm()
+));
+
+val _ = open_theory "ZS_Ints";
+val _ = set_pc "z_library";
+val Ûzs_int_defÝ = z_get_spec ñInt®;
+val Ûzs_i_ops_defÝ = z_get_spec ñINeg®;
+
+
+local
+	val thms = (strip_±_rule o rewrite_rule [zs_int_def, z_get_specñú®]) zs_i_ops_def;
+in
+	val Ûzs_mod_thmÝ = (hd o tl o rev) thms;
+	val Ûzs_div_mod_thmÝ = (hd o rev) thms;
+end;
+
+val Ûzs_div_mod_thmÝ = save_thm("zs_div_mod_thm", (
+set_goal([], ñµx, y : ú | ³y = 0 · IDiv x y = x div y ± IMod x y = x mod y®);
+a(REPEAT_UNTIL is_± strip_tac);
+a(ante_tac (z_µ_elimñ(i ¦ x, j ¦ y, d ¦ IDiv x y, r ¦ IMod x y)® z_div_mod_unique_thm));
+a(asm_rewrite_tac[]);
+a(´_T (rewrite_thm_tac o eq_sym_rule));
+a(ALL_FC_T (conv_tac o LEFT_C o LEFT_C o once_rewrite_conv)[zs_div_mod_thm]);
+a(rewrite_tac[]);
+a(PC_T1 "z_predicates" (ALL_FC_T rewrite_tac) [zs_mod_thm]);
+pop_thm()
+));
+
+=TEX
+\end{document}
+=IGN
+
+fun Ûdest_z_bin_opÝ (area : string) (msg : int)
+	(n : string) : TERM -> TERM * TERM = (fn tm =>
+	let	val (f, args) = (dest_z_app tm);
+		val (cn, _) = dest_const f;
+		val ops = dest_z_tuple args;
+	in	if n = cn
+		then (hd ops, hd(tl ops))
+		else term_fail area msg [tm]
+	end	handle Fail _ => term_fail area msg [tm]
+);
+
+val Ûdest_z_ú_î_expÝ = dest_z_bin_op "dest_z_ú_î" 86109 (fst(dest_constñ(_ ^ _)®));
+
+val Ûz_ú_î_exp_defÝ = z_get_specñ(_ ^ _)®;
+
+val Ûbase_thmÝ = (
+set_goal([], ¬µi· ñi ^ 0 = 1®®);
+a(rewrite_tac[rewrite_rule[z_get_specñú®]z_ú_î_exp_def]);
+pop_thm()
+);
+val Ûstep_thmÝ = (
+set_goal([], ¬µi j· ñj  î ´ i ^ (j + 1) = i * i ^ j®®);
+a(REPEAT strip_tac THEN ALL_FC_T rewrite_tac[rewrite_rule[z_get_specñú®]z_ú_î_exp_def]);
+pop_thm()
+);
+
+val z_one = ñ1®;
+val z_î = ñî®;
+
+val rec Ûz_ú_î_exp_convÝ : CONV = (fn tm => 
+	let	val (itm, etm) = dest_z_ú_î_exp tm;
+		val (_, e) = (dest_z_signed_int itm, dest_z_signed_int etm);
+	in	if	e @< zero
+		then	term_fail"z_ú_î_exp_conv" 99999 [tm]
+		else if	e = zero
+		then	simple_eq_match_conv base_thm tm
+		else	let	val j = e @- one;
+				val jtm = mk_z_signed_int j;
+				val etm' = mk_z_plus(mk_z_signed_int j, z_one);
+				val hyp = mk_z_(jtm, z_î);
+				val thm1 = (eq_sym_rule o z_plus_conv) etm';
+				val thm2 = (Z_RIGHT_C o simple_eq_match_conv) thm1 tm;
+				val thm3 = (¤_t_elim o (z__î_conv THEN_C z_¼_conv)) hyp;
+				val thm4 = simple_µ_elim itm step_thm;
+				val thm5 = simple_´_match_mp_rule thm4 thm3;
+				val thm6 = eq_trans_rule thm2 thm5;
+				val thm7 =  conv_rule
+					((RIGHT_C o Z_RIGHT_C) z_ú_î_exp_conv
+						THEN_C RIGHT_C z_times_conv) thm6;
+			in	thm7
+			end
+	end	handle Fail _ => term_fail"z_ú_î_exp_conv" 99999 [tm]
+);
+
+
+z_ú_î_exp_convñ4 ^ 0®;
+z_ú_î_exp_convñ4 ^ 1®;
+
+dest_z_bin_op;
+
+
+map z_div_conv [ ñ17 div 5®, ñ17 div ~5®, ñ~17 div 5®, ñ~17 div ~5® ];
+map z_mod_conv [ ñ17 mod 5®, ñ17 mod ~5®, ñ~17 mod 5®, ñ~17 mod ~5® ];
+
+map ú_div_conv [ ¬(îú 17) Div (îú 5)®, ¬(îú 17) Div ~(îú 5)®, ¬~(îú 17) Div (îú 5)®, ¬~(îú 17) Div ~(îú 5)® ];
+
+

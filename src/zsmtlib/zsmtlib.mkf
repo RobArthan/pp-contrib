@@ -1,0 +1,260 @@
+######################################################################
+# zsmtlib.mkf
+######################################################################
+
+# suffixes:
+.SUFFIXES: .doc .dvi .ldd .log .lot .sh .doc .tex .tch .pdf
+# default target:
+default: help
+
+######################################################################
+#
+#	Makefile Definitions
+#
+######################################################################
+
+PRODNAME=PPZSmtLib
+PRODDESC=a Z Model of the SMT-LIB theories and logics
+SHORTNAME=zsmtlib
+PPPARENT=zed
+
+VER=$(shell echo $${PPEGSVER:-`cat version 2>/dev/null || date +%y%m%d`})
+PRODUCT=$(PRODNAME)-$(VER)
+CWD=$(shell pwd)
+YEAR=$(shell date +%Y)
+
+USERDB=$(shell echo $$PPDB)
+DBNAME=$(shell echo $${PPDB:-$(SHORTNAME)})
+
+DBCREATED=$(SHORTNAME)_db.ldd
+
+RELDIR=release
+SRCDIR=$(RELDIR)/$(PRODNAME)-$(VER)
+
+# The documents
+SMLDOCS=
+SMLDOCS+=	zsmtlib.doc
+
+# Variations on the documents
+SMLFILES=	$(SMLDOCS:.doc=.sml)
+LDDFILES=	$(SMLDOCS:.doc=.ldd)
+DVIFILES=	$(SMLDOCS:.doc=.dvi)
+PDFFILES=	$(SMLDOCS:.doc=.pdf)
+
+TMPFILES=	$(SMLDOCS:.doc=.aux)
+TMPFILES+=	$(SMLDOCS:.doc=.bbl)
+TMPFILES+=	$(SMLDOCS:.doc=.blg)
+TMPFILES+=	$(SMLDOCS:.doc=.idx)
+TMPFILES+=	$(SMLDOCS:.doc=.log)
+TMPFILES+=	$(SMLDOCS:.doc=.lot)
+TMPFILES+=	$(SMLDOCS:.doc=.sid)
+TMPFILES+=	$(SMLDOCS:.doc=.tex)
+TMPFILES+=	$(SMLDOCS:.doc=.toc)
+TMPFILES+=	$(SMLDOCS:.doc=.th.doc)
+TMPFILES+=	$(SMLDOCS:.doc=.th.tex)
+TMPFILES+=	$(SMLDOCS:.doc=.th.aux)
+
+# packing list for a source release (target src)
+PACKINGLIST=
+PACKINGLIST+= zsmtlib.doc
+PACKINGLIST+= $(SHORTNAME).mkf
+
+DISTPACKINGLIST=$(PACKINGLIST) README.txt
+
+# useful target to print out the names of all the files in the source $(RELDIR)
+packinglist:
+	@echo $(PACKINGLIST)
+
+######################################################################
+#
+#	Display help text
+#
+######################################################################
+
+help:
+	@echo '**** $(PRODNAME): $(PRODDESC) ****'
+	@echo ''
+	@echo 'The following commands load the specification and proof scripts into a'
+	@echo 'new database called $(SHORTNAME) amd then typeset the documents in DVI or'
+	@echo 'PDF format respectively.'
+	@echo ''
+	@echo '    make -f $(SHORTNAME).mkf dvi'
+	@echo '    make -f $(SHORTNAME).mkf pdf'
+	@echo ''
+	@echo 'The following command loads the specification and proof scripts into an'
+	@echo 'existing database $$HOME/wrk/mydb.'
+	@echo ''
+	@echo '    PPDB=$$HOME/wrk/mydb make -f $(SHORTNAME).mkf load'
+	@echo ''
+	@echo 'The following command removes all the files made by this makefile.'
+	@echo 'Do this between runs of the other commands.'
+	@echo ''
+	@echo '    make -f $(SHORTNAME).mkf clean'
+	@echo ''
+	@echo 'The following command is for developers. It builds the distribution'
+	@echo 'tarball from the source repository.'
+	@echo ''
+	@echo '    make -f $(SHORTNAME).mkf dist'
+
+######################################################################
+#
+# Dependencies - determining the order of compilation
+#
+######################################################################
+
+zsmtlib.ldd:$(DBCREATED)
+
+######################################################################
+#
+#	Building the database
+#
+######################################################################
+
+load: bld
+
+bld: zsmtlib.ldd
+
+$(DBCREATED):
+ifeq ($(USERDB),)
+	pp_make_database -f -p $(PPPARENT) $(DBNAME)
+endif
+	touch $(DBCREATED)
+
+######################################################################
+#
+#	Building the documents
+#
+######################################################################
+
+dvi: $(DVIFILES)
+
+pdf: $(PDFFILES)
+
+######################################################################
+#
+#	Constructing source release directories
+#
+######################################################################
+
+reldir:
+	if [ "$${PPTARGETDIR:-}" = "" ]; \
+	then \
+		rm -rf $(RELDIR); \
+	fi
+	[ -d   $(RELDIR) ] || mkdir $(RELDIR)
+	
+
+srcdir:	reldir
+	[ -d   $(SRCDIR) ] || mkdir $(SRCDIR)
+
+rcsrel:	srcdir
+	[ -d   $(SRCDIR)/RCS ] || mkdir $(SRCDIR)/RCS
+	@for f in $(PACKINGLIST); \
+	do \
+		cp RCS/$$f,v $(SRCDIR)/RCS/$$f,v; \
+	done
+	chmod -R a-w $(RELDIR)
+	chmod -R g-w $(RELDIR)
+	chmod -R u+w $(RELDIR)
+
+rcs:	rcsrel
+	cd $(RELDIR) && tar cvf $(CWD)/$(PRODUCT).rcs.tar ./*
+	cd $(CWD) && gzip $(PRODUCT).rcs.tar && \
+	mv $(PRODUCT).rcs.tar.gz $(PRODUCT).rcs.tgz
+
+srcrel: srcdir $(DISTPACKINGLIST)
+	@for f in $(DISTPACKINGLIST); \
+	do \
+		cp $$f $(SRCDIR)/$$f; \
+	done
+	chmod -R a-w $(RELDIR)
+	chmod -R g-w $(RELDIR)
+	chmod -R u+w $(RELDIR)
+
+src:	srcrel
+	cd $(RELDIR) && tar cvf $(CWD)/$(PRODUCT).tar ./*
+	cd $(CWD) && gzip $(PRODUCT).tar && \
+	mv $(PRODUCT).tar.gz $(PRODUCT).tgz
+
+dist:	src
+
+######################################################################
+#
+#	Building the README file.
+#
+######################################################################
+
+README.txt:
+	for line in \
+	'################################################################################' \
+	'#' \
+	'# $(PRODNAME): $(PRODDESC)' \
+	'#' \
+	'# Use the make file $(SHORTNAME).mkf  to process the scripts.' \
+	'# For instructions on how to do this type:' \
+	'#' \
+	'#     make -f $(SHORTNAME).mkf' \
+	'#' \
+	'# and you will be given some help on using the make file.' \
+	'#' \
+	'# Copyright (c) 2005-$(YEAR) Lemma 1 Ltd.' \
+	'#' \
+	'# This file is supplied under the GNU General Public Licence (GPL) version 2.' \
+	'#' \
+	'# See the file LICENSE supplied with the ProofPower source for the terms' \
+	'# of the GPL or visit the OpenSource web site at http://www.opensource.org/' \
+	'#' \
+	'# Contact: Rob Arthan < rda@lemma-one.com >' \
+	'#' \
+	'################################################################################' ;\
+	do echo $$line ; done >README.txt
+
+######################################################################
+#
+#	Specials
+#
+######################################################################
+
+zsmtlib.dvi: zsmtlib.tex
+	docdvi $*; pptexenv bibtex $*; texdvi $*; texdvi $*
+
+######################################################################
+#
+#	Generic Rules
+#
+######################################################################
+
+%.ldd: %.sml
+	@rm -f $@ $*.err 2>/dev/null
+	@echo "Compiling (code)" $<
+	@pp -d $(DBNAME) -f $< >$*.err
+	@mv $*.err $@
+
+
+%.sml: %.doc
+	docsml $*
+
+%.tex: %.doc %.ldd
+	if [ "$**.th.doc" != '$**.th.doc' ]; \
+	then doctex $* $**.th.doc; \
+	else doctex $*; \
+	fi
+
+%.dvi: %.tex
+	docdvi $*
+
+%.pdf: %.dvi
+	pptexenv dvipdf -sPAPERSIZE=a4 $*
+
+######################################################################
+#
+#	Tidying Up
+#
+######################################################################
+
+clean:
+	rcsclean || true
+	rm -f $(DBCREATED) $(SHORTNAME).polydb README.txt
+	rm -f $(PRODUCT).tgz $(PRODUCT).rcs.tgz 
+	rm -f $(SMLFILES) $(LDDFILES) $(DVIFILES) $(PDFFILES) $(TMPFILES)
+	rm -rf release
