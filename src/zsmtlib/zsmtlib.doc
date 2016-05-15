@@ -27,6 +27,7 @@ Contact: Rob Arthan < rda@lemma-one.com >
 
 \def\Func#1{\mbox{\textsf{#1}}}
 \def\Abs{\Func{abs}}
+\def\Ashr{\Func{ashr}}
 \def\Floor#1{\lfloor{#1}\rfloor}
 \def\Mod{\mathop{\Func{mod}}}
 \def\Rem{\mathop{\Func{rem}}}
@@ -46,7 +47,7 @@ Contact: Rob Arthan < rda@lemma-one.com >
 {\small This document specifies models of the theories of SMT-LIB in the Z notation.}
 \end{center}}
 
-\def\Reference{LEMMA1/QCZ/ZSMTLIB/01}
+\def\Reference{LEMMA1/ZSMTLIB/01}
 
 \def\Author{R.D. Arthan}
 
@@ -689,6 +690,8 @@ This is defined by cases in such a way as to give the correct result in 2s-compl
 Ü		else	BVNeg u)
 °
 
+Unsigned less-than is already defined in the fixed size bit vector theory.
+The bit vector extensions add the three unsigned comparison operators.
 ¹ZAX
 Ü ÛBVULEÝ, ÛBVUGTÝ, ÛBVUGEÝ : BitString ­ BitString ­ Bool
 ÷üüüüüü
@@ -696,42 +699,31 @@ This is defined by cases in such a way as to give the correct result in 2s-compl
 Ü µs, t : BitString· BVULE s t = [| BV2Nat s > BV2Nat t];
 Ü µs, t : BitString· BVULE s t = [| BV2Nat s ¾ BV2Nat t]
 °
-
+The BV logic extensions give the four signed comparison operators.
 ¹ZAX
-Ü ÛBVSLTÝ : BitString ­ BitString ­ Bool
+Ü ÛBVSLTÝ, ÛBVSLEÝ, ÛBVSGTÝ, ÛBVSGEÝ: BitString ­ BitString ­ Bool
 ÷üüüüüü
 Ü µs, t : BitString· BVSLT s t = [|
 Ü		s 1 = 1 ± t 1 = 0
-Ü	²	s 1 = t 1 ±  BV2Nat s < BV2Nat t
-Ü	]
-°
-
-
-¹ZAX
-Ü ÛBVSLEÝ : BitString ­ BitString ­ Bool
-÷üüüüüü
+Ü	²	s 1 = t 1 ±  BV2Nat s < BV2Nat t];
 Ü µs, t : BitString· BVSLT s t = [|
 Ü		s 1 = 1 ± t 1 = 0
-Ü	²	s 1 = t 1 ±  BV2Nat s ¼ BV2Nat t
-Ü	]
-°
-
-
-¹ZAX
-Ü ÛBVSGTÝ, ÛBVSGEÝ: BitString ­ BitString ­ Bool
-÷üüüüüü
+Ü	²	s 1 = t 1 ±  BV2Nat s ¼ BV2Nat t];
 Ü µs, t : BitString· BVSGT s t = BVSLT t s;
 Ü µs, t : BitString· BVSGE s t = BVSLE t s
 °
 
-
+The SMT-LIB operator $\Ashr$ is an arithmetic right shift, i.e., it shifts in copies of
+the sign-bit from the left.
+(Note that left shifts are the same for signed and unsigned arithmetic.)
 ¹ZAX
 Ü ÛBVAshrÝ : BitString ­ BitString ­ BitString
 ÷üüüüüü
 Ü µs, t : BitString· BVAshr s t = 
 Ü	if s 1 = 0 then BVLshr s t else BVNot (BVLshr (BVNot s) t)
 °
-
+The repeat operator replicates a bit vector a specified number of times.
+We define this using indexing rather than recursion.
 ¹ZAX
 Ü ÛBVRepeatÝ : î ­ BitString ­ BitString
 ÷üüüüüü
@@ -739,7 +731,7 @@ This is defined by cases in such a way as to give the correct result in 2s-compl
 Ü	#(BVRepeat j t) = j * #t
 Ü ±	(µi  : 1 .. j * #t· BVRepeat j t i = t ((i - 1) mod j) + 1)
 °
-
+The zero extension operator pads a bit vector on the left with a specified number of zeroes.
 ¹ZAX
 Ü ÛBVZeroExtendÝ : î ­ BitString ­ BitString
 ÷üüüüüü
@@ -748,15 +740,12 @@ This is defined by cases in such a way as to give the correct result in 2s-compl
 
 
 ¹ZAX
-Ü ÛBVRotateLeftÝ : î ­ BitString ­ BitString
+Ü ÛBVRotateLeftÝ, ÛBVRotateRightÝ : î ­ BitString ­ BitString
 ÷üüüüüü
-Ü µi : î; t : BitString· BVRotateLeft i t = (((i + 1) .. #t) ì t) ë ((1 .. i) ì t)
-°
-
-¹ZAX
-Ü ÛBVRotateRightÝ : î ­ BitString ­ BitString
-÷üüüüüü
-Ü µi : î; t : BitString· BVRotateRight i t = (((#t - i + 1) .. #t) ì t) ë ((1 .. (#t - i)) ì t)
+Ü µi : î; t : BitString·
+Ü	BVRotateLeft i t = (((i + 1) .. #t) ì t) ë ((1 .. i) ì t);
+Ü µi : î; t : BitString·
+Ü	BVRotateRight i t = (((#t - i + 1) .. #t) ì t) ë ((1 .. (#t - i)) ì t)
 °
 
 =TEX
