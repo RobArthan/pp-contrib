@@ -127,8 +127,8 @@ ProofPower Repo & \url{https://github.com/RobArthan/pp-contrib}
 This document gives a model written in the Z notation  of each of the theories defined
 by the SMT-LIB standard version 2.5 \cite{BarFT-RR-15,smtlib-theories,smtlib-logics}.
 This model was developed by Lemma 1 primarily to assist D-RisQ in reasoning about
-programming language datatypes that are modelled in Z and mapped into SMT-LIB
-to check assertions using and SMT solver.
+programming language datatypes that are modelled in Z and refined into SMT-LIB types
+to check assertions using an SMT solver.
 The model is made freely available to the Formal Methods community and comments are invited.
 
 
@@ -142,7 +142,7 @@ it uses schemas with empty declaration parts to represent booleans as first-orde
 This document has been prepared using the document preparation tools supplied with {\Product}.
 It includes the ML commands required to type-check the Z and load it into a {\Product}
 database. Some small experimental proofs have been carried out and are included in the source
-of this document, but are omitted from the typeset document.
+of this document, but are omitted (by default) from the typeset document.
 
 
 Please note this is work in progress.
@@ -276,8 +276,8 @@ distict predicates:
 [A]œœœœœœœœœœœ
 Ü ÛEqualÝ, ÛDistinctÝ : seq A ­ Bool
 ÷üüüüüü
-Ü µs : seq A· Equal s = [| µi, j: dom s · s i = s j];
-Ü µs : seq A· Distinct s = [| µi, j : dom s · s i = s j ¤ i = j]
+Ü µs : seq A· Equal s = [| µi, j: dom s · s i = s j ];
+Ü µs : seq A· Distinct s = [| µi, j : dom s · s i = s j ¤ i = j ]
 ˆüüüüüüüüüüüüüü
 We define if-then-else by pattern-matching:
 [A]œœœœœœœœœœœ
@@ -297,8 +297,15 @@ open_theory "ZS_Ints";
 °
 
 Note that (unlike Lisp) addition and multiplication are binary operators not operators on lists.
-Division and modulus are defined the same way in the {\Product} Z toolkit as
-they are in SMT-LIB, but Standard Z offers a different definition
+It so happens that the {\Product} Z library and SMT-LIB theory of integers both use
+the Euclidean definition of division and remainder\footnote{
+The present author and Raymond Boute \cite{Boute92},
+whose work is cited in the SMT-LIB theory definition, independently and at roughly the same time
+arrived at the same conclusion about how these operations should be defined.}.
+Standard Z uses a different definition, so we give the characterizing properties of Euclidean
+division and remainder here.
+
+
 
 ¹ZAX
 Ü ÛINegÝ, ÛIAbsÝ : Int ­ Int;
@@ -399,7 +406,7 @@ open_theory "ZS_ArraysEx";
 =SML
 open_theory "ZS_FixedSizeBitVectors";
 =TEX
-We represent SMTLIB bit vectors as (non-empty) sequences of bits:
+We represent SMT-LIB bit vectors as (non-empty) sequences of bits:
 ¹Z
 Ü Bit == {0, 1}
 °
@@ -413,8 +420,8 @@ of all non-empty bit strings:
 ÷üüüüüü
 Ü µm : î‰1· BitVec m = {b : BitString | #b = m}
 °
-Note that in SMTLIB, the length of a bit vector is always statically known.
-So SMTLIB can and does impose static restrictions that we will have to
+In SMT-LIB, the length of a bit vector is always statically known.
+So SMT-LIB can and does impose static restrictions that we will have to
 model in Z by treating
 =INLINEFT
 BitVec
@@ -433,11 +440,17 @@ number it represents (in binary, most-significant bit at the left):
 °
 To define the conversion from natural numbers to bit vectors,
 we need natural number powers of integers.
-This may be defined already in later versions of {\Product}.
+This may be defined already in later versions of {\Product} and the script contains
+some hidden ML to allow for that.
+
+\Hide{
 The following ML defends against that:
 =SML
 val _ = ñ(_^_)® handle Fail _ => (
 diag_line "Please ignore the above error message.";
+=TEX
+} %\Hide
+
 ¹Z
 Ü fun 80 rightassoc _ ^ _
 °
@@ -447,9 +460,12 @@ diag_line "Please ignore the above error message.";
 Ü µi: ú· i ^ 0 = 1;
 Ü µi: ú; j : î· i ^ (j + 1) = i * i ^ j
 °
+\Hide{
 =SML
 mk_t (* conclude val ... handle Fail _ => ( ... *));
 =TEX
+} %\Hide
+
 Now we can define the conversion from natural numbers to bit vectors
 of a given length. Note that the restriction
 =INLINEFT
@@ -484,9 +500,9 @@ We need the logical operations on bits:
 ÷üüüüüü
 Ü µb1, b2: BitString· Concat b1 b2 = b1 ë b2
 °
-SMTLIB indexes bit vectors from right-to-left starting at $0$.
+SMT-LIB indexes bit vectors from right-to-left starting at $0$.
 Z sequences are indexed left to right starting at $1$. Hence in a bit vector of length $n$,
-SMTLIB index $i$ corresponds to Z index $n-i$.
+SMT-LIB index $i$ corresponds to Z index $n-i$.
 ¹ZAX
 Ü ÛExtractÝ : î ­ î ­ BitString ß BitString
 ÷üüüüüü
@@ -497,7 +513,7 @@ SMTLIB index $i$ corresponds to Z index $n-i$.
 °
 For completeness, we define the binary bitwise logical operations on operands
 of mixed length to give a result that has the same length as the shorter operand.
-Mixed length operands are statically disallowed allowed in SMTLIB.
+Mixed length operands are statically disallowed allowed in SMT-LIB.
 ¹ZAX
 Ü ÛBVNotÝ : BitString ­ BitString;
 Ü ÛBVAndÝ, ÛBVOrÝ : BitString ­ BitString ­ BitString
@@ -513,7 +529,7 @@ Mixed length operands are statically disallowed allowed in SMTLIB.
 Ü ±	(µi : dom s ¡ dom t· BVOr s t i = BitOr (s i) (t i))
 °
 For the binary arithmetic operations on operands of mixed length we take the
-result to have the same length as the longer operand. Again, SMTLIB disallows
+result to have the same length as the longer operand. Again, SMT-LIB disallows
 mixed length operands statically. The treatment of zero divisors is just inhereited
 from the Z toolkit.
 ¹ZAX
@@ -532,7 +548,7 @@ from the Z toolkit.
 Ü	BVUrem s t = Nat2BV m (BV2Nat s mod BV2Nat t)
 °
 For the shift operations on operands of mixed length we take the
-result to have the same length as the first operand. Again, SMTLIB disallows
+result to have the same length as the first operand. Again, SMT-LIB disallows
 mixed length operands statically.
 ¹ZAX
 Ü ÛBVShlÝ, ÛBVLshrÝ : BitString ­ BitString ­ BitString
@@ -551,6 +567,10 @@ Finally we have the arithmetic comparison operator:
 \section{THE SMT-LIB LOGICS}
 In this section, we give Z models that support the restrictions and extensions to
 the various theories that are defined tn the SMT-LIB logics.
+For extensions, we define additional Z constructs.
+For restrictions such as limitations on the sorts allowed in array indexes, 
+we give Z definitions naming the allowed instances.
+Syntactic restrictions such as restriction to quantifier-free formulas are outside the scope of this model.
 
 The ML commands to set up the theories for the logics are given in the following table.
 
@@ -564,16 +584,23 @@ The ML commands to set up the theories for the logics are given in the following
 \parbox{0.35\hsize}{#2}\\} %\Row
 \begin{tabular}{l|l}
 \Row{Theory}{ML set-up commands}\hline
-\Row{Bit Vector Logics}{
+\Row{Logic of Bit Vectors}{
 =SML
 open_theory "ZS_FixedSizeBitVectors";
 new_theory "ZS_BV_Extensions";
 =TEX
 }
+\Row{Logic of Arrays of Bit Vectors}{
+=SML
+open_theory "ZS_BV_Extensions";
+new_theory "ZS_ABV_Extensions";
+new_parent "ZS_ArraysEx";
+=TEX
+}
 \end{tabular}
 \end{center} % also ends \vertbarfalse etc.
 
-\subsection{Bit Vector Extensions}
+\subsection{Logic of Bit Vectors}
 =SML
 open_theory "ZS_BV_Extensions";
 =TEX
@@ -738,6 +765,7 @@ The zero extension operator pads a bit vector on the left with a specified numbe
 Ü µi : î; t : BitString· BVZeroExtend i t = ((1 .. i) ¸ {0}) ë t
 °
 
+The left and right rotation operators do exactly what their names suggest.
 
 ¹ZAX
 Ü ÛBVRotateLeftÝ, ÛBVRotateRightÝ : î ­ BitString ­ BitString
@@ -747,6 +775,21 @@ The zero extension operator pads a bit vector on the left with a specified numbe
 Ü µi : î; t : BitString·
 Ü	BVRotateRight i t = (((#t - i + 1) .. #t) ì t) ë ((1 .. (#t - i)) ì t)
 °
+
+
+\subsection{Logic of Bit Vectors and Arrays of Bit Vectors}
+=SML
+open_theory "ZS_ABV_Extensions";
+=TEX
+We give a function representing the arrays that are allowed in this logic,
+namely arrays whose indexes and values range over bit vectors of given lengths.
+¹ZAX
+Ü ÛABVArrayÝ : î‰1 ­ î‰1 ­ ð(BitString ß BitString)
+÷üüüüüü
+Ü µi, j : î·
+Ü	ABVArray i j = Array[BitVec i, BitVec j]
+°
+
 
 =TEX
 \twocolumn[\section{INDEX}]
