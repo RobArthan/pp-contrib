@@ -3,6 +3,6 @@ This directory contains a Z model of the theories and logics of SMT-LIB. The Z s
 
 This is work in progress.
 
-A PDF is included for anyone who is interested but does not with to install ProofPower.
+The specification is available as a [PDF document](http://www.lemma-one.com/ProofPower/examples/zsmtlib.pdf) for anyone who is interested but does not with to install ProofPower just to build the document.
 
 Rob Arthan. rda at lemma hyphen one dot com. May 2016.
