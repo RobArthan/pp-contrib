@@ -1,5 +1,5 @@
 ######################################################################
-#	$Id: z_egs.mkf,v 1.8 2014/05/25 14:01:41 rda Exp rda $
+# zsmtlib.mkf
 ######################################################################
 
 # suffixes:
@@ -13,10 +13,10 @@ default: help
 #
 ######################################################################
 
-PRODNAME=PPOpenTheory
-PRODDESC=an experimental implementation of OpenTheory reader and writer
-SHORTNAME=open_theory
-PPPARENT=hol
+PRODNAME=PPZSmtLib
+PRODDESC=a Z Model of the SMT-LIB theories and logics
+SHORTNAME=zsmtlib
+PPPARENT=zed
 
 VER=$(shell echo $${PPEGSVER:-`cat version 2>/dev/null || date +%y%m%d`})
 PRODUCT=$(PRODNAME)-$(VER)
@@ -33,7 +33,7 @@ SRCDIR=$(RELDIR)/$(PRODNAME)-$(VER)
 
 # The documents
 SMLDOCS=
-SMLDOCS+=	wrk084.doc
+SMLDOCS+=	zsmtlib.doc
 
 # Variations on the documents
 SMLFILES=	$(SMLDOCS:.doc=.sml)
@@ -56,10 +56,10 @@ TMPFILES+=	$(SMLDOCS:.doc=.th.aux)
 
 # packing list for a source release (target src)
 PACKINGLIST=
-PACKINGLIST+= wrk084.doc
+PACKINGLIST+= zsmtlib.doc
 PACKINGLIST+= $(SHORTNAME).mkf
 
-DISTPACKINGLIST=$(PACKINGLIST)
+DISTPACKINGLIST=$(PACKINGLIST) README.txt
 
 # useful target to print out the names of all the files in the source $(RELDIR)
 packinglist:
@@ -72,8 +72,7 @@ packinglist:
 ######################################################################
 
 help:
-	@echo 'This is the make file for OpenTheory: an experimental implementation'
-	@echo 'of an OpenTheory reader and writer in ProofPower.'
+	@echo '**** $(PRODNAME): $(PRODDESC) ****'
 	@echo ''
 	@echo 'The following commands load the specification and proof scripts into a'
 	@echo 'new database called $(SHORTNAME) amd then typeset the documents in DVI or'
@@ -103,7 +102,7 @@ help:
 #
 ######################################################################
 
-wrk084.ldd:$(DBCREATED)
+zsmtlib.ldd:$(DBCREATED)
 
 ######################################################################
 #
@@ -113,7 +112,7 @@ wrk084.ldd:$(DBCREATED)
 
 load: bld
 
-bld: wrk084.ldd
+bld: zsmtlib.ldd
 
 $(DBCREATED):
 ifeq ($(USERDB),)
@@ -181,6 +180,46 @@ dist:	src
 
 ######################################################################
 #
+#	Building the README file.
+#
+######################################################################
+
+README.txt:
+	for line in \
+	'################################################################################' \
+	'#' \
+	'# $(PRODNAME): $(PRODDESC)' \
+	'#' \
+	'# Use the make file $(SHORTNAME).mkf  to process the scripts.' \
+	'# For instructions on how to do this type:' \
+	'#' \
+	'#     make -f $(SHORTNAME).mkf' \
+	'#' \
+	'# and you will be given some help on using the make file.' \
+	'#' \
+	'# Copyright (c) 2005-$(YEAR) Lemma 1 Ltd.' \
+	'#' \
+	'# This file is supplied under the GNU General Public Licence (GPL) version 2.' \
+	'#' \
+	'# See the file LICENSE supplied with the ProofPower source for the terms' \
+	'# of the GPL or visit the OpenSource web site at http://www.opensource.org/' \
+	'#' \
+	'# Contact: Rob Arthan < rda@lemma-one.com >' \
+	'#' \
+	'################################################################################' ;\
+	do echo $$line ; done >README.txt
+
+######################################################################
+#
+#	Specials
+#
+######################################################################
+
+zsmtlib.dvi: zsmtlib.tex
+	docdvi $*; pptexenv bibtex $*; texdvi $*; texdvi $*
+
+######################################################################
+#
 #	Generic Rules
 #
 ######################################################################
@@ -209,37 +248,13 @@ dist:	src
 
 ######################################################################
 #
-#	Tests
-#
-######################################################################
-
-import-base.sh: wrk084.sml
-
-base-thms.th.doc: import-base
-	import-base
-
-export-test.sml: wrk084.sml
-
-export-test.art: export-test.sml
-	pp -d open_theory -n -f export-test.sml > export-test.ttd
-
-reimport-test.sml: wrk084.sml
-
-reimport-test.th.doc: reimport-test.sml export-test.art
-	pp_list -d open_theory -i reimport-test.sml reimport-test \
-		> reimport-test.th.doc
-
-test: base-thms.th.doc reimport-test.th.doc
-
-######################################################################
-#
 #	Tidying Up
 #
 ######################################################################
 
 clean:
 	rcsclean || true
-	rm -f $(DBCREATED) $(SHORTNAME).polydb
+	rm -f $(DBCREATED) $(SHORTNAME).polydb README.txt
 	rm -f $(PRODUCT).tgz $(PRODUCT).rcs.tgz 
 	rm -f $(SMLFILES) $(LDDFILES) $(DVIFILES) $(PDFFILES) $(TMPFILES)
 	rm -rf release
