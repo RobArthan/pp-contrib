@@ -377,15 +377,14 @@ fun Ûmorphism_convÝ
 		val parametrized_conv = FIRST_C (map simple_ho_eq_match_conv1 parametrized_thms)
 			handle Fail _ => fail_conv;
 		val simp_conv = simple_eq_match_conv o_i_rule_thm;
-		val rec rec_conv = (fn t =>
-			((i_conv ORELSE_C
-			k_conv ORELSE_C
-			(pair_conv THEN_C RAND_C(RANDS_C(TRY_C rec_conv))) ORELSE_C
-			(unary_conv THEN_TRY_C RIGHT_C rec_conv) ORELSE_C
-			(binary_conv THEN_C RIGHT_C (RAND_C(RANDS_C (TRY_C rec_conv)))) ORELSE_C
-			(parametrized_conv THEN_C RIGHT_C (TRY_C rec_conv)))
-				AND_OR_C simp_conv) t
-		);
+		val rec rec_conv : CONV = (fn t => (FIRST_C [
+			i_conv,
+			k_conv,
+			(pair_conv THEN_C RAND_C(RANDS_C(TRY_C rec_conv))),
+			(unary_conv THEN_TRY_C RIGHT_C rec_conv),
+			(binary_conv THEN_C RIGHT_C (RAND_C(RANDS_C (TRY_C rec_conv)))),
+			(parametrized_conv THEN_C RIGHT_C (TRY_C rec_conv))]
+				AND_OR_C simp_conv) t);
 	in	Ì_unpair_conv AND_OR_C rec_conv
 	end
 );
