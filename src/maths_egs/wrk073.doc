@@ -75,21 +75,25 @@ $Id: wrk073.doc,v 1.36 2011/02/11 17:47:01 rda Exp rda $
 %\def\Binomial#1#2{\left(\begin{array}{c}#1\\#2\end{array}\right)}
 \def\Binomial#1#2{C_{#2}^{#1}}
 
-\title{Mathematical Case Studies: Finite Combinatorics\thanks{
+\title{Mathematical Case Studies: Some Finite and Infinite Combinatorics\thanks{
 First posted 22 November 2005;
 for full changes history see: \protect\url{https://github.com/RobArthan/pp-contrib}.
 }}
 \author{Rob Arthan\\{\tt rda@lemma-one.com}}
+\date{\FormatDate{\VCDate}}
 \makeindex
 \begin{document}
 \begin{titlepage}
 \maketitle
 \begin{abstract}
 
-This document presents some definitions and theorems from elementary finite combinatorics.
+This document presents some definitions and theorems from elementary finite and infinite combinatorics.
 The definitions include a ``fold'' operator for finite sets and the operation that sums a real-valued function on a finite indexed set.
 The theorems include: more facts about finiteness and the size of finite sets; algebraic properties of indexed sums; induction over finitely-supported functions; the inclusion/exclusion principle;
 the binomial coefficients and their basic properties, including the formula for the number of combinations and the binomial theorem.
+The theory is applied to give proofs of Bertrand's ballot theorem and the two-square theorem.
+The main theorems in infinite combinatorics are the infinite versions of the pigeon-hole principle and
+of Ramsey's theorem.
 
 \end{abstract}
 \vfill
@@ -111,14 +115,16 @@ Reference: LEMMA1/HOL/WRK073; Current git revision: \VCVersion%
 
 \section{INTRODUCTION}
 This document is one of a set of documents containing mathematical case studies in  {\ProductHOL}.
-It deals with some finite combinatorics.
-Notable results include the inclusion/exclusion principle, the formula for the number of combinations and the binomial theorem.
+It deals with some finite and infinite combinatorics.
+Notable results include the inclusion/exclusion principle, the formula for the number of combinations,
+the binomial theorem, Bertrand's ballot theorem and the infinite version of Ramsey's theorem.
 
-Section~\ref{theory} below gives an overview of the theory, including all the specifications and a guide to the theorems proved.
-Section~\ref{listing} contains a listing of all the theorems proved in the theory.
-An index to the specifications and the theorems is given at the end of the document.
+Section~\ref{theory-fincomb} and~\ref{theory-infcomb} below give an overview of the material on finite and infinite combatorics respectively, including all the specifications
+and a guide to the theorems proved.
+Section~\ref{listing-fincomb} and \ref{listing-infcomb} contain listings of all the theorems proved
+in the theories. An index to the specifications and the theorems is given at the end of the document.
 
-\section{THE THEORY {\em fincomb}}\label{theory}
+\section{THE THEORY {\em fincomb}}\label{theory-fincomb}
 
 \subsection{Preliminaries}
 The following commands set up a theory to hold the definitions, theorems, etc.,  and a proof context that is convenient for the work.
@@ -708,7 +714,51 @@ h_fixed_in_b_thm
 two_squares_lemma
 =TEX
 }
+\newpage
+\section{THE THEORY {\em infcomb}}\label{theory-infcomb}
+=SML
+force_delete_theory "infcomb" handle Fail _ => ();
+open_theory "fincomb";
+new_theory "infcomb";
+set_merge_pcs["basic_hol1", "'sets_alg"];
+=TEX
+The only definition we need is that of the class of infinite sets (which is simply to be
+the complement of the class of finite sets):
 
+πHOLCONST
+‹ €Infinite› : 'a SET SET
+˜¸¸¸¸¸¸
+‹ Infinite = ~Finite
+∞
+
+The theorems begin with a simple refactoring of the definition that characterizes
+infinite sets as those admitting a one-to-one endofunction. This is used to show
+that a set difference $a \mathop{\backslash} b$ where $a$ is infinite and $b$ is finite
+is infinite and that a one-to-one image of an infinite set is infinite.
+We then has some theorems about the natural numbers: they are infinite,
+the minimum of an infinite subset of natural numbers is well-defined, an infinite
+set of natural numbers is unbounded and an infinite set of natural numbers is the
+range of an order-preserving function on the natural numbers.
+With all this in hand we prove the infinite vefsions of the pigeon hole theorem and of
+Ramsey's theorem. 
+\ThmsII{%
+=GFT
+infinite_thm
+infinite_diff_finite_thm
+infinite_one_one_image_thm
+Ó_infinite_thm
+min_infinite_thm
+=TEX
+}{%
+=GFT
+infinite_unbounded_thm
+ordered_enumeration_thm
+infinite_pigeon_hole_thm
+infinite_ramsey_thm
+=TEX
+}
+
+\newpage
 \bibliographystyle{fmu}
 \bibliography{fmu}
 
@@ -716,9 +766,16 @@ two_squares_lemma
 {%\HOLindexOff
 \let\Section\section
 \let\subsection\Hide
-\def\section#1{\Section{#1}\label{listing}}
+\def\section#1{\Section{#1}\label{listing-fincomb}}
 \let\subsection\Hide
-\include{wrk073.th}}
+\include{wrk0731.th}}
+
+{%\HOLindexOff
+\let\Section\section
+\let\subsection\Hide
+\def\section#1{\Section{#1}\label{listing-infcomb}}
+\let\subsection\Hide
+\include{wrk0732.th}}
 
 =TEX
 
@@ -727,10 +784,13 @@ two_squares_lemma
 {\small\printindex}
 
 \end{document} %% COMMENT THIS LINE OUT TO TYPESET THE PROOF SCRIPTS
+\section{PROOFS IN THE THEORY {\em fincomb}}
 =TEX
 %%%%
 %%%%
 =SML
+open_theory"fincomb";
+set_merge_pcs["basic_hol1", "'sets_alg", "'˙", "'Ø"];
 val €supp_def› = get_spec ¨SuppÆ;
 val €binomial_def› = get_spec ¨BinomialÆ;
 val €distinct_samples_def› = get_spec ¨DistinctSamplesÆ;
@@ -5446,6 +5506,431 @@ a(all_var_elim_asm_tac1
 a(∂_tac¨Ó˙ 2 * x1Æ THEN ∂_tac¨x3Æ THEN PC_T1 "˙_lin_arith" asm_prove_tac[]);
 pop_thm()
 ));
+=TEX
+\section{PROOFS IN THE THEORY {\em infcomb}}
+
+=SML
+open_theory "infcomb";
+set_merge_pcs["basic_hol1", "'sets_alg", "'˙", "'Ø"];
+=SML
+val €infinite_def› = get_spec¨InfiniteÆ;
+=TEX
+=SML
+val €infinite_lemma1› = (* save_thm *) snd ("infinite_lemma1", (
+set_goal([], ¨µa∑ a ç Infinite ¥ ∂f : Ó ≠ 'a∑ OneOne f ± µi∑ f i ç aÆ);
+a(rewrite_tac[infinite_def] THEN REPEAT strip_tac);
+a(lemma_tac¨∂g∑g 0 = {} ± µi∑ g (i + 1) = {≈x∑x ç a \ g i} ¿ g iÆ THEN1 prove_∂_tac);
+a(lemma_tac¨≥a = {}Æ THEN1 (contr_tac THEN all_var_elim_asm_tac1 THEN all_fc_tac[empty_finite_thm]));
+a(lemma_tac¨µi∑ g i ç FiniteÆ THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(induction_tac¨iÆ THEN asm_rewrite_tac[empty_finite_thm]);
+a(bc_thm_tac singleton_¿_finite_thm THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(lemma_tac¨µi∑ g i Ä aÆ THEN REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(induction_tac¨iÆ THEN asm_rewrite_tac[]);
+a(asm_rewrite_tac[pc_rule1 "sets_ext1" prove_rule[]¨µy b∑{y} ¿ b Ä a § y ç a ± b Ä aÆ]);
+a(lemma_tac¨≥g i = aÆ THEN1 (contr_tac THEN all_var_elim_asm_tac1 THEN asm_prove_tac[]));
+a(all_≈_tac THEN REPEAT_N 2 (POP_ASM_T ante_tac) THEN PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "2.2" *** *)
+a(lemma_tac¨µi∑ (≈ x∑ x ç a \ g i) ç a \ g iÆ THEN1 strip_tac);
+a(lemma_tac¨g i Ä a ± ≥g i = aÆ THEN1 (asm_rewrite_tac[] THEN
+	contr_tac THEN all_var_elim_asm_tac1 THEN asm_prove_tac[]));
+a(all_≈_tac THEN REPEAT_N 2 (POP_ASM_T ante_tac) THEN PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "2.2.2" *** *)
+a(lemma_tac¨µi j∑ i < j ¥ (≈ x∑ x ç a \ g i) ç g jÆ);
+(* *** Goal "2.2.2.1" *** *)
+a(rewrite_tac[rewrite_rule[º_def] less_def] THEN REPEAT strip_tac THEN all_var_elim_asm_tac1);
+a(induction_tac¨i'Æ THEN1 asm_rewrite_tac[pc_rule1 "sets_ext1" prove_rule[]¨µy b∑ y ç {y} ¿ bÆ]);
+(* *** Goal "2.2.2.1" *** *)
+a(asm_rewrite_tac[pc_rule1"lin_arith" prove_rule[]¨(i + 1) + i' + 1 = ((i + 1) + i') + 1Æ]);
+a(bc_tac[pc_rule1 "sets_ext1" prove_rule[]¨µy a b∑y ç b ¥ y ç a ¿ bÆ] THEN strip_tac);
+(* *** Goal "2.2.2.2" *** *)
+a(∂_tac¨Ãi∑≈ x∑ x ç a \ g iÆ THEN rewrite_tac[one_one_def] THEN REPEAT strip_tac);
+(* *** Goal "2.2.2.2.1" *** *)
+a(strip_asm_tac (list_µ_elim[¨x1Æ, ¨x2Æ] less_cases_thm) THEN all_asm_fc_tac[]);
+(* *** Goal "2.2.2.2.1.1" *** *)
+a(POP_ASM_T ante_tac THEN asm_rewrite_tac[]);
+a(DROP_NTH_ASM_T 4 (ante_tac o µ_elim¨x2Æ) THEN REPEAT strip_tac);
+(* *** Goal "2.2.2.2.1.2" *** *)
+a(POP_ASM_T ante_tac THEN DROP_NTH_ASM_T 2 (rewrite_thm_tac o eq_sym_rule));
+a(DROP_NTH_ASM_T 3 (ante_tac o µ_elim¨x1Æ) THEN REPEAT strip_tac);
+(* *** Goal "2.2.2.2.2" *** *)
+a(DROP_NTH_ASM_T 2 (ante_tac o µ_elim¨iÆ) THEN REPEAT strip_tac);
+pop_thm()
+));
+=TEX
+=SML
+val €infinite_thm› = save_thm("infinite_thm", (
+set_goal([], ¨µa∑ a ç Infinite § ∂f : Ó ≠ 'a∑ OneOne f ± µi∑ f i ç aÆ);
+a(rewrite_tac[taut_rule¨µp q∑ (p § q) § (p ¥ q) ± (q ¥ p)Æ, infinite_lemma1]
+	THEN rewrite_tac[infinite_def, one_one_def] THEN contr_tac);
+a(lemma_tac¨{x | ∂i∑ i < #a + 1 ± x = f i} ç Finite ±
+	#{x | ∂i∑ i < #a + 1 ± x = f i} = #{i | i < #a + 1}Æ
+		THEN1 (bc_thm_tac bijection_finite_size_thm THEN rewrite_tac[range_finite_size_thm]));
+(* *** Goal "1" *** *)
+a(∂_tac ¨fÆ THEN asm_rewrite_tac[]);
+a(REPEAT strip_tac THEN all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(POP_ASM_T ante_tac THEN rewrite_tac[range_finite_size_thm]);
+a(lemma_tac¨{x | ∂i∑ i < #a + 1 ± x = f i} ç Finite ± #{x | ∂i∑ i < #a + 1 ± x = f i} º #aÆ
+		THEN1 (bc_thm_tac Ä_finite_size_thm THEN REPEAT strip_tac));
+(* *** Goal "2.1" *** *)
+a(PC_T1 "sets_ext1" rewrite_tac[] THEN REPEAT strip_tac THEN all_var_elim_asm_tac1
+	THEN asm_rewrite_tac[]);
+(* *** Goal "2.2" *** *)
+a(PC_T1 "lin_arith" asm_prove_tac[]);
+pop_thm()
+));
+=TEX
+=SML
+val €infinite_non_empty_thm› = save_thm("infinite_non_empty_thm", (
+set_goal([], ¨µa∑ a ç Infinite ¥ ∂x∑ x ç aÆ);
+a(REPEAT strip_tac THEN all_fc_tac[infinite_thm]);
+a(asm_prove_tac[]);
+pop_thm()
+));
+=TEX
+=SML
+val €Ó_infinite_thm› = save_thm("Ó_infinite_thm", (
+set_goal([], ¨Universe : Ó SET ç InfiniteÆ);
+a(rewrite_tac[infinite_thm]);
+a(∂_tac¨Ãi∑iÆ THEN rewrite_tac[one_one_def]);
+pop_thm()
+));
+=TEX
+=SML
+val €infinite_diff_finite_thm› = save_thm("infinite_diff_finite_thm", (
+set_goal([], ¨µa b∑ a ç Infinite ± b ç Finite ¥ a \ b ç InfiniteÆ);
+a(rewrite_tac[infinite_def] THEN contr_tac);
+a(lemma_tac¨b ¿ (a \ b) ç FiniteÆ THEN1 asm_rewrite_tac[¿_finite_thm]);
+a(lemma_tac¨a Ä b ¿ (a \ b)Æ THEN1 PC_T1 "sets_ext1" prove_tac[]);
+a(all_fc_tac[Ä_finite_thm]);
+pop_thm()
+));
+=TEX
+=SML
+val €min_infinite_thm› = save_thm("min_infinite_thm", (
+set_goal([], ¨µa∑ a ç Infinite ¥ Min a ç a ± µi∑ i ç a ¥ Min a º iÆ);
+a(REPEAT strip_tac THEN all_fc_tac[infinite_non_empty_thm]);
+(* *** Goal "1" *** *)
+a(all_fc_tac[min_ç_thm]);
+(* *** Goal "2" *** *)
+a(all_fc_tac[min_º_thm]);
+pop_thm()
+));
+=TEX
+=SML
+val €infinite_diff_singleton_thm› = save_thm("infinite_diff_singleton_thm", (
+set_goal([], ¨µa x∑ a ç Infinite ¥ a \ {x} ç InfiniteÆ);
+a(REPEAT strip_tac THEN bc_thm_tac infinite_diff_finite_thm
+	THEN asm_rewrite_tac[singleton_finite_thm]);
+pop_thm()
+));
+=TEX
+=SML
+val €infinite_unbounded_thm› = save_thm("infinite_unbounded_thm", (
+set_goal([], ¨µa i∑ a ç Infinite ¥ ∂j : Ó∑ j ç a ± i < jÆ);
+a(rewrite_tac[infinite_def] THEN contr_tac);
+a(DROP_NTH_ASM_T 2 ante_tac THEN rewrite_tac[]);
+a(bc_thm_tac Ä_finite_thm THEN ∂_tac¨{j | j < i + 1}Æ);
+a(rewrite_tac[range_finite_size_thm] THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+a(spec_nth_asm_tac 2 ¨xÆ THEN PC_T1 "lin_arith" asm_prove_tac[]);
+pop_thm()
+));
+
+=TEX
+=SML
+=TEX
+=SML
+val €infinite_one_one_image_thm› = save_thm("infinite_one_one_image_thm", (
+set_goal([], ¨µa f∑ a ç Infinite ± OneOne f ¥ {y | ∂x∑ x ç a ± y = f x} ç InfiniteÆ);
+a(rewrite_tac[infinite_thm, one_one_def] THEN REPEAT strip_tac);
+a(∂_tac¨Ãi∑ f(f' i)Æ THEN rewrite_tac[] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(all_asm_fc_tac[] THEN all_asm_fc_tac[]);
+(* *** Goal "2" *** *)
+a(∂_tac¨f' iÆ THEN asm_rewrite_tac[]);
+pop_thm()
+));
+
+=TEX
+=SML
+val €ordered_enumeration_lemma1› = snd (* save_thm *) ("ordered_enumeration_lemma1", (
+set_goal([], ¨µa : Ó ; i j∑ i ç a ± i < j ¥
+	 #{k | k ç a ± k < i} < #{k | k ç a ± k < j}Æ);
+a(REPEAT strip_tac);
+a(lemma_tac¨{k | k ç a ± k < i} Ä {k | k ç a ± k < j}Æ THEN1
+	(PC_T1 "sets_ext1" REPEAT strip_tac THEN PC_T1 "lin_arith" asm_prove_tac[]));
+a(lemma_tac¨{k | k ç a ± k < j} ç FiniteÆ THEN1 
+	(bc_thm_tac Ä_finite_thm THEN ∂_tac¨{k | k < j}Æ
+		THEN rewrite_tac[range_finite_size_thm]
+			THEN PC_T1 "sets_ext" asm_prove_tac[]));
+a(LEMMA_T¨{k|k ç a ± k < i} ç Finite ± # {k|k ç a ± k < i} º # {k|k ç a ± k < j}Æ
+	(strip_asm_tac o rewrite_rule[pc_rule1"lin_arith" prove_rule[]
+		¨µm n:Ó∑m º n § m < n ≤ m = nÆ]));
+(* *** Goal "1" *** *)
+a(bc_thm_tac Ä_finite_size_thm THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+a(PC_T1 "lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(i_contr_tac THEN all_fc_tac[Ä_size_eq_thm]);
+a(POP_ASM_T ante_tac THEN PC_T1 "sets_ext1" rewrite_tac[]);
+a(strip_tac THEN ∂_tac¨iÆ THEN REPEAT strip_tac);
+pop_thm()
+));
+
+=TEX
+=SML
+val €ordered_enumeration_lemma2› = snd (* save_thm *) ("ordered_enumeration_lemma2", (
+set_goal([], ¨µa : Ó ; i j∑
+		j ç a ± #{k | k ç a ± k < i} < #{k | k ç a ± k < j}
+	¥ i < jÆ);
+a(REPEAT strip_tac);
+a(strip_asm_tac(list_µ_elim[¨iÆ, ¨jÆ] less_cases_thm)
+	THEN1 all_var_elim_asm_tac1);
+a(contr_tac THEN lemma_tac¨i = j ≤ j < iÆ THEN1 PC_T1 "lin_arith" asm_prove_tac[]
+	THEN1 all_var_elim_asm_tac1);
+a(all_fc_tac[ordered_enumeration_lemma1] THEN1 PC_T1 "lin_arith" asm_prove_tac[]);
+pop_thm()
+));
+
+=TEX
+=SML
+
+val €ordered_enumeration_thm› = save_thm("ordered_enumeration_thm", (
+set_goal([], ¨µa : Ó ∑ a ç Infinite ¥ ∂ f : Ó ≠ Ó∑
+		a = {i | ∂m∑ f m = i}
+	±	(µm n∑ m < n ¥ f m < f n)Æ);
+a(REPEAT strip_tac);
+a(lemma_tac ¨µi∑ {j | j ç a ± j < i} ç FiniteÆ THEN1
+	(REPEAT strip_tac THEN bc_thm_tac Ä_finite_thm THEN ∂_tac ¨{j : Ó | j < i}Æ
+		THEN rewrite_tac[range_finite_size_thm] THEN PC_T1 "sets_ext1" prove_tac[]));
+a(lemma_tac¨µn∑∂i∑i ç a ± #{j | j ç a ± j < i} = nÆ THEN1 strip_tac);
+a(induction_tac¨nÆ);
+(* *** Goal "1.1" *** *)
+a(fc_tac[min_infinite_thm]);
+a(∂_tac¨Min aÆ THEN REPEAT strip_tac);
+a(LEMMA_T ¨µi∑ # {j|j ç a ± j < i} = 0 § {j|j ç a ± j < i} = {}Æ rewrite_thm_tac
+	THEN1 (strip_tac THEN bc_thm_tac size_0_thm THEN asm_rewrite_tac[]));
+a(PC_T1 "sets_ext1" asm_rewrite_tac[pc_rule1"lin_arith" prove_rule[]
+	¨µx y∑≥(x ç a ± x < y) § x ç a ¥ y º xÆ]);
+(* *** Goal "1.2" *** *)
+a(lemma_tac¨{j | j < i + 1} ç FiniteÆ THEN1 rewrite_tac[range_finite_size_thm]);
+a(all_fc_tac[infinite_diff_finite_thm]);
+a(DROP_NTH_ASM_T 6 discard_tac THEN fc_tac[min_infinite_thm]);
+a(∂_tac¨Min(a \ {j|j < i + 1})Æ THEN REPEAT strip_tac);
+a(LEMMA_T¨{j|j ç a ± j < Min (a \ {j|j < i + 1})} = {i} ¿ {j|j ç a ± j < i}Æ
+		rewrite_thm_tac
+	THEN1 (PC_T1 "sets_ext1" REPEAT strip_tac THEN_TRY all_var_elim_asm_tac1));
+(* *** Goal "1.2.1" *** *)
+a(spec_nth_asm_tac 6 ¨xÆ THEN PC_T1 "lin_arith" asm_prove_tac[]);
+(* *** Goal "1.2.2" *** *)
+a(spec_nth_asm_tac 3 ¨iÆ THEN PC_T1 "lin_arith" asm_prove_tac[]);
+(* *** Goal "1.2.3" *** *)
+a(spec_nth_asm_tac 5 ¨xÆ THEN PC_T1 "lin_arith" asm_prove_tac[]);
+(* *** Goal "1.2.4" *** *)
+a(spec_nth_asm_tac 8 ¨iÆ);
+a(PC_T1 "predicates" lemma_tac¨≥i ç {j | j ç a ± j < i}Æ THEN1 rewrite_tac[]);
+a(ALL_FC_T asm_rewrite_tac[size_singleton_¿_thm]);
+(* *** Goal "2" *** *)
+a(lemma_tac¨∂f∑ µ n∑ f n ç a ± # {j|j ç a ± j < f n} = nÆ THEN1 prove_∂_tac);
+a(DROP_NTH_ASM_T 2 discard_tac);
+a(∂_tac¨fÆ THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(∂_tac¨#{j | j ç a ± j < x}Æ);
+a(DROP_NTH_ASM_T 2 (strip_asm_tac o µ_elim¨#{j | j ç a ± j < x}Æ));
+a(strip_asm_tac (list_µ_elim[¨f (# {j|j ç a ± j < x})Æ, ¨xÆ] less_cases_thm)
+	THEN i_contr_tac
+	THEN all_fc_tac[ordered_enumeration_lemma1]
+	THEN PC_T1 "lin_arith" asm_prove_tac[]);
+(* *** Goal "2.2" *** *)
+a(all_var_elim_asm_tac1 THEN asm_rewrite_tac[]);
+(* *** Goal "2.3" *** *)
+a(bc_thm_tac ordered_enumeration_lemma2);
+a(∂_tac ¨aÆ THEN asm_rewrite_tac[]);
+pop_thm()
+));
+
+=TEX
+=SML
+val €finite_size_to_finite_rule› : THM -> THM = (
+	let	val pattern = ¨a ç Finite ± pÆ;
+	in	fn thm => 
+			let	val thm1 = (undisch_rule o all_µ_elim) thm;
+				val _ = term_match (concl thm1) pattern;
+				val thm2 = (all_µ_intro o all_disch_rule o ±_left_elim) thm1;
+			in	thm2
+			end
+	end
+);
+
+=TEX
+=SML
+val €infinite_pigeon_hole_thm› = save_thm("infinite_pigeon_hole_thm", (
+set_goal([], ¨µa b; f : 'a ≠ 'b∑
+		a ç Infinite
+	±	b ç Finite
+	±	(µx∑x ç a ¥ f x ç b)
+	¥	(∂y∑ y ç b ± {x | x ç a ± f x = y} ç Infinite)Æ);
+a(rewrite_tac[infinite_def] THEN contr_tac);
+a(lemma_tac¨a = ﬁ{s | ∂y∑ y ç b ± s = {x | x ç a ± f x = y}}Æ);
+(* *** Goal "1" *** *)
+a(PC_T1 "sets_ext1" asm_prove_tac[]);
+a(all_asm_fc_tac[]);
+a(∂_tac¨{z | z ç a ± f z = f x}Æ THEN asm_rewrite_tac[]);
+a(∂_tac¨f xÆ THEN asm_rewrite_tac[]);
+(* *** Goal "2" *** *)
+a(lemma_tac¨a ç FiniteÆ THEN POP_ASM_T once_rewrite_thm_tac);
+a(bc_thm_tac ﬁ_finite_thm);
+a(REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(bc_thm_tac (finite_size_to_finite_rule surjection_finite_size_thm));
+a(∂_tac¨Ãy∑ {x | x ç a ± f x = y}Æ THEN ∂_tac¨bÆ THEN REPEAT strip_tac);
+a(rewrite_tac[]);
+(* *** Goal "2.2" *** *)
+a(PC_T "sets_ext1" strip_tac THEN REPEAT strip_tac THEN all_var_elim_asm_tac1);
+a(asm_prove_tac[]);
+pop_thm()
+));
+=TEX
+=SML
+val €infinite_ramsey_thm› = save_thm("infinite_ramsey_thm", (
+set_goal([], ¨µn X C; m : Ó∑
+		X ç Infinite ± (µa∑ C a < m)
+	¥	(∂Y c∑	Y Ä X ± Y ç Infinite ± c < m
+		±	µa∑ a Ä Y ± a ç Finite ± #a = n ¥ C a = c)Æ);
+a(strip_tac THEN induction_tac¨n:ÓÆ THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(∂_tac¨XÆ THEN ∂_tac¨C{}Æ THEN asm_rewrite_tac[] THEN REPEAT strip_tac);
+a(ALL_FC_T rewrite_tac[size_0_thm]);
+(* *** Goal "2" *** *)
+a(lemma_tac¨µY∑	Y ç Infinite
+	¥	∂Z x c∑
+			x ç Y ± Z Ä Y \ {x} ± Z ç Infinite ± c < m'
+		±	µa∑ a Ä {x} ¿ Z ± a ç Finite ± #a = n + 1 ± x ç a ¥ C a = cÆ);
+(* *** Goal "2.1" *** *)
+a(DROP_NTH_ASM_T 2 discard_tac THEN REPEAT strip_tac THEN all_fc_tac[infinite_non_empty_thm]);
+a(lemma_tac¨Y \ {x} ç InfiniteÆ THEN1 (bc_thm_tac infinite_diff_singleton_thm THEN REPEAT strip_tac));
+a(lemma_tac¨µa∑ (Ãa∑ C (a ¿ {x})) a < m'Æ THEN1 asm_rewrite_tac[]);
+a(LIST_DROP_NTH_ASM_T [4, 5] discard_tac THEN all_asm_fc_tac[]);
+a(POP_ASM_T (strip_asm_tac o rewrite_rule[]));
+a(∂_tac¨Y'Æ THEN ∂_tac¨xÆ THEN ∂_tac¨cÆ THEN REPEAT strip_tac);
+a(LEMMA_T ¨a = (a \ {x}) ¿ {x}Æ once_rewrite_thm_tac THEN1
+	(POP_ASM_T ante_tac THEN PC_T1 "sets_ext1" prove_tac[]));
+a(DROP_NTH_ASM_T 5 bc_thm_tac THEN REPEAT strip_tac);
+(* *** Goal "2.1.1" *** *)
+a(DROP_NTH_ASM_T 4 ante_tac THEN  PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "2.1.2" *** *)
+a(bc_thm_tac Ä_finite_thm THEN ∂_tac¨aÆ THEN REPEAT strip_tac);
+a(PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "2.1.3" *** *)
+a(LEMMA_T ¨#a = #(a \ {x}) + #{x} Æ
+	(fn thm => (ante_tac o eq_sym_rule) thm THEN asm_rewrite_tac[size_singleton_thm]));
+a(bc_thm_tac size_Ä_diff_thm THEN REPEAT strip_tac);
+a(POP_ASM_T ante_tac THEN PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "2.2" *** *)
+a(lemma_tac¨∂Y∑
+	Y 0 = X
+±	µi∑
+	Y(i+1) = (≈ Z∑ ∂x c∑ x ç Y i ± Z Ä Y i \ {x} ± Z ç Infinite ± c < m'
+		±	µa∑ a Ä {x} ¿ Z ± a ç Finite ± #a = n + 1 ± x ç a ¥ C a = c)Æ
+	THEN1 prove_∂_tac);
+a(lemma_tac¨µi∑ Y i ç InfiniteÆ);
+(* *** Goal "2.2.1" *** *)
+a(strip_tac THEN induction_tac¨i:ÓÆ THEN asm_rewrite_tac[]);
+a(all_≈_tac);
+a(DROP_NTH_ASM_T 4 bc_thm_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2.2.2" *** *)
+a(lemma_tac¨µi∑ ∂x c∑
+		x ç Y i ± Y (i+1) Ä Y i \ {x} ± c < m'
+	 ±	µa∑ a Ä {x} ¿ Y(i+1) ± a ç Finite ± #a = n + 1 ± x ç a ¥ C a = cÆ);
+(* *** Goal "2.2.2.1" *** *)
+a(REPEAT strip_tac THEN asm_rewrite_tac[] THEN all_≈_tac);
+(* *** Goal "2.2.2.1.1" *** *)
+a(DROP_NTH_ASM_T 4 bc_thm_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2.2.2.1.2" *** *)
+a(∂_tac¨xÆ THEN ∂_tac¨cÆ THEN REPEAT strip_tac);
+a(DROP_NTH_ASM_T 5 bc_thm_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2.2.2.2" *** *)
+a(lemma_tac¨∂xs cs∑ 
+		(µi∑ xs i ç Y i ± Y (i+1) Ä Y i \ {xs i})
+	±	(µi∑cs i < m')
+	±	(µi∑ µa∑ a Ä {xs i} ¿ Y(i+1) ± a ç Finite ± #a = n + 1 ± xs i ç a ¥ C a = cs i)Æ
+ THEN prove_∂_tac THEN REPEAT strip_tac);
+(* *** Goal "2.2.2.2.1" *** *)
+a(POP_ASM_T (strip_asm_tac o µ_elim¨i''Æ));
+a(∂_tac¨xÆ THEN REPEAT strip_tac THEN ∂_tac¨cÆ THEN asm_rewrite_tac[]);
+(* *** Goal "2.2.2.2.2" *** *)
+a(LIST_DROP_NTH_ASM_T [4, 6, 8] discard_tac);
+a(lemma_tac¨µi j∑i < j ¥ Y j Ä Y i \ {xs i}Æ);
+(* *** Goal "2.2.2.2.2.1" *** *)
+a(rewrite_tac[rewrite_rule[º_def] less_def] THEN REPEAT_N 3 strip_tac THEN all_var_elim_asm_tac1);
+a(induction_tac¨i'Æ THEN1 asm_rewrite_tac[]);
+a(rewrite_tac[plus_assoc_thm1]);
+a(bc_tac[pc_rule1 "sets_ext1" prove_rule[] ¨µa b c∑a Ä b ±b Ä c¥ a Ä cÆ]
+	THEN ∂_tac ¨Y ((i + 1) + i')Æ THEN asm_rewrite_tac[]);
+a(rewrite_tac[pc_rule1 "lin_arith" prove_rule[] ¨(i + 1) + i' = (i + i') + 1Æ]);
+a(bc_tac[pc_rule1 "sets_ext1" prove_rule[] ¨µa b c∑a Ä b ± b Ä c¥ a Ä cÆ]
+	THEN ∂_tac ¨Y ((i + i') + 1) \ {xs((i + i') + 1)}Æ THEN1 asm_rewrite_tac[]);
+a(PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "2.2.2.2.2.2" *** *)
+a(lemma_tac¨µi j∑i < j ¥ xs j ç Y i \ {xs i}Æ);
+(* *** Goal "2.2.2.2.2.2.1" *** *)
+a(REPEAT_N 3 strip_tac THEN all_asm_fc_tac[]);
+a(bc_tac[pc_rule1 "sets_ext1" prove_rule[] ¨µx a b∑x ç a ± a Ä b ¥ x ç bÆ]
+	THEN ∂_tac ¨Y jÆ THEN asm_rewrite_tac[]);
+(* *** Goal "2.2.2.2.2.2.2.2" *** *)
+a(lemma_tac¨µi j∑ i º j ¥ Y j Ä Y iÆ);
+(* *** Goal "2.2.2.2.2.2.2.2.1" *** *)
+a(rewrite_tac[pc_rule1"lin_arith" prove_rule[] ¨µi j:Ó∑ i º j § i = j ≤ i < jÆ]
+	THEN REPEAT strip_tac THEN1 asm_rewrite_tac[]);
+a(LIST_DROP_NTH_ASM_T [3] all_fc_tac);
+a(POP_ASM_T ante_tac THEN PC_T1 "sets_ext1" prove_tac[]);
+(* *** Goal "2.2.2.2.2.2.2" *** *)
+a(lemma_tac¨OneOne xsÆ THEN1 (rewrite_tac[one_one_def] THEN REPEAT strip_tac));
+(* *** Goal "2.2.2.2.2.2.2.2.1" *** *)
+a(strip_asm_tac(list_µ_elim[¨x1Æ, ¨x2Æ] less_cases_thm) THEN i_contr_tac);
+(* *** Goal "2.2.2.2.2.2.2.2.1.1" *** *)
+a(LIST_DROP_NTH_ASM_T [4] all_fc_tac);
+a(POP_ASM_T ante_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2.2.2.2.2.2.2.2.1.2" *** *)
+a(LIST_DROP_NTH_ASM_T [4] all_fc_tac);
+(* *** Goal "2.2.2.2.2.2.2.2.2" *** *)
+a((ante_tac o rewrite_rule [Ó_infinite_thm, range_finite_size_thm] o
+	list_µ_elim[¨Universe : Ó SETÆ, ¨{i | i < m'}Æ, ¨csÆ]) infinite_pigeon_hole_thm
+	THEN asm_rewrite_tac[] THEN strip_tac);
+a(rename_tac[(¨yÆ, "c")] THEN all_fc_tac[infinite_one_one_image_thm]);
+a(POP_ASM_T (strip_asm_tac o rewrite_rule[]));
+a(∂_tac¨{x | ∂i∑cs i = c ± x = xs i}Æ THEN REPEAT strip_tac THEN1 ∂_tac¨cÆ);
+(* *** Goal "2.2.2.2.2.2.2.2.2.1" *** *)
+a(all_fc_tac[ordered_enumeration_thm] THEN REPEAT strip_tac);
+a(POP_ASM_T ante_tac THEN cases_tac ¨a = {}Æ THEN1 asm_rewrite_tac[size_empty_thm]);
+a(POP_ASM_T ante_tac THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+a(all_fc_tac[pc_rule1 "sets_ext1" prove_rule[]¨µx a b∑ x ç a ± a Ä b ¥ x ç bÆ]);
+a(DROP_NTH_ASM_T 2 discard_tac THEN all_var_elim_asm_tac1);
+a(lemma_tac¨Min {i | xs i ç a} ç {i | xs i ç a}Æ THEN1
+	(bc_thm_tac min_ç_thm THEN ∂_tac¨iÆ THEN REPEAT strip_tac));
+a(DROP_NTH_ASM_T 3 discard_tac);
+a(all_fc_tac[pc_rule1 "sets_ext1" prove_rule[]¨µx a b∑ x ç a ± a Ä b ¥ x ç bÆ]);
+a(GET_NTH_ASM_T 12 (fn th => all_fc_tac[rewrite_rule[one_one_def] th])
+	THEN all_var_elim_asm_tac1);
+a(DROP_NTH_ASM_T 14 bc_thm_tac THEN REPEAT strip_tac);
+a(PC_T1 "sets_ext1" REPEAT strip_tac);
+a(all_fc_tac[pc_rule1 "sets_ext1" prove_rule[]¨µb∑ x ç a ± a Ä b ¥ x ç bÆ]
+	THEN1 all_var_elim_asm_tac1);
+a(LEMMA_T¨Min {i|xs i ç a} º i'Æ ante_tac THEN1 (bc_thm_tac min_º_thm THEN asm_rewrite_tac[]));
+a(rewrite_tac[pc_rule1"lin_arith" prove_rule[] ¨µi j:Ó∑ i º j § i = j ≤ i < jÆ]
+	THEN strip_tac THEN1 all_var_elim_asm_tac1);
+a(bc_tac[pc_rule1 "sets_ext1" prove_rule[]¨µx a b∑ x ç a ± a Ä b ¥ x ç bÆ]);
+a(∂_tac¨Y i'Æ THEN asm_rewrite_tac[]);
+a(LIST_GET_NTH_ASM_T [15] bc_tac THEN PC_T1 "lin_arith" asm_prove_tac[]);
+(* *** Goal "2.2.2.2.2.2.2.2.2.2" *** *)
+a(PC_T1 "sets_ext1" REPEAT strip_tac THEN all_var_elim_asm_tac1);
+a(bc_tac[pc_rule1 "sets_ext1" prove_rule[]¨µx a b∑ x ç a ± a Ä b ¥ x ç bÆ]);
+a(∂_tac¨Y iÆ THEN asm_rewrite_tac[]);
+a(LIST_GET_NTH_ASM_T [5] bc_tac THEN PC_T1 "lin_arith" asm_prove_tac[]);
+pop_thm()
+));
 
 =TEX
 \Hide{
@@ -5456,10 +5941,12 @@ local
 	val {print=pt, out=ot, out1=ot1} = gen_theory_lister sections;
 	fun output_banner (thyn : string) = "THEOREMS IN THE THEORY " ^ (case thyn of "-" => get_current_theory_name () | _ => thyn);
 	fun output_theorems (par : {out_file:string, theory:string}) : unit = (
+		(open_theory o #theory) par;
 		(ot output_banner par) handle ex => reraise ex "z_output_theory"
 	);
 in
-	val _ = output_theorems{out_file="wrk073.th.doc", theory="-"};
+	val _ = output_theorems{out_file="wrk0731.th.doc", theory="fincomb"};
+	val _ = output_theorems{out_file="wrk0732.th.doc", theory="infcomb"};
 end;
 =TEX
 } %\Hide
