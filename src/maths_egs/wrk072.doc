@@ -3065,6 +3065,101 @@ a(rewrite_tac[Ø_times_assoc_thm, –_recip_clauses, ˙Ø_one_one_thm, s1_s1_loop_def
 pop_thm()
 ));
 
+
+
+=TEX
+%%%%
+%%%%
+
+=SML
+
+val €÷_Ó_exp_ç_s1_thm› = save_thm ( "÷_Ó_exp_ç_s1_thm", ( 
+set_goal([], ¨µn z∑
+	z ç S1 ¥ z^n ç S1
+Æ);
+a(REPEAT strip_tac THEN induction_tac ¨n:ÓÆ THEN rewrite_tac[÷_Ó_exp_def]);
+(* *** Goal "1" *** *)
+a(LEMMA_T ¨Ó÷ 1 = ExpS1 0.Æ rewrite_thm_tac);
+(* *** Goal "1.1" *** *)
+a(rewrite_tac[Ó÷_def, exp_s1_def, Ø÷_def, sin_def]);
+(* *** Goal "1.2" *** *)
+a(rewrite_tac[exp_s1_ç_s1_thm]);
+(* *** Goal "2" *** *)
+a(all_fc_tac[s1_times_thm]);
+pop_thm()
+));
+
+=TEX
+%%%%
+%%%%
+
+=SML
+
+val €÷_Ó_exp_s1_s1_continuous_thm› = save_thm ( "÷_Ó_exp_s1_s1_continuous_thm", ( 
+set_goal([], ¨µn∑ 
+	(Ãz∑ z^n) ç (OâS1, OâS1) Continuous
+Æ);
+a(strip_tac THEN conv_tac ((RIGHT_C o RAND_C o RIGHT_C o rewrite_conv) [open_s1_def]) );
+a(bc_thm_tac subspace_range_continuous_bc_thm THEN rewrite_tac[] THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(ALL_FC_T rewrite_tac [÷_Ó_exp_ç_s1_thm]);
+(* *** Goal "2" *** *)
+a(rewrite_tac[open_s1_def] THEN bc_thm_tac subspace_domain_continuous_thm);
+a(rewrite_tac[] THEN ÷_continuity_tac[]);
+pop_thm()
+));
+
+
+=TEX
+%%%%
+%%%%
+
+=SML
+
+val €s1_s1_degree_÷_Ó_exp_thm› = save_thm ( "s1_s1_degree_÷_Ó_exp_thm", ( 
+set_goal([], ¨µn∑ 
+	S1S1Degree (Ãz∑ z^n) = Ó˙ n
+Æ);
+a(strip_tac THEN rewrite_tac[s1_s1_degree_def]);
+a(lemma_tac¨S1S1Loop (Ã z∑ z ^ n) ç Loops(OâS1, Ó÷ 1)Æ);
+(* *** Goal "1" *** *)
+a((ante_tac o µ_elim¨(Ã z:÷∑ z ^ n)Æ) s1_s1_loop_loop_thm);
+a(rewrite_tac[÷_Ó_exp_s1_s1_continuous_thm]);
+(* *** Goal "2" *** *)
+a(LEMMA_T ¨(Ã x∑ (Ãy∑ 2. * – * ÓØ n * y) (IotaI x)) ç Paths OâRÆ ante_tac);
+(* *** Goal "2.1" *** *)
+a(bc_thm_tac comp_iota_i_path_thm);
+a(rewrite_tac[] THEN Ø_continuity_tac[]);
+(* *** Goal "2.2" *** *)
+a(rewrite_tac[] THEN strip_tac);
+a(lemma_tac¨µ s∑ ExpS1 ((Ã x∑ 2. * – * ÓØ n * IotaI x) s) = S1S1Loop (Ã z∑ z ^ n) sÆ);
+(* *** Goal "2.2.1" *** *)
+a(µ_tac THEN rewrite_tac[exp_s1_def, s1_s1_loop_def, iota_s1_def, iota_i_def]);
+a(if_cases_tac THEN asm_rewrite_tac[de_moivre_thm]
+	THEN_TRY SOLVED_T (rewrite_tac[sin_def, Ó÷_def, Ø÷_def]));
+(* *** Goal "2.2.1.1" *** *)
+a(lemma_tac¨s = 1.Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(all_var_elim_asm_tac1 THEN rewrite_tac[Ó÷_def, Ø÷_def]);
+a(rewrite_tac[pc_rule1 "Ø_lin_arith" prove_rule[] ¨µx y z : Ø∑ x * y * z = (x * z) * yÆ,
+	rewrite_rule [ÓØ_times_homomorphism_thm] sin_cos_even_times_–_thm]);
+(* *** Goal "2.2.1.2" *** *)
+a(rewrite_tac[Ó÷_def, Ø÷_def]);
+a(rewrite_tac[pc_rule1 "Ø_lin_arith" prove_rule[] ¨µx y z : Ø∑ x * y * z = (x * z) * yÆ,
+	rewrite_rule [ÓØ_times_homomorphism_thm] sin_cos_even_times_–_thm]);
+(* *** Goal "2.2.1.3" *** *)
+a((conv_tac o ONCE_MAP_C) Ø_anf_conv THEN REPEAT strip_tac);
+(* *** Goal "2.2.1.4" *** *)
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "2.2.2" *** *)
+a(ALL_FC_T (MAP_EVERY ante_tac) [loop_s1_degree_def]);
+a(rewrite_tac[times_2_–_lemma, Ø_times_assoc_thm1, iota_i_def]);
+a(rewrite_tac[pc_rule1 "Ø_lin_arith" prove_rule[] ¨µx y z : Ø∑ (x * y) * z = y * x * zÆ,
+	–_recip_clauses]);
+a(LEMMA_T ¨ÓØ n = ˙Ø(Ó˙ n)Æ rewrite_thm_tac THEN1 rewrite_tac[˙Ø_Ó˙_thm]);
+a(rewrite_tac[˙Ø_one_one_thm]);
+pop_thm()
+));
+
 =TEX
 \Hide{
 =SML
