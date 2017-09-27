@@ -360,14 +360,15 @@ contents_def
 equiv_class_eq_thm
 equiv_class_ç_thm
 constant_img_thm
+respects_img_thm
 =TEX
 }{%
 =GFT
-respects_img_thm
 respects_img_contents_thm
 quotient_map_onto_thm
 quotient_ç_thm
 quotient_rep_∂_thm
+equiv_mono_thm
 =TEX
 }
 
@@ -1083,8 +1084,7 @@ force_delete_theory"group_egs" handle Fail _ => ();
 open_theory"groups";
 new_theory"group_egs";
 new_parent"analysis";
-new_parent"÷";
-set_merge_pcs["basic_hol1", "'sets_alg", "'˙", "'÷", "'Ø"];
+set_merge_pcs["basic_hol1", "'sets_alg", "'˙", "'Ø"];
 =TEX
 %%%%
 %%%%
@@ -1166,16 +1166,6 @@ exp_isomorphism_thm
 linear_homomorphism_thm
 =TEX
 }
-
-We now define the additive and multiplicative groups of complex numbers.
-
-πHOLCONST
-‹ €÷â+› :  ÷ GROUP;
-‹ €÷â*› :  ÷ GROUP
-˜¸¸¸¸¸¸
-‹	÷â+ = MkGROUP Universe $+ (Ó÷ 0) ~
-‹ ±	÷â* = MkGROUP {x | ≥x = Ó÷ 0} $* (Ó÷ 1) $õ-õ1
-∞
 
 %%%%
 %%%%
@@ -1347,9 +1337,7 @@ val €quotient_ç_thm› = save_pop_thm "quotient_ç_thm";
 =TEX
 =SML
 set_goal([], ¨
-	µX $¶∑
-		Equiv(X, $¶)
-	¥	A ç X / ($¶) ¥ ∂x∑ x ç X ± x ç A
+	µX $¶∑ Equiv(X, $¶) ± A ç X / ($¶) ¥ ∂x∑ x ç X ± x ç A
 Æ);
 a(rewrite_tac[ quotient_set_def, equiv_class_def, equiv_def, refl_def] THEN REPEAT strip_tac);
 a(all_var_elim_asm_tac1);
@@ -1365,6 +1353,21 @@ set_goal([], ¨
 a(rewrite_tac[ respects_def, refines_def] THEN REPEAT strip_tac);
 a(all_asm_fc_tac[] THEN all_asm_fc_tac[]);
 val €respects_refines_thm› = save_pop_thm "respects_refines_thm";
+=TEX
+%%%%
+%%%%
+
+=SML
+
+val €equiv_mono_thm› = save_thm ( "equiv_mono_thm", (
+set_goal([], ¨µX $¶ Y∑
+	Equiv(X, $¶) ± Y Ä X ¥ Equiv(Y, $¶)
+Æ);
+a(PC_T1 "sets_ext" rewrite_tac[equiv_def, refl_def, sym_def, trans_def] THEN REPEAT strip_tac
+	THEN REPEAT (all_asm_fc_tac[]));
+pop_thm()
+));
+
 =TEX
 =SML
 set_goal([], ¨
@@ -3162,15 +3165,13 @@ val €product_homomorphism_thm› = save_pop_thm "product_honomorphism_thm";
 %%%%
 =SML
 open_theory"group_egs";
-set_merge_pcs["basic_hol1", "'sets_alg", "'˙", "'Ø", "'÷"];
+set_merge_pcs["basic_hol1", "'sets_alg", "'˙", "'Ø"];
 =TEX
 =SML
 val €˙_plus_def› = ±_left_elim(get_spec¨˙_plusÆ);
 val €˙_units_def› = ±_right_elim(get_spec¨˙_unitsÆ);
 val €Ø_additive_def› = ±_left_elim(get_spec¨Øâ+Æ);
 val €Ø_pos_def› = ±_right_elim(get_spec¨Ø_posÆ);
-val €÷_additive_def› = get_spec¨÷â+Æ;
-val €÷_multiplicative_def› = get_spec¨÷â*Æ;
 =TEX
 =SML
 set_goal([], ¨
@@ -3316,88 +3317,6 @@ set_goal([], ¨
 a(rewrite_tac[Ø_additive_def, group_ops_def, homomorphism_def, ∏_group_def, ∏_def]
 	THEN PC_T1 "Ø_lin_arith" prove_tac[]);
 val €plus_Ø_additive_homomorphism_thm› = save_pop_thm "plus_Ø_additive_homomorphism_thm";
-
-=TEX
-=SML
-set_goal([], ¨
-	÷â+ ç Group
-Æ);
-a(rewrite_tac[÷_additive_def, group_def, group_ops_def, ÷_plus_assoc_thm]);
-val €÷_additive_group_thm› = save_pop_thm "÷_additive_group_thm";
-
-
-
-=TEX
-=SML
-set_goal([], ¨
-	÷â* ç Group
-Æ);
-a(rewrite_tac[÷_multiplicative_def, group_def, group_ops_def, ÷_times_assoc_thm]);
-a(contr_tac THEN fc_tac[÷_times_eq_0_thm, ÷_times_recip_thm1, ÷_times_recip_thm]);
-a(POP_ASM_T ante_tac THEN asm_rewrite_tac[]);
-val €÷_multiplicative_group_thm› = save_pop_thm "÷_multiplicative_group_thm";
-
-=TEX
-=SML
-set_goal([], ¨
-	Car ÷â+ = Universe
-±	(µx y:÷∑ (x . y) ÷â+ = x + y)
-±	Unit ÷â+ = Ó÷ 0
-±	(µx:÷∑ (x õ~) ÷â+ = ~x)
-Æ);
-a(rewrite_tac[÷_additive_def, group_ops_def]);
-val €÷_additive_ops_thm› = save_pop_thm "÷_additive_ops_thm";
-=TEX
-=SML
-set_goal([], ¨
-	Car ÷â* = {x | ≥x = Ó÷ 0}
-±	(µx y:÷∑ (x . y) ÷â* = x * y)
-±	Unit ÷â* = Ó÷ 1
-±	(µx:÷∑ (x õ~) ÷â* = x õ-õ1)
-Æ);
-a(rewrite_tac[÷_multiplicative_def, group_ops_def]);
-val €÷_multiplicative_ops_thm› = save_pop_thm "÷_multiplicative_ops_thm";
-
-=TEX
-=SML
-set_goal([], ¨÷â+ = Øâ+ ∏âG Øâ+Æ);
-a(rewrite_tac[group_eq_group_thm]);
-a(rewrite_tac[÷_additive_def, group_ops_def, ∏_group_def, Ø_additive_ops_thm]);
-a(rewrite_tac[÷_plus_def, ÷_minus_def, Ó÷_def, Ø÷_def, ∏_def]);
-a(PC_T1"sets_ext1" rewrite_tac[]);
-val €÷_eq_Ø_∏_Ø_thm› = save_pop_thm "÷_eq_Ø_∏_Ø_thm";
-
-=TEX
-=SML
-val €÷_additive_÷_multiplicative_homomorphism_def› =
-	save_thm("÷_additive_÷_multiplicative_homomorphism_def",
-		rewrite_rule[÷_multiplicative_ops_thm, ÷_additive_ops_thm]
-			 (list_µ_elim[¨÷â+Æ, ¨÷â*Æ] homomorphism_def));
-
-=TEX
-=SML
-set_goal([], ¨
-	Exp ç Homomorphism(÷â+, ÷â*)
-Æ);
-a(rewrite_tac[ ÷_additive_÷_multiplicative_homomorphism_def]);
-a(conv_tac (TOP_MAP_C Ã_pair_conv));
-a(rewrite_tac[÷_exp_def, exp_clauses, ÷_plus_def, ÷_times_def, Ø÷_def, Ó÷_def,
-	sin_cos_plus_thm]);
-a(conv_tac (MAP_C Ø_anf_conv));
-a(contr_tac);
-a(lemma_tac¨≥Exp x1 = 0.Æ THEN1 rewrite_tac[exp_≥_eq_0_thm]);
-a(fc_tac[Ø_times_eq_0_thm]);
-a(ante_tac(µ_elim¨x2Æ cos_squared_plus_sin_squared_thm));
-a(asm_rewrite_tac[]);
-val €÷_exp_homomorphism_thm› = save_pop_thm "÷_exp_homomorphism_thm";
-
-=TEX
-=SML
-set_goal([], ¨µc∑
-	(Ãx∑c * x) ç Homomorphism(÷â+, ÷â+)
-Æ);
-a(rewrite_tac[÷_additive_def, group_ops_def, homomorphism_def, ÷_times_plus_distrib_thm]);
-val €÷_linear_homomorphism_thm› = save_pop_thm "÷_linear_homomorphism_thm";
 
 =TEX
 %%%%
