@@ -2310,6 +2310,72 @@ pop_thm()
 %%%%
 
 =SML
+
+val €subspace_product_subspace_thm› = save_thm ( "subspace_product_subspace_thm", (
+set_goal([], ¨µ” ‘ X Y∑
+	” ç Topology ± ‘ ç Topology
+¥	(X ÚâT ”) ∏âT (Y ÚâT ‘)  = (X ∏ Y) ÚâT (” ∏âT ‘)
+Æ);
+a(REPEAT strip_tac);
+a(lemma_tac¨” ∏âT ‘ ç TopologyÆ THEN1 all_fc_tac[product_topology_thm]);
+a(rewrite_tac[subspace_topology_def] THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(rename_tac[(¨xÆ, "P")] THEN
+	∂_tac¨ﬁ{Q | ∂A B∑ A ç ” ± B ç ‘ ± Q = (A ∏ B) ± Q ° (X ∏ Y) Ä P}Æ
+	THEN REPEAT strip_tac);
+(* *** Goal "1.1" *** *)
+a(bc_thm_tac ﬁ_open_thm THEN REPEAT strip_tac);
+a(rewrite_tac[product_topology_def] THEN PC_T1 "sets_ext1" REPEAT strip_tac);
+a(MERGE_PCS_T1 ["'bin_rel", "sets_ext1"] all_asm_fc_tac[]);
+a(∂_tac¨AÆ THEN ∂_tac¨BÆ THEN asm_rewrite_tac[]);
+a(MERGE_PCS_T1 ["'bin_rel", "sets_ext1"] asm_rewrite_tac[]);
+(* *** Goal "1.2" *** *)
+a(PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "1.2.1" *** *)
+a(DROP_NTH_ASM_T 2 (strip_asm_tac o rewrite_rule[product_topology_def]));
+a(LIST_DROP_NTH_ASM_T [1] all_fc_tac THEN all_var_elim_asm_tac1);
+a(∂_tac¨B' ∏ B''Æ THEN rename_tac[(¨B''Æ, "D"), (¨B'Æ, "C")]);
+a(REPEAT strip_tac THEN1 MERGE_PCS_T1 ["'bin_rel", "predicates"]asm_rewrite_tac[]);
+a(∂_tac¨CÆ THEN ∂_tac¨DÆ THEN asm_rewrite_tac[]);
+a(POP_ASM_T ante_tac THEN DROP_ASMS_T discard_tac);
+a(PC_T1 "sets_ext1" rewrite_tac[∏_def] THEN REPEAT strip_tac);
+a(all_asm_fc_tac[]);
+(* *** Goal "1.2.2" *** *)
+a(DROP_NTH_ASM_T 2 (strip_asm_tac o rewrite_rule[product_topology_def]));
+a(LIST_DROP_NTH_ASM_T [1] all_fc_tac THEN all_var_elim_asm_tac1);
+a(asm_rewrite_tac[∏_def]);
+(* *** Goal "1.2.3" *** *)
+a(DROP_NTH_ASM_T 2 bc_thm_tac);
+a(PC_T1 "sets_ext1" REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(rename_tac[(¨xÆ, "P")] THEN rewrite_tac[product_topology_def]
+	THEN REPEAT strip_tac);
+a(DROP_NTH_ASM_T 3 (strip_asm_tac o rewrite_rule[product_topology_def]));
+a(LIST_GET_NTH_ASM_T [3] all_fc_tac);
+a(LIST_DROP_NTH_ASM_T [3] all_fc_tac);
+a(rename_tac[(¨AÆ, "C"), (¨B'Æ, "D")] THEN ∂_tac¨C ° XÆ THEN ∂_tac¨D ° YÆ
+	THEN REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(∂_tac¨CÆ THEN REPEAT strip_tac);
+(* *** Goal "2.2" *** *)
+a(∂_tac¨DÆ THEN REPEAT strip_tac);
+(* *** Goal "2.3" *** *)
+a(DROP_NTH_ASM_T 6 ante_tac THEN rewrite_tac[∏_def] THEN REPEAT strip_tac);
+(* *** Goal "2.4" *** *)
+a(DROP_NTH_ASM_T 6 ante_tac THEN rewrite_tac[∏_def] THEN REPEAT strip_tac);
+(* *** Goal "2.5" *** *)
+a(PC_T1 "sets_ext1" asm_rewrite_tac[∏_def] THEN REPEAT strip_tac);
+a(DROP_NTH_ASM_T 5 ante_tac THEN PC_T1 "sets_ext1" rewrite_tac[∏_def] THEN REPEAT strip_tac);
+a(LIST_DROP_NTH_ASM_T [1] all_fc_tac);
+pop_thm()
+));
+
+
+=TEX
+%%%%
+%%%%
+
+=SML
 val €unit_topology_thm› = save_thm ( "unit_topology_thm", (
 set_goal([], ¨ 1âT ç Topology Æ);
 a(rewrite_tac[topology_def, unit_topology_def]
@@ -7153,6 +7219,17 @@ pop_thm()
 ));
 
 =TEX
+
+%%%%
+%%%%
+=SML
+
+val €subspace_Ø_topology_thm› = save_thm( "subspace_Ø_topology_thm", (
+	(rewrite_rule[open_Ø_topology_thm] o µ_elim¨OâRÆ) subspace_topology_thm
+));
+
+
+=TEX
 %%%%
 %%%%
 =SML
@@ -7604,6 +7681,51 @@ a(cases_tac¨ÓØ 0 º sÆ THEN cases_tac ¨ÓØ 0 º uÆ
 pop_thm()
 ));
 
+
+=TEX
+The square root function is continuous on the non-negative reals.
+There is a case for defining it to be $0$ for negative argument
+so that it beomes continuous on the whole real line, but we have not yet
+done this, except locally within the following proof.
+%%%%
+%%%%
+=SML
+
+val €sqrt_continuous_thm› = save_thm( "sqrt_continuous_thm", (
+set_goal([], ¨
+	Sqrt ç ({x | 0. º x} ÚâT OâR, OâR) Continuous
+Æ);
+a(lemma_tac¨(Ãx∑ if x º 0. then 0. else Sqrt x) ç (OâR, OâR) ContinuousÆ);
+(* *** Goal "1" *** *)
+a(rewrite_tac[continuous_cts_at_Ø_thm] THEN strip_tac);
+a(ho_bc_thm_tac cond_cts_thm1);
+a(rewrite_tac[const_cts_thm, sqrt_0_1_thm]);
+a(∂_tac¨2. * (Abs x + 1.)Æ THEN ∂_tac¨~(2. * (Abs x + 1.))Æ);
+a(rewrite_tac[closed_interval_def] THEN REPEAT strip_tac);
+(* *** Goal "1.1" *** *)
+a(rewrite_tac[»_axiom] THEN bc_thm_tac sqrt_cts_thm THEN REPEAT strip_tac);
+(* *** Goal "1.2" *** *)
+a(rewrite_tac[Ø_abs_def] THEN if_cases_tac THEN asm_rewrite_tac[]
+	THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "1.3" *** *)
+a(rewrite_tac[Ø_abs_def] THEN if_cases_tac THEN asm_rewrite_tac[]
+	THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+(* *** Goal "2" *** *)
+a(bc_thm_tac same_on_space_continuous_thm);
+a(∂_tac¨(Ã x∑ if x º 0. then 0. else Sqrt x)Æ
+	THEN asm_rewrite_tac[open_Ø_topology_thm,
+		subspace_Ø_space_t_thm, subspace_Ø_topology_thm]
+	THEN REPEAT strip_tac);
+(* *** Goal "2.1" *** *)
+a(bc_thm_tac subspace_domain_continuous_thm THEN asm_rewrite_tac[open_Ø_topology_thm]);
+(* *** Goal "2.2" *** *)
+a(cases_tac ¨x º 0.Æ THEN asm_rewrite_tac[sqrt_0_1_thm]);
+a(lemma_tac ¨x = 0.Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(asm_rewrite_tac[sqrt_0_1_thm]);
+pop_thm()
+));
+
+
 =TEX
 
 %%%%
@@ -8022,7 +8144,8 @@ val _ = add_rw_thms [
 	open_Ø_topology_thm,
 	space_t_Ø_thm,
 	open_Ø_id_continuous_thm,
-	(rewrite_rule[open_Ø_topology_thm] o µ_elim¨OâRÆ) open_Ø_const_continuous_thm
+	(rewrite_rule[open_Ø_topology_thm] o µ_elim¨OâRÆ) open_Ø_const_continuous_thm,
+	subspace_Ø_topology_thm
 	]
 	"'topology_Ø";
 local
