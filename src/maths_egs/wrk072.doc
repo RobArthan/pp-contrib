@@ -3662,7 +3662,7 @@ pop_thm()
 Here it would be nice to have ANF for complex arithmetic.
 =SML
 
-val €fta_lemma1› = save_thm( "fta_lemma", (
+val €fta_lemma1› = save_thm( "fta_lemma1", (
 set_goal([], ¨µc n z t∑
 		SeriesâC (Ã i∑ c i * Ø÷ t^(n-i) * z^i) (n + 1) 
 	=	Ø÷ t * (SeriesâC (Ã i∑ c i * Ø÷ t^((n-1)-i) * z^i) n) + c n * z^n
@@ -3832,7 +3832,7 @@ pop_thm()
 
 val €fta_lemma6› = save_thm( "fta_lemma6", (
 set_goal([], ¨µc n∑
-	(µz∑ ≥PolyâC (c, n) z = Ó÷ 0) ± ≥c n = Ó÷ 0
+	(µz∑ ≥PolyâC (c, n) z = Ó÷ 0) ± c n = Ó÷ 1
 ¥	(Ãz∑ z * Ø÷ (Abs z õ-õ1)) o (Ã(z, t)∑ SeriesâC (Ã i∑ c i * Ø÷ t^(n-i) * z^i) (n + 1))
 		ç (OâS1 ∏âT OâR, OâS1) Continuous 
 Æ);
@@ -3852,7 +3852,7 @@ a(REPEAT strip_tac THEN cases_tac¨s = 0.Æ THEN1 all_var_elim_asm_tac1);
 (* *** Goal "3.1" *** *)
 a(LEMMA_T ¨
 	SeriesâC (Ã i∑ c i * Ø÷ 0. ^ (n - i) * w ^ i) (n + 1) =
-	SeriesâC (Ã i∑if i = n then c n * w^n else Ó÷ 0) (n + 1)Æ rewrite_thm_tac);
+	SeriesâC (Ã i∑if i = n then w^n else Ó÷ 0) (n + 1)Æ rewrite_thm_tac);
 (* *** Goal "3.1.1" *** *)
 a(bc_thm_tac ÷_series_eq_thm THEN REPEAT strip_tac THEN rewrite_tac[]);
 a(if_cases_tac THEN asm_rewrite_tac[]);
@@ -3865,7 +3865,7 @@ a(rewrite_tac ÷_ops_defs);
 (* *** Goal "3.1.2" *** *)
 a(rewrite_tac[÷_series_def]);
 a(LEMMA_T ¨
-	SeriesâC (Ã i∑ if i = n then c n * w ^ n else Ó÷ 0) n =
+	SeriesâC (Ã i∑ if i = n then w ^ n else Ó÷ 0) n =
 	SeriesâC (Ã i∑ Ó÷ 0) nÆ rewrite_thm_tac);
 (* *** Goal "3.1.2.1" *** *)
 a(bc_thm_tac ÷_series_eq_thm THEN REPEAT strip_tac THEN rewrite_tac[]);
@@ -3873,7 +3873,6 @@ a(if_cases_tac THEN asm_rewrite_tac[]);
 a(PC_T1 "lin_arith" asm_prove_tac[]);
 (* *** Goal "3.1.2.2" *** *)
 a(rewrite_tac[÷_series_const_thm]);
-a(asm_rewrite_tac [÷_times_eq_0_thm1]);
 a(bc_thm_tac ÷_Ó_exp_≥_eq_0_thm);
 a(swap_nth_asm_concl_tac 1 THEN asm_rewrite_tac[÷_abs_eq_0_thm, s1_def]);
 a(rewrite_tac (sqrt_0_1_thm::÷_ops_defs));
@@ -3889,7 +3888,6 @@ a(rewrite_tac[(rewrite_rule[] o list_µ_elim[¨OâCÆ, ¨OâRÆ]) subspace_product_subs
 a(bc_thm_tac subspace_domain_continuous_thm);
 a(REPEAT strip_tac THEN1 basic_topology_tac[]);
 a(rewrite_tac[fta_lemma3]);
-fta_lemma3;
 pop_thm()
 ));
 
@@ -3897,29 +3895,35 @@ pop_thm()
 %%%%
 %%%%
 =SML
-(*
 
 val €fta_lemma7› = save_thm( "fta_lemma7", (
 set_goal([], ¨µc n∑
-	(µz∑ ≥PolyâC (c, n) z = Ó÷ 0) ± ≥c n = Ó÷ 0
+	(µz∑ ≥PolyâC (c, n) z = Ó÷ 0) ± c n = Ó÷ 1
 ¥	((OâS1, {}, OâS1) Homotopic)
-	(Ãz∑ z^n)
+	((Ãz∑ z * Ø÷ (Abs z õ-õ1)) o (Ãz : ÷∑ z^n))
 	((Ãz∑ z * Ø÷ (Abs z õ-õ1)) o (PolyâC (c, n)))
 Æ);
 a(REPEAT strip_tac THEN rewrite_tac[homotopic_def, homotopy_def]);
-a(∂_tac¨(Ã(z, t)∑ SeriesâC (Ã i∑ c i * Ø÷ t^(n-i) * z^i) (n + 1))Æ
-	THEN ALL_FC_T rewrite_tac[fta_lemma3]);
+a(∂_tac¨(Ãz∑ z * Ø÷ (Abs z õ-õ1)) o (Ã(z, t)∑ SeriesâC (Ã i∑ c i * Ø÷ t^(n-i) * z^i) (n + 1))Æ
+	THEN ALL_FC_T rewrite_tac[fta_lemma6]);
 a(rewrite_tac[o_def] THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
-a(rewrite_tac ÷_ops_defs);
+a(rewrite_tac[fta_lemma1]);
+a(LEMMA_T¨Ø÷ 0. = Ó÷ 0Æ rewrite_thm_tac THEN1 rewrite_tac ÷_ops_defs);
+a(cases_tac¨x = Ó÷ 0Æ THEN1 all_var_elim_asm_tac1);
+(* *** Goal "1.1" *** *)
+a((strip_asm_tac o µ_elim¨nÆ) Ó_cases_thm THEN all_var_elim_asm_tac1
+	THEN asm_rewrite_tac[]);
+(* *** Goal "1.2" *** *)
+a(asm_rewrite_tac[÷_abs_times_thm]);
+a(LEMMA_T ¨Abs(Ó÷ 1) = 1.Æ rewrite_thm_tac THEN1 rewrite_tac ÷_ops_defs); 
+a(rewrite_tac [sqrt_0_1_thm]);
 (* *** Goal "2" *** *)
-a(rewrite_tac ÷_ops_defs);
-
-
+a(LEMMA_T¨Ø÷ 1. = Ó÷ 1Æ rewrite_thm_tac THEN1 rewrite_tac ÷_ops_defs);
+a(rewrite_tac[÷_poly_def]);
 pop_thm()
 ));
 
-*)
 =TEX
 %%%%
 %%%%
