@@ -3775,14 +3775,100 @@ a(REPEAT strip_tac THEN rewrite_tac[÷_poly_def,	÷_sigma_times_thm1, ÷_times_asso
 pop_thm()
 ));
 
+
+=TEX
+%%%%
+%%%%
+=SML
+
+val €sqrt_º_1_thm› = save_thm( "sqrt_º_1_thm", (
+set_goal([], ¨
+	µx∑ 0. º x  ± x º 1. ¥ Sqrt x º 1.
+Æ);
+a(REPEAT strip_tac);
+a(contr_tac THEN POP_ASM_T (strip_asm_tac o rewrite_rule[Ø_≥_º_less_thm]));
+a(lemma_tac¨0. < Sqrt xÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a((ante_tac o µ_elim¨Sqrt xÆ) Ø_times_mono_§_thm THEN asm_rewrite_tac[] THEN REPEAT strip_tac);
+a(∂_tac¨1.Æ THEN REPEAT strip_tac THEN ∂_tac¨Sqrt xÆ THEN asm_rewrite_tac[]);
+a(conv_tac (ONCE_MAP_C Ø_anf_conv));
+a(ALL_FC_T rewrite_tac[sqrt_thm]);
+a(PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+pop_thm()
+));
+
+
+=TEX
+%%%%
+%%%%
+=SML
+
+val €÷_poly_degree_0_lemma1› = save_thm( "÷_poly_degree_0_lemma1", (
+set_goal([], ¨µc n∑
+	(µz∑ Abs z º 1. ¥ ≥PolyâC (c, n) z = Ó÷ 0)
+¥	(Ãz∑ z * Ø÷ (Abs z õ-õ1)) o (Ã(z, t)∑ PolyâC (c, n) (Ø÷ (IotaI t)*z)) ç (OâS1 ∏âT OâR, OâS1) Continuous 
+Æ);
+a(REPEAT strip_tac THEN bc_thm_tac o_continuous_thm);
+a(∂_tac ¨~{Ó÷ 0} ÚâT OâCÆ THEN rewrite_tac[pp_s1_continuous_thm]);
+a(REPEAT strip_tac THEN1 basic_topology_tac[]);
+a(bc_thm_tac subspace_range_continuous_bc_thm);
+a(rewrite_tac[] THEN REPEAT strip_tac THEN1 basic_topology_tac[]);
+(* *** Goal "1" *** *)
+a(DROP_NTH_ASM_T 2 bc_thm_tac THEN POP_ASM_T ante_tac);
+a(pair_tac¨x = (w, b)Æ THEN
+	rewrite_tac[(rewrite_rule[] o list_µ_elim[¨OâS1Æ, ¨OâRÆ])product_topology_space_t_thm, ∏_def]);
+a(rewrite_tac[s1_def] THEN REPEAT strip_tac);
+a(asm_rewrite_tac [÷_abs_times_thm, iota_i_def]);
+a(if_cases_tac THEN asm_rewrite_tac (sqrt_0_1_thm :: ÷_ops_defs));
+a(lemma_tac¨0. º bÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(ALL_FC_T rewrite_tac[sqrt_times_thm] THEN conv_tac (ONCE_MAP_C Ø_anf_conv));
+a(ALL_FC_T asm_rewrite_tac[sqrt_thm]);
+(* *** Goal "2" *** *)
+a(rewrite_tac[open_s1_def]);
+a(once_rewrite_tac[(eq_sym_rule o µ_elim¨OâRÆ) universe_subspace_topology_thm]);
+a(rewrite_tac[(rewrite_rule[] o list_µ_elim[¨OâCÆ, ¨OâRÆ]) subspace_product_subspace_thm]);
+a(bc_thm_tac subspace_domain_continuous_thm);
+a(REPEAT strip_tac THEN1 basic_topology_tac[]);
+a(÷_continuity_tac[Ø÷_continuous_thm, ÷_poly_continuous_thm, iota_i_continuous_thm]
+	THEN rewrite_tac[eq_sym_rule open_÷_def, Ø÷_continuous_thm,
+		÷_poly_continuous_thm]);
+pop_thm()
+));
+
+=TEX
+%%%%
+%%%%
+=SML
+
+val €÷_poly_degree_0_lemma2› = save_thm( "÷_poly_degree_0_lemma2", (
+set_goal([], ¨µc n∑
+	(µz∑ Abs z º 1. ¥ ≥PolyâC (c, n) z = Ó÷ 0)
+¥	∂w∑w ç S1
+±	((OâS1, {}, OâS1) Homotopic)
+	(Ãz∑ w)
+	((Ãz∑ z * Ø÷ (Abs z õ-õ1)) o (PolyâC (c, n)))
+Æ);
+a(REPEAT strip_tac THEN ∂_tac¨ PolyâC (c, n) (Ó÷ 0) * Ø÷ (Abs (PolyâC (c, n) (Ó÷ 0)) õ-õ1)Æ);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(bc_thm_tac pp_s1_ç_s1_thm THEN POP_ASM_T bc_thm_tac);
+a(rewrite_tac (sqrt_0_1_thm :: ÷_ops_defs));
+(* *** Goal "2" *** *)
+a(rewrite_tac[homotopic_def, homotopy_def]);
+a(∂_tac¨(Ãz∑ z * Ø÷ (Abs z õ-õ1)) o (Ã(z, t)∑ PolyâC (c, n) (Ø÷ (IotaI t)*z))Æ
+	THEN ALL_FC_T rewrite_tac[÷_poly_degree_0_lemma1]);
+a(rewrite_tac[o_def] THEN REPEAT strip_tac
+	THEN rewrite_tac (iota_i_def::÷_ops_defs));
+pop_thm()
+));
+
+
 =TEX
 %%%%
 %%%%
 
-Here it would be nice to have ANF for complex arithmetic.
 =SML
 
-val €fta_lemma1› = save_thm( "fta_lemma1", (
+val €÷_poly_degree_n_lemma1› = save_thm( "÷_poly_degree_n_lemma1", (
 set_goal([], ¨µc n z t∑
 		SigmaâC (Ã i∑ c i * Ø÷ (IotaI t)^(n-i) * z^i) (n + 1) 
 	=	Ø÷ (IotaI t) * (SigmaâC (Ã i∑ c i * Ø÷ (IotaI t)^((n-1)-i) * z^i) n) + c n * z^n
@@ -3826,7 +3912,7 @@ pop_thm()
 %%%%
 =SML
 
-val €fta_lemma2› = save_thm( "fta_lemma2", (
+val €÷_poly_degree_n_lemma2› = save_thm( "÷_poly_degree_n_lemma2", (
 set_goal([], ¨µc n z t∑
 	≥(IotaI t) = 0.
 ¥	SigmaâC (Ã i∑ c i * Ø÷ (IotaI t)^(n-i) * z^i) (n + 1) =
@@ -3881,7 +3967,7 @@ pop_thm()
 %%%%
 =SML
 
-val €fta_lemma3› = save_thm( "fta_lemma3", (
+val €÷_poly_degree_n_lemma3› = save_thm( "÷_poly_degree_n_lemma3", (
 set_goal([], ¨µc n∑
 	(Ã(z, t)∑ SigmaâC (Ã i∑ c i * Ø÷ (IotaI t)^(n-i) * z^i) (n + 1)) ç (OâC ∏âT OâR, OâC) Continuous 
 Æ);
@@ -3902,59 +3988,9 @@ pop_thm()
 %%%%
 =SML
 
-val €fta_lemma4› = save_thm( "fta_lemma4", (
+val €÷_poly_degree_n_lemma4› = save_thm( "÷_poly_degree_n_lemma4", (
 set_goal([], ¨µc n∑
-	(µz∑ ≥PolyâC (c, n) z = Ó÷ 0)
-¥	(Ãz∑ z * Ø÷ (Abs z õ-õ1)) o (Ã(z, t)∑ PolyâC (c, n) (Ø÷ (IotaI t)*z)) ç (OâS1 ∏âT OâR, OâS1) Continuous 
-Æ);
-a(REPEAT strip_tac THEN bc_thm_tac o_continuous_thm);
-a(∂_tac ¨~{Ó÷ 0} ÚâT OâCÆ THEN rewrite_tac[pp_s1_continuous_thm]);
-a(REPEAT strip_tac THEN1 basic_topology_tac[]);
-a(bc_thm_tac subspace_range_continuous_bc_thm);
-a(rewrite_tac[] THEN REPEAT strip_tac THEN1 basic_topology_tac[] THEN1 asm_rewrite_tac[]);
-a(rewrite_tac[open_s1_def]);
-a(once_rewrite_tac[(eq_sym_rule o µ_elim¨OâRÆ) universe_subspace_topology_thm]);
-a(rewrite_tac[(rewrite_rule[] o list_µ_elim[¨OâCÆ, ¨OâRÆ]) subspace_product_subspace_thm]);
-a(bc_thm_tac subspace_domain_continuous_thm);
-a(REPEAT strip_tac THEN1 basic_topology_tac[]);
-a(÷_continuity_tac[Ø÷_continuous_thm, ÷_poly_continuous_thm, iota_i_continuous_thm]
-	THEN rewrite_tac[eq_sym_rule open_÷_def, Ø÷_continuous_thm,
-		÷_poly_continuous_thm]);
-pop_thm()
-));
-
-=TEX
-%%%%
-%%%%
-=SML
-
-val €fta_lemma5› = save_thm( "fta_lemma5", (
-set_goal([], ¨µc n∑
-	(µz∑ ≥PolyâC (c, n) z = Ó÷ 0)
-¥	∂w∑w ç S1
-±	((OâS1, {}, OâS1) Homotopic)
-	(Ãz∑ w)
-	((Ãz∑ z * Ø÷ (Abs z õ-õ1)) o (PolyâC (c, n)))
-Æ);
-a(REPEAT strip_tac THEN ∂_tac¨ PolyâC (c, n) (Ó÷ 0) * Ø÷ (Abs (PolyâC (c, n) (Ó÷ 0)) õ-õ1)Æ);
-a(REPEAT strip_tac THEN1 (bc_thm_tac pp_s1_ç_s1_thm THEN asm_rewrite_tac[]));
-a(rewrite_tac[homotopic_def, homotopy_def]);
-a(∂_tac¨(Ãz∑ z * Ø÷ (Abs z õ-õ1)) o (Ã(z, t)∑ PolyâC (c, n) (Ø÷ (IotaI t)*z))Æ
-	THEN ALL_FC_T rewrite_tac[fta_lemma4]);
-a(rewrite_tac[o_def] THEN REPEAT strip_tac
-	THEN rewrite_tac (iota_i_def::÷_ops_defs));
-pop_thm()
-));
-
-
-=TEX
-%%%%
-%%%%
-=SML
-
-val €fta_lemma6› = save_thm( "fta_lemma6", (
-set_goal([], ¨µc n∑
-	(µz∑ ≥z = Ó÷ 0 ¥ ≥PolyâC (c, n) z = Ó÷ 0) ± c n = Ó÷ 1
+	(µz∑ 1. º Abs z ¥ ≥PolyâC (c, n) z = Ó÷ 0) ± c n = Ó÷ 1
 ¥	(Ãz∑ z * Ø÷ (Abs z õ-õ1)) o (Ã(z, t)∑ SigmaâC (Ã i∑ c i * Ø÷ (IotaI t)^(n-i) * z^i) (n + 1))
 		ç (OâS1 ∏âT OâR, OâS1) Continuous 
 Æ);
@@ -4009,21 +4045,33 @@ a(lemma_tac¨≥(IotaI s) = 0.Æ
 		if_cases_tac THEN
 			asm_rewrite_tac[] THEN
 				PC_T1 "Ø_lin_arith" asm_prove_tac[]));
-a(ALL_FC_T rewrite_tac[fta_lemma2]);
+a(ALL_FC_T rewrite_tac[÷_poly_degree_n_lemma2]);
 a((strip_asm_tac o list_µ_elim[¨nÆ, ¨Ø÷ (IotaI s)Æ]) ÷_Ó_exp_≥_eq_0_thm);
 a(asm_rewrite_tac[÷_times_eq_0_thm1]);
 a(DROP_NTH_ASM_T 7 bc_thm_tac);
-a(asm_rewrite_tac[÷_times_eq_0_thm1]);
-a(ALL_FC_T rewrite_tac[÷_recip_≥_eq_0_thm]);
-a(swap_nth_asm_concl_tac 5
-	THEN asm_rewrite_tac (s1_def :: sqrt_0_1_thm :: ÷_ops_defs));
+a(DROP_NTH_ASM_T 5 ante_tac);
+a(rewrite_tac[÷_abs_times_thm, s1_def] THEN STRIP_T rewrite_thm_tac);
+a(DROP_NTH_ASM_T 2 ante_tac);
+a(rewrite_tac[iota_i_def] THEN if_cases_tac THEN asm_rewrite_tac (sqrt_0_1_thm :: ÷_ops_defs));
+a(REPEAT strip_tac);
+a(ALL_FC_T rewrite_tac[Ø_recip_clauses]);
+a(rewrite_tac[Ø_times_assoc_thm1] THEN ALL_FC_T rewrite_tac[Ø_recip_clauses]);
+a(lemma_tac¨0. < sÆ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(all_fc_tac [Ø_0_less_0_less_recip_thm]);
+a(lemma_tac¨0. º s õ-õ1Æ THEN1 PC_T1 "Ø_lin_arith" asm_prove_tac[]);
+a(ALL_FC_T rewrite_tac[sqrt_times_thm] THEN conv_tac (ONCE_MAP_C Ø_anf_conv));
+a(ALL_FC_T rewrite_tac[sqrt_thm]);
+a(contr_tac THEN POP_ASM_T (strip_asm_tac o rewrite_rule[Ø_≥_º_less_thm]));
+a((ante_tac o µ_elim¨sÆ) Ø_times_mono_§_thm THEN asm_rewrite_tac[] THEN strip_tac);
+a(∂_tac¨s õ-õ1Æ THEN strip_tac THEN ∂_tac¨1.Æ THEN asm_rewrite_tac[]);
+a(ALL_FC_T rewrite_tac[Ø_recip_clauses] THEN PC_T1 "Ø_lin_arith" asm_prove_tac[]);
 (* *** Goal "4" *** *)
 a(rewrite_tac[open_s1_def]);
 a(once_rewrite_tac[(eq_sym_rule o µ_elim¨OâRÆ) universe_subspace_topology_thm]);
 a(rewrite_tac[(rewrite_rule[] o list_µ_elim[¨OâCÆ, ¨OâRÆ]) subspace_product_subspace_thm]);
 a(bc_thm_tac subspace_domain_continuous_thm);
 a(REPEAT strip_tac THEN1 basic_topology_tac[]);
-a(rewrite_tac[fta_lemma3]);
+a(rewrite_tac[÷_poly_degree_n_lemma3]);
 pop_thm()
 ));
 
@@ -4032,19 +4080,19 @@ pop_thm()
 %%%%
 =SML
 
-val €fta_lemma7› = save_thm( "fta_lemma7", (
+val €÷_poly_degree_n_lemma5› = save_thm( "÷_poly_degree_n_lemma5", (
 set_goal([], ¨µc n∑
-	(µz∑ ≥z = Ó÷ 0 ¥ ≥PolyâC (c, n) z = Ó÷ 0) ± c n = Ó÷ 1
+	(µz∑ 1. º Abs z ¥ ≥PolyâC (c, n) z = Ó÷ 0) ± c n = Ó÷ 1
 ¥	((OâS1, {}, OâS1) Homotopic)
 	((Ãz∑ z * Ø÷ (Abs z õ-õ1)) o (Ãz : ÷∑ z^n))
 	((Ãz∑ z * Ø÷ (Abs z õ-õ1)) o (PolyâC (c, n)))
 Æ);
 a(REPEAT strip_tac THEN rewrite_tac[homotopic_def, homotopy_def]);
 a(∂_tac¨(Ãz∑ z * Ø÷ (Abs z õ-õ1)) o (Ã(z, t)∑ SigmaâC (Ã i∑ c i * Ø÷ (IotaI t)^(n-i) * z^i) (n + 1))Æ
-	THEN ALL_FC_T rewrite_tac[fta_lemma6]);
+	THEN ALL_FC_T rewrite_tac[÷_poly_degree_n_lemma4]);
 a(rewrite_tac[o_def] THEN REPEAT strip_tac);
 (* *** Goal "1" *** *)
-a(rewrite_tac[fta_lemma1] THEN rewrite_tac[iota_i_def]);
+a(rewrite_tac[÷_poly_degree_n_lemma1] THEN rewrite_tac[iota_i_def]);
 a(LEMMA_T¨Ø÷ 0. = Ó÷ 0Æ rewrite_thm_tac THEN1 rewrite_tac ÷_ops_defs);
 a(cases_tac¨x = Ó÷ 0Æ THEN1 all_var_elim_asm_tac1);
 (* *** Goal "1.1" *** *)
@@ -4061,18 +4109,17 @@ a(rewrite_tac[÷_poly_def]);
 pop_thm()
 ));
 
-
 =TEX
 %%%%
 %%%%
 =SML
 
-val €fta_lemma8› = save_thm( "fta_lemma8", (
+val €÷_poly_degree_0_thm› = save_thm( "÷_poly_degree_0_thm", (
 set_goal([], ¨µc n∑
-	(µz∑ ≥PolyâC (c, n) z = Ó÷ 0)
+	(µz∑ Abs z º 1. ¥ ≥PolyâC (c, n) z = Ó÷ 0)
 ¥	S1S1Degree ((Ãz∑ z * Ø÷ (Abs z õ-õ1)) o (PolyâC (c, n))) = Ó˙ 0
 Æ);
-a(REPEAT strip_tac THEN all_fc_tac[fta_lemma5]);
+a(REPEAT strip_tac THEN all_fc_tac[÷_poly_degree_0_lemma2]);
 a(all_fc_tac[s1_s1_degree_const_thm, s1_s1_degree_homotopy_invariant_thm]);
 a(POP_ASM_T ante_tac THEN asm_rewrite_tac[]);
 pop_thm()
@@ -4083,12 +4130,12 @@ pop_thm()
 %%%%
 =SML
 
-val €fta_lemma9› = save_thm( "fta_lemma9", (
+val €÷_poly_degree_n_thm› = save_thm( "÷_poly_degree_n_thm", (
 set_goal([], ¨µc n∑
-	(µz∑ ≥z = Ó÷ 0 ¥ ≥PolyâC (c, n) z = Ó÷ 0) ± c n = Ó÷ 1
+	(µz∑ 1. º Abs z ¥ ≥PolyâC (c, n) z = Ó÷ 0) ± c n = Ó÷ 1
 ¥	S1S1Degree ((Ãz∑ z * Ø÷ (Abs z õ-õ1)) o (PolyâC (c, n))) = Ó˙ n
 Æ);
-a(REPEAT strip_tac THEN all_fc_tac[fta_lemma7]);
+a(REPEAT strip_tac THEN all_fc_tac[÷_poly_degree_n_lemma5]);
 a(all_fc_tac[s1_s1_degree_homotopy_invariant_thm]);
 a(POP_ASM_T (rewrite_thm_tac o eq_sym_rule) THEN DROP_ASMS_T discard_tac);
 a(LEMMA_T ¨S1S1Degree((Ã z∑ z * Ø÷ (Abs z õ-õ1)) o (Ã z:÷∑ z ^ n)) =
@@ -4121,6 +4168,28 @@ a(once_rewrite_tac[÷_sigma_def] THEN asm_rewrite_tac[]);
 pop_thm()
 ));
 
+
+=TEX
+%%%%
+%%%%
+=SML
+
+val €monic_fta_thm› = save_thm( "monic_fta_thm", (
+set_goal([], ¨
+	µc n∑ c 0 = Ó÷ 0 ≤ ≥n = 0 ± c n = Ó÷ 1 ¥ (∂ z∑ PolyâC(c, n) z = Ó÷ 0)
+Æ);
+a(REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(∂_tac¨Ó÷ 0Æ THEN bc_thm_tac constant_term_0_root_thm THEN strip_tac);
+(* *** Goal "2" *** *)
+a(contr_tac THEN (ante_tac o all_µ_elim) ÷_poly_degree_0_thm
+	THEN (ante_tac o all_µ_elim) ÷_poly_degree_n_thm
+	THEN asm_rewrite_tac[]);
+a(STRIP_T rewrite_thm_tac);
+a(asm_rewrite_tac[Ó˙_one_one_thm]);
+pop_thm()
+));
+
 =TEX
 %%%%
 %%%%
@@ -4136,14 +4205,7 @@ a(∂_tac¨Ó÷ 0Æ THEN bc_thm_tac constant_term_0_root_thm THEN strip_tac);
 (* *** Goal "2" *** *)
 a(lemma_tac¨(Ãi∑ c n õ-õ1 * c i) n = Ó÷ 1Æ
 	THEN1 (rewrite_tac[] THEN bc_thm_tac ÷_times_recip_thm1 THEN REPEAT strip_tac));
-a(lemma_tac¨∂z∑ PolyâC ((Ãi∑ c n õ-õ1 * c i), n) z = Ó÷ 0Æ);
-(* *** Goal "2.1" *** *)
-a(contr_tac); 
-a(lemma_tac¨µ z∑ ≥z = Ó÷ 0 ¥ ≥PolyâC ((Ã i∑ c n õ-õ1 * c i), n) z = Ó÷ 0Æ
-	THEN1 asm_rewrite_tac[]);
-a(all_fc_tac[fta_lemma8, fta_lemma9]);
-a(POP_ASM_T ante_tac THEN asm_rewrite_tac[Ó˙_one_one_thm]);
-(* *** Goal "2.2" *** *)
+a(all_fc_tac[monic_fta_thm]);
 a(∂_tac¨zÆ THEN POP_ASM_T ante_tac);
 a(rewrite_tac[÷_poly_times_thm]);
 a(rewrite_tac[÷_times_eq_0_thm1] THEN contr_tac);
