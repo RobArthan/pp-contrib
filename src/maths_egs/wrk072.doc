@@ -431,8 +431,8 @@ The degree of an element of the fundamental group of the unit circle:
 πHOLCONST
 ‹ €ClassS1Degree› : (Ø ≠ ÷)  ≠ ˙
 ˜¸¸¸¸¸¸
-‹ µx p f∑
-‹	p ç Loops(OâS1, x) / PathHomotopic OâS1 ± f ç p
+‹ µp f∑
+‹	p ç Loops(OâS1, Ó÷ 1) / PathHomotopic OâS1 ± f ç p
 ‹ ¥	ClassS1Degree p = LoopS1Degree f
 ∞
 
@@ -2752,7 +2752,7 @@ val €exp_s1_path_lifting_thm› = save_thm( "exp_s1_path_lifting_thm",
 
 val €exp_s1_path_lifting_thm1› = save_thm ( "exp_s1_path_lifting_thm1", ( 
 set_goal([], ¨
-µ y f∑
+µf∑
 	f ç Paths OâS1
 ¥	(∂ g∑ g ç Paths OâR ± (µ s∑ ExpS1 (g s) = f s))Æ);
 a(REPEAT strip_tac);
@@ -2771,26 +2771,24 @@ a(∂_tac¨gÆ THEN asm_rewrite_tac[]);
 pop_thm()
 ));
 
-
 =TEX
 %%%%
 %%%%
 
 =SML
-(*
 
-val €s1_s1_loop_thm› = save_thm ( "s1_s1_loop_thm", ( 
+val €exp_s1_loop_lifting_thm› = save_thm ( "exp_s1_loop_lifting_thm", ( 
 set_goal([], ¨
-µ f∑
-	f ç (OâS1, OâS1) Continuous
-¥	(Ã t∑ f (ExpS1 (2. * – * t))) ç Loops(OâS1, f (Ó÷ 0))Æ);
-a(rewrite_tac[loops_def, paths_def] THEN REPEAT strip_tac);
-
-
+µf x ∑
+	f ç Loops (OâS1, x)
+¥	(∂ g∑ g ç Paths OâR ± (µ s∑ ExpS1 (g s) = f s))Æ);
+a(rewrite_tac[loops_def] THEN REPEAT strip_tac);
+a(all_fc_tac[exp_s1_path_lifting_thm1]);
+a(∂_tac¨gÆ THEN asm_rewrite_tac[]);
 pop_thm()
 ));
 
-*)
+
 =TEX
 %%%%
 %%%%
@@ -4211,6 +4209,107 @@ a(rewrite_tac[÷_poly_times_thm]);
 a(rewrite_tac[÷_times_eq_0_thm1] THEN contr_tac);
 a(POP_ASM_T discard_tac THEN ALL_FC_T (MAP_EVERY ante_tac) [÷_times_recip_thm]);
 a(asm_rewrite_tac[]);
+pop_thm()
+));
+
+
+=TEX
+%%%%
+%%%%
+
+=SML
+
+(*
+drop_main_goal();
+*)
+
+(*
+
+val _ = save_consistency_thm ¨ClassS1DegreeÆ (
+push_consistency_goal ¨ClassS1DegreeÆ;
+a(bc_thm_tac induced_fun_∂_thm THEN REPEAT strip_tac);
+(* *** Goal "1" *** *)
+a(bc_thm_tac loops_homotopic_equiv_thm THEN rewrite_tac[one_ç_s1_thm]);
+(* *** Goal "2" *** *)
+
+
+
+
+a(prove_∂_tac THEN REPEAT strip_tac);
+
+
+
+pop_thm()
+);
+
+val €class_s1_degree_def› = get_spec ¨ClassS1DegreeÆ;
+
+
+*)
+=TEX
+%%%%
+%%%%
+=SML
+
+val €loop_s1_degree_plus_thm› = save_thm( "loop_s1_degree_plus_thm", (
+set_goal([], ¨µf g x∑
+	f ç Loops(OâS1, x) ± g ç Loops(OâS1, x)
+¥	LoopS1Degree (f +âP g) = LoopS1Degree f + LoopS1Degree g 
+Æ);
+a(REPEAT strip_tac);
+a(POP_ASM_T ante_tac THEN all_fc_tac[exp_s1_loop_lifting_thm] THEN strip_tac);
+a(rename_tac[(¨g'Æ, "p")] THEN DROP_NTH_ASM_T 4 ante_tac
+	THEN all_fc_tac[loop_path_thm] THEN strip_tac);
+a(lemma_tac¨ExpS1(p 1.) = g 0.Æ);
+(* *** Goal "1" *** *)
+a(all_asm_ante_tac THEN rewrite_tac[loops_def] THEN REPEAT strip_tac);
+a(asm_rewrite_tac[]);
+a(LEMMA_T¨g 0. = x Æ rewrite_thm_tac THEN1 (DROP_NTH_ASM_T 3 bc_thm_tac THEN REPEAT strip_tac));
+a(POP_ASM_T bc_thm_tac THEN REPEAT strip_tac);
+(* *** Goal "2" *** *)
+a(all_fc_tac[exp_s1_path_lifting_thm]);
+a(rename_tac[(¨g'Æ, "q")] THEN lemma_tac ¨p +âP q ç Paths OâRÆ
+	THEN1 (bc_thm_tac path_plus_path_path_thm THEN REPEAT strip_tac));
+a(lemma_tac ¨f +âP g ç Loops(OâS1, x)Æ
+	THEN1 (bc_thm_tac loop_plus_loop_loop_thm THEN rewrite_tac[] THEN REPEAT strip_tac));
+a(lemma_tac ¨µs∑ ExpS1((p +âP q) s) = (f +âP g) sÆ);
+(* *** Goal "2.1" *** *)
+a(REPEAT strip_tac THEN rewrite_tac[path_plus_def]);
+a(if_cases_tac THEN asm_rewrite_tac[]);
+(* *** Goal "2.2" *** *)
+a(ALL_FC_T (MAP_EVERY ante_tac) [loop_s1_degree_def]);
+a(rewrite_tac[times_2_–_lemma] THEN REPEAT strip_tac);
+a(bc_thm_tac ˙Ø_one_one_thm);
+a(asm_rewrite_tac[˙Ø_plus_homomorphism_thm]);
+a(rewrite_tac[path_plus_def] THEN PC_T1 "Ø_lin_arith" prove_tac[]);
+pop_thm()
+));
+
+=TEX
+%%%%
+%%%%
+=SML
+
+val €loop_s1_degree_minus_thm› = save_thm( "loop_s1_degree_minus_thm", (
+set_goal([], ¨µf  x∑
+	f ç Loops(OâS1, x)
+¥	LoopS1Degree (~âP f) = ~(LoopS1Degree f)
+Æ);
+a(REPEAT strip_tac);
+a(all_fc_tac[exp_s1_loop_lifting_thm]);
+a(rename_tac[(¨gÆ, "p")] THEN lemma_tac ¨~âP p ç Paths OâRÆ
+	THEN1 (bc_thm_tac minus_path_path_thm THEN REPEAT strip_tac));
+a(lemma_tac ¨~âP f ç Loops(OâS1, x)Æ
+	THEN1 (bc_thm_tac minus_loop_loop_thm THEN rewrite_tac[] THEN REPEAT strip_tac));
+a(lemma_tac ¨µs∑ ExpS1(~âP p s) = ~âP f sÆ);
+(* *** Goal "1" *** *)
+a(REPEAT strip_tac THEN asm_rewrite_tac[path_minus_def]);
+(* *** Goal "2" *** *)
+a(ALL_FC_T (MAP_EVERY ante_tac) [loop_s1_degree_def]);
+a(rewrite_tac[times_2_–_lemma] THEN REPEAT strip_tac);
+a(bc_thm_tac ˙Ø_one_one_thm);
+a(asm_rewrite_tac[˙Ø_minus_homomorphism_thm]);
+a(rewrite_tac[path_minus_def] THEN PC_T1 "Ø_lin_arith" prove_tac[]);
 pop_thm()
 ));
 
