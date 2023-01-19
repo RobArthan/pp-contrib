@@ -1,6 +1,16 @@
 ######################################################################
 #	$Id: maths_egs.mkf,v 1.21 2014/05/25 13:58:16 rda Exp rda $
 ######################################################################
+# This version of the makefile is for use with the utf8 branch of ProofPower
+# It does this without changing the coding of the source in the repository
+# but by converting as necessary using pp_file_conv before use.
+# If forward development in utf8 were intended, then the sources in
+# the repository would be changed to .pp files.
+# The documents contain script causing the resulting theory to be
+# output as .th.doc files, which under utf8 will actually be in utf8.
+# Since these do not appear to be used, I have not tidied this up.
+######################################################################
+
 
 # suffixes known
 .SUFFIXES: .db .doc .dvi .ldd .log .lot .sh .doc .tex .tch
@@ -16,7 +26,6 @@ COFLAGS=-kv
 #	Makefile Definitions
 #
 ######################################################################
-
 
 PRODNAME=PPMathsEgs
 PRODDESC=mathematical case studies in ProofPower-HOL
@@ -71,6 +80,7 @@ SMLFILES=	$(SMLDOCS:.doc=.sml)
 LDDFILES=	$(SMLDOCS:.doc=.ldd)
 DVIFILES=	$(SMLDOCS:.doc=.dvi)
 PDFFILES=	$(SMLDOCS:.doc=.pdf)
+PPFILES=	$(SMLDOCS:.doc=.pp)
 
 TMPFILES=	$(SMLDOCS:.doc=.aux)
 TMPFILES+=	$(SMLDOCS:.doc=.bbl)
@@ -273,12 +283,17 @@ README.txt:
 	@pp -d $(DBNAME) -f $< >$*.err
 	@mv $*.err $@
 
+#%.sml: %.doc
+#	docsml $*
 
-%.sml: %.doc
-	docsml $*
+%.sml: %.pp
+	ppsml $*
 
 %.tex: %.doc %.ldd
-	doctex $* $**.th.doc
+	doctex $*
+
+%.tex: %.pp %.ldd
+	pptex $*
 
 wrk083.tex: wrk083.doc
 	doctex $*
@@ -288,6 +303,9 @@ wrk083.tex: wrk083.doc
 
 %.pdf: %.dvi
 	dvipdf -sPAPERSIZE=a4 $*
+
+%.pp: %.doc
+	pp_file_conv <$*.doc >$*.pp
 
 ######################################################################
 #
