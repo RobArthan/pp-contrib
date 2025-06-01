@@ -1,0 +1,136 @@
+#! /bin/sh
+#	texpdf Adapted from ProofPower texdvi in: imp100.doc,v 1.17 2004/12/20 19:03:22 rda Exp
+# copright Lemma1 Ltd.
+#  Now $Id: texpdf,v 1.7 2011/02/02 21:48:21 rbj Exp $
+
+PROGNAME=`basename $0`
+USAGE="$PROGNAME [-v] [-p TeX_program] <file> ..."
+USAGEMSG="$PROGNAME : usage: $USAGE"
+PROGNAME=`basename $0`
+diag() {
+	echo $PROGNAME: $* 1>&2
+}
+if test "$PPENVDEBUG" = ""
+then
+	env_diag() {
+		true
+	}
+else
+	env_diag() {
+		diag $*
+	}
+fi
+set_pp_home() {
+	if test "$PPHOME" = ""
+	then
+		BINDIR=`dirname $0`
+		if test "$BINDIR" = ""
+		then
+			BINDIR="."
+		fi
+		FINDFILE=$BINDIR/findfile
+		if test -x $FINDFILE && BINFILE=`$FINDFILE -r $0`
+		then
+			env_diag "found real path to executable $0 at $BINFILE"
+			REALBINDIR=`dirname $BINFILE`
+			PPHOME=`dirname $REALBINDIR`
+			if test -d $PPHOME
+			then
+				env_diag "using PPHOME=$PPHOME"
+				export PPHOME
+				PATH=$PPHOME/bin:$PATH
+				env_diag "using PATH=$PATH"
+			else
+				env_diag cannot access $PPHOME
+				diag "cannot locate the ProofPower installation directory"
+			fi
+		else
+			env_diag "cannot find real path to executable $0"
+			diag "cannot locate the ProofPower installation directory"
+			exit 1
+		fi
+	else	env_diag "PPHOME set by caller to $PPHOME"
+		env_diag "PATH set by caller to $PATH"
+	fi
+	if test "$PPETCPATH" = ""
+	then
+		PPETCPATH=$PPHOME/etc:$PATH
+		export PPETCPATH
+		env_diag "using PPETCPATH=$PPETCPATH"
+	else
+		env_diag "PPETCPATH set by caller to $PPETCPATH"
+	fi
+}
+VERBOSE="n"
+TEXPROGRAM="pdflatex"
+RUNBIBTEX="n"
+
+while true
+do
+	case $1 in
+	-b)		RUNBIBTEX=y			; shift ; 		;;
+	-p)		TEXPROGRAM=$2			; shift ; shift	;;
+	-v)		VERBOSE="y"			; shift 	;;
+	--)						  shift ; break ;;
+	-*)		diag "Bad flag for $PROGNAME: $1"
+			diag $USAGEMSG
+								  exit 1 ;;
+	*)							  break ;;
+	esac
+done
+
+if test $# -lt 1
+then
+	diag $USAGEMSG
+	exit 1
+fi
+
+EXITSTATUS=0
+
+set_pp_home
+
+TEXINPUTS=$TEXINPUTS:$PPHOME/tex:$PPHOME/doc:
+export TEXINPUTS
+env_diag "using TEXINPUTS=$TEXINPUTS"
+BIBINPUTS=$BIBINPUTS:$PPHOME/tex:$PPHOME/doc:
+export BIBINPUTS
+env_diag "using BIBINPUTS=$BIBINPUTS"
+BSTINPUTS=$BSTINPUTS:$PPHOME/tex:$PPHOME/doc:
+export BSTINPUTS
+env_diag "using BSTINPUTS=$BSTINPUTS"
+
+for FILE
+do
+	stem=`basename $FILE .tex`
+	dname=`dirname $FILE`
+	dvifile=$stem.dvi
+	idxfile=$stem.idx
+	sidfile=$stem.sid
+	texfile=$dname/$stem.tex
+
+	if test $VERBOSE = "y"
+	then
+		diag $PROGNAME: reading $texfile writing $dvifile
+	fi
+
+	if test ! -r $texfile
+	then
+		diag "$PROGNAME:" $texfile "does not exist or cannot be read"
+		EXITSTATUS=1
+	else
+		touch $sidfile
+		$TEXPROGRAM $texfile || exit $?
+		if test "$RUNBIBTEX" = "y"
+		then
+			bibtex $stem
+		fi
+		if test -r $idxfile
+		then
+		    perl -n -e 'if (/\\indexentry\{!/) {while (/([^"])([@!|])/) {s/([^"])([@!|])/$1"$2/g}; s/indexentry\{"!/indexentry\{/; s/"\|hyperpage/\|hyperpage/}; print;' < $idxfile \
+			| makeindex -i -s rbjpp.ist -o $sidfile
+		    sed -i -e 's/\\delimiter /\\delimiter "/' $sidfile
+		fi
+	fi
+done
+
+exit $EXITSTATUS

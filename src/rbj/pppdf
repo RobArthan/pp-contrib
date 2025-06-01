@@ -1,0 +1,136 @@
+#! /bin/sh
+#	pppdf   Adapted from ProofPower docdvi (via docpdf) from: imp100.doc,v 1.17 2004/12/20 19:03:22 rda Exp 
+#  copyright Lemma1 Ltd.
+# Now $Id: pppdf $.
+
+PROGNAME=`basename $0`
+USAGE="$PROGNAME [-v] [-e edit_script] [-f view_file] [-K] [-k keyword_file]"
+USAGE="$USAGE [-p TeX_program] <file> ..."
+USAGEMSG="$PROGNAME: usage: $USAGE"
+PROGNAME=`basename $0`
+diag() {
+	echo $PROGNAME: $* 1>&2
+}
+if test "$PPENVDEBUG" = ""
+then
+	env_diag() {
+		true
+	}
+else
+	env_diag() {
+		diag $*
+	}
+fi
+set_pp_home() {
+	if test "$PPHOME" = ""
+	then
+		BINDIR=`dirname $0`
+		if test "$BINDIR" = ""
+		then
+			BINDIR="."
+		fi
+		FINDFILE=$BINDIR/findfile
+		if test -x $FINDFILE && BINFILE=`$FINDFILE -r $0`
+		then
+			env_diag "found real path to executable $0 at $BINFILE"
+			REALBINDIR=`dirname $BINFILE`
+			PPHOME=`dirname $REALBINDIR`
+			if test -d $PPHOME
+			then
+				env_diag "using PPHOME=$PPHOME"
+				export PPHOME
+				PATH=$PPHOME/bin:$PATH
+				env_diag "using PATH=$PATH"
+			else
+				env_diag cannot access $PPHOME
+				diag "cannot locate the ProofPower installation directory"
+			fi
+		else
+			env_diag "cannot find real path to executable $0"
+			diag "cannot locate the ProofPower installation directory"
+			exit 1
+		fi
+	else	env_diag "PPHOME set by caller to $PPHOME"
+		env_diag "PATH set by caller to $PATH"
+	fi
+	if test "$PPETCPATH" = ""
+	then
+		PPETCPATH=$PPHOME/etc:$PATH
+		export PPETCPATH
+		env_diag "using PPETCPATH=$PPETCPATH"
+	else
+		env_diag "PPETCPATH set by caller to $PPETCPATH"
+	fi
+}
+VERBOSE="n"
+EDITFILE=""
+SVARGS=""
+#TEXPROGRAM="pdflatex"
+TEXPROGRAM="xelatex"
+DOLATEX="3"
+OPT_K=""
+
+while true
+do
+	case $1 in
+	-e)		EDITFILE="$EDITFILE -e $2"	; shift ; shift	;;
+	-f)		SVARGS=$SVARGS" -f $2"		; shift ; shift	;;
+	-K)		SVARGS=$SVARGS" -K"		; shift		;;
+	-k)		SVARGS=$SVARGS" -k $2"		; shift ; shift	;;
+	-p)		TEXPROGRAM=$2			; shift ; shift	;;
+	-v)		VERBOSE="y"			; shift 	;;
+	-4)		DOLATEX="4"			  shift		;;
+	-3)		DOLATEX="3"			  shift		;;
+	-2)		DOLATEX="2"			  shift		;;
+	-1)		DOLATEX="1"			  shift		;;
+	--)						  shift ; break ;;
+	-*)		diag "Bad flag for $PROGNAME: $1"
+			diag $USAGEMSG
+								  exit 1 ;;
+	*)							  break ;;
+	esac
+done
+
+set_pp_home
+
+if test $# -lt 1
+then
+	diag $USAGEMSG
+	exit 1
+fi
+
+TEXARGS="-p "$TEXPROGRAM
+
+EXITSTATUS=0
+
+for FILE
+do
+	stem=`basename $FILE .pp`
+	dname=`dirname $FILE`
+	ppfile=$dname/$stem.pp
+	pdffile=$stem.pdf
+
+	if test $VERBOSE = "y"
+	then
+		diag $PROGNAME: reading $ppfile writing $pdffile
+		SVARGS=$SVARGS" -v"
+		TEXARGS=$TEXARGS" -v"
+	fi
+
+	pptex $EDITFILE $SVARGS $ppfile || { EX=$? ; EXITSTATUS=1 ; continue ; }
+	texpdf -b $TEXARGS $stem < /dev/null || { EX=$? ; EXITSTATUS=1 ; continue ; }
+	if	test $DOLATEX -ge 2
+	then	texpdf $TEXARGS $stem < /dev/null \
+		|| { EX=$? ; EXITSTATUS=1 ; continue ; }
+	fi
+	if	test $DOLATEX -ge 3
+	then	texpdf $TEXARGS $stem < /dev/null \
+		|| { EX=$? ; EXITSTATUS=1 ; continue ; }
+	fi
+	if	test $DOLATEX -ge 4
+	then	texpdf $TEXARGS $stem < /dev/null \
+		|| { EX=$? ; EXITSTATUS=1 ; continue ; }
+	fi
+done
+
+exit $EXITSTATUS
